@@ -14,6 +14,8 @@
 | `book_no_structure.docx` | 书稿缺陷一（M2） | 仅触发 {BOOK-STRUCT-001, BOOK-PAGE-001}（2 分页符 + 1 分节符 = 3 处，达聚合阈值） |
 | `book_toc_mismatch.docx` | 书稿缺陷二（M2） | 仅触发 {BOOK-STRUCT-002}（目录「第二章 转折」vs 标题「第二章 转机」） |
 | `paper_apa_citations.md` | APA + MD 缺陷（M2） | 仅触发 {MD-STRUCT-001, REF-APA-001}；语言 en；默认体例 → apa-7；(Jones, 2021) 无条目 |
+| `epub_good.epub` | 电子书绿色基线（M3） | **0 条问题**；默认体例 → none（不检查引用） |
+| `epub_needs_review.epub` | 电子书缺陷样本（M3） | 触发全部 6 条 EPUB 规则（mimetype 压缩 / 缺 dc:title / 无 nav / 章缺 lang / 图缺 alt / 断链 ×2）；MIME 与 LANG 可修复 |
 | `paper_sample.md` / `paper_sample.txt` | 输入冒烟 | 干净输入；txt 无适用规则，检查空跑为 0 问题 |
 
 ## paper_needs_review.docx 种入缺陷 ↔ 规则对照

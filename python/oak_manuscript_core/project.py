@@ -74,6 +74,7 @@ class Project:
         language: str = "auto",
         citation_style: str = "default",
         check_depth: str = "full",
+        epub_preview: bool = False,
     ) -> "Project":
         input_path = Path(input_path)
         project_dir = Path(project_dir)
@@ -108,6 +109,7 @@ class Project:
                 "language": language,
                 "citation_style": citation_style,
                 "check_depth": check_depth,
+                "epub_preview": epub_preview,
             }
         )
         now = now_iso()

@@ -15,6 +15,7 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "python"))
 
 from tests.docx_factory import DocxBuilder  # noqa: E402
+from tests.epub_factory import EpubBuilder  # noqa: E402
 
 SAMPLES = REPO / "samples"
 
@@ -154,6 +155,42 @@ def build_book_toc_mismatch() -> DocxBuilder:
     return b
 
 
+def build_epub_good() -> EpubBuilder:
+    """电子书绿色基线：预期 0 条问题。"""
+    return (
+        EpubBuilder(title="示例电子书：构造基线", identifier="urn:oak:sample-epub-good")
+        .chapter("chapter1.xhtml",
+                 '<h1 id="c1">第一章 构造开端</h1>'
+                 '<p>这是电子书构造样本的第一章，全部文字为占位而写。</p>'
+                 '<p><a href="chapter2.xhtml#c2">跳转到第二章</a></p>')
+        .chapter("chapter2.xhtml",
+                 '<h1 id="c2">第二章 构造收束</h1>'
+                 '<p>第二章正文同样为占位文字，包含一张带替代文本的示意图。</p>'
+                 '<p><a href="#c2">回到本章开头</a></p>')
+    )
+
+
+def build_epub_needs_review() -> EpubBuilder:
+    """电子书缺陷样本：六条 M3 规则各触发至少一次。
+
+    mimetype 压缩存放（MIME）；缺 dc:title（OPF）；无 nav（NAV）；
+    第一章缺 lang（LANG，dc:language 存在故可修复）；图片缺 alt（IMG）；
+    断文件链接与断锚点（LINK ×2）。
+    """
+    return (
+        EpubBuilder(title=None, identifier="urn:oak:sample-epub-defect",
+                    mimetype_stored=False, include_nav=False)
+        .chapter("chapter1.xhtml",
+                 '<h1 id="c1">第一章</h1><p>本章的 html 元素缺少语言属性。</p>'
+                 '<p><a href="missing.xhtml">指向不存在文件的链接</a></p>',
+                 lang=None)
+        .chapter("chapter2.xhtml",
+                 '<h1 id="c2">第二章</h1>'
+                 '<p><img src="figure.png"/>这张图片没有替代文本。</p>'
+                 '<p><a href="chapter1.xhtml#nowhere">指向不存在锚点的链接</a></p>')
+    )
+
+
 APA_MD_SAMPLE = """# Constructed Sample Paper
 
 This constructed sample exercises the Markdown reader and the APA citation
@@ -205,6 +242,8 @@ def main() -> None:
         "book_no_structure.docx": build_book_no_structure().bytes(),
         "book_toc_mismatch.docx": build_book_toc_mismatch().bytes(),
         "paper_apa_citations.md": APA_MD_SAMPLE.encode("utf-8"),
+        "epub_good.epub": build_epub_good().bytes(),
+        "epub_needs_review.epub": build_epub_needs_review().bytes(),
         "paper_sample.md": MD_SAMPLE.encode("utf-8"),
         "paper_sample.txt": TXT_SAMPLE.encode("utf-8"),
     }

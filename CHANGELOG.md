@@ -4,6 +4,15 @@
 
 ## [未发布]
 
+### 2026-07-11 — 阶段 1 M3 完成（阶段 1 收官）
+
+- EPUB 读取器：mimetype 三要件校验、container→OPF、必需元数据、nav、内容文档 lang / img / 链接锚点（复用 ZIP 安全层）；
+- 6 条 EPUB 规则实现（冻结定义零变更）；Issue location 新增可选 `resource` 字段与 `package` 部位（向后兼容扩展，见 SPEC_MODELS 附注）；
+- 白名单按纪律扩至 6 条封顶：FIX-EPUB-MIME-001（重建首位不压缩）、FIX-EPUB-LANG-001（按 dc:language 补齐，语言未知不补写）；`apply_fixes` 按格式分发；
+- 基础 EPUB 导出（`--epub-preview`）：产物经本核心 EPUB 检查自检零问题；
+- EpubCheck / Ace 保持「未运行」如实标注（真实接入待用户授权外部工具下载）；
+- 新增 epub_good / epub_needs_review 样本；测试 135 → **175 项**全通过；CLI 实跑 EPUB 闭环与预览导出验收。
+
 ### 2026-07-11 — 阶段 1 M2 完成
 
 - Markdown / TXT 读取器：ATX 标题、空行分段、围栏代码豁免、BOM/CRLF 容错；文档模型正名 `Document`（保留 `DocxDocument` 别名），段落新增 `page_break_count`；

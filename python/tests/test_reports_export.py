@@ -71,13 +71,13 @@ class OpsFlowTest(unittest.TestCase):
         carried = [i for i in outcome.issues if i["rule_id"] == "PUNCT-MIX-001"]
         self.assertTrue(carried and carried[0]["status"] == "rejected", "拒绝状态应在复检后保留")
 
-    def test_check_rejects_epub_until_m3(self):
+    def test_check_gives_friendly_error_on_broken_epub(self):
         dummy = self.tmp / "book.epub"
-        dummy.write_bytes(b"placeholder")
-        proj = Project.create(dummy, self.tmp / "proj-epub")
+        dummy.write_bytes(b"placeholder-not-a-zip")
+        proj = Project.create(dummy, self.tmp / "proj-epub", manuscript_type="ebook")
         with self.assertRaises(OakError) as ctx:
             ops.run_check(proj, PACK)
-        self.assertIn("M3", str(ctx.exception))
+        self.assertIn("无法读取", str(ctx.exception))
 
     def test_check_supports_md_since_m2(self):
         proj = Project.create(SAMPLES / "paper_apa_citations.md", self.tmp / "proj-md")

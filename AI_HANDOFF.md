@@ -145,6 +145,10 @@ cd Oak-Manuscript-App
   （书稿结构 / 目录一致 / 分页聚合 / MD 标题 / APA 括注 / Chicago 注释书目）、
   4 个新样本，测试增至 135 项；CLI 实跑书稿与 APA Markdown 双闭环。
   规则包 oak-rules 1.0.0 未做任何变更（M2 定义在阶段 0 已冻结）；
-- **下一步：M3**（EPUB 输入与电子书配置 + 基础 EPUB 导出 + 白名单扩 2 条 EPUB 修复），
-  待办清单见 `docs/DEVELOPMENT_STATUS.md`。接手前先读 AGENTS.md。
-  注意：接入 EpubCheck / Ace 属外部工具，未运行不得称「通过」；下载安装外部工具前须经用户授权。
+- **M3 也已完成（2026-07-11）——阶段 1 就此收官**：EPUB 读取器 + 6 条 EPUB 规则 +
+  白名单扩至 6 条封顶（EPUB mimetype 重建 / lang 补齐，含「语言未知不补写」反例）+
+  基础 EPUB 导出（自检零问题）。四种输入格式、三类检查配置、35 条冻结规则全部落地，
+  测试 175 项一条命令通过；
+- **下一步：阶段 2（桌面 APP MVP）**，待办清单见 `docs/DEVELOPMENT_STATUS.md`。
+  接手前先读 AGENTS.md。两个前置授权点：① 引入 Electron 需安装 npm 依赖（方案 §24 第 10 条，
+  须用户授权）；② EpubCheck / Ace 真实运行需下载外部工具（同须授权，未运行前报告只标「未运行」）。

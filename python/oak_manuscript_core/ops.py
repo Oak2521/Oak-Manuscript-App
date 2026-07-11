@@ -38,7 +38,9 @@ def _read_document(project: Project):
         from .readers.txt_reader import read_txt
 
         return read_txt(project.working_path)
-    raise OakError("「.epub」输入将在 M3 里程碑支持；当前版本支持 DOCX / Markdown / TXT。")
+    from .readers.epub_reader import read_epub
+
+    return read_epub(project.working_path)
 
 
 def _issue_key(issue: dict) -> tuple:
@@ -234,6 +236,30 @@ def export_project(project: Project, pack: dict, out_dir: Path | None = None) ->
     revised = ensure_within(base, target_dir / f"revised_{project.stored_filename}")
     shutil.copyfile(project.working_path, revised)
     written.append(revised)
+
+    # 基础 EPUB 预览（M3，方案 §5.5）：仅当用户开启且源稿不是 EPUB
+    settings = project.data["settings"]
+    if settings.get("epub_preview") and project.source_format != "epub":
+        from .epub_writer import build_basic_epub
+
+        doc = _read_document(project)
+        title = next(
+            (p.text.strip() for p in doc.paragraphs if p.text.strip()),
+            project.stored_filename,
+        )
+        if len(title) > 100:
+            title = project.stored_filename
+        lang_code = {"zh": "zh", "en": "en", "mixed": "zh"}.get(
+            settings.get("language_detected") or "", "zh"
+        )
+        preview = ensure_within(base, target_dir / "preview.epub")
+        preview.write_bytes(
+            build_basic_epub(
+                doc, title=title, language=lang_code,
+                identifier=f"urn:oak:project-{project.data['project_id']}",
+            )
+        )
+        written.append(preview)
 
     json_path = ensure_within(base, target_dir / "report.json")
     write_json(json_path, report)

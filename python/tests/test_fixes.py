@@ -108,7 +108,11 @@ class DisciplineTest(FixTestBase):
             apply_fixes(path, {"FIX-EVIL-999"})
 
     def test_whitelist_constant_matches_frozen_spec(self):
-        self.assertEqual(WHITELIST, ALL_FIX_IDS)
+        # RULESET_V1：M1 四条 + M3 预留两条（EPUB），共六条，不得再多
+        self.assertEqual(
+            WHITELIST,
+            ALL_FIX_IDS | {"FIX-EPUB-MIME-001", "FIX-EPUB-LANG-001"},
+        )
 
     def test_idempotent_second_run_changes_nothing(self):
         b = (

@@ -10,8 +10,8 @@ from .rulepack import detect_language, resolve_citation_style
 from .rules import RULE_FUNCS
 from .rules.common import PREVIEW_MAX
 
-IMPLEMENTED_MILESTONES = {"M1", "M2"}
-_PART_ORDER = {"document": 0, "footnotes": 1, "endnotes": 2}
+IMPLEMENTED_MILESTONES = {"M1", "M2", "M3"}
+_PART_ORDER = {"package": 0, "document": 1, "footnotes": 2, "endnotes": 3}
 
 
 @dataclass
@@ -84,6 +84,7 @@ def check_document(
     issues.sort(
         key=lambda i: (
             _PART_ORDER.get(i["location"]["part"], 9),
+            i["location"].get("resource") or "",
             i["location"]["paragraph"] if i["location"]["paragraph"] is not None else 10**9,
             i["location"]["note_id"] if i["location"]["note_id"] is not None else 0,
             i["rule_id"],
@@ -111,6 +112,7 @@ def _assemble_issue(rule_def: dict, f: dict, settings: dict) -> dict:
             "part": f.get("part", "document"),
             "paragraph": f.get("paragraph"),
             "note_id": f.get("note_id"),
+            "resource": f.get("resource"),
         },
         "preview": preview,
         "standard_refs": list(rule_def["standard_refs"]),

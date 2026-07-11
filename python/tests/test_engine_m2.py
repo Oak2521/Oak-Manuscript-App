@@ -60,11 +60,10 @@ class EngineM2SamplesTest(unittest.TestCase):
         result = check_document(doc, settings("paper"), PACK, doc_format="txt")
         self.assertEqual(result.issues, [])
 
-    def test_only_m3_reported_as_skipped(self):
+    def test_no_milestone_skipped_after_m3(self):
         doc = read_docx(SAMPLES / "book_good.docx")
         result = check_document(doc, settings("print_book"), PACK)
-        milestones = {g["milestone"] for g in result.skipped_rule_groups}
-        self.assertEqual(milestones, {"M3"})
+        self.assertEqual(result.skipped_rule_groups, [])  # 三个里程碑全部实现（2026-07-11）
 
     def test_m2_determinism(self):
         r1 = check_document(read_docx(SAMPLES / "book_toc_mismatch.docx"),

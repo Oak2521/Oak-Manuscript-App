@@ -23,6 +23,8 @@ _EVALUATION_BLOCK = (
 
 def _loc(issue: dict) -> str:
     loc = issue["location"]
+    if loc.get("resource"):
+        return loc["resource"]
     if loc["part"] == "footnotes":
         return f"脚注 {loc['note_id']}"
     if loc["paragraph"] is not None:

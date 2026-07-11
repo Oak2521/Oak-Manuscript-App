@@ -12,7 +12,7 @@
   "severity": "error | warning | suggestion",
   "title": "连续空格",
   "explanation": "为什么需要处理（来自规则包，面向作者的语言）",
-  "location": { "part": "document | footnotes | endnotes", "paragraph": 23, "note_id": null },
+  "location": { "part": "document | footnotes | endnotes | package", "paragraph": 23, "note_id": null, "resource": null },
   "preview": "截断脱敏的短上下文，≤ 60 字符",
   "standard_refs": ["OAK-DOCX-STYLE-001"],
   "auto_fixable": true,
@@ -27,7 +27,8 @@
 - **severity**：`error` = 必须先处理（技术性阻碍投稿/出版）；`warning` = 建议处理；`suggestion` = 可选改进。
 - **confidence**：`high` 才允许进入自动修复白名单；`low` 一律归入「需要人工判断」组展示。
 - **status 流转**：`open` →（用户接受修复并已应用）`resolved`；→（用户明确拒绝）`rejected`；`accepted` 为用户已接受但尚未应用的中间态。复检时：已 `resolved` 的问题若再次检出，生成**新 issue**（不复活旧的）。
-- **issue_id 确定性**：同一输入 + 同一规则包版本，两次检查产生的问题集合与顺序完全一致（引擎按 part → paragraph → rule_id 排序）。
+- **issue_id 确定性**：同一输入 + 同一规则包版本，两次检查产生的问题集合与顺序完全一致（引擎按 part → resource → paragraph → rule_id 排序）。
+- **location 兼容性附注（2026-07-11，M3）**：为 EPUB 增加可选字段 `resource`（包内资源路径）与 part 取值 `package`（包级问题）。属向后兼容的增量扩展，v1.0 消费方可安全忽略。
 - **preview 脱敏**：只含问题附近截断文本；脱敏摘要与日志中**不得**出现 preview。
 
 ## 2. 稿件状态级别（结果页概览，方案 §5.3，冻结的透明条件）

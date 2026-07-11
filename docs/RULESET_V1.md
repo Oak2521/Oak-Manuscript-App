@@ -13,7 +13,7 @@
 | FIX-EMPTYPARA-001 | DOCX-PARA-001 | 连续空段合并为至多一个（含分节符 / 图片的段落豁免） | 二次运行零变更 |
 | FIX-PUNCT-001 | DOCX-PUNCT-001 | 重复全角标点合并为单个（省略号……、破折号——豁免） | 二次运行零变更 |
 
-M3 预留：FIX-EPUB-MIME-001、FIX-EPUB-LANG-001。其余 29 条一律不自动修复（语境敏感或涉及作者取舍）。
+M3 两条（已于 2026-07-11 随 M3 实现，白名单就此 6 条封顶）：FIX-EPUB-MIME-001（重建 mimetype 为首位不压缩）、FIX-EPUB-LANG-001（按 OPF dc:language 补齐 html lang；**语言未声明时不修**）。其余 29 条一律不自动修复（语境敏感或涉及作者取舍）。
 
 ## M1 规则（23 条，DOCX + 论文 + GB/T 7714—2025）
 

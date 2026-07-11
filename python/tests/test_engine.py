@@ -87,8 +87,8 @@ class EngineOnSamplesTest(unittest.TestCase):
     def test_skipped_milestone_groups_reported(self):
         doc = read_docx(SAMPLES / "paper_good.docx")
         result = check_document(doc, dict(PAPER_SETTINGS), PACK)
-        milestones = {g["milestone"] for g in result.skipped_rule_groups}
-        self.assertEqual(milestones, {"M3"})  # M2 已实现（2026-07-11）
+        # 三个里程碑全部实现后，「未启用检查」应为空（如实报告机制本身仍被 engine 保留）
+        self.assertEqual(result.skipped_rule_groups, [])
 
     def test_explicit_citation_style_respected(self):
         doc = read_docx(SAMPLES / "paper_good.docx")

@@ -45,6 +45,7 @@ def _cmd_create(args) -> int:
         Path(args.input), Path(args.project),
         manuscript_type=args.type, language=args.language,
         citation_style=args.citation, check_depth=args.depth,
+        epub_preview=args.epub_preview,
     )
     _emit({
         "ok": True,
@@ -141,6 +142,8 @@ def build_parser() -> argparse.ArgumentParser:
                    choices=["default", "gbt7714-2025", "apa-7",
                             "chicago-18-nb", "chicago-18-ad", "none"])
     p.add_argument("--depth", default="full", choices=["quick", "full"])
+    p.add_argument("--epub-preview", action="store_true",
+                   help="导出时附带基础 EPUB 预览（非 EPUB 源稿适用）")
 
     for name, help_text in (("check", "运行检查"), ("recheck", "复检")):
         p = sub.add_parser(name, help=help_text)

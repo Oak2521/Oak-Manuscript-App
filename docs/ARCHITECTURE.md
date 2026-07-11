@@ -48,6 +48,8 @@ Python Core（oak_manuscript_core）   ← 阶段 1（当前）
 | `oak_manuscript_core/readers/docx_reader.py` | OOXML 解析 → 统一文档模型 |
 | `oak_manuscript_core/readers/md_reader.py` | （M2）Markdown ATX 标题 + 分段解析 |
 | `oak_manuscript_core/readers/txt_reader.py` | （M2）纯文本空行分段 |
+| `oak_manuscript_core/readers/epub_reader.py` | （M3）EPUB 容器 / OPF / nav / 内容文档结构解析 |
+| `oak_manuscript_core/epub_writer.py` | （M3）基础 EPUB 导出（自检零问题） |
 | `oak_manuscript_core/model.py` | 文档模型、问题（Issue）、检查结果的数据类 |
 | `oak_manuscript_core/rulepack.py` | 规则包加载与校验、「默认」体例映射 |
 | `oak_manuscript_core/engine.py` | 规则调度（按稿件类型 / 语言 / 体例启用），确定性保证 |
