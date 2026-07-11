@@ -100,6 +100,82 @@ def build_paper_missing_parts() -> DocxBuilder:
     return b
 
 
+def build_book_good() -> DocxBuilder:
+    """书稿绿色基线（print_book）：预期 0 条问题。"""
+    b = DocxBuilder()
+    b.p("示例书稿：构造样本的书稿基线")
+    b.p("目录")
+    b.p("第一章 起点")
+    b.p("第二章 转机")
+    b.p("第一章 起点", style="Heading1")
+    b.p_runs([("t", "这是书稿构造样本的第一章正文，全部文字为占位而写，不含真实内容。"
+                    "章节结构完整，目录与标题一致，注释与书目齐备"), ("fnref", 1), ("t", "。")])
+    b.p("为了让语言识别取得足够的中文字符数量，这里再补充一段构造文字，"
+        "描述完全虚构的写作过程与修订经历，避免任何可识别的真实信息。")
+    b.p("第二章 转机", style="Heading1")
+    b.p("第二章同样是占位文字。书稿样本不使用手工分页符，不使用制表符，"
+        "段落之间不留连续空行，以保证基线检查完全干净。")
+    b.p("参考文献", style="Heading1")
+    b.p("某构. 示例书目条目. 北京: 示例出版社, 2020.")
+    b.footnote(1, "这是一条有内容的注释，用于验证注释—书目制的基线。")
+    return b
+
+
+def build_book_no_structure() -> DocxBuilder:
+    """书稿缺陷样本一：无章节结构 + 手工分页/分节（≥3 处）。"""
+    b = DocxBuilder()
+    b.p("示例书稿：没有结构的书稿")
+    b.p_runs([("t", "这份书稿从头到尾没有使用任何标题样式，全部是普通段落。"), ("pagebreak",)])
+    b.p_runs([("t", "作者用手工分页符来切分章节，这在进入专业排版后需要清理。"), ("pagebreak",)])
+    b.p_section_break()
+    b.p("这里再补充足够的构造文字让语言识别稳定判定为中文为主，"
+        "同时保持段落干净，不引入空格、标点或空段类的问题。")
+    return b
+
+
+def build_book_toc_mismatch() -> DocxBuilder:
+    """书稿缺陷样本二：目录与章节标题不一致（仅此一处缺陷）。"""
+    b = DocxBuilder()
+    b.p("示例书稿：目录失配的书稿")
+    b.p("目录")
+    b.p("第一章 起点")
+    b.p("第二章 转折")  # 实际章节是「第二章 转机」→ BOOK-STRUCT-002
+    b.p("第三章 结局")
+    b.p("第一章 起点", style="Heading1")
+    b.p_runs([("t", "第一章正文为构造占位文字，配有一条正常注释"), ("fnref", 1), ("t", "。")])
+    b.p("第二章 转机", style="Heading1")
+    b.p("第二章正文继续占位。修订过程中章名从「转折」改成了「转机」，"
+        "但目录忘记同步更新，这正是本样本要验证的缺陷。")
+    b.p("第三章 结局", style="Heading1")
+    b.p("第三章正文补足中文字符数量，保证语言识别与默认体例映射稳定。")
+    b.p("参考文献", style="Heading1")
+    b.p("某构. 示例书目条目. 北京: 示例出版社, 2021.")
+    b.footnote(1, "一条有内容的注释。")
+    return b
+
+
+APA_MD_SAMPLE = """# Constructed Sample Paper
+
+This constructed sample exercises the Markdown reader and the APA citation
+check. Prior work established the constructed baseline (Smith, 2020). A second
+claim cites a source that is intentionally missing from the reference list
+(Jones, 2021). Joint authorship is also covered by the matcher (Smith & Lee,
+2019). All sentences here are placeholder text written only to give the
+language detector enough English words to classify this file confidently.
+
+### Skipped Level Section
+
+The heading above jumps from level one to level three on purpose, which the
+Markdown structure rule should flag exactly once.
+
+## References
+
+Smith, J. (2020). Constructed methods for placeholder studies. Example Press.
+
+Smith, J., & Lee, K. (2019). Joint constructed work. Example Press.
+"""
+
+
 MD_SAMPLE = """# 示例文稿（Markdown 样本）
 
 本文件用于 M2 里程碑的 Markdown 输入冒烟测试，内容为匿名构造文字。
@@ -125,6 +201,10 @@ def main() -> None:
         "paper_good.docx": build_paper_good().bytes(),
         "paper_needs_review.docx": build_paper_needs_review().bytes(),
         "paper_missing_parts.docx": build_paper_missing_parts().bytes(),
+        "book_good.docx": build_book_good().bytes(),
+        "book_no_structure.docx": build_book_no_structure().bytes(),
+        "book_toc_mismatch.docx": build_book_toc_mismatch().bytes(),
+        "paper_apa_citations.md": APA_MD_SAMPLE.encode("utf-8"),
         "paper_sample.md": MD_SAMPLE.encode("utf-8"),
         "paper_sample.txt": TXT_SAMPLE.encode("utf-8"),
     }

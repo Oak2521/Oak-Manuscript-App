@@ -10,7 +10,7 @@ from .rulepack import detect_language, resolve_citation_style
 from .rules import RULE_FUNCS
 from .rules.common import PREVIEW_MAX
 
-IMPLEMENTED_MILESTONES = {"M1"}
+IMPLEMENTED_MILESTONES = {"M1", "M2"}
 _PART_ORDER = {"document": 0, "footnotes": 1, "endnotes": 2}
 
 

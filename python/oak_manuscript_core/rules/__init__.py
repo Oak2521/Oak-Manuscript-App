@@ -20,4 +20,4 @@ def rule(rule_id: str):
 
 
 # 导入即注册（顺序无关，引擎按规则包顺序调度）
-from . import whitespace, punctuation, structure, headings, notes, references  # noqa: E402,F401
+from . import whitespace, punctuation, structure, headings, notes, references, book  # noqa: E402,F401

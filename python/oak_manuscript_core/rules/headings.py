@@ -12,8 +12,7 @@ from .common import finding, make_preview
 _NUM_PREFIX = re.compile(r"^(\d+(?:\.\d+)*)(?=[\s.．、）)]|$)")
 
 
-@rule("HEAD-STRUCT-001")
-def heading_level_jump(doc: DocxDocument, ctx: dict) -> list[dict]:
+def _level_jumps(doc: DocxDocument) -> list[dict]:
     findings = []
     prev_level = None
     for para in doc.paragraphs:
@@ -25,6 +24,17 @@ def heading_level_jump(doc: DocxDocument, ctx: dict) -> list[dict]:
             )
         prev_level = para.heading_level
     return findings
+
+
+@rule("HEAD-STRUCT-001")
+def heading_level_jump(doc: DocxDocument, ctx: dict) -> list[dict]:
+    return _level_jumps(doc)
+
+
+@rule("MD-STRUCT-001")
+def md_heading_level_jump(doc: DocxDocument, ctx: dict) -> list[dict]:
+    """与 HEAD-STRUCT-001 同一判定，作用于 Markdown 的 ATX 标题（M2）。"""
+    return _level_jumps(doc)
 
 
 @rule("HEAD-STRUCT-002")

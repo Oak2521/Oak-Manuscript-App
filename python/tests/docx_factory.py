@@ -42,6 +42,11 @@ class DocxBuilder:
     def p_empty(self) -> "DocxBuilder":
         return self.p("")
 
+    def p_section_break(self) -> "DocxBuilder":
+        """段落属性携带分节符的段落（书稿分节风险样本用）。"""
+        self._paras.append({"style": None, "runs": [], "sectpr": True})
+        return self
+
     def footnote(self, fid: int, text: str | None) -> "DocxBuilder":
         """登记脚注定义。text=None 或 "" 生成空注。"""
         self._footnotes[fid] = text or ""
@@ -55,14 +60,19 @@ class DocxBuilder:
             return f'<w:r><w:t xml:space="preserve">{_esc(token[1])}</w:t></w:r>'
         if kind == "tab":
             return "<w:r><w:tab/></w:r>"
+        if kind == "pagebreak":
+            return '<w:r><w:br w:type="page"/></w:r>'
         if kind == "fnref":
             return f'<w:r><w:footnoteReference w:id="{token[1]}"/></w:r>'
         raise ValueError(f"unknown token: {token!r}")
 
     def _para_xml(self, para: dict) -> str:
-        ppr = ""
+        ppr_parts = []
         if para["style"]:
-            ppr = f'<w:pPr><w:pStyle w:val="{para["style"]}"/></w:pPr>'
+            ppr_parts.append(f'<w:pStyle w:val="{para["style"]}"/>')
+        if para.get("sectpr"):
+            ppr_parts.append("<w:sectPr/>")
+        ppr = f"<w:pPr>{''.join(ppr_parts)}</w:pPr>" if ppr_parts else ""
         runs = "".join(self._run_xml(t) for t in para["runs"])
         return f"<w:p>{ppr}{runs}</w:p>"
 

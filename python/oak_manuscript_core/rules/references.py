@@ -152,6 +152,39 @@ def missing_year(doc: DocxDocument, ctx: dict) -> list[dict]:
     return findings
 
 
+# APA 括注：（Surname, 2020）/（Surname & Other, 2019）/（Surname et al., 2018），
+# 含年份后缀 2020a。多引文并列（分号分隔）与叙述式引用留待后续版本。
+_APA_CITE = re.compile(
+    r"\(\s*([A-Z][A-Za-z\-']+)"
+    r"(?:\s*(?:&|and)\s*[A-Z][A-Za-z\-']+)?"
+    r"(?:\s+et al\.)?"
+    r"\s*,\s*(\d{4})[a-z]?\s*\)"
+)
+
+
+@rule("REF-APA-001")
+def apa_citation_without_entry(doc: DocxDocument, ctx: dict) -> list[dict]:
+    """（M2）文内 APA 括注 → References 条目的单向基础核对。"""
+    pos = _section_pos(doc)
+    if pos is None:
+        return []
+    entries = _entries(doc, pos)
+    findings = []
+    for para in doc.paragraphs[:pos]:
+        for m in _APA_CITE.finditer(para.text):
+            surname, year = m.group(1), m.group(2)
+            pattern = re.compile(rf"\b{re.escape(surname)}\b")
+            matched = any(
+                pattern.search(body) and year in body for _p, _num, body in entries
+            )
+            if not matched:
+                findings.append(
+                    finding(paragraph=para.index,
+                            preview=make_preview(para.text, m.start(), m.end()))
+                )
+    return findings
+
+
 @rule("REF-GBT-003")
 def mixed_width_punctuation(doc: DocxDocument, ctx: dict) -> list[dict]:
     pos = _section_pos(doc)

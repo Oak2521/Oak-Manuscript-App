@@ -46,6 +46,8 @@ Python Core（oak_manuscript_core）   ← 阶段 1（当前）
 | `oak_manuscript_core/project.py` | 项目创建 / 打开、project.json 读写、原稿哈希、检查点 |
 | `oak_manuscript_core/safety.py` | 路径规范化与逃逸拒绝、ZIP 安全（成员数 / 单文件 / 总解压上限）、大文件预警 |
 | `oak_manuscript_core/readers/docx_reader.py` | OOXML 解析 → 统一文档模型 |
+| `oak_manuscript_core/readers/md_reader.py` | （M2）Markdown ATX 标题 + 分段解析 |
+| `oak_manuscript_core/readers/txt_reader.py` | （M2）纯文本空行分段 |
 | `oak_manuscript_core/model.py` | 文档模型、问题（Issue）、检查结果的数据类 |
 | `oak_manuscript_core/rulepack.py` | 规则包加载与校验、「默认」体例映射 |
 | `oak_manuscript_core/engine.py` | 规则调度（按稿件类型 / 语言 / 体例启用），确定性保证 |

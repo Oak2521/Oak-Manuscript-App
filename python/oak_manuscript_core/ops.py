@@ -30,9 +30,15 @@ def _read_document(project: Project):
     fmt = project.source_format
     if fmt == "docx":
         return read_docx(project.working_path)
-    if fmt in ("md", "txt"):
-        raise OakError(f"「.{fmt}」输入将在 M2 里程碑支持；当前版本（M1）仅支持 DOCX。")
-    raise OakError("「.epub」输入将在 M3 里程碑支持；当前版本（M1）仅支持 DOCX。")
+    if fmt == "md":
+        from .readers.md_reader import read_md
+
+        return read_md(project.working_path)
+    if fmt == "txt":
+        from .readers.txt_reader import read_txt
+
+        return read_txt(project.working_path)
+    raise OakError("「.epub」输入将在 M3 里程碑支持；当前版本支持 DOCX / Markdown / TXT。")
 
 
 def _issue_key(issue: dict) -> tuple:

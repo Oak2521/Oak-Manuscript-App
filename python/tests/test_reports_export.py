@@ -71,11 +71,21 @@ class OpsFlowTest(unittest.TestCase):
         carried = [i for i in outcome.issues if i["rule_id"] == "PUNCT-MIX-001"]
         self.assertTrue(carried and carried[0]["status"] == "rejected", "拒绝状态应在复检后保留")
 
-    def test_check_rejects_non_docx_in_m1(self):
-        proj = Project.create(SAMPLES / "paper_sample.md", self.tmp / "proj-md")
+    def test_check_rejects_epub_until_m3(self):
+        dummy = self.tmp / "book.epub"
+        dummy.write_bytes(b"placeholder")
+        proj = Project.create(dummy, self.tmp / "proj-epub")
         with self.assertRaises(OakError) as ctx:
             ops.run_check(proj, PACK)
-        self.assertIn("M2", str(ctx.exception))
+        self.assertIn("M3", str(ctx.exception))
+
+    def test_check_supports_md_since_m2(self):
+        proj = Project.create(SAMPLES / "paper_apa_citations.md", self.tmp / "proj-md")
+        record, outcome = ops.run_check(proj, PACK)
+        self.assertEqual(record["check_id"], "check-0001")
+        self.assertEqual(proj.data["settings"]["citation_style_resolved"], "apa-7")
+        self.assertEqual({i["rule_id"] for i in outcome.issues},
+                         {"MD-STRUCT-001", "REF-APA-001"})
 
     def test_export_writes_revised_docx_and_three_reports(self):
         ops.run_check(self.proj, PACK)

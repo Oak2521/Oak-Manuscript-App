@@ -13,6 +13,7 @@ class Paragraph:
     style_id: str | None = None
     heading_level: int | None = None   # 1..9；非标题为 None
     tab_count: int = 0
+    page_break_count: int = 0          # 段内手工分页符（w:br type=page）数
     has_drawing: bool = False
     has_sectpr: bool = False
     footnote_refs: list[int] = field(default_factory=list)
@@ -35,7 +36,7 @@ class Footnote:
 
 
 @dataclass
-class DocxDocument:
+class Document:
     paragraphs: list[Paragraph] = field(default_factory=list)
     footnotes: list[Footnote] = field(default_factory=list)
     footnote_ref_ids: list[int] = field(default_factory=list)  # 正文引用顺序
@@ -43,3 +44,7 @@ class DocxDocument:
     @property
     def body_text(self) -> str:
         return "\n".join(p.text for p in self.paragraphs)
+
+
+# 兼容别名：M1 期代码与测试使用的名称（模型自 M2 起对 DOCX/MD/TXT 通用）
+DocxDocument = Document

@@ -21,6 +21,22 @@
 - [x] 损坏 / 不支持文件给出可理解错误且不损伤已有项目；
 - [x] 统一测试入口 `python scripts/run_tests.py` 一条命令全部通过（103 项）。
 
+## M2 验收（阶段 1 第二里程碑：纸质出版物 + APA 7 / Chicago 18 + Markdown、TXT 输入）
+
+> 验收日期：2026-07-11。证据：统一测试 135 项全通过；`out/demo-m2-book`（print_book DOCX）
+> 与 `out/demo-m2-md`（APA Markdown）CLI 实跑闭环，退出码与触发集符合预期。
+
+- [x] Markdown 输入：ATX 标题解析、空行分段、围栏代码块不误判结构（tests/test_text_readers.py）；
+- [x] TXT 输入：空行分段、BOM 与 CRLF 容错；无 txt 专属规则时检查空跑不报错；
+- [x] 纸质出版物配置独立运行：print_book × DOCX 走完整检查（默认体例 → chicago-18-nb）；
+- [x] M2 六条规则全部实现并逐条测试（含反例）：BOOK-STRUCT-001 / 002、BOOK-PAGE-001（≥3 聚合阈值）、MD-STRUCT-001、REF-APA-001（括注→条目单向核对）、REF-CHI-001（注释↔书目存在性一致）；
+- [x] 书稿绿色基线（book_good.docx）0 误报；缺陷样本触发集精确等于预期（tests/test_engine_m2.py）；
+- [x] APA 体例经「默认」映射选定（paper × en → apa-7）并写入报告；
+- [x] md 项目全流程（create → check → export → verify）经 ops 层与 CLI 实跑验证；
+- [x] .epub 输入仍明确提示 M3 支持，不误报支持；
+- [x] 引擎「未启用检查」如实缩减为仅 M3；
+- [x] 统一测试入口一条命令全部通过（135 项）。
+
 ## 基础版全量验收（方案 §21，阶段 3 前完成）
 
 - [ ] Windows 能安装或解压启动，并完成匿名 DOCX 主流程

@@ -7,10 +7,14 @@
 
 | 文件 | 用途 | 预期 |
 |---|---|---|
-| `paper_good.docx` | 绿色基线 | **0 条问题**；状态「基本具备编辑评估条件」；语言识别 zh；默认体例 → gbt7714-2025 |
-| `paper_needs_review.docx` | 缺陷样本 | 触发下表全部规则；修复白名单 4 条可自动修复且幂等 |
+| `paper_good.docx` | 论文绿色基线 | **0 条问题**；状态「基本具备编辑评估条件」；语言识别 zh；默认体例 → gbt7714-2025 |
+| `paper_needs_review.docx` | 论文缺陷样本 | 触发下表全部规则；修复白名单 4 条可自动修复且幂等 |
 | `paper_missing_parts.docx` | 结构缺失 | 仅触发 PAPER-STRUCT-001 / 002 / 003 / 004 |
-| `paper_sample.md` / `paper_sample.txt` | M2 输入冒烟 | M1 阶段不参与检查 |
+| `book_good.docx` | 书稿绿色基线（M2） | **0 条问题**；默认体例 → chicago-18-nb；目录一致、注释与书目齐备 |
+| `book_no_structure.docx` | 书稿缺陷一（M2） | 仅触发 {BOOK-STRUCT-001, BOOK-PAGE-001}（2 分页符 + 1 分节符 = 3 处，达聚合阈值） |
+| `book_toc_mismatch.docx` | 书稿缺陷二（M2） | 仅触发 {BOOK-STRUCT-002}（目录「第二章 转折」vs 标题「第二章 转机」） |
+| `paper_apa_citations.md` | APA + MD 缺陷（M2） | 仅触发 {MD-STRUCT-001, REF-APA-001}；语言 en；默认体例 → apa-7；(Jones, 2021) 无条目 |
+| `paper_sample.md` / `paper_sample.txt` | 输入冒烟 | 干净输入；txt 无适用规则，检查空跑为 0 问题 |
 
 ## paper_needs_review.docx 种入缺陷 ↔ 规则对照
 

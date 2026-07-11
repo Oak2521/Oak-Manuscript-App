@@ -141,5 +141,10 @@ cd Oak-Manuscript-App
   AD-001 核心零第三方依赖（stdlib 解析 OOXML，unittest 测试）；
   AD-002 CLI 即接口契约（stdout 单 JSON，退出码 0/1/2，Electron 阶段直接复用）；
   AD-003 规则包与代码分离（定义在 config，逻辑按 rule_id 注册，启动时一致性校验）；
-- **下一步：M2**（纸质出版物 + APA 7 / Chicago 18 + Markdown、TXT 输入），
+- **M2 也已完成并通过验收（2026-07-11）**：Markdown / TXT 读取器、6 条 M2 规则
+  （书稿结构 / 目录一致 / 分页聚合 / MD 标题 / APA 括注 / Chicago 注释书目）、
+  4 个新样本，测试增至 135 项；CLI 实跑书稿与 APA Markdown 双闭环。
+  规则包 oak-rules 1.0.0 未做任何变更（M2 定义在阶段 0 已冻结）；
+- **下一步：M3**（EPUB 输入与电子书配置 + 基础 EPUB 导出 + 白名单扩 2 条 EPUB 修复），
   待办清单见 `docs/DEVELOPMENT_STATUS.md`。接手前先读 AGENTS.md。
+  注意：接入 EpubCheck / Ace 属外部工具，未运行不得称「通过」；下载安装外部工具前须经用户授权。

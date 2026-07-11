@@ -88,7 +88,7 @@ class EngineOnSamplesTest(unittest.TestCase):
         doc = read_docx(SAMPLES / "paper_good.docx")
         result = check_document(doc, dict(PAPER_SETTINGS), PACK)
         milestones = {g["milestone"] for g in result.skipped_rule_groups}
-        self.assertEqual(milestones, {"M2", "M3"})
+        self.assertEqual(milestones, {"M3"})  # M2 已实现（2026-07-11）
 
     def test_explicit_citation_style_respected(self):
         doc = read_docx(SAMPLES / "paper_good.docx")

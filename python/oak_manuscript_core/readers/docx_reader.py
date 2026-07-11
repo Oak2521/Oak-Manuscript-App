@@ -103,6 +103,7 @@ def _parse_paragraph(p_el, index: int, style_levels: dict[str, int]) -> Paragrap
 
     pieces: list[str] = []
     tab_count = 0
+    page_breaks = 0
     has_drawing = False
     refs: list[int] = []
     for run in p_el.findall(f".//{W}r"):
@@ -113,6 +114,8 @@ def _parse_paragraph(p_el, index: int, style_levels: dict[str, int]) -> Paragrap
             elif tag == f"{W}tab":
                 pieces.append("\t")
                 tab_count += 1
+            elif tag == f"{W}br" and child.get(f"{W}type") == "page":
+                page_breaks += 1
             elif tag == f"{W}footnoteReference":
                 try:
                     refs.append(int(child.get(f"{W}id", "")))
@@ -128,6 +131,7 @@ def _parse_paragraph(p_el, index: int, style_levels: dict[str, int]) -> Paragrap
         style_id=style_id,
         heading_level=style_levels.get(style_id) if style_id else None,
         tab_count=tab_count,
+        page_break_count=page_breaks,
         has_drawing=has_drawing,
         has_sectpr=p_el.find(f"{W}pPr/{W}sectPr") is not None,
         footnote_refs=refs,
