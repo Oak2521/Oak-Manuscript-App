@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import html as _html
 
-_EXTERNAL_LABEL = {"not_run": "未运行", "passed": "已运行", "failed": "已运行（发现问题）"}
+_EXTERNAL_LABEL = {"not_run": "未运行", "passed": "已运行：未发现问题", "failed": "已运行：发现问题"}
 _SEVERITY_SECTIONS = (
     ("error", "必须处理的问题"),
     ("warning", "建议处理的问题"),
@@ -97,9 +97,11 @@ def render_markdown(report: dict) -> str:
     lines.append("")
     lines.append("## 外部验证状态")
     lines.append("")
+    details = report.get("external_tools_detail", {})
     for tool, status in report["external_tools"].items():
         label = _EXTERNAL_LABEL.get(status, status)
-        lines.append(f"- {tool}：{label}")
+        extra = f"（{details[tool]}）" if details.get(tool) else ""
+        lines.append(f"- {tool}：{label}{extra}")
 
     if report["skipped_rule_groups"]:
         lines.append("")

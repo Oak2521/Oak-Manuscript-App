@@ -63,6 +63,7 @@ def build_basic_epub(doc: Document, *, title: str, language: str, identifier: st
         f'<dc:identifier id="pub-id">{e(identifier)}</dc:identifier>'
         f"<dc:title>{e(title)}</dc:title>"
         f"<dc:language>{e(language)}</dc:language>"
+        '<meta property="dcterms:modified">2026-01-01T00:00:00Z</meta>'
         "</metadata><manifest>"
         '<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>'
         '<item id="content" href="content.xhtml" media-type="application/xhtml+xml"/>'

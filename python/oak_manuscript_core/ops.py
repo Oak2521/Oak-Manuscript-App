@@ -183,6 +183,96 @@ def run_fixes(project: Project, pack: dict):
     return record, counts
 
 
+def run_external(project: Project) -> dict:
+    """对 EPUB 项目运行可用的外部验证工具，把真实状态写回最近一次检查结果。
+
+    工具缺失时保持 not_run（绝不虚报）；返回各工具的状态与说明。
+    """
+    from .external import discover_tools, run_ace, run_epubcheck
+
+    if project.source_format != "epub":
+        raise OakError("外部验证（EpubCheck / Ace）仅适用于 EPUB 稿件。")
+    if not project.data["checks"]:
+        raise OakError("请先运行检查，再运行外部验证。")
+
+    tools = discover_tools()
+    results: dict[str, dict] = {}
+
+    if tools["epubcheck_jar"] and tools["java"]:
+        results["epubcheck"] = run_epubcheck(
+            project.working_path, project.root / "reports" / "epubcheck.json",
+            jar=tools["epubcheck_jar"], java=tools["java"],
+        )
+    else:
+        missing = "缺少 Java 运行时" if tools["epubcheck_jar"] else "未安装 EpubCheck"
+        results["epubcheck"] = {"status": "not_run", "detail": missing}
+
+    if tools["ace"] and tools["chrome"]:
+        results["ace"] = run_ace(
+            project.working_path, project.root / "reports" / "ace",
+            ace=tools["ace"], chrome=tools["chrome"],
+        )
+    elif tools["ace"]:
+        results["ace"] = {"status": "not_run", "detail": "缺少可用的 Chrome / Chromium"}
+    else:
+        results["ace"] = {"status": "not_run", "detail": "未安装 Ace by DAISY"}
+
+    # 写回最近一次检查结果文件（状态 + 说明），供报告如实呈现
+    last = project.data["checks"][-1]
+    result_path = project.root / last["result_file"]
+    result = read_json(result_path)
+    result["external_tools"] = {name: r["status"] for name, r in results.items()}
+    result["external_tools_detail"] = {name: r["detail"] for name, r in results.items()}
+    write_json(result_path, result)
+    project.save()
+    return results
+
+
+_WORD_BUCKETS = (
+    (5_000, "5千字以内"),
+    (20_000, "5千—2万字"),
+    (50_000, "2万—5万字"),
+    (100_000, "5万—10万字"),
+)
+
+
+def build_evaluation_summary(project: Project) -> dict:
+    """脱敏出版评估摘要（§8.4 字段白名单）。
+
+    默认禁止项在此物理上不存在：不含正文、标题、文件名、路径、
+    参考文献原文、任何哈希。第一版仅本地生成，绝不自动发送。
+    """
+    if not project.data["checks"]:
+        raise OakError("尚未运行检查，无法生成评估摘要。请先执行 check。")
+    doc = _read_document(project)
+    chars = len("".join(doc.body_text.split()))
+    bucket = next((label for limit, label in _WORD_BUCKETS if chars <= limit), "10万字以上")
+
+    issues = load_issues(project)
+    counts = {
+        "error": {"open": 0, "resolved": 0, "rejected": 0},
+        "warning": {"open": 0, "resolved": 0, "rejected": 0},
+        "suggestion": {"open": 0, "resolved": 0, "rejected": 0},
+    }
+    for issue in issues:
+        slot = "open" if issue["status"] in ("open", "accepted") else issue["status"]
+        if slot in counts[issue["severity"]]:
+            counts[issue["severity"]][slot] += 1
+
+    settings = project.data["settings"]
+    return {
+        "schema_version": "1.0",
+        "manuscript_type": settings["manuscript_type"],
+        "language": settings.get("language_detected") or settings["language"],
+        "word_count_range": bucket,
+        "issue_counts": counts,
+        "citation_style_resolved": settings["citation_style_resolved"],
+        "rulepack_version": project.data["rulepack"]["version"],
+        "generated_at": now_iso(),
+        "intent": "unspecified",
+    }
+
+
 def build_report_data(project: Project, pack: dict) -> dict:
     if not project.data["checks"]:
         raise OakError("尚未运行检查，无法生成报告。请先执行 check。")
@@ -218,6 +308,7 @@ def build_report_data(project: Project, pack: dict) -> dict:
         ],
         "skipped_rule_groups": result["skipped_rule_groups"],
         "external_tools": result["external_tools"],
+        "external_tools_detail": result.get("external_tools_detail", {}),
         "disclaimer": DISCLAIMER,
     }
 
@@ -272,6 +363,10 @@ def export_project(project: Project, pack: dict, out_dir: Path | None = None) ->
     html_path = ensure_within(base, target_dir / "report.html")
     html_path.write_text(render_html(report), encoding="utf-8", newline="\n")
     written.append(html_path)
+
+    summary_path = ensure_within(base, target_dir / "evaluation_summary.json")
+    write_json(summary_path, build_evaluation_summary(project))
+    written.append(summary_path)
 
     project.save()
     return written

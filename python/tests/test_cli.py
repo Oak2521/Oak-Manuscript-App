@@ -86,7 +86,9 @@ class CliClosedLoopTest(unittest.TestCase):
         # 5. export
         code, out, err = run_cli("export", "--project", str(self.pdir))
         self.assertEqual(code, 0, err)
-        self.assertEqual(len(out["files"]), 4)
+        # 修订稿 + 三种报告 + 脱敏评估摘要
+        self.assertGreaterEqual(len(out["files"]), 5)
+        self.assertTrue(any(f.endswith("evaluation_summary.json") for f in out["files"]))
         for f in out["files"]:
             self.assertTrue(Path(f).is_file())
 

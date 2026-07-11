@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'">
+  <title>湖岸稿件 Oak Manuscript</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside id="sidebar">
+    <div class="brand">湖岸稿件<span>Oak Manuscript</span></div>
+    <nav id="steps">
+      <button data-page="welcome" class="step active">欢迎与隐私</button>
+      <button data-page="project" class="step" disabled>创建项目</button>
+      <button data-page="target" class="step" disabled>检查目标</button>
+      <button data-page="progress" class="step" disabled>检查进度</button>
+      <button data-page="issues" class="step" disabled>问题与订正</button>
+      <button data-page="export" class="step" disabled>导出结果</button>
+      <button data-page="standards" class="step">标准与设置</button>
+    </nav>
+    <div class="sidebar-foot">
+      <button id="btn-login" class="ghost">注册 / 登录湖岸账号</button>
+      <div id="app-meta" class="muted"></div>
+    </div>
+  </aside>
+
+  <main id="content">
+    <!-- 1 欢迎与隐私 -->
+    <section class="page active" id="page-welcome">
+      <h1>欢迎使用湖岸稿件</h1>
+      <div class="callout">
+        <strong>您的稿件默认只在本机处理。</strong>
+        <p>检查、订正、报告与导出全部在本地完成；不上传稿件，不要求注册；原稿以只读副本保存并全程 SHA-256 校验，绝不被修改。</p>
+      </div>
+      <p>支持格式：<code>.docx</code>（论文 / 书稿全部检查）、<code>.md</code>、<code>.txt</code>、<code>.epub</code>。自动修复仅限白名单内的机械问题，逐项经您确认。</p>
+      <div class="actions">
+        <button id="btn-own-file" class="primary">检查自己的稿件</button>
+        <button id="btn-sample">使用匿名样本体验</button>
+        <button id="btn-open-project" class="ghost">打开已有项目</button>
+      </div>
+      <div id="sample-list" class="hidden">
+        <h3>选择一个匿名样本</h3>
+        <div id="sample-buttons" class="grid"></div>
+      </div>
+    </section>
+
+    <!-- 2 创建项目 -->
+    <section class="page" id="page-project">
+      <h1>创建检查项目</h1>
+      <div class="form-row"><label>稿件文件</label><div id="chosen-file" class="filebox">未选择</div></div>
+      <div class="form-row"><label>项目保存位置</label>
+        <div class="inline"><div id="chosen-dir" class="filebox">未选择（需要空目录）</div>
+        <button id="btn-pick-dir">选择目录…</button></div>
+      </div>
+      <p class="muted">APP 将在该目录建立项目结构，复制一份只读原稿副本并记录 SHA-256。您的原文件不会被移动或修改。</p>
+      <div class="actions"><button id="btn-to-target" class="primary" disabled>下一步：选择检查目标</button></div>
+    </section>
+
+    <!-- 3 检查目标 -->
+    <section class="page" id="page-target">
+      <h1>选择检查目标</h1>
+      <div class="form-row"><label>稿件类型</label>
+        <div class="radio-group" id="type-group">
+          <label><input type="radio" name="mtype" value="paper" checked> 论文</label>
+          <label><input type="radio" name="mtype" value="print_book"> 纸质出版物</label>
+          <label><input type="radio" name="mtype" value="ebook"> 电子书</label>
+        </div>
+      </div>
+      <div class="form-row"><label>目标引用格式</label>
+        <select id="citation-select">
+          <option value="default" selected>默认（推荐，由 APP 按类型与语言自动选定）</option>
+          <option value="gbt7714-2025">GB/T 7714—2025</option>
+          <option value="apa-7">APA 7</option>
+          <option value="chicago-18-nb">Chicago 18 注释—书目</option>
+          <option value="chicago-18-ad">Chicago 18 作者—日期</option>
+          <option value="none">暂不检查引用格式</option>
+        </select>
+      </div>
+      <div class="form-row"><label>语言</label>
+        <select id="language-select">
+          <option value="auto" selected>自动识别</option>
+          <option value="zh">中文为主</option>
+          <option value="en">英文为主</option>
+          <option value="mixed">中英混合</option>
+        </select>
+      </div>
+      <div class="form-row"><label>其他</label>
+        <label class="check"><input type="checkbox" id="epub-preview-check"> 导出时生成基础 EPUB 预览</label>
+      </div>
+      <p class="muted" id="citation-hint">选择「默认」时，检查开始前会明确显示本次采用的体例，并写入项目与报告。</p>
+      <div class="actions"><button id="btn-start-check" class="primary">开始检查</button></div>
+    </section>
+
+    <!-- 4 检查进度 -->
+    <section class="page" id="page-progress">
+      <h1>正在检查</h1>
+      <ul id="progress-stages" class="stages"></ul>
+      <p class="muted">检查在本机进行，时长取决于稿件大小。不会显示无法解释的百分比。</p>
+    </section>
+
+    <!-- 5 问题列表（双栏） -->
+    <section class="page" id="page-issues">
+      <header class="issues-header">
+        <div>
+          <h1 id="issues-title">检查结果</h1>
+          <div id="status-level" class="status-badge"></div>
+          <div id="citation-note" class="muted"></div>
+        </div>
+        <div class="issues-toolbar">
+          <button id="btn-autofix" class="primary">自动修复（仅白名单）</button>
+          <button id="btn-recheck">重新检查</button>
+          <button id="btn-external">外部验证（EPUB）</button>
+          <button id="btn-to-export">导出…</button>
+        </div>
+      </header>
+      <div class="two-pane">
+        <div class="pane-left">
+          <div id="issue-filters" class="filters">
+            <button data-f="pending" class="active">待处理</button>
+            <button data-f="error">必须处理</button>
+            <button data-f="warning">建议处理</button>
+            <button data-f="suggestion">可选改进</button>
+            <button data-f="done">已处理</button>
+          </div>
+          <ul id="issue-list"></ul>
+        </div>
+        <div class="pane-right" id="issue-detail">
+          <p class="muted">从左侧选择一条问题查看详情。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 导出 -->
+    <section class="page" id="page-export">
+      <h1>导出结果</h1>
+      <div id="export-summary" class="callout"></div>
+      <div class="actions">
+        <button id="btn-export-all" class="primary">导出修订稿与报告</button>
+        <button id="btn-export-pdf" disabled>生成 PDF 审阅样张（≤16 页）</button>
+        <button id="btn-open-folder" disabled>打开导出文件夹</button>
+        <button id="btn-verify">验证项目完整性</button>
+      </div>
+      <ul id="export-files"></ul>
+      <div id="verify-result" class="muted"></div>
+      <div class="soft-cta">
+        <h3>想进一步判断稿件是否适合出版？</h3>
+        <p>湖岸橡树可在您主动提交后，结合稿件类型、篇幅和本次检查摘要提供出版评估。APP 不会自动上传您的稿件。</p>
+        <div class="actions">
+          <button id="btn-evaluation">了解湖岸橡树出版评估</button>
+          <button id="btn-cta-dismiss" class="ghost">暂不需要</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 标准与设置 -->
+    <section class="page" id="page-standards">
+      <h1>标准资源与设置</h1>
+      <h3>订正参考标准</h3>
+      <table id="standards-table"><thead>
+        <tr><th>标准</th><th>类型</th><th>版本</th><th>适用范围</th></tr>
+      </thead><tbody></tbody></table>
+      <h3>账号与同步</h3>
+      <div class="callout">
+        <p id="auth-status-text">湖岸账号即将开放。登录永不强制：未登录时全部核心功能完整可用。</p>
+        <p>检查记录同步：<strong>默认关闭</strong>。开放后需您逐级明确授权，稿件文件级同步每次单独确认。</p>
+        <button id="btn-login2" class="ghost">注册 / 登录湖岸账号</button>
+      </div>
+      <h3>隐私</h3>
+      <p class="muted">默认网络关闭、默认分析关闭；诊断信息不含正文、标题、文件名和路径。详见随附 PRIVACY_AND_SECURITY 文档。</p>
+      <div id="rulepack-info" class="muted"></div>
+    </section>
+  </main>
+
+  <div id="toast" class="hidden"></div>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -4,6 +4,24 @@
 
 ## [未发布]
 
+### 2026-07-11 — 阶段 2 完成 + 阶段 3 部分完成（0.0.1 内部开发版）
+
+**阶段 2：桌面 APP MVP**
+- Electron 43 壳：安全基线全项（contextIsolation / sandbox / IPC 白名单 + 输入验证 / shell=false / CSP / 导航拦截 / 外链白名单）；python-bridge（UTF-8 JSON 契约直连核心 CLI）；Provider 全占位不联网；
+- 七个中文主页面（§7.1）：欢迎隐私 / 创建项目 / 检查目标 / 阶段式进度 / 问题双栏（接受·拒绝·暂不处理）/ 导出中心 / 标准资源与设置；登录入口「即将开放」；
+- PDF 审阅样张（printToPDF ≤16 页）；`npm run smoke`：DOCX + EPUB 双闭环走真实 UI 代码路径，PASS；
+- 修复：productName 含斜杠导致 Electron userData 路径初始化崩溃（0xC0000005）。
+
+**外部验证与导出补全**
+- EpubCheck 5.3.0 下载接入（Java 21）：`external` 子命令 + UI 按钮，状态真实写回报告（passed/failed/not_run + 明细）；其发现并修复了生成器缺 dcterms:modified 的真实缺口；
+- Ace 1.4.6 接入（跳过内置 Chromium，本机 Chrome 驱动）；
+- 新增脱敏出版评估摘要导出（§8.4 字段白名单 + 泄露断言测试）。
+
+**阶段 3：打包**
+- Windows x64 便携 ZIP（electron-builder）：捆绑 Python 3.13.14 嵌入式运行时 + 核心 + 规则包 + 样本 + EpubCheck，解压即用；应用图标（零依赖生成）；SHA-256 校验值与发布说明（RELEASE_NOTES_0.0.1.md）；打包版 --smoke 双闭环 PASS。
+
+测试：175 → **185 项**（+Ace 慢测 1 项按需启用）。
+
 ### 2026-07-11 — 阶段 1 M3 完成（阶段 1 收官）
 
 - EPUB 读取器：mimetype 三要件校验、container→OPF、必需元数据、nav、内容文档 lang / img / 链接锚点（复用 ZIP 安全层）；

@@ -149,6 +149,14 @@ cd Oak-Manuscript-App
   白名单扩至 6 条封顶（EPUB mimetype 重建 / lang 补齐，含「语言未知不补写」反例）+
   基础 EPUB 导出（自检零问题）。四种输入格式、三类检查配置、35 条冻结规则全部落地，
   测试 175 项一条命令通过；
-- **下一步：阶段 2（桌面 APP MVP）**，待办清单见 `docs/DEVELOPMENT_STATUS.md`。
-  接手前先读 AGENTS.md。两个前置授权点：① 引入 Electron 需安装 npm 依赖（方案 §24 第 10 条，
-  须用户授权）；② EpubCheck / Ace 真实运行需下载外部工具（同须授权，未运行前报告只标「未运行」）。
+- **阶段 2 已完成、阶段 3 部分完成（2026-07-11，用户已授权安装与下载）**：
+  Electron 43 壳（安全基线全项）+ 七页中文 UI + UI 双闭环冒烟（`npm run smoke`）；
+  EpubCheck 5.3.0 + Ace 1.4.6 真实接入（`external` 子命令 + UI 按钮，状态如实写回报告）；
+  脱敏评估摘要导出；Windows 便携包（含 Python 3.13.14 嵌入式运行时，解压即用）+
+  SHA-256 + 打包版冒烟 PASS。版本 0.0.1 内部开发版（docs/RELEASE_NOTES_0.0.1.md）。
+- **剩余工作与阻塞**（详见 DEVELOPMENT_STATUS「后续待办」）：
+  阶段 3 收尾需外部资源（macOS 机器、签名证书、人工内测）；
+  阶段 4 被网站用户系统上线阻塞，网站侧页面须另行授权在网站项目执行；
+  技术背账：基础 EPUB 补可访问性元数据、主进程日志清理。
+- 本地大文件不入库：`tools/`（EpubCheck）、`python-runtime/`、`node_modules/`、`release/`
+  均已 gitignore，重建方式见 USER_GUIDE 与 package.json scripts。

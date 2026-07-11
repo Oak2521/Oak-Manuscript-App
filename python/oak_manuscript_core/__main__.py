@@ -118,6 +118,13 @@ def _cmd_verify(args) -> int:
     return 1 if problems else 0
 
 
+def _cmd_external(args) -> int:
+    proj = Project.open(Path(args.project))
+    results = ops.run_external(proj)
+    _emit({"ok": True, "results": results})
+    return 1 if any(r["status"] == "failed" for r in results.values()) else 0
+
+
 def _cmd_issue(args) -> int:
     proj = Project.open(Path(args.project))
     issue = ops.set_issue_status(proj, args.id, args.status)
@@ -162,6 +169,9 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("verify", help="项目完整性验证（原稿哈希等）")
     p.add_argument("--project", required=True)
 
+    p = sub.add_parser("external", help="运行外部验证工具（EpubCheck / Ace，仅 EPUB）")
+    p.add_argument("--project", required=True)
+
     p = sub.add_parser("issue", help="设置问题处理状态")
     p.add_argument("--project", required=True)
     p.add_argument("--id", required=True)
@@ -184,6 +194,7 @@ def main(argv: list[str] | None = None) -> int:
         "fix": _cmd_fix,
         "export": _cmd_export,
         "verify": _cmd_verify,
+        "external": _cmd_external,
         "issue": _cmd_issue,
     }
     try:

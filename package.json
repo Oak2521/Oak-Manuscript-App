@@ -1,10 +1,33 @@
 {
   "name": "oak-manuscript",
-  "productName": "Oak Manuscript / 湖岸稿件",
+  "productName": "湖岸稿件 Oak Manuscript",
   "version": "0.0.1",
   "private": true,
-  "description": "本地优先的稿件检查与修订桌面应用（阶段 2 起接入 Electron，当前为 Python 命令行核心）",
+  "description": "本地优先的稿件检查与修订桌面应用（Electron 壳 + Python 零依赖检查核心）",
+  "main": "electron/main.js",
   "scripts": {
-    "test": "python scripts/run_tests.py"
+    "start": "electron .",
+    "smoke": "electron . --smoke",
+    "test": "python scripts/run_tests.py",
+    "dist": "electron-builder --win zip"
+  },
+  "devDependencies": {
+    "@daisy/ace": "^1.4.6",
+    "electron": "^43.1.0",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.oakbylake.manuscript",
+    "productName": "湖岸稿件 Oak Manuscript",
+    "directories": { "output": "release" },
+    "files": ["electron/**/*", "renderer/**/*", "package.json"],
+    "extraResources": [
+      { "from": "python/oak_manuscript_core", "to": "python/oak_manuscript_core", "filter": ["**/*.py"] },
+      { "from": "python-runtime", "to": "python-runtime" },
+      { "from": "config", "to": "config" },
+      { "from": "samples", "to": "samples" },
+      { "from": "tools", "to": "tools" }
+    ],
+    "win": { "target": ["zip"], "icon": "electron/icon.ico" }
   }
 }

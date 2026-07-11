@@ -2,11 +2,14 @@
 
 > 每次里程碑级测试运行后更新。记录命令、环境、结果与失败处理。未运行的项目标注「未运行」，不得声称通过。
 
-## 最新一次运行（2026-07-11，M3 验收 / 阶段 1 完成）
+## 最新一次运行（2026-07-11，阶段 2/3 验收）
 
-- 环境：Windows 11 Pro，Python 3.13.14（要求 3.11+，零第三方依赖）
-- 命令：`python scripts/run_tests.py`
-- 结果：**175 项测试，0 失败，0 错误**（2.1 秒）
+- 环境：Windows 11 Pro，Python 3.13.14，Node 24 / Electron 43，Java 21（EpubCheck）
+- Python 套件：`python scripts/run_tests.py` → **185 项测试，0 失败 0 错误**
+  （含 EpubCheck 真实运行测试；Ace 慢测经 `OAK_TEST_ACE=1` 单独运行通过 → 合计 186 项全绿）
+- UI 冒烟：`npm run smoke` → **PASS**（DOCX 21→修复5→16；EPUB 7→修复2→5；各导出 5 文件 + PDF 样张 + verify；Provider 占位纪律断言）
+- 打包版冒烟：`release\win-unpacked\湖岸稿件 Oak Manuscript.exe --smoke` → **PASS**（嵌入式 Python 运行时 + 打包资源布局全部工作）
+- 依赖审计：`npm audit` 报告 @daisy/ace 传递依赖 multer 存在已知 CVE——**仅开发依赖，不进发布包**（发布包 files 列表不含 node_modules）
 
 ### 覆盖矩阵
 
@@ -42,6 +45,11 @@
 **M3**
 - `out/demo-m3-epub`（ebook EPUB 缺陷样本）：check 退出码 1（MIME/OPF/NAV 为 error）→ fix（MIME+LANG 各 1 处）→ recheck 退出码 1（OPF/NAV 等仍在，符合预期）→ export 4 文件 → verify 退出码 0；
 - `out/demo-m3-preview`（paper DOCX + --epub-preview）：export 5 文件，`preview.epub` 生成并经本核心 EPUB 检查自检零问题。
+
+**阶段 2/3 与外部工具**
+- 外部验证实跑（demo-m3-epub，修复后仍含缺陷）：`external` 退出码 1；EpubCheck 5.3.0 报 0 fatal / 6 error / 0 warning；Ace 报整体 fail、8 项断言——两个工具均真实运行并如实写回报告；
+- EpubCheck 曾抓出我们生成器的真实缺口（缺 dcterms:modified），修复后 epub_good 通过（0 error）——外部验证接入的直接价值；
+- 打包便携 ZIP：174.7 MB，SHA-256 见 RELEASE_NOTES_0.0.1.md；打包版 --smoke 双闭环 PASS。
 
 ## 外部工具验证状态
 

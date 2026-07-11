@@ -11,13 +11,16 @@
 | 阶段 1 M2：纸质出版物 + APA 7 / Chicago 18 + MD/TXT | **完成**（2026-07-11） |
 | 阶段 1 M3：EPUB 输入与电子书配置 + 基础 EPUB 导出 | **完成**（2026-07-11） |
 | **阶段 1 整体** | **完成**——四种输入、三类配置、35 条规则全部落地 |
-| 阶段 2：桌面 APP MVP | 未开始（下一步） |
-| 阶段 3—5 | 未开始 |
+| 阶段 2：桌面 APP MVP | **完成**（2026-07-11，UI 双闭环冒烟 PASS） |
+| 阶段 3：质量、打包与内测 | **部分完成**——Windows 便携包 + 校验值 + 打包版冒烟 ✔；余：macOS / 签名 / 安装器 / 人工内测 |
+| 阶段 4：网站和授权对接 | **被阻塞**：网站用户系统未上线；网站侧页面属网站项目任务（本仓库只读参考约束） |
+| 阶段 5：正式发布 | 未开始（依赖阶段 3 收尾与阶段 4） |
 
 ### 测试基线
 
-- 统一入口：`python scripts/run_tests.py`（unittest，零第三方依赖）
-- 当前：**175 项测试，0 失败 0 错误**（含 CLI 子进程端到端闭环）
+- Python 统一入口：`python scripts/run_tests.py` — **185 项测试，0 失败 0 错误**（Ace 慢测默认跳过，`OAK_TEST_ACE=1` 启用）
+- UI 冒烟：`npm run smoke` — DOCX + EPUB 双闭环 + Provider 占位纪律断言
+- 打包：`npm run dist` → release/ 便携 ZIP；打包版可直接 `--smoke` 自检
 - 样本再生成：`python scripts/make_samples.py`（确定性，固定 ZIP 时间戳）
 
 ### 关键交付物索引
@@ -31,17 +34,26 @@
 | 检查核心 | python/oak_manuscript_core/（CLI：create/check/fix/recheck/export/verify/issue） |
 | 架构决策 | docs/ARCHITECTURE.md（AD-001 零依赖、AD-002 CLI 契约、AD-003 规则包分离） |
 
-### 阶段 2 待办（进入前先读方案 §18 阶段 2、§7 界面、§12.3 Electron 安全基线）
+### 后续待办
 
-- Electron 壳（main / preload / python-bridge / path-policy / providers 占位），安全基线：contextIsolation、sandbox、IPC 白名单、shell=false；
-- 七个主页面（§7.1）：欢迎与隐私、创建/打开项目、选择检查目标、检查进度、问题列表与预览（双栏 §7.2）、导出中心、标准资源与设置；
-- 注册/登录入口与同步询问 UI（占位「即将开放」，不联网，未登录不出现同步询问）；
-- 出版评估软转化位（§8.1–8.2 位置与文案红线）；
-- 中文 UI；匿名 DOCX 与 EPUB 在 UI 中完成完整闭环（阶段 2 完成标准）；
-- 注意：引入 Electron 属安装依赖，动手前须经用户授权（方案 §24 第 10 条）。
-- 遗留技术债：EpubCheck / Ace 真实运行接入（需用户授权下载外部工具）；PDF 审阅样张（依赖 Electron 打印，归阶段 2）。
+**阶段 3 收尾（需外部资源）**
+- macOS `.app` / DMG 构建与公证（需 macOS 机器 + Apple 开发者账号）；
+- Windows 安装器（NSIS）与代码签名（需证书）；
+- 5—10 位作者 + 2—3 位编辑受控内测（人工组织，按误报率 / 导出成功率 / 完成率迭代）。
+
+**阶段 4 前置条件**
+- 网站用户系统合并上线（Supabase 路线，代码已在网站项目分支）；
+- 网站侧 9 个缺失页面（含隐私政策与使用条款）——属网站项目任务，须另行授权在网站项目执行；
+- 届时替换 AuthProvider（PKCE）/ SyncProvider / EvaluationProvider 真实实现，本地核心与项目格式不变。
+
+**技术改进背账**
+- 基础 EPUB 导出补可访问性元数据（schema:accessMode 等，Ace 现如实报 fail，呼应方案 §15.6）；
+- npm audit 高危项跟踪（@daisy/ace 传递依赖 multer CVE——仅开发依赖，不进发布包）；
+- Electron 主进程去除启动期诊断日志（或改为可选 verbose）。
 
 ## 历史记录
+
+- 2026-07-11：**阶段 2 完成 + 阶段 3 部分完成**。Electron 43 壳（安全基线全项）+ 七页中文 UI + UI 双闭环冒烟；EpubCheck 5.3.0 与 Ace 1.4.6 真实接入（发现并修复生成器缺 dcterms:modified）；脱敏评估摘要导出；Windows 便携包（含嵌入式 Python）+ SHA-256 + 打包版冒烟 PASS。测试 185 项。
 
 - 2026-07-11：**M3 完成，阶段 1 收官**。EPUB 读取器（mimetype/container/OPF/nav/内容文档）、6 条 EPUB 规则、白名单扩至 6 条（EPUB mimetype 重建 + lang 补齐，含「语言未知不补写」反例）、基础 EPUB 导出（自检零问题）。175 项测试。
 

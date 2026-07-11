@@ -60,6 +60,8 @@ class EpubBuilder:
             meta.append(f"<dc:title>{_esc(self.title)}</dc:title>")
         if self.language is not None:
             meta.append(f"<dc:language>{_esc(self.language)}</dc:language>")
+        # EPUB 3 必需（EpubCheck RSC-005）；固定时间戳保持确定性
+        meta.append('<meta property="dcterms:modified">2026-01-01T00:00:00Z</meta>')
         items = []
         spine = []
         if self.include_nav:

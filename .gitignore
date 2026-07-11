@@ -18,6 +18,10 @@ release/*
 Thumbs.db
 *.log
 
+# 外部工具二进制与打包运行时（本地下载，见 docs/USER_GUIDE.md）
+tools/
+python-runtime/
+
 # 本地用户项目与真实稿件：绝不入库（方案 §20.5）
 local_projects/
 real_manuscripts/
