@@ -1,0 +1,197 @@
+"""湖岸稿件命令行入口（AD-002 契约）。
+
+- stdout：单个 UTF-8 JSON 文档（机器可读，Electron 桥直接消费）；
+- stderr：人类可读提示；
+- 退出码：0 成功；1 检查存在未处理的必须处理问题（或完整性有非致命问题）；
+  2 运行错误 / 原稿哈希不一致。
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+from . import __version__
+from . import ops
+from .errors import OakError
+from .project import Project
+from .rulepack import load_rulepack
+
+_REPO = Path(__file__).resolve().parents[2]
+
+
+def _default_rulepack() -> Path:
+    pack_dir = _REPO / "config" / "rule-packs"
+    candidates = sorted(pack_dir.glob("oak-rules-*.json"))
+    if not candidates:
+        raise OakError(f"找不到规则包：{pack_dir}")
+    return candidates[-1]
+
+
+def _emit(payload: dict) -> None:
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+def _pending_error_exists(issues: list[dict]) -> bool:
+    return any(
+        i["severity"] == "error" and i["status"] in ("open", "accepted") for i in issues
+    )
+
+
+def _cmd_create(args) -> int:
+    proj = Project.create(
+        Path(args.input), Path(args.project),
+        manuscript_type=args.type, language=args.language,
+        citation_style=args.citation, check_depth=args.depth,
+    )
+    _emit({
+        "ok": True,
+        "project": str(proj.root),
+        "project_id": proj.data["project_id"],
+        "source_sha256": proj.source_sha256,
+        "settings": proj.data["settings"],
+    })
+    print("项目已创建，原稿只读副本与 SHA-256 已记录。", file=sys.stderr)
+    return 0
+
+
+def _cmd_check(args, kind: str) -> int:
+    proj = Project.open(Path(args.project))
+    pack = load_rulepack(Path(args.rulepack) if args.rulepack else _default_rulepack())
+    record, outcome = ops.run_check(proj, pack, kind=kind)
+    from .engine import manuscript_status_level
+
+    _emit({
+        "ok": True,
+        "check_id": record["check_id"],
+        "kind": kind,
+        "status_level": manuscript_status_level(outcome.issues),
+        "issue_counts": record["issue_counts"],
+        "citation_note": ops._citation_note(proj.data["settings"]),
+        "issues": outcome.issues,
+        "skipped_rule_groups": outcome.skipped_rule_groups,
+    })
+    return 1 if _pending_error_exists(outcome.issues) else 0
+
+
+def _cmd_fix(args) -> int:
+    proj = Project.open(Path(args.project))
+    pack = load_rulepack(Path(args.rulepack) if args.rulepack else _default_rulepack())
+    record, counts = ops.run_fixes(proj, pack)
+    _emit({
+        "ok": True,
+        "fix_run_id": record.get("fix_run_id"),
+        "checkpoint_id": record.get("checkpoint_id"),
+        "applied_count": len(record["applied"]),
+        "counts": counts,
+    })
+    if record["applied"]:
+        print("修复完成。修复前的版本已保存为检查点，建议运行 recheck 复检。", file=sys.stderr)
+    else:
+        print("没有可自动修复的问题。", file=sys.stderr)
+    return 0
+
+
+def _cmd_export(args) -> int:
+    proj = Project.open(Path(args.project))
+    pack = load_rulepack(Path(args.rulepack) if args.rulepack else _default_rulepack())
+    out_dir = Path(args.out) if args.out else None
+    files = ops.export_project(proj, pack, out_dir)
+    _emit({"ok": True, "files": [str(f) for f in files]})
+    print(f"已导出 {len(files)} 个文件。原稿未被修改。", file=sys.stderr)
+    return 0
+
+
+def _cmd_verify(args) -> int:
+    proj = Project.open(Path(args.project))
+    problems = proj.verify()
+    _emit({
+        "ok": not problems,
+        "problems": problems,
+        "source_sha256": proj.source_sha256,
+    })
+    if any("SHA-256" in p for p in problems):
+        return 2
+    return 1 if problems else 0
+
+
+def _cmd_issue(args) -> int:
+    proj = Project.open(Path(args.project))
+    issue = ops.set_issue_status(proj, args.id, args.status)
+    _emit({"ok": True, "issue": issue})
+    return 0
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="oak_manuscript_core",
+        description="湖岸稿件本地检查核心（M1：DOCX + 论文 + GB/T 7714—2025）",
+    )
+    parser.add_argument("--version", action="version", version=f"oak-manuscript-core {__version__}")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    p = sub.add_parser("create", help="创建检查项目（复制只读原稿并记录哈希）")
+    p.add_argument("--input", required=True)
+    p.add_argument("--project", required=True)
+    p.add_argument("--type", default="paper", choices=["paper", "print_book", "ebook"])
+    p.add_argument("--language", default="auto", choices=["auto", "zh", "en", "mixed"])
+    p.add_argument("--citation", default="default",
+                   choices=["default", "gbt7714-2025", "apa-7",
+                            "chicago-18-nb", "chicago-18-ad", "none"])
+    p.add_argument("--depth", default="full", choices=["quick", "full"])
+
+    for name, help_text in (("check", "运行检查"), ("recheck", "复检")):
+        p = sub.add_parser(name, help=help_text)
+        p.add_argument("--project", required=True)
+        p.add_argument("--rulepack")
+
+    p = sub.add_parser("fix", help="应用白名单机械修复（自动建检查点）")
+    p.add_argument("--project", required=True)
+    p.add_argument("--rulepack")
+
+    p = sub.add_parser("export", help="导出修订稿与三种报告")
+    p.add_argument("--project", required=True)
+    p.add_argument("--rulepack")
+    p.add_argument("--out", help="导出目录（默认为项目 exports/）")
+
+    p = sub.add_parser("verify", help="项目完整性验证（原稿哈希等）")
+    p.add_argument("--project", required=True)
+
+    p = sub.add_parser("issue", help="设置问题处理状态")
+    p.add_argument("--project", required=True)
+    p.add_argument("--id", required=True)
+    p.add_argument("--status", required=True,
+                   choices=["open", "accepted", "rejected", "resolved"])
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8")
+        except (AttributeError, OSError):
+            pass
+    args = build_parser().parse_args(argv)
+    handlers = {
+        "create": _cmd_create,
+        "check": lambda a: _cmd_check(a, "check"),
+        "recheck": lambda a: _cmd_check(a, "recheck"),
+        "fix": _cmd_fix,
+        "export": _cmd_export,
+        "verify": _cmd_verify,
+        "issue": _cmd_issue,
+    }
+    try:
+        return handlers[args.command](args)
+    except OakError as exc:
+        print(f"错误：{exc.message}", file=sys.stderr)
+        return 2
+    except Exception as exc:  # 兜底：绝不吞错误，也绝不假装成功
+        print(f"意外错误（{type(exc).__name__}）：{exc}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

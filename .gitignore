@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node（阶段 2 起）
+node_modules/
+
+# 构建与发布产物
+out/*
+!out/.gitkeep
+release/*
+!release/.gitkeep
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+*.log
+
+# 本地用户项目与真实稿件：绝不入库（方案 §20.5）
+local_projects/
+real_manuscripts/
+*.tmp

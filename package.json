@@ -1,0 +1,10 @@
+{
+  "name": "oak-manuscript",
+  "productName": "Oak Manuscript / 湖岸稿件",
+  "version": "0.0.1",
+  "private": true,
+  "description": "本地优先的稿件检查与修订桌面应用（阶段 2 起接入 Electron，当前为 Python 命令行核心）",
+  "scripts": {
+    "test": "python scripts/run_tests.py"
+  }
+}

@@ -129,3 +129,17 @@ cd Oak-Manuscript-App
 - 方案升级 v1.2：落实全部「v1.1 待核实」标注，产品范围、里程碑与技术决策无任何变化；
   v1.1 文件从工作树移除（git 历史与本地「方案存档」保留副本）；
 - 建立本地 `D:\Workspace\Oak Manuscript App\方案存档\`（仓库外），存放各版本方案与交接文档快照。
+
+## 9. 开发进度（2026-07-11：阶段 0 与 M1 完成）
+
+- **阶段 0 完成**：项目格式 / 三模型 / 规则包 oak-rules 1.0.0（35 条，白名单 4 条）/
+  默认体例映射 v1.0.0 全部冻结（docs/SPEC_*.md、docs/RULESET_V1.md、config/）；匿名样本库建立；
+- **阶段 1 M1 完成并通过验收**：零依赖 Python 检查核心 + CLI 六命令闭环，
+  103 项测试一条命令通过（`python scripts/run_tests.py`），Word 实测修订稿正常打开。
+  验收证据见 `docs/ACCEPTANCE.md` 与 `docs/TEST_REPORT.md`；
+- **重要架构决策**（详见 docs/ARCHITECTURE.md，第一版期间不变更）：
+  AD-001 核心零第三方依赖（stdlib 解析 OOXML，unittest 测试）；
+  AD-002 CLI 即接口契约（stdout 单 JSON，退出码 0/1/2，Electron 阶段直接复用）；
+  AD-003 规则包与代码分离（定义在 config，逻辑按 rule_id 注册，启动时一致性校验）；
+- **下一步：M2**（纸质出版物 + APA 7 / Chicago 18 + Markdown、TXT 输入），
+  待办清单见 `docs/DEVELOPMENT_STATUS.md`。接手前先读 AGENTS.md。

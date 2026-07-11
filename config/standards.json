@@ -1,0 +1,149 @@
+{
+  "schema_version": "1.0",
+  "updated_at": "2026-07-11",
+  "standards": [
+    {
+      "standard_id": "GBT-7714-2025",
+      "title": "信息与文献 参考文献著录规则（GB/T 7714—2025）",
+      "source_type": "official",
+      "official_source_url": "",
+      "oak_resource_slug": "citation/gbt-7714-2025",
+      "version": "2025",
+      "updated_at": "2026-07-11",
+      "scope": "中文论文与出版物参考文献著录（顺序编码制 / 著者-出版年制）",
+      "summary": "国家标准，规定参考文献条目的著录项目、格式与文献类型标识。APP 只做结构性一致性检查，不判断条目内容真实性。"
+    },
+    {
+      "standard_id": "APA-7",
+      "title": "APA Publication Manual, 7th Edition",
+      "source_type": "official",
+      "official_source_url": "https://apastyle.apa.org/",
+      "oak_resource_slug": "citation/apa-7",
+      "version": "7",
+      "updated_at": "2026-07-11",
+      "scope": "英文社科论文引用与格式（M2 启用）",
+      "summary": "受版权保护的体例手册，APP 仅保存元数据与结构性规则，不复制原文。"
+    },
+    {
+      "standard_id": "CHICAGO-18",
+      "title": "The Chicago Manual of Style, 18th Edition",
+      "source_type": "official",
+      "official_source_url": "https://www.chicagomanualofstyle.org/",
+      "oak_resource_slug": "citation/chicago-18",
+      "version": "18",
+      "updated_at": "2026-07-11",
+      "scope": "图书出版引用体例：注释—书目制与作者—日期制（M2 启用）",
+      "summary": "受版权保护的体例手册，APP 仅保存元数据与结构性规则，不复制原文。"
+    },
+    {
+      "standard_id": "EPUB-33",
+      "title": "EPUB 3.3 (W3C Recommendation)",
+      "source_type": "technical_spec",
+      "official_source_url": "https://www.w3.org/TR/epub-33/",
+      "oak_resource_slug": "ebook/epub-3-3",
+      "version": "3.3",
+      "updated_at": "2026-07-11",
+      "scope": "电子书容器、包文档、导航与内容文档（M3 启用）",
+      "summary": "W3C 技术规范。完整合规验证依赖外部 EpubCheck，未运行时报告如实标注「未运行」。"
+    },
+    {
+      "standard_id": "OAK-DOCX-STYLE-001",
+      "title": "Word 稿件空白与标点卫生（湖岸解释）",
+      "source_type": "oak_interpretation",
+      "official_source_url": "",
+      "oak_resource_slug": "docx/whitespace-punctuation",
+      "version": "1.0.0",
+      "updated_at": "2026-07-11",
+      "scope": "DOCX 稿件进入编辑流程前的机械清理项",
+      "summary": "连续空格、制表符、多余空段、重复标点会干扰编辑与排版软件的段落处理，属于可机械修复的低风险问题。依据湖岸编辑部收稿清理经验整理。"
+    },
+    {
+      "standard_id": "OAK-PAPER-STRUCT-001",
+      "title": "论文基本结构完整性（湖岸解释）",
+      "source_type": "oak_interpretation",
+      "official_source_url": "",
+      "oak_resource_slug": "paper/structure",
+      "version": "1.0.0",
+      "updated_at": "2026-07-11",
+      "scope": "中文论文的题名、摘要、关键词、正文、参考文献要件",
+      "summary": "多数期刊与学位论文规范要求的基础要件。缺失不代表内容有问题，但会阻碍投稿流程。"
+    },
+    {
+      "standard_id": "OAK-HEADING-001",
+      "title": "标题层级与编号一致性（湖岸解释）",
+      "source_type": "oak_interpretation",
+      "official_source_url": "",
+      "oak_resource_slug": "paper/heading-hierarchy",
+      "version": "1.0.0",
+      "updated_at": "2026-07-11",
+      "scope": "标题样式层级跳级与编号连续性",
+      "summary": "层级跳级和编号断裂会破坏目录生成与结构导航，编辑与排版环节都会因此返工。"
+    },
+    {
+      "standard_id": "OAK-NOTES-001",
+      "title": "脚注与尾注规范（湖岸解释）",
+      "source_type": "oak_interpretation",
+      "official_source_url": "",
+      "oak_resource_slug": "paper/footnotes",
+      "version": "1.0.0",
+      "updated_at": "2026-07-11",
+      "scope": "脚注 / 尾注的内容完整性与重复",
+      "summary": "空注和重复注通常是修改遗留，进入排版后极难发现。"
+    },
+    {
+      "standard_id": "OAK-REF-001",
+      "title": "文内引用与参考文献对应（湖岸解释）",
+      "source_type": "oak_interpretation",
+      "official_source_url": "",
+      "oak_resource_slug": "paper/citation-reference-match",
+      "version": "1.0.0",
+      "updated_at": "2026-07-11",
+      "scope": "顺序编码制下 [n] 引用与文献表的对应、重复与断号",
+      "summary": "引用编号指向不存在的条目是审稿常见退回原因；重复条目与未被引用条目需要作者人工裁决。"
+    },
+    {
+      "standard_id": "OAK-PUNCT-001",
+      "title": "中英文标点混排（湖岸解释）",
+      "source_type": "oak_interpretation",
+      "official_source_url": "",
+      "oak_resource_slug": "docx/cjk-punctuation",
+      "version": "1.0.0",
+      "updated_at": "2026-07-11",
+      "scope": "中文语境下的半角标点与全半角一致性",
+      "summary": "中文句子中夹杂半角逗号句点多为输入法切换遗留；但数学表达式、代码、英文引文中的半角标点是正确的，因此本组规则不自动修复。"
+    },
+    {
+      "standard_id": "OAK-CITATION-DEFAULT-001",
+      "title": "「默认」引用体例映射说明（湖岸解释）",
+      "source_type": "oak_interpretation",
+      "official_source_url": "",
+      "oak_resource_slug": "citation/default-mapping",
+      "version": "1.0.0",
+      "updated_at": "2026-07-11",
+      "scope": "稿件类型 × 语言 → 体例的确定性映射（方案 §6.2）",
+      "summary": "帮助不了解体例的作者直接开始检查。映射公开、确定、可随规则包版本更新；实际采用体例写入项目文件与报告。"
+    },
+    {
+      "standard_id": "OAK-BOOK-PREP-001",
+      "title": "书稿进入编辑前的清理（湖岸解释，M2 启用）",
+      "source_type": "oak_interpretation",
+      "official_source_url": "",
+      "oak_resource_slug": "book/pre-editing-cleanup",
+      "version": "1.0.0",
+      "updated_at": "2026-07-11",
+      "scope": "纸质出版物稿件的结构与版式风险",
+      "summary": "占位：随 M2 里程碑充实。"
+    },
+    {
+      "standard_id": "OAK-EPUB-BASICS-001",
+      "title": "电子书结构与可访问性基础（湖岸解释，M3 启用）",
+      "source_type": "oak_interpretation",
+      "official_source_url": "",
+      "oak_resource_slug": "ebook/structure-accessibility",
+      "version": "1.0.0",
+      "updated_at": "2026-07-11",
+      "scope": "EPUB 容器、元数据、导航与替代文本",
+      "summary": "占位：随 M3 里程碑充实。"
+    }
+  ]
+}

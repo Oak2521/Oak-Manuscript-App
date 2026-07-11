@@ -1,0 +1,26 @@
+{
+  "config_version": "1.0",
+  "defaults": {
+    "manuscript_type": "paper",
+    "language": "auto",
+    "citation_style": "default",
+    "check_depth": "full"
+  },
+  "limits": {
+    "max_input_bytes_warn": 52428800,
+    "zip_max_members": 10000,
+    "zip_max_member_bytes": 209715200,
+    "zip_max_total_bytes": 1073741824,
+    "preview_max_chars": 60,
+    "max_checkpoints": 5
+  },
+  "language_detection": {
+    "algorithm": "cjk_ascii_ratio",
+    "dominance_ratio": 4,
+    "min_sample_chars": 200
+  },
+  "network": {
+    "enabled": false,
+    "allowed_domains": ["oakbylake.com"]
+  }
+}
