@@ -1,6 +1,6 @@
 # 湖岸稿件（Oak Manuscript）独立 APP 完整开发方案
 
-> 文档版本：1.1（Claude 修订版，基于 v1.0 重建完整版评审修订）  
+> 文档版本：1.2（Claude 修订版，完成两个参考仓库核对，落实全部「待核实」标注）  
 > 日期：2026-07-11  
 > 项目代号：Oak Manuscript  
 > 推荐中文名称：湖岸稿件  
@@ -11,6 +11,15 @@
 ---
 
 ## 版本修订记录
+
+### v1.2（Claude 修订版，2026-07-11）
+
+完成两个参考仓库的只读核对（此前云端会话因授权通道故障未能读取），落实全部「v1.1 待核实」标注：
+
+1. §10 网站配套核对落实：netlify-site 为 Eleventy v3 静态站（Netlify 部署，主域名 oakbylake.com），canonical 由每页 front matter 显式声明，URL 规范化依赖 `_redirects`；12 项必需页面中已有 1 项、部分具备 2 项、缺 9 项（含隐私政策与使用条款，下载开放前必须新建）；网站账号系统为 Supabase + Netlify Functions 路线，已在分支开发完成但未合并上线。详表见 `docs/湖岸稿件_网站配套页面现状对照_20260711.md`；
+2. §11.1 复用资产核对落实：七类资产逐项核实**全部存在**（流程文档、清单、Python 检查工具、测试与匿名样本齐备），并补充高价值发现（manuscript_health_check 体检管线、report_writer 三态报告模型、privacy_scanner、GB/T 7714 检查器等）。详表见 `docs/湖岸稿件_可复用资产清单_20260711.md`；
+3. §11.4 注记：AuthProvider 未来对接目标确认为网站 Supabase 认证体系（邮箱 + Google OAuth），与 PKCE 设想兼容；
+4. 本次修订不改变任何产品范围、里程碑与技术决策；两份核对文档作为方案附件随方案维护，核对为 2026-07-11 快照，阶段 4 启动时应重新核对网站现状。
 
 ### v1.1（Claude 修订版，2026-07-11）
 
@@ -746,7 +755,12 @@ APP 的长期壁垒不只是代码，而是“标准来源—湖岸解释—可�
 
 APP 可以先开发，但网站必须逐步补齐以下页面。正式路径需结合网站现有目录结构确认，以下为建议信息架构，不应在未核对现有 canonical URL 前直接改动线上路径。
 
-> （v1.1 待核实：本节页面清单尚未对照 netlify-site 仓库实际结构核对。落实前需确认站点框架能力、现有 canonical URL 与进程记录文档位置，核对工作在网站项目中以只读方式进行。）
+> （v1.2 已核实，2026-07-11 快照，详表见 `docs/湖岸稿件_网站配套页面现状对照_20260711.md`。要点：
+> ① 站点为 Eleventy v3 静态站，Netlify 部署，主域名 `https://oakbylake.com`；每页在 front matter 显式声明绝对 canonical URL，URL 规范化依赖 `_redirects`（permalink 变更必须同步，网站硬约束）——新增 APP 配套页面须遵循此约定，§10.3 的稳定 slug + 重定向策略与之兼容；
+> ② 网站权威进程记录：父目录 `SITE_STATUS.md`（过程交接总记录）与 `.claude\UPGRADE_REGISTRY.md`（升级总账），仓库内 `项目说明.md` 留摘要——§10.4 的记录要求落点于此；
+> ③ 12 项必需页面现状：已有 1 项（帮助 FAQ），部分具备 2 项（出版评估可基于 /free-manuscript-check/ 扩展；标准资源总览可基于 /resources/ 与 /oak-index/ 扩展，但站内尚无出版规范类标准解释区），其余 9 项缺失，其中隐私政策与使用条款在 APP 下载开放前必须新建；
+> ④ 网站账号系统：Supabase + Netlify Functions 路线，注册 / 登录 / 用户后台 / 管理后台已在分支开发完成（PR#7/#8），尚未合并上线；《文脉》期刊受 DOAJ 承诺约束永不设登录墙。APP 侧不得假设账号系统已上线。
+> 页面缺口均为网站项目的开发任务，须经用户授权后在网站项目中单独执行。）
 
 ### 10.1 必需页面
 
@@ -822,7 +836,8 @@ APP 可以先开发，但网站必须逐步补齐以下页面。正式路径需�
 - 报告格式、问题分类和严重程度经验；
 - 匿名样本与测试用例。
 
-> （v1.1 待核实：以上清单需对照 oak-publishing-system 仓库逐项核对存在形态与可复用程度，核对结果作为阶段 0 规则来源盘点的输入。）
+> （v1.2 已核实，2026-07-11：以上七类资产逐项核对**全部存在**，形态完整——流程文档、task list 清单、Python CLI 检查工具（word_structure_checker / manuscript_cleaner / footnote_checker / reference_checker / pdf_preflight_report / epub_checker 等，含 GB/T 7714 与中文标点专有检查）、7 份风格指南（诗集为 v1 草稿待审定）、统一三态报告模型（pass / review / blocked，见 shared/report_writer.py 与 INTERFACE_SPEC.md）、7 类型 × 三态匿名样本库与 226 项测试。另有清单之外的高价值发现：manuscript_health_check 体检管线（APP「一键检查」原型）、external_quality_report 脱敏器、privacy_scanner 隐私门禁、layout_specs 版式规格数据。带具体路径的完整清单与阶段 0 规则来源建议见 `docs/湖岸稿件_可复用资产清单_20260711.md`。
+> 注意两点：① 内部三态模型与本方案 §6.3 的 error / warning / suggestion 语义相近但不相同，阶段 0 定义问题模型时须显式写出映射；② 10_project_records、08_docs/business_plan 等目录含真实项目与经营信息，属 §11.2 禁止复用项，详见清单文档隐私红线一节。）
 
 ### 11.2 不应直接复用的内容
 
@@ -859,7 +874,7 @@ APP 不直接读取出版体系后台目录，而是使用经过审核、匿名�
 
 ### 11.4 后接 Provider 接口
 
-- `AuthProvider`：访客模式 → 网站账号和 PKCE 登录；第一版 UI 即保留注册 / 登录入口，Provider 返回「即将开放 / 未登录」状态（v1.1 修订）；
+- `AuthProvider`：访客模式 → 网站账号和 PKCE 登录；第一版 UI 即保留注册 / 登录入口，Provider 返回「即将开放 / 未登录」状态（v1.1 修订）。网站侧认证已确认为 Supabase（邮箱 + Google OAuth），与 PKCE 流程兼容；对接前网站账号系统须先合并上线（v1.2 核对注记）；
 - `LicenseProvider`：本地免费模式 → Pro 年费授权和设备管理；
 - `EvaluationProvider`：打开公开页面 → 用户确认后发送脱敏摘要；
 - `SyncProvider`：本地占位（仅记录同步偏好）→ 用户确认后将分级检查记录同步到网站用户后台（见 8.5，v1.1 新增）；
@@ -1588,7 +1603,7 @@ APP、网站和内部出版体系必须保持独立仓库或独立工作区。�
 
 1. 建立 oak-manuscript-app 仓库基线：目录结构（见第十九节）、AGENTS.md、开发状态与验收文档骨架、Git 版本记录；
 2. 完成阶段 0：冻结产品范围、项目文件格式、问题 / 规则 / 标准模型，建立匿名样本库；
-3. 盘点并核对两个参考仓库（只读）：确认 oak-publishing-system 中可复用的检查逻辑与 netlify-site 的配套页面现状，产出第一版最小规则集清单（20—40 条）；
+3. 盘点并核对两个参考仓库（只读）：确认 oak-publishing-system 中可复用的检查逻辑与 netlify-site 的配套页面现状（**核对已于 2026-07-11 完成**，见 docs 下两份核对文档，v1.2），在此基础上产出第一版最小规则集清单（20—40 条，仍待阶段 0 冻结）；
 4. 实现阶段 1 M1：DOCX + 论文 + GB/T 7714—2025 的命令行完整闭环，含统一测试入口，确保单条完整测试命令可重复通过；
 5. 实现 M2、M3，补齐四种输入格式与三类检查配置；
 6. 搭建 Electron 壳与七个主页面，完成匿名 DOCX 与 EPUB 的 UI 端到端闭环（含登录入口与同步询问的占位实现）；
