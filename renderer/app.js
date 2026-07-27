@@ -12,10 +12,17 @@ const state = {
   filter: "pending",
   exportFiles: [],
   pdfPath: null,
+  fixPlan: null,
+  fixPlanning: false,
+  fixApplying: false,
+  checkpoints: [],
+  selectedCheckpointId: null,
+  restoringCheckpoint: false,
 };
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const P0 = window.OakP0Ui;
 
 function toast(msg, ms = 2600) {
   const el = $("#toast");
@@ -132,10 +139,104 @@ function renderDetail(issue) {
   el.querySelector(".expl").textContent = issue.explanation;
   el.querySelector(".refs").textContent = (issue.standard_refs || []).join("、") + "（详见「标准与设置」页）";
   el.querySelector(".fix").textContent = issue.auto_fixable
-    ? "白名单机械修复：可用「自动修复」一键处理，修复前自动创建检查点，可撤销。"
+    ? "白名单机械修复：APP 会先集中展示本批全部修改，您一次确认后整批处理；修复前自动创建检查点，可撤销。"
     : "需要您人工判断与修改，工具不自动改动。";
   el.querySelectorAll("[data-act]").forEach((btn) =>
     btn.addEventListener("click", () => actions.issueAction(issue.issue_id, btn.dataset.act)));
+}
+
+// ---------- 批量修复确认与检查点 ----------
+
+function renderFixPlan(plan) {
+  $("#fix-plan-count").textContent =
+    `本批次共 ${plan.count} 项。只有点击“确认批量修复 ${plan.count} 项”才会写入工作稿。`;
+  $("#btn-confirm-fix-plan").textContent = `确认批量修复 ${plan.count} 项`;
+  $("#btn-confirm-fix-plan").disabled = plan.count === 0;
+
+  const list = $("#fix-plan-items");
+  list.replaceChildren();
+  for (const item of plan.items) {
+    const row = document.createElement("li");
+    const info = document.createElement("div");
+    const title = document.createElement("span");
+    const location = document.createElement("span");
+    const before = document.createElement("div");
+    const after = document.createElement("div");
+    title.className = "batch-item-title";
+    location.className = "batch-item-location";
+    before.className = "batch-preview before";
+    after.className = "batch-preview after";
+    title.textContent = item.title;
+    location.textContent = item.location;
+    before.textContent = item.beforePreview;
+    after.textContent = item.afterPreview;
+    info.append(title, location);
+    row.append(info, before, after);
+    list.appendChild(row);
+  }
+}
+
+function checkpointReasonLabel(reason) {
+  return {
+    before_batch_fix: "批量修复前",
+    before_fix: "批量修复前",
+    before_restore: "恢复操作前",
+    manual: "手动检查点",
+  }[reason] || "项目检查点";
+}
+
+function conciseCheckpointError(errors) {
+  const fallback = "检查点完整性验证未通过";
+  const first = Array.isArray(errors) && errors.length ? String(errors[0]).trim() : fallback;
+  const text = first || fallback;
+  return text.length > 96 ? `${text.slice(0, 95)}…` : text;
+}
+
+function renderCheckpointList() {
+  const box = $("#checkpoint-list");
+  box.replaceChildren();
+  state.selectedCheckpointId = null;
+  $("#btn-restore-checkpoint").disabled = true;
+
+  if (!state.checkpoints.length) {
+    const empty = document.createElement("div");
+    empty.className = "checkpoint-empty";
+    empty.textContent = "当前项目还没有可恢复的检查点。";
+    box.appendChild(empty);
+    $("#btn-undo-last-fix").disabled = true;
+    return;
+  }
+
+  $("#btn-undo-last-fix").disabled = !P0.latestBatchCheckpoint(state.checkpoints);
+  for (const cp of state.checkpoints) {
+    const label = document.createElement("label");
+    const radio = document.createElement("input");
+    const name = document.createElement("span");
+    const meta = document.createElement("span");
+    label.className = `checkpoint-option${cp.canRestore ? "" : " unrestorable"}`;
+    radio.type = "radio";
+    radio.name = "checkpoint";
+    radio.value = cp.checkpointId;
+    radio.disabled = !cp.canRestore;
+    name.className = "checkpoint-name";
+    meta.className = "checkpoint-meta";
+    const checkpointName = cp.label || `${checkpointReasonLabel(cp.reason)}（${cp.checkpointId}）`;
+    name.textContent = cp.canRestore ? checkpointName : `${checkpointName}（不可恢复）`;
+    const count = cp.itemCount === null ? "" : ` ｜ ${cp.itemCount} 项`;
+    const invalidReason = cp.canRestore
+      ? ""
+      : ` ｜ 原因：${conciseCheckpointError(cp.validationErrors)}` +
+        (cp.validationErrors.length > 1 ? `（另有 ${cp.validationErrors.length - 1} 项）` : "");
+    meta.textContent = `${cp.createdAt || "时间未知"}${count}${invalidReason}`;
+    if (cp.canRestore) {
+      radio.addEventListener("change", () => {
+        state.selectedCheckpointId = cp.checkpointId;
+        $("#btn-restore-checkpoint").disabled = false;
+      });
+    }
+    label.append(radio, name, meta);
+    box.appendChild(label);
+  }
 }
 
 // ---------- actions（UI 与冒烟共用） ----------
@@ -242,12 +343,110 @@ const actions = {
   },
 
   async autoFix() {
-    const fx = unwrap(await window.oak.fix(state.project));
-    const applied = fx.result.applied_count || 0;
-    if (applied > 0) toast(`已自动修复 ${applied} 项（检查点 ${fx.result.checkpoint_id}），正在复检…`);
-    else toast("没有可自动修复的问题");
-    const after = await this.recheck();
-    return { applied, after };
+    if (state.fixPlanning || state.fixApplying) return { count: 0, busy: true };
+    state.fixPlanning = true;
+    $("#btn-autofix").disabled = true;
+    try {
+      const response = unwrap(await window.oak.planFixes(state.project));
+      const plan = P0.normalizeFixPlan(response.result);
+      state.fixPlan = plan;
+      if (plan.count === 0) {
+        state.fixPlan = null;
+        toast("没有可批量自动修复的问题");
+        return { planId: plan.planId, count: 0 };
+      }
+      renderFixPlan(plan);
+      $("#fix-plan-dialog").showModal();
+      return { planId: plan.planId, count: plan.count };
+    } finally {
+      state.fixPlanning = false;
+      $("#btn-autofix").disabled = false;
+    }
+  },
+
+  cancelFixPlan() {
+    if (state.fixApplying) return false;
+    state.fixPlan = null;
+    const dialog = $("#fix-plan-dialog");
+    if (dialog.open) dialog.close("cancel");
+    return true;
+  },
+
+  async confirmFixPlan() {
+    if (!state.fixPlan) throw new Error("没有待确认的批量修复计划");
+    if (state.fixApplying) throw new Error("批量修复正在执行");
+    const plan = state.fixPlan;
+    state.fixApplying = true;
+    $("#btn-confirm-fix-plan").disabled = true;
+    $("#btn-cancel-fix-plan").disabled = true;
+    try {
+      const fx = unwrap(await window.oak.applyFixPlan(state.project, plan.planId));
+      const applied = Number.isInteger(fx.result.applied_count) ? fx.result.applied_count : 0;
+      const checkpointId = fx.result.checkpoint_id || null;
+      state.fixPlan = null;
+      $("#fix-plan-dialog").close("applied");
+      if (applied > 0) {
+        toast(`已批量修复 ${applied} 项${checkpointId ? `（检查点 ${checkpointId}）` : ""}，正在复检…`);
+      } else {
+        toast("计划未应用任何修改，正在重新检查…");
+      }
+      const after = await this.recheck();
+      return { applied, checkpointId, after };
+    } finally {
+      state.fixApplying = false;
+      $("#btn-confirm-fix-plan").disabled = false;
+      $("#btn-cancel-fix-plan").disabled = false;
+    }
+  },
+
+  async loadCheckpoints() {
+    const response = unwrap(await window.oak.listCheckpoints(state.project));
+    state.checkpoints = P0.normalizeCheckpoints(response.result);
+    renderCheckpointList();
+    return state.checkpoints;
+  },
+
+  async openCheckpoints() {
+    await this.loadCheckpoints();
+    $("#checkpoint-dialog").showModal();
+    return { count: state.checkpoints.length };
+  },
+
+  closeCheckpoints() {
+    if (state.restoringCheckpoint) return false;
+    const dialog = $("#checkpoint-dialog");
+    if (dialog.open) dialog.close("cancel");
+    state.selectedCheckpointId = null;
+    return true;
+  },
+
+  async restoreCheckpoint(checkpointId) {
+    if (state.restoringCheckpoint) throw new Error("正在恢复检查点");
+    state.restoringCheckpoint = true;
+    $("#btn-undo-last-fix").disabled = true;
+    $("#btn-restore-checkpoint").disabled = true;
+    try {
+      const response = unwrap(await window.oak.restoreCheckpoint(state.project, checkpointId));
+      $("#checkpoint-dialog").close("restored");
+      state.selectedCheckpointId = null;
+      toast(`已恢复检查点 ${checkpointId}，正在重新检查…`);
+      const after = await this.recheck();
+      return { result: response.result, after };
+    } finally {
+      state.restoringCheckpoint = false;
+    }
+  },
+
+  async undoLastFix() {
+    await this.loadCheckpoints();
+    const checkpoint = P0.latestBatchCheckpoint(state.checkpoints);
+    if (!checkpoint) throw new Error("没有可撤销的批量修复检查点");
+    return this.restoreCheckpoint(checkpoint.checkpointId);
+  },
+
+  async restoreSelectedCheckpoint() {
+    if (!state.selectedCheckpointId) throw new Error("请先选择一个检查点");
+    return this.restoreCheckpoint(state.selectedCheckpointId);
   },
 
   async recheck() {
@@ -301,6 +500,8 @@ const actions = {
       issues: state.lastCheck ? state.lastCheck.issues.length : 0,
       statusLevel: state.lastCheck ? state.lastCheck.status_level : null,
       exports: state.exportFiles.length,
+      fixPlanCount: state.fixPlan ? state.fixPlan.count : 0,
+      checkpoints: state.checkpoints.length,
     };
   },
 };
@@ -366,7 +567,28 @@ document.addEventListener("DOMContentLoaded", () => {
     actions.readSettingsFromUi();
     try { await actions.startCheck(); } catch (err) { toast(String(err.message || err), 5000); showPage("target"); }
   });
-  $("#btn-autofix").addEventListener("click", () => actions.autoFix().catch((e) => toast(String(e.message || e))));
+  $("#btn-autofix").addEventListener("click", () => actions.autoFix().catch((e) => toast(String(e.message || e), 5000)));
+  $("#btn-checkpoints").addEventListener("click", () => actions.openCheckpoints().catch((e) => toast(String(e.message || e), 5000)));
+  $("#btn-cancel-fix-plan").addEventListener("click", () => actions.cancelFixPlan());
+  $("#btn-confirm-fix-plan").addEventListener("click", () =>
+    actions.confirmFixPlan().catch((e) => toast(String(e.message || e), 5000)));
+  $("#btn-close-checkpoints").addEventListener("click", () => actions.closeCheckpoints());
+  $("#btn-undo-last-fix").addEventListener("click", () =>
+    actions.undoLastFix().catch((e) => toast(String(e.message || e), 5000)));
+  $("#btn-restore-checkpoint").addEventListener("click", () =>
+    actions.restoreSelectedCheckpoint().catch((e) => toast(String(e.message || e), 5000)));
+  $("#fix-plan-dialog").addEventListener("cancel", (event) => {
+    if (state.fixApplying) event.preventDefault();
+  });
+  $("#fix-plan-dialog").addEventListener("close", () => {
+    if (!state.fixApplying) state.fixPlan = null;
+  });
+  $("#checkpoint-dialog").addEventListener("cancel", (event) => {
+    if (state.restoringCheckpoint) event.preventDefault();
+  });
+  $("#checkpoint-dialog").addEventListener("close", () => {
+    if (!state.restoringCheckpoint) state.selectedCheckpointId = null;
+  });
   $("#btn-recheck").addEventListener("click", () => actions.recheck().catch((e) => toast(String(e.message || e))));
   $("#btn-external").addEventListener("click", async () => {
     toast("正在运行外部验证（EpubCheck / Ace），可能需要数十秒…", 4000);

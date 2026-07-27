@@ -77,10 +77,32 @@ async function runSmoke(win, pathPolicy) {
     assert(check.page === "issues", `${sc.name}：应停在问题页`);
     console.log(`[smoke]   check：${check.issueCount} 项，状态「${check.statusLevel}」`);
 
-    const fix = await js("__oakActions.autoFix()");
-    if (sc.expectFixes) assert(fix.applied > 0, `${sc.name}：白名单修复应有作用`);
+    const firstPlan = await js("__oakActions.autoFix()");
+    if (sc.expectFixes) assert(firstPlan.count > 0, `${sc.name}：批量计划应列出白名单修复`);
+    if (firstPlan.count > 0) {
+      const cancelled = await js("__oakActions.cancelFixPlan()");
+      assert(cancelled === true, `${sc.name}：应能取消批量计划`);
+      const afterCancel = await js("__oakActions.recheck()");
+      assert(afterCancel.issueCount === check.issueCount, `${sc.name}：取消计划不得写入修复`);
+    }
+    const plan = await js("__oakActions.autoFix()");
+    if (sc.expectFixes) assert(plan.count === firstPlan.count, `${sc.name}：取消后再次预览应得到同样数量`);
+    let fix = plan.count > 0
+      ? await js("__oakActions.confirmFixPlan()")
+      : { applied: 0, after: { issueCount: check.issueCount } };
+    if (sc.expectFixes) assert(fix.applied > 0, `${sc.name}：确认后白名单修复应有作用`);
     assert(fix.after.issueCount < check.issueCount, `${sc.name}：复检后问题应减少`);
-    console.log(`[smoke]   fix：修复 ${fix.applied} 项，复检剩 ${fix.after.issueCount} 项`);
+    if (sc.expectFixes) {
+      const checkpointView = await js("__oakActions.openCheckpoints()");
+      assert(checkpointView.count > 0, `${sc.name}：修复后应列出检查点`);
+      const undone = await js("__oakActions.undoLastFix()");
+      assert(undone.after.issueCount === check.issueCount, `${sc.name}：撤销后应恢复修复前问题集`);
+      const replayPlan = await js("__oakActions.autoFix()");
+      assert(replayPlan.count === plan.count, `${sc.name}：撤销后应可重新生成完整批次`);
+      fix = await js("__oakActions.confirmFixPlan()");
+      assert(fix.after.issueCount < check.issueCount, `${sc.name}：重新确认后问题应再次减少`);
+    }
+    console.log(`[smoke]   plan：集中确认 ${plan.count} 项；fix：修复 ${fix.applied} 项，复检剩 ${fix.after.issueCount} 项`);
 
     const exp = await js("__oakActions.doExport()");
     assert(exp.files.length >= 4, `${sc.name}：导出应含修订稿与三种报告`);

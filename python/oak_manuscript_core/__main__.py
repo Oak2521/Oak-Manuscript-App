@@ -80,9 +80,15 @@ def _cmd_check(args, kind: str) -> int:
 def _cmd_fix(args) -> int:
     proj = Project.open(Path(args.project))
     pack = load_rulepack(Path(args.rulepack) if args.rulepack else _default_rulepack())
-    record, counts = ops.run_fixes(proj, pack)
+    record, counts = ops.run_fixes(
+        proj,
+        pack,
+        plan_id=args.plan_id,
+        confirmed_issue_ids=args.issue_id,
+    )
     _emit({
         "ok": True,
+        "plan_id": record.get("plan_id"),
         "fix_run_id": record.get("fix_run_id"),
         "checkpoint_id": record.get("checkpoint_id"),
         "applied_count": len(record["applied"]),
@@ -92,6 +98,19 @@ def _cmd_fix(args) -> int:
         print("修复完成。修复前的版本已保存为检查点，建议运行 recheck 复检。", file=sys.stderr)
     else:
         print("没有可自动修复的问题。", file=sys.stderr)
+    return 0
+
+
+def _cmd_plan_fixes(args) -> int:
+    proj = Project.open(Path(args.project))
+    pack = load_rulepack(Path(args.rulepack) if args.rulepack else _default_rulepack())
+    plan = ops.plan_fixes(proj, pack)
+    _emit({"ok": True, **plan})
+    print(
+        f"已生成批量修复预览：{plan['candidate_count']} 项。"
+        "尚未修改 working、问题状态或项目记录。",
+        file=sys.stderr,
+    )
     return 0
 
 
@@ -132,6 +151,24 @@ def _cmd_issue(args) -> int:
     return 0
 
 
+def _cmd_list_checkpoints(args) -> int:
+    proj = Project.open(Path(args.project))
+    _emit({"ok": True, "checkpoints": proj.list_checkpoints()})
+    return 0
+
+
+def _cmd_restore_checkpoint(args) -> int:
+    proj = Project.open(Path(args.project))
+    result = proj.restore_checkpoint(args.checkpoint_id)
+    _emit({"ok": True, **result})
+    print(
+        f"已恢复检查点 {result['restored_checkpoint_id']}；"
+        f"恢复前状态保存在 {result['safety_checkpoint_id']}。",
+        file=sys.stderr,
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="oak_manuscript_core",
@@ -157,9 +194,17 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--project", required=True)
         p.add_argument("--rulepack")
 
-    p = sub.add_parser("fix", help="应用白名单机械修复（自动建检查点）")
+    p = sub.add_parser("plan-fixes", help="生成批量机械修复集中预览（严格只读）")
     p.add_argument("--project", required=True)
     p.add_argument("--rulepack")
+
+    p = sub.add_parser("fix", help="执行已集中确认的批量机械修复（自动建检查点）")
+    p.add_argument("--project", required=True)
+    p.add_argument("--rulepack")
+    p.add_argument("--plan-id", required=True,
+                   help="plan-fixes 返回、且已由用户确认的 plan_id")
+    p.add_argument("--issue-id", action="append",
+                   help="可选；重复传入计划中的全部 issue_id，用于显式校验确认集合")
 
     p = sub.add_parser("export", help="导出修订稿与三种报告")
     p.add_argument("--project", required=True)
@@ -168,6 +213,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("verify", help="项目完整性验证（原稿哈希等）")
     p.add_argument("--project", required=True)
+
+    p = sub.add_parser("list-checkpoints", help="列出可恢复的项目检查点")
+    p.add_argument("--project", required=True)
+
+    p = sub.add_parser("restore-checkpoint", help="安全恢复检查点（恢复前自动创建安全检查点）")
+    p.add_argument("--project", required=True)
+    p.add_argument("--checkpoint-id", required=True)
 
     p = sub.add_parser("external", help="运行外部验证工具（EpubCheck / Ace，仅 EPUB）")
     p.add_argument("--project", required=True)
@@ -191,9 +243,12 @@ def main(argv: list[str] | None = None) -> int:
         "create": _cmd_create,
         "check": lambda a: _cmd_check(a, "check"),
         "recheck": lambda a: _cmd_check(a, "recheck"),
+        "plan-fixes": _cmd_plan_fixes,
         "fix": _cmd_fix,
         "export": _cmd_export,
         "verify": _cmd_verify,
+        "list-checkpoints": _cmd_list_checkpoints,
+        "restore-checkpoint": _cmd_restore_checkpoint,
         "external": _cmd_external,
         "issue": _cmd_issue,
     }

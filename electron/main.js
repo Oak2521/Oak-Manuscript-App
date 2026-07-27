@@ -9,6 +9,7 @@ const { app, BrowserWindow, dialog, ipcMain, shell, session } = require("electro
 const pathPolicy = require("./path-policy");
 const bridge = require("./python-bridge");
 const providers = require("./providers");
+const { registerP0Ipc } = require("./p0-ipc");
 
 const SMOKE = process.argv.includes("--smoke");
 const ALLOWED_EXTERNAL_HOSTS = new Set(["oakbylake.com", "www.oakbylake.com"]);
@@ -25,6 +26,7 @@ function assertString(value, name) {
 
 function assertProjectDir(dir) {
   assertString(dir, "project");
+  if (!path.isAbsolute(dir)) throw new Error("项目路径必须是绝对路径");
   if (!pathPolicy.looksLikeProject(dir)) throw new Error("该目录不是湖岸稿件项目");
   return dir;
 }
@@ -114,15 +116,9 @@ ipcMain.handle("core:check", async (_e, { project, kind }) => {
   }
 });
 
-ipcMain.handle("core:fix", async (_e, { project }) => {
-  try {
-    assertProjectDir(project);
-    const { data } = await core(["fix", "--project", project]);
-    return ok({ result: data });
-  } catch (err) {
-    return fail(err);
-  }
-});
+// P0：预览计划、一次确认后应用、检查点列表与恢复。
+// 未保留无 planId 的 core:fix 通道，避免渲染端绕过集中确认。
+registerP0Ipc({ ipcMain, bridge, pathPolicy });
 
 ipcMain.handle("core:export", async (_e, { project, outDir }) => {
   try {

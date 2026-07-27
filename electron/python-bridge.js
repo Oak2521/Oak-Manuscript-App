@@ -55,4 +55,27 @@ function runCore(args, timeoutMs = DEFAULT_TIMEOUT_MS) {
   });
 }
 
-module.exports = { runCore };
+// P0 高层桥方法：调用者只能选择固定命令与固定参数槽，不能注入任意 CLI 参数。
+function planFixes(projectPath) {
+  return runCore(["plan-fixes", "--project", projectPath]);
+}
+
+function applyFixPlan(projectPath, planId) {
+  return runCore(["fix", "--project", projectPath, "--plan-id", planId]);
+}
+
+function listCheckpoints(projectPath) {
+  return runCore(["list-checkpoints", "--project", projectPath]);
+}
+
+function restoreCheckpoint(projectPath, checkpointId) {
+  return runCore(["restore-checkpoint", "--project", projectPath, "--checkpoint-id", checkpointId]);
+}
+
+module.exports = {
+  runCore,
+  planFixes,
+  applyFixPlan,
+  listCheckpoints,
+  restoreCheckpoint,
+};

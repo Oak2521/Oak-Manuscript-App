@@ -33,7 +33,7 @@
         <strong>您的稿件默认只在本机处理。</strong>
         <p>检查、订正、报告与导出全部在本地完成；不上传稿件，不要求注册；原稿以只读副本保存并全程 SHA-256 校验，绝不被修改。</p>
       </div>
-      <p>支持格式：<code>.docx</code>（论文 / 书稿全部检查）、<code>.md</code>、<code>.txt</code>、<code>.epub</code>。自动修复仅限白名单内的机械问题，逐项经您确认。</p>
+      <p>支持格式：<code>.docx</code>（论文 / 书稿全部检查）、<code>.md</code>、<code>.txt</code>、<code>.epub</code>。自动修复仅限白名单内的机械问题；APP 会先集中列出全部修改，再由您一次确认整批执行。</p>
       <div class="actions">
         <button id="btn-own-file" class="primary">检查自己的稿件</button>
         <button id="btn-sample">使用匿名样本体验</button>
@@ -108,7 +108,8 @@
           <div id="citation-note" class="muted"></div>
         </div>
         <div class="issues-toolbar">
-          <button id="btn-autofix" class="primary">自动修复（仅白名单）</button>
+          <button id="btn-autofix" class="primary">预览批量自动修复</button>
+          <button id="btn-checkpoints">撤销与检查点</button>
           <button id="btn-recheck">重新检查</button>
           <button id="btn-external">外部验证（EPUB）</button>
           <button id="btn-to-export">导出…</button>
@@ -172,7 +173,41 @@
     </section>
   </main>
 
+  <dialog id="fix-plan-dialog" class="modal" aria-labelledby="fix-plan-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="fix-plan-title">确认批量自动修复</h2>
+        <p class="muted">以下是本批次将对工作稿执行的全部白名单机械修改。取消不会写入任何内容，原稿始终不变。</p>
+      </div>
+    </div>
+    <div id="fix-plan-count" class="callout" aria-live="polite"></div>
+    <div class="batch-columns" aria-hidden="true">
+      <span>项目</span><span>修改前</span><span>修改后</span>
+    </div>
+    <ol id="fix-plan-items" class="batch-list"></ol>
+    <div class="modal-actions">
+      <button id="btn-cancel-fix-plan">取消（不写入）</button>
+      <button id="btn-confirm-fix-plan" class="primary">确认批量修复 0 项</button>
+    </div>
+  </dialog>
+
+  <dialog id="checkpoint-dialog" class="modal checkpoint-modal" aria-labelledby="checkpoint-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="checkpoint-title">撤销与检查点</h2>
+        <p class="muted">恢复只替换项目中的工作稿和对应问题记录，不会修改原稿。恢复完成后 APP 会重新检查。</p>
+      </div>
+    </div>
+    <div id="checkpoint-list" class="checkpoint-list" role="radiogroup" aria-label="可恢复的检查点"></div>
+    <div class="modal-actions checkpoint-actions">
+      <button id="btn-close-checkpoints">关闭</button>
+      <button id="btn-undo-last-fix">撤销上一次批量修复</button>
+      <button id="btn-restore-checkpoint" class="primary" disabled>恢复选定检查点</button>
+    </div>
+  </dialog>
+
   <div id="toast" class="hidden"></div>
+  <script src="p0-ui-model.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

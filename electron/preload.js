@@ -14,7 +14,12 @@ const api = {
   // 核心闭环
   createProject: (opts) => ipcRenderer.invoke("core:create", opts),
   check: (project, kind) => ipcRenderer.invoke("core:check", { project, kind }),
-  fix: (project) => ipcRenderer.invoke("core:fix", { project }),
+  planFixes: (project) => ipcRenderer.invoke("core:plan-fixes", { project }),
+  applyFixPlan: (project, planId) =>
+    ipcRenderer.invoke("core:apply-fix-plan", { project, planId }),
+  listCheckpoints: (project) => ipcRenderer.invoke("core:list-checkpoints", { project }),
+  restoreCheckpoint: (project, checkpointId) =>
+    ipcRenderer.invoke("core:restore-checkpoint", { project, checkpointId }),
   exportAll: (project, outDir) => ipcRenderer.invoke("core:export", { project, outDir }),
   verify: (project) => ipcRenderer.invoke("core:verify", { project }),
   setIssueStatus: (project, id, status) =>

@@ -30,6 +30,11 @@ ALL_M3_RULES = {
 }
 
 
+def run_confirmed_fixes(project: Project):
+    plan = ops.plan_fixes(project, PACK)
+    return ops.run_fixes(project, PACK, plan_id=plan["plan_id"])
+
+
 def rmtree_force(path: Path) -> None:
     for root_, _d, files in os.walk(path):
         for f in files:
@@ -88,7 +93,7 @@ class EpubOpsFlowTest(unittest.TestCase):
         self.assertEqual({i["rule_id"] for i in outcome.issues}, ALL_M3_RULES)
         self.assertGreater(record["issue_counts"]["error"], 0)  # MIME/OPF/NAV 为 error
 
-        _fix_record, counts = ops.run_fixes(self.proj, PACK)
+        _fix_record, counts = run_confirmed_fixes(self.proj)
         self.assertEqual(counts.get("FIX-EPUB-MIME-001"), 1)
         self.assertEqual(counts.get("FIX-EPUB-LANG-001"), 1)
         self.assertEqual(len(self.proj.data["checkpoints"]), 1)

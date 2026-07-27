@@ -26,3 +26,4 @@ python-runtime/
 local_projects/
 real_manuscripts/
 *.tmp
+tmp/

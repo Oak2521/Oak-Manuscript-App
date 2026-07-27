@@ -1,4 +1,4 @@
-"""CLI 端到端测试：以真实子进程走完 create→check→fix→recheck→export→verify 闭环。
+"""CLI 端到端测试：走完 create→check→plan-fixes→fix→recheck→export→verify。
 
 这是 M1 里程碑完成标准的直接验证（方案阶段 1：不用桌面 UI 也能用匿名样本
 通过创建、检查、修复、复检、导出和验证流程）。
@@ -70,20 +70,29 @@ class CliClosedLoopTest(unittest.TestCase):
         self.assertGreater(out["issue_counts"]["warning"], 0)
         self.assertIn("gbt7714-2025", out["citation_note"])
 
-        # 3. fix
-        code, out, err = run_cli("fix", "--project", str(self.pdir))
+        # 3. 集中预览：只读，返回绑定当前状态的 plan_id
+        code, plan, err = run_cli("plan-fixes", "--project", str(self.pdir))
+        self.assertEqual(code, 0, err)
+        self.assertGreater(plan["candidate_count"], 0)
+        self.assertEqual(plan["candidate_count"], len(plan["items"]))
+
+        # 4. 一次确认整批执行
+        code, out, err = run_cli(
+            "fix", "--project", str(self.pdir), "--plan-id", plan["plan_id"]
+        )
         self.assertEqual(code, 0, err)
         self.assertGreater(out["applied_count"], 0)
         self.assertTrue(out["checkpoint_id"])
+        self.assertEqual(out["plan_id"], plan["plan_id"])
 
-        # 4. recheck：白名单问题消失，error 仍在 → 退出码 1
+        # 5. recheck：白名单问题消失，error 仍在 → 退出码 1
         code, out, err = run_cli("recheck", "--project", str(self.pdir))
         self.assertEqual(code, 1, err)
         rules = {i["rule_id"] for i in out["issues"]}
         self.assertNotIn("DOCX-SPACE-001", rules)
         self.assertIn("REF-002", rules)
 
-        # 5. export
+        # 6. export
         code, out, err = run_cli("export", "--project", str(self.pdir))
         self.assertEqual(code, 0, err)
         # 修订稿 + 三种报告 + 脱敏评估摘要
@@ -92,7 +101,7 @@ class CliClosedLoopTest(unittest.TestCase):
         for f in out["files"]:
             self.assertTrue(Path(f).is_file())
 
-        # 6. verify：原稿不可变 → 退出码 0
+        # 7. verify：原稿不可变 → 退出码 0
         code, out, err = run_cli("verify", "--project", str(self.pdir))
         self.assertEqual(code, 0, err)
         self.assertTrue(out["ok"])
@@ -105,6 +114,14 @@ class CliClosedLoopTest(unittest.TestCase):
         code, _out, err = run_cli("create", "--input", str(bad), "--project", str(self.pdir))
         self.assertEqual(code, 2)
         self.assertIn(".docx", err)
+
+    def test_fix_requires_confirmed_plan_id(self):
+        run_cli("create", "--input", str(SAMPLE), "--project", str(self.pdir))
+        run_cli("check", "--project", str(self.pdir))
+        code, out, err = run_cli("fix", "--project", str(self.pdir))
+        self.assertEqual(code, 2)
+        self.assertIsNone(out)
+        self.assertIn("--plan-id", err)
 
     def test_verify_detects_tampering_with_exit_2(self):
         run_cli("create", "--input", str(SAMPLE), "--project", str(self.pdir))

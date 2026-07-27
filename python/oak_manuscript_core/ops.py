@@ -5,18 +5,22 @@ CLI（__main__）与未来的 Electron 桥都只调用本层，不直接碰引�
 
 from __future__ import annotations
 
+import copy
 import json
+import os
 import shutil
+import tempfile
 from pathlib import Path
 
 from . import __version__
 from .engine import check_document, manuscript_status_level
 from .errors import OakError
+from .fix_plans import build_fix_plan
 from .fixes import WHITELIST, apply_fixes
-from .project import Project
+from .project import MAX_CHECKPOINTS, Project
 from .readers.docx_reader import read_docx
 from .safety import ensure_within
-from .util import now_iso, read_json, write_json
+from .util import now_iso, read_json, sha256_file, write_json
 
 DISCLAIMER = (
     "本报告仅代表稿件的技术与规范准备程度，不评价学术质量、文学价值或出版可行性，"
@@ -150,37 +154,260 @@ def run_check(project: Project, pack: dict, *, kind: str = "check"):
     return record, outcome
 
 
-def run_fixes(project: Project, pack: dict):
-    """对 open 且可自动修复的问题应用白名单修复。返回 (fix 记录, 计数)。"""
+def _ensure_source_unchanged(project: Project) -> None:
+    if not project.source_path.is_file():
+        raise OakError("原稿副本缺失，拒绝生成或执行修复计划。")
+    if sha256_file(project.source_path) != project.source_sha256:
+        raise OakError("原稿 SHA-256 与项目记录不一致，拒绝生成或执行修复计划。")
+
+
+def plan_fixes(project: Project, pack: dict) -> dict:
+    """返回当前项目的完整批量修复预览；本函数严格只读。"""
+    if not project.data.get("checks") or not (project.root / "reports" / "issues.json").is_file():
+        raise OakError("尚未运行检查，无法生成修复计划。请先执行 check。")
+    pinned = project.data.get("rulepack") or {}
+    if pinned.get("name") and (
+        pinned.get("name") != pack.get("pack_name")
+        or pinned.get("version") != pack.get("pack_version")
+    ):
+        raise OakError(
+            "当前规则包与本次检查固定的规则包不一致，无法生成修复计划。请先复检。"
+        )
+    _ensure_source_unchanged(project)
+    return build_fix_plan(project, pack, load_issues(project))
+
+
+def _stage_json(destination: Path, data) -> Path:
+    """在目标文件同目录写好 JSON，供后续 os.replace 原子换入。"""
+    fd, raw_path = tempfile.mkstemp(
+        prefix=f".{destination.name}.", suffix=".tmp", dir=destination.parent
+    )
+    os.close(fd)
+    staged = Path(raw_path)
+    try:
+        write_json(staged, data)
+    except Exception:
+        staged.unlink(missing_ok=True)
+        raise
+    return staged
+
+
+def _valid_checkpoint_id(value: object) -> bool:
+    if not isinstance(value, str) or not value.startswith("cp-"):
+        return False
+    digits = value[3:]
+    return len(digits) >= 4 and digits.isdigit()
+
+
+def _backup_prunable_checkpoints(project: Project) -> tuple[Path | None, list[tuple[Path, Path]]]:
+    """备份本次新建检查点将裁剪的旧目录，供事务失败时完整恢复。
+
+    ``Project.make_checkpoint`` 会在第六个检查点创建后立即删除最旧目录；后续
+    JSON/working 提交仍可能失败。因此备份必须发生在 make_checkpoint 之前，且
+    成功提交后才删除。
+    """
+    entries = list(project.data.get("checkpoints", []))
+    prune_count = max(0, len(entries) + 1 - MAX_CHECKPOINTS)
+    if prune_count == 0:
+        return None, []
+
+    checkpoint_root = project.root / "checkpoints"
+    root_resolved = checkpoint_root.resolve()
+    backup_root = Path(tempfile.mkdtemp(prefix=".fix-rollback-", dir=checkpoint_root))
+    backups: list[tuple[Path, Path]] = []
+    try:
+        for entry in entries[:prune_count]:
+            if not isinstance(entry, dict):
+                raise OakError("检查点元数据损坏，无法建立修复事务回滚副本。")
+            checkpoint_id = entry.get("checkpoint_id")
+            relative = entry.get("path")
+            if not _valid_checkpoint_id(checkpoint_id) or not isinstance(relative, str):
+                raise OakError("检查点路径或 ID 非法，无法建立修复事务回滚副本。")
+            unresolved = project.root / relative
+            if unresolved.is_symlink():
+                raise OakError(f"检查点目录是符号链接，拒绝继续：{checkpoint_id}")
+            source = ensure_within(checkpoint_root, unresolved)
+            if source.parent != root_resolved or source.name != checkpoint_id:
+                raise OakError(f"检查点路径与 ID 不一致，拒绝继续：{checkpoint_id}")
+            if not source.is_dir():
+                raise OakError(f"待裁剪的检查点目录缺失：{checkpoint_id}")
+            if any(path.is_symlink() for path in source.rglob("*")):
+                raise OakError(f"检查点内含符号链接，拒绝继续：{checkpoint_id}")
+            backup = backup_root / checkpoint_id
+            shutil.copytree(source, backup)
+            backups.append((backup, source))
+    except Exception:
+        shutil.rmtree(backup_root, ignore_errors=True)
+        raise
+    return backup_root, backups
+
+
+def _restore_pruned_checkpoint_backups(backups: list[tuple[Path, Path]]) -> None:
+    """把 make_checkpoint 已裁剪的目录原子移回原位。"""
+    for backup, original in backups:
+        if original.exists():
+            continue
+        if not backup.is_dir():
+            raise OakError(f"检查点事务回滚副本缺失：{original.name}")
+        os.replace(backup, original)
+
+
+def run_fixes(
+    project: Project,
+    pack: dict,
+    *,
+    plan_id: str | None = None,
+    confirmed_issue_ids: list[str] | None = None,
+):
+    """执行用户已集中确认的批量计划，返回 ``(fix 记录, 计数)``。
+
+    ``plan_id`` 是强制确认凭据。调用方可额外传入计划里的全部 issue_id；
+    当前 P0 不允许局部选择，因为底层白名单修复按 fix_id 扫描全文，局部选择会
+    给用户造成“未选中的同类位置不会变化”的错误印象。
+    """
+    if not plan_id:
+        raise OakError("缺少已确认的修复计划。请先执行 plan-fixes 并确认完整预览。")
+
+    current_plan = plan_fixes(project, pack)
+    if plan_id != current_plan["plan_id"]:
+        raise OakError(
+            "修复计划已过期或不属于当前项目。工作副本、问题状态或规则包可能已变化；"
+            "请重新生成并确认计划。"
+        )
+
+    items = current_plan["items"]
+    candidate_ids = [item["issue_id"] for item in items]
+    candidate_set = set(candidate_ids)
+    if confirmed_issue_ids is not None:
+        if len(confirmed_issue_ids) != len(set(confirmed_issue_ids)):
+            raise OakError("确认列表含重复 issue_id，拒绝执行。")
+        confirmed_set = set(confirmed_issue_ids)
+        unexpected = sorted(confirmed_set - candidate_set)
+        if unexpected:
+            raise OakError(f"确认列表包含非本计划候选的问题：{unexpected}")
+        missing = sorted(candidate_set - confirmed_set)
+        if missing:
+            raise OakError(
+                "当前版本只允许一次确认整批候选，确认列表遗漏："
+                f"{missing}"
+            )
+
+    if not items:
+        return {
+            "fix_run_id": None,
+            "plan_id": plan_id,
+            "checkpoint_id": None,
+            "applied": [],
+            "counts": {},
+        }, {}
+
     issues = load_issues(project)
-    fixable = [
-        i for i in issues
-        if i["status"] in ("open", "accepted") and i["auto_fixable"] and i["fix_id"] in WHITELIST
-    ]
-    if not fixable:
-        return {"applied": []}, {}
+    issue_by_id = {issue["issue_id"]: issue for issue in issues}
+    new_issues = copy.deepcopy(issues)
+    new_issue_by_id = {issue["issue_id"]: issue for issue in new_issues}
+    for issue_id in candidate_ids:
+        if issue_id not in issue_by_id or issue_id not in new_issue_by_id:
+            raise OakError(f"修复计划候选已不存在：{issue_id}。请重新生成计划。")
+        new_issue_by_id[issue_id]["status"] = "resolved"
 
-    checkpoint = project.make_checkpoint(reason="before_fix")
-    fix_ids = {i["fix_id"] for i in fixable}
-    counts = apply_fixes(project.working_path, fix_ids)
+    working_path = project.working_path
+    source_hash_before = sha256_file(project.source_path)
+    fd, raw_work = tempfile.mkstemp(
+        prefix=f".{working_path.stem}.fix-", suffix=working_path.suffix,
+        dir=working_path.parent,
+    )
+    os.close(fd)
+    staged_work = Path(raw_work)
+    staged_issues: Path | None = None
+    staged_project: Path | None = None
+    checkpoint: dict | None = None
+    manifest_path = project.root / "project.json"
+    issues_path = project.root / "reports" / "issues.json"
+    data_before = copy.deepcopy(project.data)
+    manifest_before = manifest_path.read_bytes()
+    issues_before = issues_path.read_bytes()
+    checkpoint_root = project.root / "checkpoints"
+    checkpoint_names_before = {path.name for path in checkpoint_root.iterdir()}
+    checkpoint_backup_root: Path | None = None
+    checkpoint_backups: list[tuple[Path, Path]] = []
 
-    for issue in issues:
-        if issue in fixable:
-            issue["status"] = "resolved"
-    record = {
-        "fix_run_id": f"fix-{len(project.data['fixes']) + 1:04d}",
-        "applied_at": now_iso(),
-        "checkpoint_id": checkpoint["checkpoint_id"],
-        "applied": [
-            {"issue_id": i["issue_id"], "rule_id": i["rule_id"], "fix_id": i["fix_id"]}
-            for i in fixable
-        ],
-        "counts": counts,
-    }
-    project.data["fixes"].append(record)
-    save_issues(project, issues)
-    project.save()
-    return record, counts
+    try:
+        # 所有可能失败的格式解析与机械修改先发生在临时副本；working 尚未变化。
+        shutil.copyfile(working_path, staged_work)
+        fix_ids = {item["fix_id"] for item in items}
+        if not fix_ids <= WHITELIST:
+            raise OakError("修复计划包含白名单之外的 fix_id，拒绝执行。")
+        counts = apply_fixes(staged_work, fix_ids)
+        if sum(counts.values()) == 0:
+            raise OakError("计划中的候选没有产生任何机械修改，拒绝把问题误标为已解决。")
+
+        # 消除生成临时结果期间的 TOCTOU 窗口；变化即要求用户重新确认。
+        if plan_fixes(project, pack)["plan_id"] != plan_id:
+            raise OakError("修复计划在执行前已过期；请重新生成并确认计划。")
+        if sha256_file(project.source_path) != source_hash_before:
+            raise OakError("原稿在修复期间发生变化，已中止；working 未被修改。")
+
+        # 检查点先于 working 的唯一一次换入操作创建。
+        checkpoint_backup_root, checkpoint_backups = _backup_prunable_checkpoints(project)
+        checkpoint = project.make_checkpoint(reason="before_fix")
+        record = {
+            "fix_run_id": f"fix-{len(project.data['fixes']) + 1:04d}",
+            "plan_id": plan_id,
+            "applied_at": now_iso(),
+            "checkpoint_id": checkpoint["checkpoint_id"],
+            "applied": [
+                {
+                    "issue_id": item["issue_id"],
+                    "rule_id": item["rule_id"],
+                    "fix_id": item["fix_id"],
+                }
+                for item in items
+            ],
+            "counts": counts,
+        }
+        project.data["fixes"].append(record)
+
+        # JSON 先完整落到临时文件；随后与 working 一起以 os.replace 换入。
+        staged_issues = _stage_json(issues_path, new_issues)
+        staged_project = _stage_json(manifest_path, project.data)
+        os.replace(staged_work, working_path)
+        os.replace(staged_issues, issues_path)
+        os.replace(staged_project, manifest_path)
+        return record, counts
+    except Exception as exc:
+        # 若 working 已被换入，检查点是确定的回滚来源；其余状态恢复原始字节。
+        rollback_error: Exception | None = None
+        try:
+            if checkpoint is not None:
+                cp_dir = project.root / checkpoint["path"]
+                cp_work = cp_dir / project.stored_filename
+                if not cp_work.is_file():
+                    raise OakError("修复失败，且新建检查点的工作稿副本缺失。")
+                shutil.copyfile(cp_work, working_path)
+                issues_path.write_bytes(issues_before)
+                manifest_path.write_bytes(manifest_before)
+                project.data = data_before
+                shutil.rmtree(cp_dir, ignore_errors=True)
+            else:
+                project.data = data_before
+                if manifest_path.read_bytes() != manifest_before:
+                    manifest_path.write_bytes(manifest_before)
+                # 兼容 make_checkpoint 在目录换入后、返回 entry 前失败的窗口。
+                for path in checkpoint_root.iterdir():
+                    if path.name not in checkpoint_names_before and _valid_checkpoint_id(path.name):
+                        shutil.rmtree(path, ignore_errors=True)
+            _restore_pruned_checkpoint_backups(checkpoint_backups)
+        except Exception as rollback_exc:  # pragma: no cover - 极端磁盘故障
+            rollback_error = rollback_exc
+        if rollback_error is not None:
+            raise OakError(f"批量修复失败，且项目事务回滚也失败：{rollback_error}") from exc
+        raise
+    finally:
+        for path in (staged_work, staged_issues, staged_project):
+            if path is not None:
+                path.unlink(missing_ok=True)
+        if checkpoint_backup_root is not None:
+            shutil.rmtree(checkpoint_backup_root, ignore_errors=True)
 
 
 def run_external(project: Project) -> dict:
