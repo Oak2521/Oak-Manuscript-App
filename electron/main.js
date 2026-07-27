@@ -10,9 +10,18 @@ const pathPolicy = require("./path-policy");
 const bridge = require("./python-bridge");
 const providers = require("./providers");
 const { registerP0Ipc } = require("./p0-ipc");
+const { readCoreCommandResult, toFailureResponse } = require("./core-result");
+const { createPdfPreview } = require("./pdf-preview");
+const {
+  applyOfflineChromiumPolicy,
+  installOfflineRequestBlocker,
+} = require("./offline-policy");
 
 const SMOKE = process.argv.includes("--smoke");
 const ALLOWED_EXTERNAL_HOSTS = new Set(["oakbylake.com", "www.oakbylake.com"]);
+
+// 必须发生在 app ready 之前；正常启动和 smoke 使用同一默认离线基线。
+applyOfflineChromiumPolicy(app.commandLine);
 
 
 let mainWindow = null;
@@ -36,13 +45,12 @@ function ok(data) {
 }
 
 function fail(err) {
-  return { ok: false, error: String((err && err.message) || err) };
+  return toFailureResponse(err);
 }
 
 async function core(args) {
-  const { code, json, stderr } = await bridge.runCore(args);
-  if (json === null) throw new Error(stderr || "核心无输出");
-  return { code, data: json, stderr };
+  const data = await readCoreCommandResult(args[0], bridge.runCore(args));
+  return { data };
 }
 
 // ---------- IPC：对话框 ----------
@@ -192,23 +200,13 @@ ipcMain.handle("app:standards", () => {
 ipcMain.handle("report:pdf", async (_e, { project }) => {
   try {
     assertProjectDir(project);
-    const html = path.join(project, "exports", "report.html");
-    if (!fs.existsSync(html)) throw new Error("请先导出报告，再生成 PDF 样张");
-    const win = new BrowserWindow({
-      show: false,
-      webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false },
+    const target = await createPdfPreview({
+      BrowserWindow,
+      session,
+      pathPolicy,
+      project,
     });
-    try {
-      await win.loadFile(html);
-      // 审阅样张：最多 16 页（方案 §5.5）
-      const pdf = await win.webContents.printToPDF({ pageRanges: "1-16", printBackground: true });
-      const target = path.join(project, "exports", "report_preview.pdf");
-      if (!pathPolicy.isWithin(project, target)) throw new Error("目标路径越界");
-      fs.writeFileSync(target, pdf);
-      return ok({ path: target });
-    } finally {
-      win.destroy();
-    }
+    return ok({ path: target });
   } catch (err) {
     return fail(err);
   }
@@ -281,13 +279,14 @@ console.log("[main] module loaded, smoke =", SMOKE);
 
 app.whenReady().then(async () => {
   console.log("[main] app ready");
+  installOfflineRequestBlocker(session.defaultSession.webRequest);
   // CSP：仅允许自身资源（renderer 亦有 meta CSP 双保险）
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
         "Content-Security-Policy": [
-          "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'",
+          "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'",
         ],
       },
     });

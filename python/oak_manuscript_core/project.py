@@ -14,9 +14,11 @@ import re
 import secrets
 import shutil
 import stat
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
-from .errors import OakError
+from .errors import OakError, ProjectValidationError
+from .project_lock import PROJECT_LOCK_FILENAME, validate_existing_lock_file
+from .safety import is_link_or_reparse
 from .util import now_iso, read_json, sha256_file, write_json
 
 FORMAT_VERSION = "1.0"
@@ -25,6 +27,9 @@ SUBDIRS = ["source", "working", "checkpoints", "reports", "exports", "logs"]
 MAX_CHECKPOINTS = 5
 CHECKPOINT_STATE_VERSION = "1.0"
 _CHECKPOINT_ID_RE = re.compile(r"^cp-[0-9]{4,}$")
+_CHECK_ID_RE = re.compile(r"^check-[0-9]{4,}$")
+_FIX_ID_RE = re.compile(r"^fix-[0-9]{4,}$")
+_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _CHECKPOINT_STATE_FIELDS = (
     "settings",
     "rulepack",
@@ -49,32 +54,276 @@ _DEFAULT_SETTINGS = {
 
 class Project:
     def __init__(self, root: Path, data: dict) -> None:
-        self.root = Path(root)
+        self.root = Path(root).resolve()
         self.data = data
+
+    # ---- 项目路径信任边界 ----
+
+    @staticmethod
+    def _safe_basename(value: object, *, label: str = "文件名") -> str:
+        if not isinstance(value, str) or not value or "\x00" in value:
+            raise ProjectValidationError(f"{label}缺失或含 NUL，拒绝打开项目。")
+        if value in {".", ".."} or "/" in value or "\\" in value or ":" in value:
+            raise ProjectValidationError(f"{label}不是单一安全文件名，拒绝打开项目。")
+        posix = PurePosixPath(value)
+        windows = PureWindowsPath(value)
+        if (
+            posix.is_absolute()
+            or windows.is_absolute()
+            or windows.drive
+            or posix.name != value
+            or windows.name != value
+        ):
+            raise ProjectValidationError(f"{label}不是单一安全文件名，拒绝打开项目。")
+        return value
+
+    @staticmethod
+    def _lstat(path: Path, *, label: str):
+        try:
+            return os.lstat(path)
+        except OSError as exc:
+            raise ProjectValidationError(f"{label}缺失或无法安全读取，拒绝打开项目。") from exc
+
+    @classmethod
+    def _validate_root_path(cls, root: Path) -> Path:
+        info = cls._lstat(root, label="项目根目录")
+        if is_link_or_reparse(root) or not stat.S_ISDIR(info.st_mode):
+            raise ProjectValidationError("项目根目录是链接、目录联接或非常规目录，拒绝打开项目。")
+        try:
+            return root.resolve(strict=True)
+        except OSError as exc:
+            raise ProjectValidationError("项目根目录无法安全解析，拒绝打开项目。") from exc
+
+    @classmethod
+    def _validate_direct_child_dir(cls, root: Path, name: str) -> Path:
+        candidate = root / name
+        info = cls._lstat(candidate, label=f"固定子目录 {name}/")
+        if is_link_or_reparse(candidate) or not stat.S_ISDIR(info.st_mode):
+            raise ProjectValidationError(
+                f"固定子目录 {name}/ 是链接、目录联接或非常规目录，拒绝打开项目。"
+            )
+        try:
+            resolved = candidate.resolve(strict=True)
+        except OSError as exc:
+            raise ProjectValidationError(f"固定子目录 {name}/ 无法安全解析。") from exc
+        if resolved.parent != root or resolved.name != name:
+            raise ProjectValidationError(f"固定子目录 {name}/ 越出项目根目录，拒绝打开项目。")
+        return resolved
+
+    @classmethod
+    def _validate_regular_file(
+        cls,
+        path: Path,
+        *,
+        parent: Path,
+        label: str,
+        required: bool = True,
+    ) -> Path:
+        if not os.path.lexists(path):
+            if required:
+                raise ProjectValidationError(f"{label}缺失，拒绝打开项目。")
+            return path
+        info = cls._lstat(path, label=label)
+        if (
+            is_link_or_reparse(path)
+            or not stat.S_ISREG(info.st_mode)
+            or getattr(info, "st_nlink", 1) != 1
+        ):
+            raise ProjectValidationError(f"{label}是链接、硬链接或非常规文件，拒绝打开项目。")
+        try:
+            resolved = path.resolve(strict=True)
+        except OSError as exc:
+            raise ProjectValidationError(f"{label}无法安全解析，拒绝打开项目。") from exc
+        if resolved.parent != parent or resolved.name != path.name:
+            raise ProjectValidationError(f"{label}越出固定目录，拒绝打开项目。")
+        return resolved
+
+    def _safe_root(self) -> Path:
+        resolved = self._validate_root_path(self.root)
+        if resolved != self.root:
+            raise ProjectValidationError("项目根目录身份在操作期间发生变化，拒绝继续写入。")
+        return resolved
+
+    def safe_subdir(self, name: str) -> Path:
+        if name not in SUBDIRS:
+            raise ProjectValidationError(f"未知固定子目录：{name}")
+        return self._validate_direct_child_dir(self._safe_root(), name)
+
+    def manifest_path(self, *, required: bool = True) -> Path:
+        root = self._safe_root()
+        return self._validate_regular_file(
+            root / "project.json",
+            parent=root,
+            label="项目清单 project.json",
+            required=required,
+        )
+
+    def report_path(self, relative: object, *, required: bool = True) -> Path:
+        if not isinstance(relative, str) or "\\" in relative or "\x00" in relative:
+            raise ProjectValidationError("检查记录中的结果路径非法。")
+        pure = PurePosixPath(relative)
+        if pure.is_absolute() or len(pure.parts) != 2 or pure.parts[0] != "reports":
+            raise ProjectValidationError(f"检查结果路径越界：{relative}")
+        filename = self._safe_basename(pure.parts[1], label="检查结果文件名")
+        reports = self.safe_subdir("reports")
+        return self._validate_regular_file(
+            reports / filename,
+            parent=reports,
+            label=f"检查结果文件 {relative}",
+            required=required,
+        )
+
+    def issues_path(self, *, required: bool = True) -> Path:
+        return self.report_path("reports/issues.json", required=required)
+
+    def safe_report_directory(self, name: str) -> Path:
+        """返回 reports/ 下一个直接受控目录；存在时拒绝链接/联接。"""
+        safe_name = self._safe_basename(name, label="报告目录名")
+        reports = self.safe_subdir("reports")
+        candidate = reports / safe_name
+        if os.path.lexists(candidate):
+            info = self._lstat(candidate, label=f"报告目录 reports/{safe_name}")
+            if is_link_or_reparse(candidate) or not stat.S_ISDIR(info.st_mode):
+                raise ProjectValidationError(
+                    f"报告目录 reports/{safe_name} 不是安全的常规目录。"
+                )
+            resolved = candidate.resolve(strict=True)
+            if resolved.parent != reports or resolved.name != safe_name:
+                raise ProjectValidationError(f"报告目录 reports/{safe_name} 越界。")
+            return resolved
+        return candidate
+
+    def _validate_layout(self, *, require_manifest: bool = True) -> None:
+        root = self._safe_root()
+        if require_manifest:
+            self.manifest_path(required=True)
+        for sub in SUBDIRS:
+            self._validate_direct_child_dir(root, sub)
+
+    @staticmethod
+    def _nonnegative_int(value: object) -> bool:
+        return isinstance(value, int) and not isinstance(value, bool) and value >= 0
 
     # ---- 便捷属性 ----
 
     @property
     def stored_filename(self) -> str:
-        return self.data["source"]["stored_filename"]
+        source = self.data.get("source")
+        if not isinstance(source, dict):
+            raise ProjectValidationError("项目清单 source 字段损坏。")
+        return self._safe_basename(source.get("stored_filename"), label="原稿存储文件名")
 
     @property
     def source_path(self) -> Path:
-        return self.root / "source" / self.stored_filename
+        parent = self.safe_subdir("source")
+        return self._validate_regular_file(
+            parent / self.stored_filename,
+            parent=parent,
+            label="原稿副本",
+            required=True,
+        )
 
     @property
     def working_path(self) -> Path:
-        return self.root / "working" / self.stored_filename
+        parent = self.safe_subdir("working")
+        return self._validate_regular_file(
+            parent / self.stored_filename,
+            parent=parent,
+            label="工作副本",
+            required=True,
+        )
 
     @property
     def source_sha256(self) -> str:
-        return self.data["source"]["sha256"]
+        value = self.data.get("source", {}).get("sha256")
+        if not isinstance(value, str) or not _SHA256_RE.fullmatch(value):
+            raise ProjectValidationError("项目清单中的原稿 SHA-256 非法。")
+        return value
 
     @property
     def source_format(self) -> str:
-        return self.data["source"]["format"]
+        value = self.data.get("source", {}).get("format")
+        if value not in set(SUPPORTED_FORMATS.values()):
+            raise ProjectValidationError("项目清单中的原稿格式非法。")
+        return value
 
     # ---- 创建 / 打开 ----
+
+    @staticmethod
+    def _input_identity(info: os.stat_result) -> tuple[int, int, int, int]:
+        return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns)
+
+    @classmethod
+    def _open_input_source(cls, input_path: Path):
+        """跟随云盘 reparse/symlink，只接受最终可打开的常规只读来源。"""
+        try:
+            stream = open(input_path, "rb")
+        except OSError as exc:
+            raise OakError(
+                f"找不到输入文件或无法读取：{input_path.name}。未发生任何项目写入。"
+            ) from exc
+        try:
+            opened_info = os.fstat(stream.fileno())
+            if not stat.S_ISREG(opened_info.st_mode):
+                raise OakError("输入最终目标必须是常规文件；未发生任何项目写入。")
+            resolved = input_path.resolve(strict=True)
+            resolved_info = os.stat(resolved, follow_symlinks=True)
+            if (
+                not stat.S_ISREG(resolved_info.st_mode)
+                or (resolved_info.st_dev, resolved_info.st_ino)
+                != (opened_info.st_dev, opened_info.st_ino)
+            ):
+                raise OakError("输入路径在打开期间发生变化，未发生任何项目写入。")
+            return stream, cls._input_identity(opened_info)
+        except Exception:
+            stream.close()
+            raise
+
+    @classmethod
+    def _validate_create_input_extension(cls, input_path: Path) -> str:
+        ext = input_path.suffix.lower()
+        if ext not in SUPPORTED_FORMATS:
+            raise OakError(
+                f"不支持的文件格式「{ext}」。支持：.docx / .md / .txt / .epub。"
+                "旧版 .doc 请先在 Word 中另存为 .docx。"
+            )
+        return ext
+
+    @classmethod
+    def _validate_create_target(cls, project_dir: Path) -> None:
+        if not os.path.lexists(project_dir):
+            return
+        try:
+            target_info = os.lstat(project_dir)
+        except OSError as exc:
+            raise OakError("项目目标目录无法安全读取；未发生任何写入。") from exc
+        if is_link_or_reparse(project_dir) or not stat.S_ISDIR(target_info.st_mode):
+            raise OakError("项目目标必须是非链接的常规目录；未发生任何写入。")
+        entries = list(project_dir.iterdir())
+        if not entries:
+            return
+        if len(entries) == 1 and entries[0].name == PROJECT_LOCK_FILENAME:
+            # 仅接受本应用上一次留下的完整协议锁。普通同名文件属于用户数据，
+            # 必须在加锁前拒绝且保持原字节。
+            validate_existing_lock_file(entries[0])
+            return
+        raise OakError(
+            f"项目目录不为空：{project_dir}。请选择空目录，避免覆盖已有内容。"
+        )
+
+    @classmethod
+    def preflight_create(
+        cls,
+        input_path: Path | str,
+        project_dir: Path | str,
+    ) -> None:
+        """纯只读创建门禁；通过前不得创建目录或写锁文件。"""
+        input_path = Path(input_path)
+        project_dir = Path(project_dir)
+        cls._validate_create_input_extension(input_path)
+        input_stream, _identity = cls._open_input_source(input_path)
+        input_stream.close()
+        cls._validate_create_target(project_dir)
 
     @classmethod
     def create(
@@ -90,85 +339,299 @@ class Project:
     ) -> "Project":
         input_path = Path(input_path)
         project_dir = Path(project_dir)
+        # CLI 在加锁前跑过纯只读门禁；锁内重验扩展名和目标，但输入正文
+        # 只打开一次。随后始终从该文件描述符复制到 source，再从受控 source
+        # 生成 working，避免检查/复制两次打开之间的来源替换竞态。
+        ext = cls._validate_create_input_extension(input_path)
+        cls._validate_create_target(project_dir)
+        input_stream, input_identity = cls._open_input_source(input_path)
+        created_root: tuple[Path, tuple[int, int]] | None = None
+        created_dirs: list[tuple[Path, tuple[int, int]]] = []
+        created_files: list[tuple[Path, tuple[int, int]]] = []
 
-        if not input_path.is_file():
-            raise OakError(f"找不到输入文件：{input_path.name}。原稿未被读取，也未发生任何写入。")
-        ext = input_path.suffix.lower()
-        if ext not in SUPPORTED_FORMATS:
-            raise OakError(
-                f"不支持的文件格式「{ext}」。支持：.docx / .md / .txt / .epub。"
-                "旧版 .doc 请先在 Word 中另存为 .docx。"
+        def remember(path: Path, info: os.stat_result) -> tuple[int, int]:
+            identity = (info.st_dev, info.st_ino)
+            return identity
+
+        def cleanup_created() -> None:
+            for path, identity in reversed(created_files):
+                try:
+                    info = os.lstat(path)
+                    if (
+                        (info.st_dev, info.st_ino) == identity
+                        and stat.S_ISREG(info.st_mode)
+                        and not is_link_or_reparse(path)
+                        and getattr(info, "st_nlink", 1) == 1
+                    ):
+                        try:
+                            os.chmod(path, stat.S_IWRITE)
+                        except OSError:
+                            pass
+                        path.unlink()
+                except OSError:
+                    pass
+            for path, identity in reversed(created_dirs):
+                try:
+                    info = os.lstat(path)
+                    if (
+                        (info.st_dev, info.st_ino) == identity
+                        and stat.S_ISDIR(info.st_mode)
+                        and not is_link_or_reparse(path)
+                    ):
+                        path.rmdir()
+                except OSError:
+                    pass
+            if created_root is not None:
+                root_path, identity = created_root
+                try:
+                    info = os.lstat(root_path)
+                    if (
+                        (info.st_dev, info.st_ino) == identity
+                        and stat.S_ISDIR(info.st_mode)
+                        and not is_link_or_reparse(root_path)
+                    ):
+                        root_path.rmdir()
+                except OSError:
+                    pass
+
+        try:
+            if project_dir.exists():
+                if is_link_or_reparse(project_dir) or not project_dir.is_dir():
+                    raise OakError(f"项目目录不是安全的常规目录：{project_dir}")
+                unexpected = [
+                    child for child in project_dir.iterdir()
+                    if child.name != PROJECT_LOCK_FILENAME
+                ]
+                if unexpected:
+                    raise OakError(
+                        f"项目目录不为空：{project_dir}。请选择空目录，避免覆盖已有内容。"
+                    )
+            else:
+                project_dir.mkdir(parents=True, exist_ok=False)
+                root_info = os.lstat(project_dir)
+                created_root = (project_dir.absolute(), remember(project_dir, root_info))
+            project_dir = cls._validate_root_path(project_dir)
+            for sub in SUBDIRS:
+                subdir = project_dir / sub
+                subdir.mkdir()
+                created_dirs.append((subdir, remember(subdir, os.lstat(subdir))))
+
+            stored = cls._safe_basename(input_path.name, label="原稿文件名")
+            source_copy = project_dir / "source" / stored
+            source_target = open(source_copy, "xb")
+            created_files.append(
+                (source_copy, remember(source_copy, os.fstat(source_target.fileno())))
             )
-        if project_dir.exists() and any(project_dir.iterdir()):
-            raise OakError(f"项目目录不为空：{project_dir}。请选择空目录，避免覆盖已有内容。")
+            with source_target:
+                shutil.copyfileobj(input_stream, source_target)
+                source_target.flush()
+                os.fsync(source_target.fileno())
+            if cls._input_identity(os.fstat(input_stream.fileno())) != input_identity:
+                raise OakError("输入稿件在复制期间发生变化，项目创建已安全中止。")
 
-        project_dir.mkdir(parents=True, exist_ok=True)
-        for sub in SUBDIRS:
-            (project_dir / sub).mkdir()
+            digest = sha256_file(source_copy)
+            # 原稿副本设为只读（语义保护；哈希验证才是硬保证）
+            os.chmod(source_copy, stat.S_IREAD)
+            working_copy = project_dir / "working" / stored
+            working_target = open(working_copy, "xb")
+            created_files.append(
+                (working_copy, remember(working_copy, os.fstat(working_target.fileno())))
+            )
+            with open(source_copy, "rb") as controlled_source, working_target:
+                shutil.copyfileobj(controlled_source, working_target)
+                working_target.flush()
+                os.fsync(working_target.fileno())
 
-        stored = input_path.name
-        source_copy = project_dir / "source" / stored
-        shutil.copyfile(input_path, source_copy)
-        digest = sha256_file(source_copy)
-        # 原稿副本设为只读（语义保护；哈希验证才是硬保证）
-        os.chmod(source_copy, stat.S_IREAD)
-        shutil.copyfile(input_path, project_dir / "working" / stored)
-
-        settings = dict(_DEFAULT_SETTINGS)
-        settings.update(
-            {
-                "manuscript_type": manuscript_type,
-                "language": language,
-                "citation_style": citation_style,
-                "check_depth": check_depth,
-                "epub_preview": epub_preview,
+            settings = dict(_DEFAULT_SETTINGS)
+            settings.update(
+                {
+                    "manuscript_type": manuscript_type,
+                    "language": language,
+                    "citation_style": citation_style,
+                    "check_depth": check_depth,
+                    "epub_preview": epub_preview,
+                }
+            )
+            now = now_iso()
+            data = {
+                "format_version": FORMAT_VERSION,
+                "app_version": _app_version(),
+                "project_id": secrets.token_hex(8),
+                "created_at": now,
+                "updated_at": now,
+                "source": {
+                    "stored_filename": stored,
+                    "format": SUPPORTED_FORMATS[ext],
+                    "sha256": digest,
+                    "size_bytes": source_copy.stat().st_size,
+                },
+                "settings": settings,
+                "rulepack": {"name": None, "version": None, "pinned": True},
+                "checks": [],
+                "check_seq": 0,
+                "issues_file": None,
+                "checkpoints": [],
+                "checkpoint_seq": 0,
+                "fixes": [],
+                "sync": {
+                    "schema_version": "1.0",
+                    "preference": "never_asked",
+                    "history": [],
+                },
+                "integrity": {"last_verified_at": None, "source_hash_ok": True},
             }
-        )
-        now = now_iso()
-        data = {
-            "format_version": FORMAT_VERSION,
-            "app_version": _app_version(),
-            "project_id": secrets.token_hex(8),
-            "created_at": now,
-            "updated_at": now,
-            "source": {
-                "stored_filename": stored,
-                "format": SUPPORTED_FORMATS[ext],
-                "sha256": digest,
-                "size_bytes": source_copy.stat().st_size,
-            },
-            "settings": settings,
-            "rulepack": {"name": None, "version": None, "pinned": True},
-            "checks": [],
-            "check_seq": 0,
-            "issues_file": None,
-            "checkpoints": [],
-            "checkpoint_seq": 0,
-            "fixes": [],
-            "sync": {"schema_version": "1.0", "preference": "never_asked", "history": []},
-            "integrity": {"last_verified_at": None, "source_hash_ok": True},
-        }
-        proj = cls(project_dir, data)
-        proj.save(touch=False)
-        return proj
+            manifest_path = project_dir / "project.json"
+            manifest_placeholder = open(manifest_path, "xb")
+            created_files.append(
+                (manifest_path, remember(manifest_path, os.fstat(manifest_placeholder.fileno())))
+            )
+            manifest_placeholder.close()
+            proj = cls(project_dir, data)
+            proj.save(touch=False)
+            proj._validate_manifest_and_files(validate_source_hash=True)
+            return proj
+        except Exception:
+            cleanup_created()
+            raise
+        finally:
+            input_stream.close()
 
     @classmethod
     def open(cls, project_dir: Path | str) -> "Project":
         project_dir = Path(project_dir)
-        manifest = project_dir / "project.json"
-        if not manifest.is_file():
-            raise OakError(f"该目录不是湖岸稿件项目（缺少 project.json）：{project_dir}")
-        data = read_json(manifest)
+        root = cls._validate_root_path(project_dir)
+        manifest = cls._validate_regular_file(
+            root / "project.json",
+            parent=root,
+            label="项目清单 project.json",
+            required=True,
+        )
+        try:
+            data = read_json(manifest)
+        except (OSError, UnicodeError, ValueError) as exc:
+            raise ProjectValidationError("项目清单不是有效的 UTF-8 JSON，拒绝打开项目。") from exc
+        if not isinstance(data, dict):
+            raise ProjectValidationError("项目清单顶层必须是对象，拒绝打开项目。")
         if data.get("format_version") != FORMAT_VERSION:
-            raise OakError(
+            raise ProjectValidationError(
                 f"项目格式版本「{data.get('format_version')}」不受本版本支持（支持 {FORMAT_VERSION}）。"
             )
-        return cls(project_dir, data)
+        project = cls(root, data)
+        project._validate_manifest_and_files(validate_source_hash=True)
+        return project
 
-    def save(self, *, touch: bool = True) -> None:
+    def save(self, *, touch: bool = True, _validate_source_hash: bool = True) -> None:
         if touch:
             self.data["updated_at"] = now_iso()
-        write_json(self.root / "project.json", self.data)
+        self._validate_manifest_and_files(validate_source_hash=_validate_source_hash)
+        write_json(self.manifest_path(required=False), self.data)
+
+    def _validate_manifest_and_files(self, *, validate_source_hash: bool) -> None:
+        """完整验证清单 schema 与所有清单控制路径；任何业务写入前重跑。"""
+        self._validate_layout(require_manifest=False)
+        data = self.data
+        if not isinstance(data, dict) or data.get("format_version") != FORMAT_VERSION:
+            raise ProjectValidationError("项目清单版本或顶层结构非法。")
+        if not isinstance(data.get("app_version"), str) or not data["app_version"]:
+            raise ProjectValidationError("项目清单 app_version 非法。")
+        if not isinstance(data.get("project_id"), str) or not re.fullmatch(
+            r"[0-9a-f]{16}", data["project_id"]
+        ):
+            raise ProjectValidationError("项目清单 project_id 非法。")
+        for field in ("settings", "rulepack", "sync", "integrity"):
+            if not isinstance(data.get(field), dict):
+                raise ProjectValidationError(f"项目清单 {field} 字段必须是对象。")
+        for field in ("checks", "checkpoints", "fixes"):
+            if not isinstance(data.get(field), list):
+                raise ProjectValidationError(f"项目清单 {field} 字段必须是数组。")
+        for field in ("check_seq", "checkpoint_seq"):
+            if not self._nonnegative_int(data.get(field)):
+                raise ProjectValidationError(f"项目清单 {field} 字段非法。")
+
+        source = data.get("source")
+        if not isinstance(source, dict):
+            raise ProjectValidationError("项目清单 source 字段必须是对象。")
+        stored = self.stored_filename
+        source_format = self.source_format
+        expected_format = SUPPORTED_FORMATS.get(Path(stored).suffix.lower())
+        if expected_format != source_format:
+            raise ProjectValidationError("原稿文件扩展名与清单 format 不一致。")
+        if not self._nonnegative_int(source.get("size_bytes")):
+            raise ProjectValidationError("项目清单中的原稿 size_bytes 非法。")
+        source_file = self.source_path
+        working_file = self.working_path
+        try:
+            if os.path.samefile(source_file, working_file):
+                raise ProjectValidationError("原稿副本与工作副本指向同一文件，拒绝打开项目。")
+        except OSError as exc:
+            raise ProjectValidationError("无法证明原稿副本与工作副本相互独立。") from exc
+        if validate_source_hash and source_file.stat().st_size != source["size_bytes"]:
+            raise ProjectValidationError("原稿副本大小与项目清单不一致，拒绝打开项目。")
+        expected_hash = self.source_sha256
+        if validate_source_hash and sha256_file(source_file) != expected_hash:
+            raise ProjectValidationError("原稿副本 SHA-256 与项目清单不一致，拒绝打开项目。")
+
+        issues_file = data.get("issues_file")
+        if issues_file not in (None, "reports/issues.json"):
+            raise ProjectValidationError("项目清单 issues_file 路径非法。")
+        if issues_file is not None:
+            self.issues_path(required=True)
+
+        check_ids: set[str] = set()
+        max_check_sequence = 0
+        for check in data["checks"]:
+            if not isinstance(check, dict):
+                raise ProjectValidationError("项目清单中的检查记录必须是对象。")
+            check_id = check.get("check_id")
+            if not isinstance(check_id, str) or not _CHECK_ID_RE.fullmatch(check_id):
+                raise ProjectValidationError("项目清单中的 check_id 非法。")
+            if check_id in check_ids:
+                raise ProjectValidationError(f"项目清单中的 check_id 重复：{check_id}")
+            check_ids.add(check_id)
+            max_check_sequence = max(max_check_sequence, int(check_id[6:]))
+            expected_result = f"reports/{check_id}.json"
+            if check.get("result_file") != expected_result:
+                raise ProjectValidationError(f"检查结果路径与 check_id 不一致：{check_id}")
+            self.report_path(expected_result, required=True)
+        if data["check_seq"] < max_check_sequence:
+            raise ProjectValidationError("项目清单 check_seq 小于既有检查记录序号。")
+
+        checkpoint_ids: set[str] = set()
+        max_checkpoint_sequence = 0
+        for entry in data["checkpoints"]:
+            if not isinstance(entry, dict):
+                raise ProjectValidationError("项目清单中的检查点记录必须是对象。")
+            checkpoint_id = self._validate_checkpoint_id(entry.get("checkpoint_id"))
+            if checkpoint_id in checkpoint_ids:
+                raise ProjectValidationError(f"项目清单中的检查点 ID 重复：{checkpoint_id}")
+            checkpoint_ids.add(checkpoint_id)
+            max_checkpoint_sequence = max(max_checkpoint_sequence, int(checkpoint_id[3:]))
+            if entry.get("path") != f"checkpoints/{checkpoint_id}":
+                raise ProjectValidationError(f"检查点路径与 ID 不一致：{checkpoint_id}")
+            self._checkpoint_dir(entry)
+        if data["checkpoint_seq"] < max_checkpoint_sequence:
+            raise ProjectValidationError("项目清单 checkpoint_seq 小于既有检查点序号。")
+
+        fix_ids: set[str] = set()
+        for fix in data["fixes"]:
+            if not isinstance(fix, dict):
+                raise ProjectValidationError("项目清单中的修复记录必须是对象。")
+            fix_id = fix.get("fix_run_id")
+            if not isinstance(fix_id, str) or not _FIX_ID_RE.fullmatch(fix_id):
+                raise ProjectValidationError("项目清单中的 fix_run_id 非法。")
+            if fix_id in fix_ids:
+                raise ProjectValidationError(f"项目清单中的 fix_run_id 重复：{fix_id}")
+            fix_ids.add(fix_id)
+            checkpoint_id = fix.get("checkpoint_id")
+            if checkpoint_id is not None:
+                if not isinstance(checkpoint_id, str) or not _CHECKPOINT_ID_RE.fullmatch(
+                    checkpoint_id
+                ):
+                    raise ProjectValidationError(
+                        f"修复记录引用的检查点 ID 非法：{fix_id}"
+                    )
+            if "applied" in fix and not isinstance(fix.get("applied"), list):
+                raise ProjectValidationError(f"修复记录 applied 字段非法：{fix_id}")
 
     # ---- 检查点 ----
 
@@ -201,22 +664,17 @@ class Project:
         if Path(raw_path).is_absolute() or ".." in Path(raw_path).parts:
             raise OakError(f"检查点路径越界：{checkpoint_id}")
 
-        project_root = self.root.resolve()
-        checkpoint_root = (self.root / "checkpoints").resolve()
-        try:
-            checkpoint_root.relative_to(project_root)
-        except ValueError as exc:
-            raise OakError("检查点根目录越出项目范围。") from exc
-
-        candidate = self.root / raw_path
-        if not candidate.is_dir() or candidate.is_symlink():
+        checkpoint_root = self.safe_subdir("checkpoints")
+        candidate = checkpoint_root / checkpoint_id
+        if (
+            not candidate.is_dir()
+            or is_link_or_reparse(candidate)
+        ):
             raise OakError(f"检查点目录缺失或不安全：{checkpoint_id}")
         resolved = candidate.resolve()
-        try:
-            resolved.relative_to(checkpoint_root)
-        except ValueError as exc:
-            raise OakError(f"检查点路径越出项目范围：{checkpoint_id}") from exc
-        return candidate
+        if resolved.parent != checkpoint_root or resolved.name != checkpoint_id:
+            raise OakError(f"检查点路径越出项目范围：{checkpoint_id}")
+        return resolved
 
     @staticmethod
     def _checkpoint_file(cp_dir: Path, relative: str, *, required: bool = True) -> Path | None:
@@ -225,7 +683,15 @@ class Project:
             if required:
                 raise OakError(f"检查点文件缺失：{relative}")
             return None
-        if not candidate.is_file() or candidate.is_symlink():
+        try:
+            info = os.lstat(candidate)
+        except OSError as exc:
+            raise OakError(f"检查点文件无法安全读取：{relative}") from exc
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or is_link_or_reparse(candidate)
+            or getattr(info, "st_nlink", 1) != 1
+        ):
             raise OakError(f"检查点文件不安全：{relative}")
         try:
             candidate.resolve().relative_to(cp_dir.resolve())
@@ -234,19 +700,7 @@ class Project:
         return candidate
 
     def _report_path(self, relative: object, *, required: bool) -> Path:
-        if not isinstance(relative, str):
-            raise OakError("检查记录中的结果路径非法。")
-        normalized = relative.replace("\\", "/")
-        if not normalized.startswith("reports/") or Path(relative).is_absolute() or ".." in Path(relative).parts:
-            raise OakError(f"检查结果路径越界：{relative}")
-        candidate = self.root / relative
-        try:
-            candidate.resolve().relative_to((self.root / "reports").resolve())
-        except ValueError as exc:
-            raise OakError(f"检查结果路径越界：{relative}") from exc
-        if required and (not candidate.is_file() or candidate.is_symlink()):
-            raise OakError(f"检查结果文件缺失或不安全：{relative}")
-        return candidate
+        return self.report_path(relative, required=required)
 
     def _snapshot_project_state(self) -> dict:
         return {field: copy.deepcopy(self.data.get(field)) for field in _CHECKPOINT_STATE_FIELDS}
@@ -415,11 +869,20 @@ class Project:
         return result
 
     def _delete_checkpoint_directories(self, entries: list[dict]) -> None:
+        checkpoint_root = self.safe_subdir("checkpoints")
         for entry in entries:
             try:
                 cp_dir = self._checkpoint_dir(entry)
             except OakError:
-                cp_dir = self.root / "checkpoints" / str(entry.get("checkpoint_id", "invalid"))
+                checkpoint_id = self._validate_checkpoint_id(entry.get("checkpoint_id"))
+                cp_dir = checkpoint_root / checkpoint_id
+                if cp_dir.exists() and (
+                    is_link_or_reparse(cp_dir)
+                    or cp_dir.resolve().parent != checkpoint_root
+                ):
+                    raise ProjectValidationError(
+                        f"待删除检查点目录不安全：{checkpoint_id}"
+                    )
             shutil.rmtree(cp_dir, ignore_errors=True)
 
     def _prune_checkpoints(
@@ -465,19 +928,21 @@ class Project:
         }
         while True:
             checkpoint_id = f"cp-{sequence:04d}"
-            cp_dir = self.root / "checkpoints" / checkpoint_id
+            checkpoint_root = self.safe_subdir("checkpoints")
+            cp_dir = checkpoint_root / checkpoint_id
             if checkpoint_id not in known_ids and not cp_dir.exists():
                 break
             sequence += 1
 
-        stage_dir = self.root / "checkpoints" / f".{checkpoint_id}-{secrets.token_hex(6)}.tmp"
+        checkpoint_root = self.safe_subdir("checkpoints")
+        stage_dir = checkpoint_root / f".{checkpoint_id}-{secrets.token_hex(6)}.tmp"
         state = self._snapshot_project_state()
         state_doc = {
             "schema_version": CHECKPOINT_STATE_VERSION,
             "project_state": state,
             "check_results": [],
         }
-        issues_path = self.root / "reports" / "issues.json"
+        issues_path = self.issues_path(required=False)
         try:
             stage_dir.mkdir(parents=False)
             staged_working = stage_dir / self.stored_filename
@@ -551,7 +1016,7 @@ class Project:
             staged.append((working_stage, self.working_path, snapshot["working_sha256"]))
 
             if snapshot["has_issues"]:
-                issues_target = self.root / "reports" / "issues.json"
+                issues_target = self.issues_path(required=False)
                 issues_stage = issues_target.parent / f".issues.{token}.restore"
                 shutil.copyfile(snapshot["issues"], issues_stage)
                 staged.append((issues_stage, issues_target, sha256_file(snapshot["issues"])))
@@ -568,7 +1033,7 @@ class Project:
             for stage, target, _expected_hash in staged:
                 os.replace(stage, target)
             if not snapshot["has_issues"]:
-                (self.root / "reports" / "issues.json").unlink(missing_ok=True)
+                self.issues_path(required=False).unlink(missing_ok=True)
         finally:
             for stage, _target, _expected_hash in staged:
                 stage.unlink(missing_ok=True)
@@ -620,7 +1085,7 @@ class Project:
         source_hash_before = self._assert_source_intact()
 
         operation_data = copy.deepcopy(self.data)
-        checkpoint_root = self.root / "checkpoints"
+        checkpoint_root = self.safe_subdir("checkpoints")
         original_checkpoint_entries = {child.name for child in checkpoint_root.iterdir()}
         safety_entry = None
         safety_snapshot = None
@@ -695,31 +1160,51 @@ class Project:
 
     def verify(self) -> list[str]:
         problems: list[str] = []
+        layout_safe = True
+        try:
+            self._safe_root()
+            self.manifest_path(required=True)
+        except ProjectValidationError as exc:
+            problems.append(str(exc))
+            return problems
         for sub in SUBDIRS:
-            if not (self.root / sub).is_dir():
-                problems.append(f"缺少子目录：{sub}/")
-        if self.source_path.is_file():
-            actual = sha256_file(self.source_path)
+            try:
+                self.safe_subdir(sub)
+            except ProjectValidationError:
+                problems.append(f"缺少或不安全的固定子目录：{sub}/")
+                layout_safe = False
+        if not layout_safe:
+            # 不能证明 project.json 的固定父目录仍安全时，绝不写完整性状态。
+            return problems
+        try:
+            source_path = self.source_path
+            actual = sha256_file(source_path)
             if actual != self.source_sha256:
                 problems.append(
                     "原稿 SHA-256 与创建时记录不一致：原稿副本可能被外部修改。"
                     "请勿继续在本项目上操作，可从原始文件重建项目。"
                 )
-        else:
-            problems.append("原稿副本缺失（source/ 中找不到文件）。")
-        if not self.working_path.is_file():
-            problems.append("工作副本缺失（working/ 中找不到文件）。")
+        except ProjectValidationError:
+            problems.append("原稿副本缺失或不安全（source/ 中找不到安全常规文件）。")
+        try:
+            self.working_path
+        except ProjectValidationError:
+            problems.append("工作副本缺失或不安全（working/ 中找不到安全常规文件）。")
         for check in self.data.get("checks", []):
-            if not (self.root / check["result_file"]).is_file():
+            try:
+                self.report_path(check.get("result_file"), required=True)
+            except (ProjectValidationError, OakError):
                 problems.append(f"检查结果文件缺失：{check['result_file']}")
         for cp in self.data.get("checkpoints", []):
-            if not (self.root / cp["path"]).is_dir():
+            try:
+                self._checkpoint_dir(cp)
+            except (ProjectValidationError, OakError):
                 problems.append(f"检查点目录缺失：{cp['path']}")
         self.data["integrity"] = {
             "last_verified_at": now_iso(),
             "source_hash_ok": not any("SHA-256" in p for p in problems),
         }
-        self.save()
+        self.save(_validate_source_hash=False)
         return problems
 
 

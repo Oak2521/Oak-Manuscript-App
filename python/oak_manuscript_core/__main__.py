@@ -15,11 +15,23 @@ from pathlib import Path
 
 from . import __version__
 from . import ops
-from .errors import OakError
+from .errors import OakError, StructuredOakError
 from .project import Project
+from .project_lock import ProjectWriteLock
 from .rulepack import load_rulepack
 
 _REPO = Path(__file__).resolve().parents[2]
+_MUTATING_COMMANDS = {
+    "create",
+    "check",
+    "recheck",
+    "fix",
+    "export",
+    "verify",  # verify 会更新 integrity 状态，并非纯读。
+    "restore-checkpoint",
+    "external",
+    "issue",
+}
 
 
 def _default_rulepack() -> Path:
@@ -253,7 +265,25 @@ def main(argv: list[str] | None = None) -> int:
         "issue": _cmd_issue,
     }
     try:
+        if args.command in _MUTATING_COMMANDS:
+            if args.command == "create":
+                Project.preflight_create(Path(args.input), Path(args.project))
+            else:
+                # 锁前只读门禁：任意普通目录或受污染项目不得因此创建/覆盖锁文件。
+                # 锁内 handler 仍会再次 Project.open，封闭门禁后的竞态窗口。
+                Project.open(Path(args.project))
+            with ProjectWriteLock(
+                Path(args.project),
+                command=args.command,
+                create_root=args.command == "create",
+                cleanup_on_error=args.command == "create",
+            ):
+                return handlers[args.command](args)
         return handlers[args.command](args)
+    except StructuredOakError as exc:
+        _emit(exc.as_payload())
+        print(f"错误：{exc.message}", file=sys.stderr)
+        return 2
     except OakError as exc:
         print(f"错误：{exc.message}", file=sys.stderr)
         return 2

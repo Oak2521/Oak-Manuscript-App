@@ -110,7 +110,7 @@
   "check_id": "check-0001",
   "kind": "check | recheck",
   "started_at": "…", "finished_at": "…",
-  "app_version": "0.1.0-alpha.1",
+  "app_version": "0.1.0-alpha.2",
   "rulepack": { "name": "oak-rules", "version": "1.0.0" },
   "settings_snapshot": { "…": "创建检查时 project.settings 的完整快照" },
   "citation_note": "本次按 gbt7714-2025 体例检查（由默认规则 v1.0.0 选定）",
@@ -121,7 +121,24 @@
 }
 ```
 
-## 7. 同步负载 schema（v2.0，待实现）
+检查结果一致性约束：报告 `check_id` 必须对应项目 `checks[]` 记录；项目固定规则包、检查记录 `rulepack_version` 和报告规则包必须一致。`project.json.app_version` 记录项目创建版本，报告 `app_version` 记录本次检查所用核心版本，二者在旧项目升级后不要求永久相等。源码/打包 smoke 使用当次新建项目，因此会读取真实项目清单及其引用报告，额外要求两处版本都等于待验 APP 版本；不能仅凭 Renderer 或 `app:info` 自报版本。
+
+## 7. 外部验证状态模型（0.1.0-alpha.2）
+
+`external_tools` 的每个工具状态只允许 `not_run | passed | failed`，且必须以**本次进程**生成、结构合法的报告为依据：
+
+| 工具 | `passed` | `failed` | `not_run` |
+|---|---|---|---|
+| EpubCheck 5.3.0 | 退出码 0，报告版本正确且 fatal/error 均为 0 | 退出码 1，报告版本正确且 fatal+error > 0 | 工具/可信清单缺失、超时、报告非法、版本不符，或退出码与报告计数不一致 |
+| Ace 1.4.6 | 退出码 0，安全的本次报告 `earl:outcome=pass` | 退出码 0，安全的本次报告 `earl:outcome=fail` | 工具/Chrome/helper/可信清单缺失、超时、报告非法，或任何非零退出码 |
+
+`failed` 表示验证工具成功运行并发现稿件问题，不是运行错误。外部工具的详情可包含工具版本和数量统计，但不得含稿件正文、标题、文件名、本地路径或问题预览。报告渲染器不得把 `not_run` 翻译为“通过”。
+
+固定样本作为状态契约：`epub_good.epub` 在 EpubCheck/Ace 均为 `passed`；`epub_needs_review.epub` 在两者均为 `failed`。资源门禁还会用 JRE 对这两个样本执行好/坏矩阵，只有结果与固定退出码、版本和计数一致才算探针成功。
+
+运行前可信性约束：Ace 只有在 stage manifest、受版本控制的 full lock、236 包闭包、补丁与全部文件一致时才可执行，Python 运行路径须独立复核；EpubCheck/JRE 同理先通过分发与平台锁。非原生 platform/arch 不能产生运行状态；显式 `--no-runtime-probe` 的纯静态门禁结果也不得写入 `external_tools` 作为 `passed` 或 `failed`。
+
+## 8. 同步负载 schema（v2.0，待实现）
 
 商业方案只允许同步检查结果与必要元数据。旧 v1 占位中的 `project_display_name`、Issue `preview` 和 `file` 级上传全部废止，不得为兼容旧文档而实现。
 

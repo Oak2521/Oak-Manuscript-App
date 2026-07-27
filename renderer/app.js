@@ -96,7 +96,7 @@ function renderIssues() {
 
   const list = $("#issue-list");
   const items = filteredIssues();
-  list.innerHTML = items.length ? "" : '<li class="muted" style="cursor:default">（本组没有问题）</li>';
+  list.innerHTML = items.length ? "" : '<li class="muted empty-issue">（本组没有问题）</li>';
   for (const issue of items) {
     const li = document.createElement("li");
     li.className = `sev-${issue.severity}` +
@@ -121,7 +121,7 @@ function renderDetail(issue) {
   if (!issue) { el.innerHTML = '<p class="muted">从左侧选择一条问题查看详情。</p>'; return; }
   el.innerHTML = `
     <span class="detail-sev ${issue.severity}">${SEV_LABEL[issue.severity]}</span>
-    <h2 style="margin:8px 0"></h2>
+    <h2 class="issue-detail-title"></h2>
     <div class="muted"></div>
     <div class="detail-block"><h4>原文预览</h4><div class="preview-box"></div></div>
     <div class="detail-block"><h4>问题解释</h4><p class="expl"></p></div>
@@ -469,7 +469,8 @@ const actions = {
   async doExport(outDir) {
     const r = unwrap(await window.oak.exportAll(state.project, outDir || undefined));
     state.exportFiles = r.result.files;
-    $("#export-files").innerHTML = state.exportFiles.map((f) => `<li>${f}</li>`).join("");
+    state.pdfPath = null;
+    renderExportFiles();
     $("#btn-export-pdf").disabled = false;
     $("#btn-open-folder").disabled = false;
     renderExportSummary();
@@ -480,7 +481,7 @@ const actions = {
   async makePdf() {
     const r = unwrap(await window.oak.exportPdf(state.project));
     state.pdfPath = r.path;
-    $("#export-files").innerHTML += `<li>${r.path}</li>`;
+    renderExportFiles();
     toast("PDF 审阅样张已生成（最多 16 页，仅供审阅，非印前文件）");
     return { path: r.path };
   },
@@ -520,6 +521,19 @@ function renderExportSummary() {
     `<strong>原稿未被修改。</strong>` +
     `<p>已解决 ${done} 项，已拒绝 ${rejected} 项；未处理：必须处理 ${c.error}、建议处理 ${c.warning}、可选改进 ${c.suggestion}。` +
     `外部验证（EpubCheck / Ace）：未运行。导出文件保存在项目 exports/ 目录。</p>`;
+}
+
+function renderExportFiles() {
+  const list = $("#export-files");
+  const paths = state.pdfPath
+    ? [...state.exportFiles, state.pdfPath]
+    : [...state.exportFiles];
+  const items = paths.map((filePath) => {
+    const item = document.createElement("li");
+    item.textContent = String(filePath);
+    return item;
+  });
+  list.replaceChildren(...items);
 }
 
 // ---------- 标准与设置页 ----------

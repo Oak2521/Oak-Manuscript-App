@@ -4,6 +4,45 @@
 
 ## [未发布]
 
+### 2026-07-27 — 0.1.0-alpha.2（ChatGPT Windows 离线资源检查点）
+
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.2`。该标签只表示经测试的源码状态，不表示已经生成安装包或正式发行。
+
+**Windows alpha 运行资源与可信门禁**
+
+- 将 APP、Python 核心和 lockfile 版本统一为 `0.1.0-alpha.2`；源码 smoke 新增应用版本身份断言，防止旧包或旧源码冒充当前版本；
+- Windows x64 嵌入式 Python 运行时纳入 34 个文件、21,260,753 字节的受版本控制全量哈希清单，并校验 `_pth` 隔离语义；只有全部资源校验通过后才运行探针；
+- Temurin JRE 纳入 207 个文件、52,384,264 字节的锁定清单；EpubCheck 5.3.0 纳入 49 个文件、36,263,890 字节的完整分发清单，并以好样本/缺陷样本双向验证状态和错误数；
+- Ace 1.4.6 形成 236 包、6,672 文件、58,964,235 字节的生产闭包；新增受版本控制的完整阶段 lock，固定所有文件哈希、许可证材料和一个受审核的 XHTML 隔离替换，移除作者脚本并限制加载协议；stage/lock 事务失败会恢复旧目录与旧锁；
+- Ace staging 与资源门禁均拒绝空许可证文件；18 个依赖包的生成元数据通知仍不能代替原始许可证审计，且全部生产依赖闭包仍需正式人工审计；
+- Python/EpubCheck/JRE/Ace 的 packaged 路径不再静默回退到系统 PATH 或开发树；资源缺失、增删、篡改、平台/架构不匹配均由门禁拒绝；
+- Electron、源码 smoke 和资源探针统一用净化环境及 `-I -S -X utf8` bootstrap 调用 Python 核心；macOS x64/arm64 CPython 均固定为 `3.13.14`；
+- JRE 运行目录与 tracked lock 作为一个事务换入，目录或锁提交失败时恢复原运行时和原锁字节；
+- 对参与字节级信任锁的 manifest 与 Ace 隔离替换强制 Git checkout 使用 LF，并加入跨平台字节稳定性测试，避免 Windows `core.autocrlf` 破坏固定哈希；
+- 信任清单与模块列表统一采用与系统 locale/ICU 无关的 UTF-16 code-unit 顺序；
+- macOS 已拆分 x64/arm64 原生 runner，并提供明确不执行运行时探针的跨主机静态聚合；对应 Electron/Python/JRE 资源尚未准备，不能据此声称 macOS 已通过运行验证、可构建或可安装。
+
+**项目、IPC 与桌面安全收口**
+
+- Electron 默认 session 启动即应用离线 Chromium switches，并拦截 `http/https/ws/wss/ftp`；Renderer 继续使用固定 CSP，未来获授权的联网 Provider 不得放宽默认 session；
+- 源码 smoke 的项目、临时目录、用户数据、缓存与崩溃目录全部收敛到 `out/source-smoke/`，并拒绝项目外 Electron 或输出路径；
+- PDF 样张迁入非持久、无缓存隔离 session，禁用 JavaScript、导航、新窗口与网络；加载的 HTML 在打印前复核文件身份，PDF 经项目/`exports` 父链身份验证后同目录暂存、`fsync` 并原子换入；
+- Python 项目打开增加完整 schema、固定子目录、清单控制路径、source/working 独立性、链接/联接/硬链接与哈希校验；所有变更型 CLI 命令统一使用非阻塞跨进程内核写锁，争用返回结构化 `PROJECT_WRITE_LOCKED`；
+- `create` 锁前只读预检且失败零污染；锁内只打开一次用户输入，以同一文件描述符复制到 `source`，再由受控 `source` 生成 `working`。允许最终目标为常规文件的只读 OneDrive/reparse/symlink 输入，复制期间变化或失败时只清理本事务创建内容，并保留已有空目录或恢复旧协议锁字节；
+- 自选导出目录逐级拒绝链接/联接，项目内自选目录只允许位于 `exports/`；全部目标在首个字节前预检，硬链接目标 fail-closed，每个输出文件以同目录暂存和原子换入；
+- Electron 桥明确区分退出码 1 的有效业务结果与退出码 2 的运行错误，并保留 Python 结构化错误的 `code/message/retryable/details`；
+- CPython 探针改为核对 implementation、完整三段版本、releaselevel 和 serial；Ace full lock 同时固定 manifest 原始字节身份，语义等价的字节漂移也拒绝。
+
+**验证与发布边界**
+
+- 原生/沙箱外 `npm test` 统一入口 PASS：Node TAP 共 99 项，96 通过、0 失败、3 项 Windows symlink/junction 权限条件跳过；Python 默认共 270 项，0 失败、0 错误、3 项条件跳过；
+- 沙箱外隐藏 Chrome 的 `OAK_TEST_ACE=1`：270 项、0 失败、0 错误、1 项条件跳过、36.112 秒；受限沙箱内 Chrome 超时按设计 fail-closed，不作为工具通过或代码失败；
+- 沙箱外隐藏 Electron 源码 smoke：`SMOKE-RESULT: PASS`；输出严格位于 `out/source-smoke/projects/`，DOCX/EPUB 完成检查、集中预览、批量修复、恢复和再次修复，两个项目均保持 `source_hash_ok=true`；PDF 为 258,394 / 161,830 字节；
+- Windows alpha 资源门禁实际执行运行时探针并通过；sale 门禁按设计以 18 项 blocker 失败，覆盖许可证/来源审计、运行与应用资源可信根、Electron/builder 输入、Ace helper/browser/OS 网络隔离和 Windows 签名；
+- 经批准的提升权限 `build:win` 完成本地 JRE/Ace staging 和 Windows alpha 资源探针后，仅在缺少 `tools/electron-builder/win32-x64` 处停止；没有联网，也没有生成 alpha.2 NSIS 或 ZIP；打包版 smoke、干净系统验证和签名尚未运行；
+- macOS 跨主机静态门禁可执行但按预期 FAIL：缺 darwin-x64/arm64 Electron dist、两架构 Python runtime 锁和两架构 JRE；不能据此声称 macOS 可构建或已发行；
+- 本条只记录源码、资源和门禁进展；旧 0.0.1 分发物不是 alpha.2 产物，可售卖正式版仍未达到。
+
 ### 2026-07-26 — 0.1.0-alpha.1（ChatGPT 商业正式版开发线）
 
 **可信批量修复 P0**

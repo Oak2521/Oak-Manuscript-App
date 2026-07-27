@@ -9,17 +9,18 @@ import copy
 import json
 import os
 import shutil
+import stat
 import tempfile
 from pathlib import Path
 
 from . import __version__
 from .engine import check_document, manuscript_status_level
-from .errors import OakError
+from .errors import OakError, ProjectValidationError
 from .fix_plans import build_fix_plan
 from .fixes import WHITELIST, apply_fixes
 from .project import MAX_CHECKPOINTS, Project
 from .readers.docx_reader import read_docx
-from .safety import ensure_within
+from .safety import ensure_within, is_link_or_reparse
 from .util import now_iso, read_json, sha256_file, write_json
 
 DISCLAIMER = (
@@ -28,6 +29,109 @@ DISCLAIMER = (
 )
 
 _STATUS_VALUES = {"open", "accepted", "rejected", "resolved"}
+
+
+def _safe_export_directory(path: Path, *, create: bool) -> Path:
+    """逐级拒绝链接/联接并（可选）创建用户指定导出目录。"""
+    lexical = Path(path).absolute()
+    chain = list(reversed((lexical, *lexical.parents)))
+    for candidate in chain:
+        exists = os.path.lexists(candidate)
+        if not exists:
+            if not create:
+                raise ProjectValidationError(f"导出目录在写入前消失：{candidate}")
+            try:
+                candidate.mkdir(exist_ok=False)
+            except OSError as exc:
+                raise ProjectValidationError(f"无法安全创建导出目录：{candidate}") from exc
+        try:
+            info = os.lstat(candidate)
+        except OSError as exc:
+            raise ProjectValidationError(f"无法安全读取导出目录父链：{candidate}") from exc
+        if is_link_or_reparse(candidate) or not stat.S_ISDIR(info.st_mode):
+            raise ProjectValidationError(
+                f"导出目录父链含链接、目录联接或非常规目录：{candidate}"
+            )
+    try:
+        return lexical.resolve(strict=True)
+    except OSError as exc:
+        raise ProjectValidationError(f"导出目录无法安全解析：{lexical}") from exc
+
+
+def _safe_export_destination(directory: Path, filename: str) -> Path:
+    if (
+        not isinstance(filename, str)
+        or not filename
+        or filename in {".", ".."}
+        or "/" in filename
+        or "\\" in filename
+        or "\x00" in filename
+    ):
+        raise ProjectValidationError("导出文件名非法。")
+    safe_dir = _safe_export_directory(directory, create=False)
+    candidate = safe_dir / filename
+    if os.path.lexists(candidate):
+        try:
+            info = os.lstat(candidate)
+        except OSError as exc:
+            raise ProjectValidationError(f"无法安全读取已有导出目标：{filename}") from exc
+        if (
+            is_link_or_reparse(candidate)
+            or not stat.S_ISREG(info.st_mode)
+            or getattr(info, "st_nlink", 1) != 1
+        ):
+            raise ProjectValidationError(
+                f"导出目标 {filename} 是链接、硬链接或非常规文件，拒绝覆盖。"
+            )
+        resolved = candidate.resolve(strict=True)
+        if resolved.parent != safe_dir or resolved.name != filename:
+            raise ProjectValidationError(f"导出目标越出指定目录：{filename}")
+    return candidate
+
+
+def _atomic_export_bytes(directory: Path, filename: str, payload: bytes) -> Path:
+    """同目录完整暂存并原子换入；换入前再次验证父链和既有目标。"""
+    destination = _safe_export_destination(directory, filename)
+    fd, raw_stage = tempfile.mkstemp(prefix=f".{filename}.", suffix=".tmp", dir=directory)
+    stage = Path(raw_stage)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        destination = _safe_export_destination(directory, filename)
+        os.replace(stage, destination)
+        return destination
+    except Exception:
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+        raise
+    finally:
+        stage.unlink(missing_ok=True)
+
+
+def _atomic_export_copy(directory: Path, filename: str, source: Path) -> Path:
+    destination = _safe_export_destination(directory, filename)
+    fd, raw_stage = tempfile.mkstemp(prefix=f".{filename}.", suffix=".tmp", dir=directory)
+    stage = Path(raw_stage)
+    try:
+        with open(source, "rb") as source_stream, os.fdopen(fd, "wb") as target_stream:
+            shutil.copyfileobj(source_stream, target_stream)
+            target_stream.flush()
+            os.fsync(target_stream.fileno())
+        destination = _safe_export_destination(directory, filename)
+        os.replace(stage, destination)
+        return destination
+    except Exception:
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+        raise
+    finally:
+        stage.unlink(missing_ok=True)
 
 
 def _read_document(project: Project):
@@ -55,14 +159,14 @@ def _issue_key(issue: dict) -> tuple:
 
 
 def load_issues(project: Project) -> list[dict]:
-    path = project.root / "reports" / "issues.json"
+    path = project.issues_path(required=False)
     if not path.is_file():
         return []
     return read_json(path)
 
 
 def save_issues(project: Project, issues: list[dict]) -> None:
-    write_json(project.root / "reports" / "issues.json", issues)
+    write_json(project.issues_path(required=False), issues)
 
 
 def set_issue_status(project: Project, issue_id: str, status: str) -> dict:
@@ -146,7 +250,7 @@ def run_check(project: Project, pack: dict, *, kind: str = "check"):
         "external_tools": {"epubcheck": "not_run", "ace": "not_run"},
         "disclaimer": DISCLAIMER,
     }
-    write_json(project.root / record["result_file"], result_doc)
+    write_json(project.report_path(record["result_file"], required=False), result_doc)
     save_issues(project, outcome.issues)
     project.data["checks"].append(record)
     project.data["issues_file"] = "reports/issues.json"
@@ -163,7 +267,7 @@ def _ensure_source_unchanged(project: Project) -> None:
 
 def plan_fixes(project: Project, pack: dict) -> dict:
     """返回当前项目的完整批量修复预览；本函数严格只读。"""
-    if not project.data.get("checks") or not (project.root / "reports" / "issues.json").is_file():
+    if not project.data.get("checks") or not project.issues_path(required=False).is_file():
         raise OakError("尚未运行检查，无法生成修复计划。请先执行 check。")
     pinned = project.data.get("rulepack") or {}
     if pinned.get("name") and (
@@ -211,7 +315,7 @@ def _backup_prunable_checkpoints(project: Project) -> tuple[Path | None, list[tu
     if prune_count == 0:
         return None, []
 
-    checkpoint_root = project.root / "checkpoints"
+    checkpoint_root = project.safe_subdir("checkpoints")
     root_resolved = checkpoint_root.resolve()
     backup_root = Path(tempfile.mkdtemp(prefix=".fix-rollback-", dir=checkpoint_root))
     backups: list[tuple[Path, Path]] = []
@@ -223,7 +327,9 @@ def _backup_prunable_checkpoints(project: Project) -> tuple[Path | None, list[tu
             relative = entry.get("path")
             if not _valid_checkpoint_id(checkpoint_id) or not isinstance(relative, str):
                 raise OakError("检查点路径或 ID 非法，无法建立修复事务回滚副本。")
-            unresolved = project.root / relative
+            if relative.replace("\\", "/") != f"checkpoints/{checkpoint_id}":
+                raise OakError("检查点路径与 ID 不一致，无法建立修复事务回滚副本。")
+            unresolved = checkpoint_root / checkpoint_id
             if unresolved.is_symlink():
                 raise OakError(f"检查点目录是符号链接，拒绝继续：{checkpoint_id}")
             source = ensure_within(checkpoint_root, unresolved)
@@ -321,12 +427,12 @@ def run_fixes(
     staged_issues: Path | None = None
     staged_project: Path | None = None
     checkpoint: dict | None = None
-    manifest_path = project.root / "project.json"
-    issues_path = project.root / "reports" / "issues.json"
+    manifest_path = project.manifest_path(required=True)
+    issues_path = project.issues_path(required=True)
     data_before = copy.deepcopy(project.data)
     manifest_before = manifest_path.read_bytes()
     issues_before = issues_path.read_bytes()
-    checkpoint_root = project.root / "checkpoints"
+    checkpoint_root = project.safe_subdir("checkpoints")
     checkpoint_names_before = {path.name for path in checkpoint_root.iterdir()}
     checkpoint_backup_root: Path | None = None
     checkpoint_backups: list[tuple[Path, Path]] = []
@@ -370,16 +476,16 @@ def run_fixes(
         # JSON 先完整落到临时文件；随后与 working 一起以 os.replace 换入。
         staged_issues = _stage_json(issues_path, new_issues)
         staged_project = _stage_json(manifest_path, project.data)
-        os.replace(staged_work, working_path)
-        os.replace(staged_issues, issues_path)
-        os.replace(staged_project, manifest_path)
+        os.replace(staged_work, project.working_path)
+        os.replace(staged_issues, project.issues_path(required=True))
+        os.replace(staged_project, project.manifest_path(required=True))
         return record, counts
     except Exception as exc:
         # 若 working 已被换入，检查点是确定的回滚来源；其余状态恢复原始字节。
         rollback_error: Exception | None = None
         try:
             if checkpoint is not None:
-                cp_dir = project.root / checkpoint["path"]
+                cp_dir = project._checkpoint_dir(checkpoint)
                 cp_work = cp_dir / project.stored_filename
                 if not cp_work.is_file():
                     raise OakError("修复失败，且新建检查点的工作稿副本缺失。")
@@ -427,7 +533,7 @@ def run_external(project: Project) -> dict:
 
     if tools["epubcheck_jar"] and tools["java"]:
         results["epubcheck"] = run_epubcheck(
-            project.working_path, project.root / "reports" / "epubcheck.json",
+            project.working_path, project.report_path("reports/epubcheck.json", required=False),
             jar=tools["epubcheck_jar"], java=tools["java"],
         )
     else:
@@ -436,7 +542,7 @@ def run_external(project: Project) -> dict:
 
     if tools["ace"] and tools["chrome"]:
         results["ace"] = run_ace(
-            project.working_path, project.root / "reports" / "ace",
+            project.working_path, project.safe_report_directory("ace"),
             ace=tools["ace"], chrome=tools["chrome"],
         )
     elif tools["ace"]:
@@ -446,7 +552,7 @@ def run_external(project: Project) -> dict:
 
     # 写回最近一次检查结果文件（状态 + 说明），供报告如实呈现
     last = project.data["checks"][-1]
-    result_path = project.root / last["result_file"]
+    result_path = project.report_path(last["result_file"], required=True)
     result = read_json(result_path)
     result["external_tools"] = {name: r["status"] for name, r in results.items()}
     result["external_tools_detail"] = {name: r["detail"] for name, r in results.items()}
@@ -504,7 +610,7 @@ def build_report_data(project: Project, pack: dict) -> dict:
     if not project.data["checks"]:
         raise OakError("尚未运行检查，无法生成报告。请先执行 check。")
     last = project.data["checks"][-1]
-    result = read_json(project.root / last["result_file"])
+    result = read_json(project.report_path(last["result_file"], required=True))
     issues = load_issues(project)
 
     pending = {"error": 0, "warning": 0, "suggestion": 0}
@@ -545,19 +651,47 @@ def export_project(project: Project, pack: dict, out_dir: Path | None = None) ->
     from .reports import render_html, render_markdown
 
     report = build_report_data(project, pack)
-    target_dir = Path(out_dir) if out_dir is not None else project.root / "exports"
-    target_dir.mkdir(parents=True, exist_ok=True)
-    base = target_dir if out_dir is not None else project.root
+    if out_dir is None:
+        target_dir = project.safe_subdir("exports")
+    else:
+        target_dir = _safe_export_directory(Path(out_dir), create=True)
+        # 项目内部的自选目录只能位于 exports/，绝不把导出写进 source/working 等。
+        try:
+            target_dir.relative_to(project.root)
+        except ValueError:
+            pass
+        else:
+            exports_root = project.safe_subdir("exports")
+            try:
+                target_dir.relative_to(exports_root)
+            except ValueError as exc:
+                raise ProjectValidationError(
+                    "项目内部的自选导出目录必须位于 exports/ 下。"
+                ) from exc
 
     written: list[Path] = []
 
-    revised = ensure_within(base, target_dir / f"revised_{project.stored_filename}")
-    shutil.copyfile(project.working_path, revised)
+    revised_name = f"revised_{project.stored_filename}"
+    expected_names = [
+        revised_name,
+        "report.json",
+        "report.md",
+        "report.html",
+        "evaluation_summary.json",
+    ]
+    settings = project.data["settings"]
+    include_preview = settings.get("epub_preview") and project.source_format != "epub"
+    if include_preview:
+        expected_names.append("preview.epub")
+    # 先验证全部目标；任一链接/硬链接都在第一个导出字节写入前拒绝。
+    for filename in expected_names:
+        _safe_export_destination(target_dir, filename)
+
+    revised = _atomic_export_copy(target_dir, revised_name, project.working_path)
     written.append(revised)
 
     # 基础 EPUB 预览（M3，方案 §5.5）：仅当用户开启且源稿不是 EPUB
-    settings = project.data["settings"]
-    if settings.get("epub_preview") and project.source_format != "epub":
+    if include_preview:
         from .epub_writer import build_basic_epub
 
         doc = _read_document(project)
@@ -570,29 +704,43 @@ def export_project(project: Project, pack: dict, out_dir: Path | None = None) ->
         lang_code = {"zh": "zh", "en": "en", "mixed": "zh"}.get(
             settings.get("language_detected") or "", "zh"
         )
-        preview = ensure_within(base, target_dir / "preview.epub")
-        preview.write_bytes(
+        preview = _atomic_export_bytes(
+            target_dir,
+            "preview.epub",
             build_basic_epub(
                 doc, title=title, language=lang_code,
                 identifier=f"urn:oak:project-{project.data['project_id']}",
-            )
+            ),
         )
         written.append(preview)
 
-    json_path = ensure_within(base, target_dir / "report.json")
-    write_json(json_path, report)
+    json_path = _atomic_export_bytes(
+        target_dir,
+        "report.json",
+        (json.dumps(report, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
+    )
     written.append(json_path)
 
-    md_path = ensure_within(base, target_dir / "report.md")
-    md_path.write_text(render_markdown(report), encoding="utf-8", newline="\n")
+    md_path = _atomic_export_bytes(
+        target_dir,
+        "report.md",
+        render_markdown(report).encode("utf-8"),
+    )
     written.append(md_path)
 
-    html_path = ensure_within(base, target_dir / "report.html")
-    html_path.write_text(render_html(report), encoding="utf-8", newline="\n")
+    html_path = _atomic_export_bytes(
+        target_dir,
+        "report.html",
+        render_html(report).encode("utf-8"),
+    )
     written.append(html_path)
 
-    summary_path = ensure_within(base, target_dir / "evaluation_summary.json")
-    write_json(summary_path, build_evaluation_summary(project))
+    summary = build_evaluation_summary(project)
+    summary_path = _atomic_export_bytes(
+        target_dir,
+        "evaluation_summary.json",
+        (json.dumps(summary, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
+    )
     written.append(summary_path)
 
     project.save()

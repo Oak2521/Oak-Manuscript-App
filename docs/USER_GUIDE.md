@@ -2,17 +2,22 @@
 
 ## 桌面应用（推荐）
 
-当前开发版本为 `0.1.0-alpha.1`，不是可售卖正式版。仓库中的 Claude `0.0.1` Windows 便携产物仅是历史基线；新的 Windows 安装器、macOS 安装包和 Web 版仍待构建、签名及真实验收。
+当前开发版本为 `0.1.0-alpha.2`，不是可售卖正式版，也还没有对应安装包或 ZIP。仓库中的 Claude `0.0.1` Windows 便携产物仅是历史基线；新的 Windows 安装器、macOS 安装包和 Web 版仍待构建、签名及真实验收。
 
-**开发运行**：`npm install` 后 `npm start`。统一测试用 `npm test`（Node + Python）；分项排障用 `npm run test:node`、`npm run test:python`，UI 真实闭环用 `npm run smoke`。
+**开发运行**：`npm install` 后 `npm start`。统一测试用 `npm test`；分项排障用 `npm run test:node`、`npm run test:python`。当前原生/沙箱外 Node 基线为 TAP 99 项、96 通过、0 失败、3 条 Windows 权限条件跳过；Python 默认为 270 项、0 失败、0 错误、3 条件跳过；`OAK_TEST_ACE=1` 且沙箱外隐藏 Chrome 为 270 项、0 失败、0 错误、1 条件跳过。最新 `npm run smoke` 隐藏 Electron 闭环为 PASS，所有输出位于 `out/source-smoke/`。
 
 流程：欢迎页（隐私说明）→ 选稿件或匿名样本 → 选项目目录 → 选检查目标 → 检查 →
 问题页可逐条接受/拒绝/暂不处理；选择“预览批量自动修复”时，APP 在一个可滚动窗口集中列出全部白名单机械修改的标题、位置和修改前/后预览。只有点击一次“确认批量修复 N 项”才执行整批写入；取消不写入。修复后可在“撤销与检查点”中撤销上一次批量修复或恢复选定检查点 → 导出中心（修订稿、三种报告、PDF 样张、基础 EPUB 预览、脱敏评估摘要）→ 验证完整性。
 
 检查点恢复前会自动保存当前状态为安全检查点，因此恢复操作本身也可撤销。核心会把损坏或越界的检查点标为不可恢复；即使请求恢复，也会在写入前拒绝，不改变工作稿或原稿。
 
-**外部验证（EPUB）**：问题页「外部验证」按钮运行 EpubCheck（需 Java 21+）与
-Ace（需本机 Chrome）；未安装时报告如实标注「未运行」。
+同一项目若正由另一个检查、修复、导出或恢复操作写入，APP 会立即提示项目正在使用且可以稍后重试，不会把两个写操作排队叠加。进程异常退出后内核会自动释放互斥；请不要手工删除 `.oak-project-write.lock` 来判断项目是否“解锁”。
+
+创建项目支持位于 OneDrive 等云盘 reparse/symlink 入口后的只读文件，只要最终打开对象确实是常规文件。创建时锁内只读取同一个已打开来源，先生成 `source/` 再生成 `working/`；若来源在复制期间变化，创建会安全中止并清理半项目，不覆盖用户已有目录内容。
+
+**外部验证（EPUB）**：问题页「外部验证」按钮运行固定的 EpubCheck 5.3.0 与 Ace 1.4.6。开发态优先使用清单校验通过的仓库 JRE，缺失时才允许查找系统 Java；未来打包态只接受捆绑且校验通过的 JRE，不回退系统 `PATH`。Ace 的 stage manifest 还必须匹配仓库受版本控制的 full lock，Python 运行时会在每次调用前复核；Ace 目前仍需要本机 Chrome。缺少工具/锁、完整性校验失败、报告非法或进程异常时，报告如实标注「未运行」。
+
+当前构造样本的真实外部工具预期是：`epub_good.epub` 在 EpubCheck 与 Ace 都通过，`epub_needs_review.epub` 在两者都失败并报告问题。“失败”表示工具确实运行并发现缺陷，不表示程序故障。最新沙箱外隐藏 Chrome 的 Ace 条件套件已通过；受限沙箱内若浏览器超时，核心会 fail-closed 标记未运行，不能把环境超时写成稿件通过或代码通过。
 
 ## 命令行核心
 
@@ -66,6 +71,34 @@ python -m oak_manuscript_core issue --project <项目目录> --id check-0001-000
 
 `fix` 不接受缺少 `--plan-id` 的直接调用。生成计划后若 working、问题状态或规则包发生变化，旧计划会被拒绝，必须重新运行 `plan-fixes` 并再次确认。计划生成和取消均不创建检查点、不改变问题状态，也不写 working。
 
+## 发布资源检查（开发者）
+
+Windows alpha 资源的常用入口：
+
+```powershell
+# 从已经存在且版本固定的本地源重新生成/校验 JRE 与 Ace 阶段包
+npm run stage:jre:win
+npm run stage:ace
+
+# 校验核心、Electron、CPython、EpubCheck、JRE、Ace 的静态资源，
+# 静态全部通过后再执行 Python 与 EpubCheck 探针
+npm run verify:resources:win
+```
+
+普通 staging 只接受已经存在且一致的仓库锁；审计升级时才允许显式更新锁。JRE 与 Ace 的候选目录和锁以事务方式提交，目录或锁换入失败会恢复原目录和原锁。清单使用固定 UTF-16 code unit 顺序，不受系统 locale 影响。Ace 若遇到空/未知 license 声明或空许可证文件会直接拒绝；即使有许可证文件，全部 236 个包仍需正式逐包人工审计。
+
+`verify:resources:win` 使用 `--release-tier auto`：当前 prerelease 版本自动选择 `alpha`，资源正确时可以通过，同时列出不允许正式售卖的剩余阻断；无 prerelease 的正式 semver 自动选择 `sale`。当前 Windows sale 门禁仍有 18 项 blocker。不要把 alpha 门禁通过理解为“安装包已完成”或“可以销售”。
+
+资源探针默认要求 host platform/arch 与 target 一致。跨主机只做静态检查必须显式使用 `--no-runtime-probe`；该结果只证明文件结构和锁，不证明运行时可以执行。Electron 桥和 Python 资源探针共用固定 `-I -S -X utf8` bootstrap，显式加入受控 core 目录，不依赖用户 `PYTHONPATH` 或 site-packages。
+
+`npm run build:win` 还需要仓库本地的离线 electron-builder 工具链，成功构建后才会继续执行打包后资源门禁与隐藏打包 smoke。最近一次经批准的提升权限构建已完成本地 JRE/Ace staging 和 Windows alpha 资源探针，随后仅因 `tools/electron-builder/win32-x64` 缺失而停止；`release/` 没有 alpha.2 制品，不要尝试运行不存在的 EXE。
+
+macOS 分架构入口为 `npm run verify:resources:mac:x64` / `:arm64` 和 `npm run build:mac:x64` / `:arm64`，必须分别在对应原生 runner 执行。`npm run build:mac` 只选择当前 Mac 的原生架构；`npm run verify:resources:mac` 是显式 `--no-runtime-probe` 的跨架构静态聚合，不算探针或构建通过。当前仍缺 x64/arm64 Python/JRE 资源与锁、构建、签名、公证和实机证据。
+
+打包 smoke 会从 `package.json` 读取期望版本，通过 `appInfo` 核对 Electron 版本、规则包和 `app.isPackaged=true`，再读取本次真实生成的 `project.json` 与检查报告，核对 Python core 版本、check ID 和三处规则包身份一致；因此旧 alpha.1/0.0.1 包、陈旧 core 或错误规则包都不能冒充 alpha.2 验收结果。源码 smoke 的项目、临时目录、用户数据、缓存和崩溃目录严格限定在仓库 `out/source-smoke/`，打包 smoke 同样只能写仓库 `out/`，窗口保持隐藏。
+
+自选导出目录会逐级拒绝链接、目录联接和非常规目录；若选择项目内部目录，只允许 `exports/` 下。全部输出目标先统一预检，已有链接或硬链接目标不会被覆盖；每个文件在同目录完整暂存并原子换入。PDF 样张另在禁 JavaScript、导航和网络的非持久隔离 session 中生成。
+
 ## 输出与退出码
 
 - 每个命令在标准输出打印一个 UTF-8 JSON 文档（可直接程序化消费），提示信息走标准错误；
@@ -75,5 +108,6 @@ python -m oak_manuscript_core issue --project <项目目录> --id check-0001-000
 ## 隐私说明
 
 - 当前桌面 alpha 的检查、计划、修复、恢复与导出均在本机完成，不上传稿件；
+- Electron 默认 session 阻断网络 scheme；未来联网 Provider 必须单独取得授权，不能放宽默认离线界面；
 - 原稿以只读副本保存在项目 `source/` 目录，绝不被修改；
 - 详见 `PRIVACY_AND_SECURITY.md`。

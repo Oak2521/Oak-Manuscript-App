@@ -53,6 +53,8 @@ code { background: #eef1ef; padding: 1px 5px; border-radius: 3px; }
   padding: 12px 16px; border-radius: 0 6px 6px 0; margin-bottom: 16px;
 }
 .muted { color: var(--muted); font-size: 13px; line-height: 1.6; }
+.empty-issue { cursor: default; }
+.issue-detail-title { margin: 8px 0; }
 .hidden { display: none !important; }
 
 button {

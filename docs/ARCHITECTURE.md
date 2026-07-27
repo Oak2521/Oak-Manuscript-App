@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.1` 已实现架构；Windows 正式安装器、macOS、Web、统一账号、订阅、同步与标准自动升级仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.2` 源码检查点架构；本轮尚未生成 alpha.2 Windows 安装器或 ZIP。macOS、Web、统一账号、订阅、同步与标准自动升级仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -8,7 +8,11 @@
 Renderer（无 Node 权限）
         ↓ IPC 白名单
 Electron Main
-  ├─ 窗口与文件选择 / 路径策略 / PDF 样张 / 外部链接白名单 / Provider 适配层
+  ├─ 窗口与文件选择 / 路径策略 / 外部链接白名单 / Provider 适配层
+  ├─ 默认 session 离线门禁 + Renderer CSP
+  ├─ PDF：非持久隔离 session / 禁 JS、导航、网络 / 身份校验后原子写
+  ├─ appInfo 身份（版本 + 规则包 + app.isPackaged），供源码与打包 smoke 防止错验旧包
+  ├─ 统一 Python bootstrap：-I -S -X utf8 + 受控 core 目录
   ├─ P0 修复：planFixes / applyFixPlan（必须带 plan_id）
   └─ 检查点：listCheckpoints / restoreCheckpoint
         ↓ shell=false，参数数组，严格 UTF-8 JSON
@@ -16,8 +20,10 @@ Python Core（oak_manuscript_core）
   ├─ 读取器：DOCX（M1）/ Markdown、TXT（M2）/ EPUB（M3）
   ├─ 规则引擎（确定性）与规则包加载
   ├─ plan-fixes 只读计划 → plan_id 确认 → fix 原子批量修复
-  ├─ 项目管理：只读原稿、SHA-256、完整状态检查点（≤5）与安全恢复
-  ├─ 报告（JSON / Markdown / HTML）与修订稿导出
+  ├─ 项目管理：完整 schema/路径验证、只读原稿、SHA-256、跨进程内核写锁
+  ├─ create：锁前零污染预检 → 锁内单 FD 输入 → source → working
+  ├─ 完整状态检查点（≤5）与安全恢复
+  ├─ 报告（JSON / Markdown / HTML）与安全原子导出
   └─ 完整性与安全验证（路径 / ZIP / 大文件）
 ```
 
@@ -32,6 +38,10 @@ Python 核心作为桌面 sidecar；CLI 子命令与 JSON 输出由 Electron 直
 理由：① 离线、零安装即可运行与测试；② 确定性与供应链风险最小化；③ 免除依赖安装授权流程；④ 打包时 sidecar 体积与复杂度最小。
 代价：DOCX 写回（修订稿导出）需自实现受控的 XML 局部改写——可接受，因为修复白名单本就限定在少量机械、可精确定位的操作。
 若未来某能力（如 PDF 渲染）确需第三方库，须经用户授权并记录新决策。
+
+### AD-005 Python sidecar 使用唯一隔离启动契约（2026-07-27，冻结）
+
+Electron 桥和发布资源门禁共用 `electron/python-invocation.js`，固定调用 `python -I -S -X utf8 -c <bootstrap>`。bootstrap 只把经路径策略解析的绝对 core 目录插入 `sys.path[0]`，再用 `runpy` 执行 `oak_manuscript_core`；不能依赖工作目录、用户 `PYTHONPATH`、site-packages 或启动钩子。`-X utf8` 是命令行固定项，因为 `-I` 会忽略继承环境中的 UTF-8 设置。
 
 ### AD-002 CLI 即接口契约（2026-07-11）
 
@@ -49,12 +59,33 @@ Python 核心作为桌面 sidecar；CLI 子命令与 JSON 输出由 Electron 直
 
 检查点除工作稿与问题列表外，还快照设置、规则包、检查历史、问题指针、修复历史及所引用的检查结果。恢复前创建 `before_restore:<目标 ID>` 安全检查点；目标损坏、哈希不符或路径越界时，在写入前拒绝。恢复结果本身可通过安全检查点撤销。
 
+### AD-006 默认 Electron session 永久离线（2026-07-27，冻结）
+
+正常启动在 `app.ready` 前应用固定离线 Chromium switches，并在 default session 拦截 `http/https/ws/wss/ftp`。Renderer CSP 不允许远程脚本或主动嵌入；系统浏览器外链仍由 HTTPS/域名白名单单独裁决。
+
+未来经用户主动授权的 Auth/Sync/Standards 等网络能力必须使用独立、最小权限的传输或隔离 session，带自己的开关、字段白名单和零请求关闭态测试；不得为“方便联网”解除默认 session 的离线基线。
+
+### AD-007 项目写入必须先完整验证并取得单项目内核锁（2026-07-27，冻结）
+
+`Project.open()` 是写入前的 fail-closed 信任门：验证 `project.json` schema、六个固定子目录、清单控制的报告/问题/检查点/修复路径、source/working 的常规文件身份、相互独立性、大小与 SHA-256。项目根、固定子目录、manifest 与受控文件均拒绝链接、junction/reparse、硬链接和路径逃逸。
+
+`create/check/recheck/fix/export/verify/restore-checkpoint/external/issue` 共用 `ProjectWriteLock`。Windows 在元数据区之外锁定固定字节，macOS/POSIX 使用非阻塞 `flock`；争用不排队，立即返回结构化 `PROJECT_WRITE_LOCKED`。锁文件是持久诊断载体，进程存活由内核锁而非 PID 元数据判断；崩溃后内核自动释放，不删除所谓“陈旧锁”来猜测状态。只读 `plan-fixes` 与 `list-checkpoints` 不取得写锁。
+
+`create` 在写锁创建前做纯只读门禁；非法输入、非空目标或普通同名锁文件不改变目标树。锁内只打开一次用户输入，以同一 FD 写入并 `fsync` `source`，复核来源身份/大小/mtime 后，再从受控 `source` 生成 `working`。输入入口可经过 OneDrive/reparse/symlink，但最终打开对象必须是常规文件。失败清理只删除本事务记录身份的文件与目录；用户已有空目录保留，已有协议锁恢复原字节。
+
+### AD-008 外部导出与 PDF 均以目标身份为边界（2026-07-27，冻结）
+
+Python `export_project(..., out_dir=...)` 逐级检查目标父链；项目内部自选目录只能位于 `exports/`。整批目标在第一个导出字节前预检，已有链接、硬链接或非常规目标一律拒绝；每个输出在同目录完整暂存、`fsync` 后 `os.replace`。这是逐文件原子换入，不宣称一次多文件导出具有跨文件事务性。
+
+PDF 使用无 `persist:` 前缀且禁缓存的专用 session，禁 JavaScript、导航、新窗口和网络；专用 CSP 只允许自包含报告所需的内联样式和 `data:` 图片。加载前后复核 `report.html` 文件身份，输出 writer 逐段复核项目根、`exports/` 与目标身份，并以同目录临时文件原子换入 `report_preview.pdf`。
+
 ## 3. Python 核心模块地图（随实现更新）
 
 | 模块 | 职责 |
 |---|---|
-| `oak_manuscript_core/project.py` | 项目创建 / 打开、project.json、原稿哈希、完整状态检查点列表与安全恢复 |
-| `oak_manuscript_core/safety.py` | 路径规范化与逃逸拒绝、ZIP 安全（成员数 / 单文件 / 总解压上限）、大文件预警 |
+| `oak_manuscript_core/project.py` | 项目创建 / 打开、完整 schema 与受控路径验证、原稿哈希、完整状态检查点列表与安全恢复 |
+| `oak_manuscript_core/project_lock.py` | Windows/macOS/POSIX 非阻塞跨进程项目写锁、协议元数据与结构化争用错误 |
+| `oak_manuscript_core/safety.py` | 路径规范化、链接/reparse 与逃逸拒绝、ZIP 安全（成员数 / 单文件 / 总解压上限）、大文件预警 |
 | `oak_manuscript_core/readers/docx_reader.py` | OOXML 解析 → 统一文档模型 |
 | `oak_manuscript_core/readers/md_reader.py` | （M2）Markdown ATX 标题 + 分段解析 |
 | `oak_manuscript_core/readers/txt_reader.py` | （M2）纯文本空行分段 |
@@ -66,15 +97,56 @@ Python 核心作为桌面 sidecar；CLI 子命令与 JSON 输出由 Electron 直
 | `oak_manuscript_core/rules/` | 各规则判断逻辑（每规则独立、可单测） |
 | `oak_manuscript_core/fixes.py` | 白名单机械修复原语（幂等） |
 | `oak_manuscript_core/fix_plans.py` | 生成绑定项目 / working / issues / 规则包 / 候选的只读批量计划 |
-| `oak_manuscript_core/ops.py` | 检查编排、计划验证、批量修复事务与回滚 |
+| `oak_manuscript_core/ops.py` | 检查编排、计划验证、批量修复事务与回滚、安全自选目录与逐文件原子导出 |
 | `oak_manuscript_core/reports.py` | JSON / Markdown / HTML 报告渲染 |
 | `oak_manuscript_core/exporter.py` | 修订稿 DOCX 导出、导出目录校验 |
 | `oak_manuscript_core/__main__.py` | CLI（含 plan-fixes / fix --plan-id / list-checkpoints / restore-checkpoint） |
 
 ## 4. 安全基线
 
-- 一切文件写入限定在项目目录或用户明确选择的导出目录；导出前验证目标仍在允许范围内；
+- 一切文件写入限定在经过身份验证的项目目录或用户明确选择的安全导出目录；项目内自选目录只能位于 `exports/`，全部目标先统一预检，每个文件同目录暂存、`fsync` 并原子换入；
 - ZIP 解包前检查成员数量、单文件大小、总解压大小，拒绝路径穿越与可疑符号链接；
 - 批量修复失败不得留下部分 working、问题状态或项目清单写入；恢复失败优先用安全检查点回滚；
-- Electron 已启用 `contextIsolation`、sandbox、`nodeIntegration=false`、CSP 与固定 IPC 白名单；项目 IPC 只接受绝对且包含 `project.json` 的项目路径，计划 ID / 检查点 ID 通过格式校验；
+- 全部变更型 CLI 命令在完整项目校验后取得跨进程非阻塞内核写锁；锁争用、受污染项目或普通同名锁文件均在业务写入前 fail-closed；
+- Electron 已启用 `contextIsolation`、sandbox、`nodeIntegration=false`、CSP、默认 session 离线门禁与固定 IPC 白名单；项目 IPC 只接受绝对且包含 `project.json` 的项目路径，计划 ID / 检查点 ID 通过格式校验；
+- PDF 在独立非持久 session 中禁用 JavaScript、导航与网络，并通过文件/目录身份快照及原子 writer 写入；
+- Python 退出码 1 是有效业务结果，退出码 2 是运行错误；结构化 `code/message/retryable/details` 贯通到 IPC；
 - 统一测试入口为 `npm test`（Node 契约与 UI 结构测试 + Python 核心测试）；分项为 `npm run test:node`、`npm run test:python`。
+
+## 5. 发布资源可信链（0.1.0-alpha.2）
+
+Windows alpha 资源不是靠“目录存在”通过门禁，而是由四组全量清单固定：
+
+| 资源 | 固定方式 | 当前 Windows 状态 |
+|---|---|---|
+| CPython 3.13.14 | `config/tool-manifests/python-runtime-<platform>-<arch>.json` 固定完整文件集合、大小和 SHA-256；探针精确核对 CPython implementation、三段版本、releaselevel 和 serial；拒绝多文件、少文件、篡改及链接 | `win32-x64` 清单存在；`python313._pth` 只允许 `python313.zip`、`.`、受控 `../python`，且禁止 `import site` |
+| EpubCheck 5.3.0 | `config/tool-manifests/epubcheck-5.3.0.json` 固定 JAR、完整依赖闭包及许可证材料 | 49 个文件均纳入清单 |
+| Temurin JRE 21.0.11+10 | JRE 自带 `manifest.json` 固定生成产物；仓库 `config/tool-manifests/jre-<platform>-<arch>.json` 另行固定源 JDK 与 JRE manifest | `win32-x64` 锁存在；固定保守模块集合 |
+| Ace 1.4.6 | `tools/ace/manifest.json` 描述阶段产物；受版本控制的 `config/tool-manifests/ace-1.4.6.json` 另行固定 stage manifest 原始字节哈希、236 包闭包、全部文件与补丁 | Node 门禁和 Python 实际运行路径均复核 full lock；语义相同但原始字节漂移也拒绝；正式可信根签名及 236 包逐包人工审计仍未完成 |
+
+所有平台相关锁按 `platform/arch` 选择，不能用 Windows 锁替代 macOS 锁。当前仓库没有 `darwin-x64`、`darwin-arm64` 的 Python/JRE 运行资源和对应锁；macOS 门禁因此应当失败关闭，而不是跳过。
+
+所有会进入哈希或锁身份的目录与清单统一按 JavaScript UTF-16 code unit 比较排序，不使用随操作系统、ICU 或用户 locale 改变的 `localeCompare`。JRE 和 Ace 的 staging 先在候选目录完成；显式更新锁时，stage 目录与受版本控制锁作为一个事务提交，任一步失败恢复旧目录和旧锁，不能留下“新运行时 + 旧锁”或相反组合。普通 staging 只接受已存在且匹配的锁。
+
+资源门禁分成两个阶段：
+
+1. **非执行静态阶段**：先验证核心文件、全量文件集合、大小、SHA-256、符号链接/路径、目标架构、版本、许可证及补丁记录。此阶段不会启动 Python 或 Java。
+2. **运行探针阶段**：只有全部静态检查的全局错误数为零，才启动已校验运行时。Python 用 AD-005 的固定 bootstrap 运行核心版本探针；JRE 分别对 `epub_good.epub` 和 `epub_needs_review.epub` 运行 EpubCheck，并精确核对好样本零错误和缺陷样本非零错误。任一静态错误都会阻止全部后续探针。
+
+这条顺序是安全边界：运行时可执行文件本身必须先通过完整性验证，不能以“能启动”替代可信性检查。
+
+探针只能在目标平台和目标架构的原生 runner 上执行；host 与 target 不一致时 fail-closed。跨主机只做静态聚合检查必须显式传入 `--no-runtime-probe`，报告也会记录探针未执行，不能把静态通过写成运行证据。
+
+## 6. Ace 作者内容隔离与剩余边界
+
+阶段化 Ace runner 在加载作者 XHTML 时先关闭 JavaScript，再用固定的 `@xmldom/xmldom` 清洗器移除 `script`、`iframe`、`object`、`embed`、`base`、事件属性、危险 URL、XSLT processing instruction、meta refresh 与作者 CSP。清洗完成后才启用 JavaScript 并注入固定 Ace/axe 脚本。请求拦截只允许解包 EPUB `basedir` 真实路径内的 `file:`，以及运行所需的 `data:`、`blob:`、`about:`；其它协议和目录逃逸一律拒绝，同时抑制 Chromium 后台联网。
+
+这仍不是正式版的完整隔离证明：当前 Ace 通过通用 Electron/Node helper 启动，并依赖用户系统 Chrome；网络限制主要位于浏览器参数与请求拦截层，尚无 OS 级网络沙箱。系统 Chrome、受控最小权限 helper、签名可信根和 OS 级隔离均继续作为 sale 门禁阻断项。
+
+## 7. 构建与冒烟边界
+
+- `alpha` 资源门禁允许在结构和探针通过后返回仍待解决的正式发布阻断项；`sale` 门禁把同一批阻断项提升为错误。alpha 通过不等于可售卖。
+- 源码 smoke 与打包 smoke 都通过 `app:info` 核对 Electron 版本/规则包；随后读取本次真实生成的 `project.json` 和所引用检查报告，核对 Python core 版本、check ID 以及项目/检查记录/报告三处规则包一致。打包 smoke 还强制证明 `app.isPackaged=true`，防止把旧版、陈旧 core 或错误规则包误记为新打包版。
+- 源码 smoke 的项目、缓存、临时目录、用户数据、HOME/APPDATA/XDG 与 crash dumps 精确限制在 `out/source-smoke/`；打包 smoke 同样受仓库 `out/` 边界控制。Windows EXE 还须先通过 x64 PE32+ 校验。
+- macOS 构建拆为 `build:mac:x64` 与 `build:mac:arm64`；聚合入口 `build:mac` 只选择当前原生 host 架构，不在一个进程伪造双架构探针。`verify:resources:mac` 只是带 `--no-runtime-probe` 的跨架构静态聚合，不能替代两个原生 runner 的执行证据。
+- 当前 alpha.2 只具备源码、Windows 本地资源和门禁；离线 electron-builder 工具链、Windows 签名和实际 alpha.2 制品尚缺。macOS 分架构配置已存在，但运行资源、原生构建、签名、公证、Gatekeeper 与实机 smoke 均未完成。

@@ -27,6 +27,7 @@ class EpubBuilder:
         mimetype_first: bool = True,
         mimetype_stored: bool = True,
         include_nav: bool = True,
+        ace_accessible: bool = False,
     ) -> None:
         self.title = title
         self.language = language
@@ -35,6 +36,7 @@ class EpubBuilder:
         self.mimetype_first = mimetype_first
         self.mimetype_stored = mimetype_stored
         self.include_nav = include_nav
+        self.ace_accessible = ace_accessible
         # (filename, lang 或 None, body_html)
         self._chapters: list[tuple[str, str | None, str]] = []
 
@@ -62,6 +64,16 @@ class EpubBuilder:
             meta.append(f"<dc:language>{_esc(self.language)}</dc:language>")
         # EPUB 3 必需（EpubCheck RSC-005）；固定时间戳保持确定性
         meta.append('<meta property="dcterms:modified">2026-01-01T00:00:00Z</meta>')
+        if self.ace_accessible:
+            meta.extend([
+                '<meta property="schema:accessMode">textual</meta>',
+                '<meta property="schema:accessModeSufficient">textual</meta>',
+                '<meta property="schema:accessibilityFeature">structuralNavigation</meta>',
+                '<meta property="schema:accessibilityHazard">none</meta>',
+                '<meta property="schema:accessibilitySummary">'
+                '本构造样本包含结构化目录和带语言标记的文本内容。'
+                '</meta>',
+            ])
         items = []
         spine = []
         if self.include_nav:
@@ -71,9 +83,14 @@ class EpubBuilder:
         for i, (fn, _lang, _body) in enumerate(self._chapters, start=1):
             items.append(f'<item id="c{i}" href="{fn}" media-type="application/xhtml+xml"/>')
             spine.append(f'<itemref idref="c{i}"/>')
+        package_language = (
+            f' xml:lang="{_esc(self.language)}"'
+            if self.ace_accessible and self.language is not None else ""
+        )
         return (
             '<?xml version="1.0" encoding="UTF-8"?>'
-            '<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="pub-id">'
+            '<package xmlns="http://www.idpf.org/2007/opf" version="3.0" '
+            f'unique-identifier="pub-id"{package_language}>'
             '<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">'
             + "".join(meta)
             + "</metadata><manifest>"
@@ -87,11 +104,12 @@ class EpubBuilder:
         lis = "".join(
             f'<li><a href="{fn}">{_esc(fn)}</a></li>' for fn, _l, _b in self._chapters
         )
+        nav_role = ' role="doc-toc"' if self.ace_accessible else ""
         return (
             '<?xml version="1.0" encoding="UTF-8"?>'
             f'<html xmlns="{XHTML_NS}" xmlns:epub="http://www.idpf.org/2007/ops" '
             'lang="zh" xml:lang="zh"><head><title>目录</title></head>'
-            f'<body><nav epub:type="toc"><ol>{lis}</ol></nav></body></html>'
+            f'<body><nav epub:type="toc"{nav_role}><ol>{lis}</ol></nav></body></html>'
         )
 
     def _chapter_xhtml(self, lang: str | None, body: str) -> str:

@@ -1,0 +1,281 @@
+{
+  "schema_version": "1.0",
+  "tool": {
+    "name": "EpubCheck",
+    "version": "5.3.0"
+  },
+  "distribution": "tools/epubcheck-5.3.0",
+  "entry": "epubcheck.jar",
+  "required_files": [
+    "CHANGELOG.txt",
+    "LICENSE.txt",
+    "README.txt",
+    "THIRD-PARTY.txt",
+    "epubcheck.jar",
+    "licenses/Apache-2.0.txt",
+    "licenses/BSD-3-Clause.txt",
+    "licenses/MIT.txt",
+    "licenses/MPL-2.0.txt",
+    "licenses/W3C.txt"
+  ],
+  "license_files": [
+    "LICENSE.txt",
+    "THIRD-PARTY.txt",
+    "licenses/Apache-2.0.txt",
+    "licenses/BSD-3-Clause.txt",
+    "licenses/MIT.txt",
+    "licenses/MPL-2.0.txt",
+    "licenses/W3C.txt"
+  ],
+  "formal_provenance_audit_required": true,
+  "provenance_note": "Locally supplied distribution; origin and redistribution evidence require formal audit before sale.",
+  "file_count": 49,
+  "total_bytes": 36263890,
+  "files": [
+    {
+      "path": "CHANGELOG.txt",
+      "size_bytes": 56271,
+      "sha256": "faa32f9f5dd71edb8c19263060b792f4942ea070d20ef979b5d094a42467dbb8"
+    },
+    {
+      "path": "LICENSE.txt",
+      "size_bytes": 1561,
+      "sha256": "30639fa2b228607910b33c58b3748e7a94c29795d14e1134cbb5f287daf284e9"
+    },
+    {
+      "path": "README.txt",
+      "size_bytes": 2267,
+      "sha256": "34b41f12cfa5c4132b55ff68b981f5d14bf593cf1e4572fd478ed14f6e785e20"
+    },
+    {
+      "path": "THIRD-PARTY.txt",
+      "size_bytes": 2555,
+      "sha256": "d7c5ab8c2be53106872536734e275873be7a43aba7068734183e28b82a8dc80d"
+    },
+    {
+      "path": "epubcheck.jar",
+      "size_bytes": 1223671,
+      "sha256": "f7f96617c929371821609b88c8484d6dc9f24fe916499863c46094c5fb778a65"
+    },
+    {
+      "path": "lib/Saxon-HE-11.4.jar",
+      "size_bytes": 5109857,
+      "sha256": "42e35494dc2e6b5e97256ae7cdf2b7ce30439c352566f35de02bed3a06a2b169"
+    },
+    {
+      "path": "lib/accessors-smart-2.4.9.jar",
+      "size_bytes": 29904,
+      "sha256": "accdd5c7ac4c49b155890aaea1ffca2a9ccd5826b562dd95a99fc1887003e031"
+    },
+    {
+      "path": "lib/asm-9.3.jar",
+      "size_bytes": 122176,
+      "sha256": "1263369b59e29c943918de11d6d6152e2ec6085ce63e5710516f8c67d368e4bc"
+    },
+    {
+      "path": "lib/common-image-3.9.4.jar",
+      "size_bytes": 85550,
+      "sha256": "a5f41991d2492f28ce4f04b82abfffb89f5ffa9dfc87f4e58f10d526e5ba4a83"
+    },
+    {
+      "path": "lib/common-io-3.9.4.jar",
+      "size_bytes": 89993,
+      "sha256": "cc7c27947bf21a75fbc3d613e79bdd8619908e67b88cc7d73091a55876e4fd38"
+    },
+    {
+      "path": "lib/common-lang-3.9.4.jar",
+      "size_bytes": 119561,
+      "sha256": "a521b797d58f65b80fa8ca365d95911622408cab220fd5d852169805f640acbd"
+    },
+    {
+      "path": "lib/commons-codec-1.19.0.jar",
+      "size_bytes": 374716,
+      "sha256": "5c3881e4f556855e9c532927ee0c9dfde94cc66760d5805c031a59887070af5f"
+    },
+    {
+      "path": "lib/commons-compress-1.28.0.jar",
+      "size_bytes": 1117221,
+      "sha256": "e1522945218456f3649a39bc4afd70ce4bd466221519dba7d378f2141a4642ca"
+    },
+    {
+      "path": "lib/commons-io-2.20.0.jar",
+      "size_bytes": 563971,
+      "sha256": "df90bba0fe3cb586b7f164e78fe8f8f4da3f2dd5c27fa645f888100ccc25dd72"
+    },
+    {
+      "path": "lib/commons-lang3-3.18.0.jar",
+      "size_bytes": 702952,
+      "sha256": "4eeeae8d20c078abb64b015ec158add383ac581571cddc45c68f0c9ae0230720"
+    },
+    {
+      "path": "lib/error_prone_annotations-2.36.0.jar",
+      "size_bytes": 19401,
+      "sha256": "77440e270b0bc9a249903c5a076c36a722c4886ca4f42675f2903a1c53ed61a5"
+    },
+    {
+      "path": "lib/failureaccess-1.0.3.jar",
+      "size_bytes": 10763,
+      "sha256": "cbfc3906b19b8f55dd7cfd6dfe0aa4532e834250d7f080bd8d211a3e246b59cb"
+    },
+    {
+      "path": "lib/galimatias-0.1.3.jar",
+      "size_bytes": 107357,
+      "sha256": "b37cbc4513584ed6aa1d8f7529ebe77abbe28c1f54ec63b0ff28a00a2d9d2a9a"
+    },
+    {
+      "path": "lib/guava-33.4.8-jre.jar",
+      "size_bytes": 3023797,
+      "sha256": "f3d7f57f67fd622f4d468dfdd692b3a5e3909246c28017ac3263405f0fe617ed"
+    },
+    {
+      "path": "lib/httpclient5-5.1.3.jar",
+      "size_bytes": 797934,
+      "sha256": "28c759254f4e35319e078bb6ffea75676608dc12cb243b24fb3c8732522977fe"
+    },
+    {
+      "path": "lib/httpcore5-5.1.3.jar",
+      "size_bytes": 850808,
+      "sha256": "f2bf2f2c7772169c9e30699719667ad30f9b46c4e9d7841907deb2d12d9923fe"
+    },
+    {
+      "path": "lib/httpcore5-h2-5.1.3.jar",
+      "size_bytes": 232137,
+      "sha256": "d0e78ba15aa8ebe77982b660ac4b09a95d6e035dbdbea762577dc1c8e2935807"
+    },
+    {
+      "path": "lib/icu4j-77.1.jar",
+      "size_bytes": 14663227,
+      "sha256": "b3640b9f416a4411fd33c59abbeea8fd57d024c23e1819bf9673220a97499fe3"
+    },
+    {
+      "path": "lib/imageio-core-3.9.4.jar",
+      "size_bytes": 116474,
+      "sha256": "244843a7bc8ecf6efb20aa5f817e977addafb3f6b0ce70393b3e6d1109591fae"
+    },
+    {
+      "path": "lib/imageio-jpeg-3.9.4.jar",
+      "size_bytes": 92263,
+      "sha256": "cdc95ecde53b012774790ead020879af6c76928c8d8e0be4b964528937ec1b7d"
+    },
+    {
+      "path": "lib/imageio-metadata-3.9.4.jar",
+      "size_bytes": 81866,
+      "sha256": "580a334f8e20c99ff9127fa9b0022b0f02a981b46e6b38e0df393052329a6324"
+    },
+    {
+      "path": "lib/isorelax-20030108.jar",
+      "size_bytes": 192602,
+      "sha256": "3427152431cf7f967f92e69e5cac16147c5d8fb4b4e5a8a72f5291788efcff8c"
+    },
+    {
+      "path": "lib/j2objc-annotations-3.0.0.jar",
+      "size_bytes": 12467,
+      "sha256": "88241573467ddca44ffd4d74aa04c2bbfd11bf7c17e0c342c94c9de7a70a7c64"
+    },
+    {
+      "path": "lib/jackson-annotations-2.18.2.jar",
+      "size_bytes": 78494,
+      "sha256": "581bd61000ef7648943f781ca05689e56d03f6052748365a8e2b3a9b5d3fa32f"
+    },
+    {
+      "path": "lib/jackson-core-2.18.2.jar",
+      "size_bytes": 597807,
+      "sha256": "d8054ae7c0d1c2d2f55d28e46026ebe5892881f3fab5f439233184381c3b4a1f"
+    },
+    {
+      "path": "lib/jackson-databind-2.18.2.jar",
+      "size_bytes": 1658755,
+      "sha256": "4b364e6850dc89172fcf1d4dd26b8ff5488eda44ff4657e22dd265203dd5ab3c"
+    },
+    {
+      "path": "lib/jing-20181222.jar",
+      "size_bytes": 764033,
+      "sha256": "e5e13fa92d9461f37b7c3d760780ea07cca5b7947440f99ebb7608b5b168aaa3"
+    },
+    {
+      "path": "lib/json-path-2.8.0.jar",
+      "size_bytes": 277582,
+      "sha256": "9601707e95cd79fb98570a01ea8cfb857b5cde948744d6e0edf733c11002c95b"
+    },
+    {
+      "path": "lib/json-path-assert-2.8.0.jar",
+      "size_bytes": 16606,
+      "sha256": "5de6305e6e1df4f4c1ad603f1d7ac2394b474c767b8165701a492643ac34a56a"
+    },
+    {
+      "path": "lib/json-smart-2.4.10.jar",
+      "size_bytes": 120206,
+      "sha256": "70cab5e9488630dc631b1fc6e7fa550d95cddd19ba14db39ceca7cabfbd4e5ae"
+    },
+    {
+      "path": "lib/jspecify-1.0.0.jar",
+      "size_bytes": 3819,
+      "sha256": "1fad6e6be7557781e4d33729d49ae1cdc8fdda6fe477bb0cc68ce351eafdfbab"
+    },
+    {
+      "path": "lib/listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar",
+      "size_bytes": 2199,
+      "sha256": "b372a037d4230aa57fbeffdef30fd6123f9c0c2db85d0aced00c91b974f33f99"
+    },
+    {
+      "path": "lib/sac-1.3.jar",
+      "size_bytes": 15808,
+      "sha256": "003785669f921aafe4f137468dd20a01a36111e94fd7449f26c16e7924d82d23"
+    },
+    {
+      "path": "lib/slf4j-api-1.7.36.jar",
+      "size_bytes": 41125,
+      "sha256": "d3ef575e3e4979678dc01bf1dcce51021493b4d11fb7f1be8ad982877c16a1c0"
+    },
+    {
+      "path": "lib/slf4j-nop-1.7.36.jar",
+      "size_bytes": 3946,
+      "sha256": "c214958b07816cb4412b30c7bdbd4308ffdc6ba2a83767b8f3a9229cbd9274d6"
+    },
+    {
+      "path": "lib/xercesImpl-2.12.2.jar",
+      "size_bytes": 1446149,
+      "sha256": "6fc991829af1708d15aea50c66f0beadcd2cfeb6968e0b2f55c1b0909883fe16"
+    },
+    {
+      "path": "lib/xml-apis-1.4.01.jar",
+      "size_bytes": 220536,
+      "sha256": "a840968176645684bb01aed376e067ab39614885f9eee44abe35a5f20ebe7fad"
+    },
+    {
+      "path": "lib/xmlresolver-4.4.3-data.jar",
+      "size_bytes": 1027769,
+      "sha256": "a57db23d75c3580cb15eb6e1a854683f4579cfd265f5cf1011a6983d9aed0f1f"
+    },
+    {
+      "path": "lib/xmlresolver-4.4.3.jar",
+      "size_bytes": 152670,
+      "sha256": "9d642c96c3f6811e20a9f6cfee3ca15ec84ecb939f6be639fee065670773a7d1"
+    },
+    {
+      "path": "licenses/Apache-2.0.txt",
+      "size_bytes": 11326,
+      "sha256": "d8621ec2eee5b9ca3c65f8492505f3590de8574fac0fdf5132a77232dba47abc"
+    },
+    {
+      "path": "licenses/BSD-3-Clause.txt",
+      "size_bytes": 1484,
+      "sha256": "ffd50d49a26c28c3603d878470ed9e1374c36d581a57197db0239bc47f1f3298"
+    },
+    {
+      "path": "licenses/MIT.txt",
+      "size_bytes": 1061,
+      "sha256": "63348cbb4123077d700324ecbd3fe086e6535ea0a6e0dc7893f47a20e6fa05f7"
+    },
+    {
+      "path": "licenses/MPL-2.0.txt",
+      "size_bytes": 16725,
+      "sha256": "c76f740d1521b9bed9ca7a04ad526c310493c62621b1341d623b431736533b30"
+    },
+    {
+      "path": "licenses/W3C.txt",
+      "size_bytes": 2468,
+      "sha256": "312cc97521c9108bb3012ba16903ddfcb0b3a3a86799e2687e9e5d6819eb2dc9"
+    }
+  ]
+}

@@ -1,2 +1,7 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# These files participate in byte-level SHA-256 trust locks. Their checkout
+# bytes must be identical on Windows and macOS regardless of core.autocrlf.
+config/tool-manifests/*.json text eol=lf
+scripts/patches/*.js text eol=lf

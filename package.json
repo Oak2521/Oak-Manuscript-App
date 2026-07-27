@@ -1,35 +1,88 @@
 {
   "name": "oak-manuscript",
   "productName": "湖岸稿件 Oak Manuscript",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "private": true,
   "description": "本地优先的稿件检查与修订桌面应用（Electron 壳 + Python 零依赖检查核心）",
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
-    "smoke": "electron . --smoke",
+    "smoke": "node scripts/run_source_smoke.js",
     "test": "npm run test:node && npm run test:python",
     "test:node": "node --test \"tests/*.test.js\"",
     "test:python": "python scripts/run_tests.py",
-    "dist": "electron-builder --win zip"
+    "stage:ace": "node scripts/stage_ace.js",
+    "stage:jre:win": "node scripts/stage_epubcheck_jre.js",
+    "verify:resources:win": "node scripts/verify_packaged_resources.js --platform win32 --arch x64 --release-tier auto",
+    "verify:resources:mac": "npm run verify:resources:mac:static",
+    "verify:resources:mac:static": "node scripts/verify_packaged_resources.js --platform darwin --release-tier auto --no-runtime-probe",
+    "verify:resources:mac:x64": "node scripts/verify_packaged_resources.js --platform darwin --arch x64 --release-tier auto",
+    "verify:resources:mac:arm64": "node scripts/verify_packaged_resources.js --platform darwin --arch arm64 --release-tier auto",
+    "verify:packaged:mac:x64": "node scripts/verify_packaged_resources.js --platform darwin --arch x64 --release-tier auto --packaged --root \"release/mac/湖岸稿件 Oak Manuscript.app/Contents/Resources\"",
+    "verify:packaged:mac:arm64": "node scripts/verify_packaged_resources.js --platform darwin --arch arm64 --release-tier auto --packaged --root \"release/mac-arm64/湖岸稿件 Oak Manuscript.app/Contents/Resources\"",
+    "verify:packaged:win": "node scripts/verify_packaged_resources.js --platform win32 --arch x64 --release-tier auto --packaged --root release/win-unpacked/resources",
+    "smoke:packaged:win": "node scripts/run_packaged_smoke.js",
+    "build:win": "npm run stage:jre:win && npm run stage:ace && npm run verify:resources:win && node scripts/run_electron_builder.js --win --x64 && npm run verify:packaged:win && npm run smoke:packaged:win",
+    "build:mac:x64": "npm run stage:ace && npm run verify:resources:mac:x64 && node scripts/run_electron_builder.js --mac --x64 && npm run verify:packaged:mac:x64",
+    "build:mac:arm64": "npm run stage:ace && npm run verify:resources:mac:arm64 && node scripts/run_electron_builder.js --mac --arm64 && npm run verify:packaged:mac:arm64",
+    "build:mac": "node scripts/run_native_mac_build.js",
+    "dist": "npm run build:win"
   },
   "devDependencies": {
-    "@daisy/ace": "^1.4.6",
+    "@daisy/ace-cli": "^1.4.6",
     "electron": "^43.1.0",
     "electron-builder": "^26.15.3"
   },
   "build": {
     "appId": "com.oakbylake.manuscript",
     "productName": "湖岸稿件 Oak Manuscript",
+    "electronDist": "scripts/electron_dist.js",
     "directories": { "output": "release" },
+    "beforePack": "scripts/before_pack.js",
     "files": ["electron/**/*", "renderer/**/*", "package.json"],
     "extraResources": [
       { "from": "python/oak_manuscript_core", "to": "python/oak_manuscript_core", "filter": ["**/*.py"] },
-      { "from": "python-runtime", "to": "python-runtime" },
       { "from": "config", "to": "config" },
       { "from": "samples", "to": "samples" },
-      { "from": "tools", "to": "tools" }
+      { "from": "tools/epubcheck-5.3.0", "to": "tools/epubcheck-5.3.0" }
     ],
-    "win": { "target": ["zip"], "icon": "electron/icon.ico" }
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "zip", "arch": ["x64"] }
+      ],
+      "icon": "electron/icon.ico",
+      "artifactName": "Oak-Manuscript-${version}-Windows-${arch}.${ext}",
+      "extraResources": [
+        { "from": "python-runtime", "to": "python-runtime" },
+        { "from": "tools/jre-win32-x64", "to": "tools/jre" },
+        { "from": "tools/ace", "to": "tools/ace" }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "湖岸稿件 Oak Manuscript",
+      "uninstallDisplayName": "湖岸稿件 Oak Manuscript",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "warningsAsErrors": true
+    },
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x64"] }
+      ],
+      "category": "public.app-category.productivity",
+      "artifactName": "Oak-Manuscript-${version}-macOS-${arch}.${ext}",
+      "extraResources": [
+        { "from": "python-runtime-macos-${arch}", "to": "python-runtime" },
+        { "from": "tools/jre-darwin-${arch}", "to": "tools/jre" },
+        { "from": "tools/ace", "to": "tools/ace" }
+      ]
+    }
   }
 }

@@ -4,13 +4,14 @@
 "use strict";
 
 const path = require("path");
+const { readCoreResult, toFailureResponse } = require("./core-result");
 
 function ok(data) {
   return { ok: true, ...data };
 }
 
 function fail(err) {
-  return { ok: false, error: String((err && err.message) || err) };
+  return toFailureResponse(err);
 }
 
 function assertProjectDir(project, pathPolicy) {
@@ -26,20 +27,6 @@ function assertOpaqueId(value, name) {
     throw new Error(`参数非法：${name}`);
   }
   return value;
-}
-
-async function readCoreResult(resultPromise) {
-  const { code, json, stderr } = await resultPromise;
-  if (json === null || json === undefined) throw new Error(stderr || "核心无输出");
-  const failedJson = json && typeof json === "object" && json.ok === false;
-  // AD-002：0=成功，1=发现未处理问题但仍有有效 JSON，2=运行错误。
-  // 保留 code 1 的可消费结果；其他非零退出码一律不能被外层包装成成功。
-  const failedExit = Number.isInteger(code) && code !== 0 && code !== 1;
-  if (failedJson || failedExit) {
-    const detail = json && typeof json === "object" && (json.error || json.message);
-    throw new Error(String(detail || stderr || `检查核心运行失败（退出码 ${code}）`));
-  }
-  return json;
 }
 
 function registerP0Ipc({ ipcMain, bridge, pathPolicy }) {

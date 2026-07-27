@@ -189,3 +189,41 @@ test("main P0 IPC surfaces core JSON errors and exit code 2, while preserving ex
   assert.equal(exitOne.ok, true);
   assert.equal(exitOne.result.plan_id, "plan-0002");
 });
+
+test("main P0 IPC preserves structured project write-lock errors", async () => {
+  const handlers = new Map();
+  const locked = async () => ({
+    code: 2,
+    json: {
+      ok: false,
+      error: {
+        code: "PROJECT_WRITE_LOCKED",
+        message: "项目正由另一个进程写入",
+        retryable: true,
+        details: { owner: { command: "test-holder-check", pid: 4321 } },
+      },
+    },
+    stderr: "",
+  });
+  registerP0Ipc({
+    ipcMain: { handle: (name, fn) => handlers.set(name, fn) },
+    bridge: {
+      planFixes: locked,
+      applyFixPlan: locked,
+      listCheckpoints: locked,
+      restoreCheckpoint: locked,
+    },
+    pathPolicy: { looksLikeProject: () => true },
+  });
+
+  const result = await handlers.get("core:plan-fixes")(null, {
+    project: "C:\\projects\\oak",
+  });
+  assert.deepEqual(result, {
+    ok: false,
+    error: "项目正由另一个进程写入",
+    code: "PROJECT_WRITE_LOCKED",
+    retryable: true,
+    details: { owner: { command: "test-holder-check", pid: 4321 } },
+  });
+});

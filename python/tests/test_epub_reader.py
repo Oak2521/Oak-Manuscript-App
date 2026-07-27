@@ -44,6 +44,24 @@ class EpubReaderTest(unittest.TestCase):
         self.assertIn("第一章", ch1.text)
         self.assertIn("c1", ch1.anchor_ids)
 
+    def test_accessible_fixture_emits_ace_metadata_and_toc_role(self):
+        path = self._save(
+            EpubBuilder(ace_accessible=True).chapter("c.xhtml", "<h1>章节</h1>")
+        )
+        with zipfile.ZipFile(path) as archive:
+            opf = archive.read("OEBPS/content.opf").decode("utf-8")
+            nav = archive.read("OEBPS/nav.xhtml").decode("utf-8")
+        for marker in [
+            'xml:lang="zh"',
+            'property="schema:accessMode"',
+            'property="schema:accessModeSufficient"',
+            'property="schema:accessibilityFeature"',
+            'property="schema:accessibilityHazard"',
+            'property="schema:accessibilitySummary"',
+        ]:
+            self.assertIn(marker, opf)
+        self.assertIn('epub:type="toc" role="doc-toc"', nav)
+
     def test_mimetype_not_first_detected(self):
         book = read_epub(self._save(EpubBuilder(mimetype_first=False).chapter("c.xhtml", "<p>x</p>")))
         self.assertFalse(book.mimetype_ok)

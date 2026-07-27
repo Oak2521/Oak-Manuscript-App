@@ -158,7 +158,11 @@ def build_book_toc_mismatch() -> DocxBuilder:
 def build_epub_good() -> EpubBuilder:
     """电子书绿色基线：预期 0 条问题。"""
     return (
-        EpubBuilder(title="示例电子书：构造基线", identifier="urn:oak:sample-epub-good")
+        EpubBuilder(
+            title="示例电子书：构造基线",
+            identifier="urn:oak:sample-epub-good",
+            ace_accessible=True,
+        )
         .chapter("chapter1.xhtml",
                  '<h1 id="c1">第一章 构造开端</h1>'
                  '<p>这是电子书构造样本的第一章，全部文字为占位而写。</p>'

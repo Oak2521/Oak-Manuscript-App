@@ -4,8 +4,19 @@
 
 const { spawn } = require("child_process");
 const pathPolicy = require("./path-policy");
+const {
+  createIsolatedPythonEnvironment,
+  pythonCoreInvocation,
+} = require("./python-invocation");
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
+
+function createPythonEnvironment(
+  source = process.env,
+  { electronExec = process.execPath, packaged = pathPolicy.appIsPackaged() } = {},
+) {
+  return createIsolatedPythonEnvironment(source, { electronExec, packaged });
+}
 
 /**
  * 运行核心子命令。返回 { code, json, stderr }。
@@ -17,11 +28,16 @@ function runCore(args, timeoutMs = DEFAULT_TIMEOUT_MS) {
       reject(new Error("非法的核心调用参数"));
       return;
     }
-    const child = spawn(pathPolicy.pythonExecutable(), ["-m", "oak_manuscript_core", ...args], {
-      cwd: pathPolicy.pythonDir(),
+    const invocation = pythonCoreInvocation({
+      executable: pathPolicy.pythonExecutable(),
+      coreDir: pathPolicy.pythonDir(),
+      args,
+    });
+    const child = spawn(invocation.command, invocation.args, {
+      cwd: invocation.cwd,
       shell: false,
       windowsHide: true,
-      env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+      env: createPythonEnvironment(),
     });
     let stdout = "";
     let stderr = "";
@@ -73,6 +89,7 @@ function restoreCheckpoint(projectPath, checkpointId) {
 }
 
 module.exports = {
+  createPythonEnvironment,
   runCore,
   planFixes,
   applyFixPlan,
