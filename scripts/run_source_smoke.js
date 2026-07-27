@@ -8,20 +8,26 @@ const {
   DEFAULT_TIMEOUT_MS,
   FAIL_MARKER,
   PASS_MARKER,
+  createSmokeRunId,
   createSmokeEnvironment,
   ensureLocalDirectory,
   isInside,
   readExpectedAppVersion,
   smokeArguments,
+  validateSmokeRunId,
 } = require("./run_packaged_smoke");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const MAX_OUTPUT_BYTES = 16 * 1024 * 1024;
 
-function getSourceSmokePaths(root = PROJECT_ROOT, electronExecutable = require("electron")) {
+function getSourceSmokePaths(
+  root = PROJECT_ROOT,
+  electronExecutable = require("electron"),
+  runId = "manual",
+) {
   const projectRoot = path.resolve(root);
   const outRoot = path.join(projectRoot, "out");
-  const smokeRoot = path.join(outRoot, "source-smoke");
+  const smokeRoot = path.join(outRoot, "source-smoke", "runs", validateSmokeRunId(runId));
   const paths = {
     projectRoot,
     electronExecutable: path.resolve(electronExecutable),
@@ -55,11 +61,12 @@ function runSourceSmoke({
   spawn = spawnSync,
   timeoutMs = DEFAULT_TIMEOUT_MS,
   inheritedEnv = process.env,
+  runId = createSmokeRunId(),
 } = {}) {
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
     throw new Error(`冒烟超时值非法：${String(timeoutMs)}`);
   }
-  const paths = getSourceSmokePaths(root, electronExecutable);
+  const paths = getSourceSmokePaths(root, electronExecutable, runId);
   const rootStat = fs.lstatSync(paths.projectRoot, { throwIfNoEntry: false });
   const electronStat = fs.lstatSync(paths.electronExecutable, { throwIfNoEntry: false });
   if (!rootStat?.isDirectory() || rootStat.isSymbolicLink()) {
@@ -123,6 +130,8 @@ function runSourceSmoke({
     ok: true,
     electronExecutable: paths.electronExecutable,
     expectedVersion,
+    runId,
+    smokeRoot: paths.smokeRoot,
     outputRoot: paths.projectOutput,
     stdout,
     stderr,

@@ -47,3 +47,25 @@ test("UI marks unrestorable checkpoints, shows the reason and prevents selection
   assert.match(styles, /\.checkpoint-option\.unrestorable/);
   assert.match(styles, /cursor:\s*not-allowed/);
 });
+
+test("UI exposes a complete project standard diff before one explicit apply", () => {
+  for (const id of [
+    "project-standard-text",
+    "btn-project-standard-change",
+    "rulepack-upgrade-dialog",
+    "rulepack-upgrade-summary",
+    "rulepack-upgrade-release",
+    "rulepack-upgrade-rules",
+    "rulepack-upgrade-standards",
+    "rulepack-upgrade-citation",
+    "btn-cancel-rulepack-upgrade",
+    "btn-confirm-rulepack-upgrade",
+  ]) {
+    assert.match(html, new RegExp(`id=["']${id}["']`));
+  }
+  assert.match(html, /已有项目不会静默改变/);
+  assert.match(app, /window\.oak\.planProjectStandardChange/);
+  assert.match(app, /window\.oak\.applyProjectStandardChange/);
+  assert.match(app, /\.textContent\s*=/);
+  assert.doesNotMatch(app, /rulepack-upgrade[^\n]*innerHTML/);
+});

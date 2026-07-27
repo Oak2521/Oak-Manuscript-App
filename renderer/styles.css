@@ -67,6 +67,12 @@ button.primary { background: var(--oak); border-color: var(--oak); color: #fff; 
 button.primary:hover:not(:disabled) { background: var(--oak-dark); color: #fff; }
 button.ghost { background: transparent; border-color: rgba(140,203,170,.6); color: inherit; }
 .actions { display: flex; gap: 10px; margin: 18px 0; flex-wrap: wrap; }
+.compact-actions { margin: 10px 0; }
+.standard-release-card .actions + .muted { margin-top: 4px; }
+.project-standard-panel {
+  margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(140,203,170,.55);
+}
+.project-standard-panel p { margin: 0 0 9px; }
 
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; margin-top: 10px; }
 .form-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
@@ -199,6 +205,26 @@ dialog.modal::backdrop { background: rgba(20, 29, 25, .58); }
 .checkpoint-name { font-weight: 600; }
 .checkpoint-meta { grid-column: 2; color: var(--muted); font-size: 12px; }
 .checkpoint-empty { padding: 18px; color: var(--muted); text-align: center; }
+.rulepack-upgrade-modal { width: min(980px, calc(100vw - 48px)); }
+.upgrade-diff-section { margin: 0 22px 16px; }
+.upgrade-diff-section h3 { margin: 0 0 7px; color: var(--oak-dark); font-size: 15px; }
+.upgrade-diff-list {
+  margin: 0; padding: 0; list-style: none; max-height: 24vh; overflow-y: auto;
+  border: 1px solid var(--line); border-radius: 7px; background: #fff;
+}
+.upgrade-diff-list li { padding: 8px 10px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.upgrade-diff-list li:last-child { border-bottom: none; }
+.upgrade-diff-list .empty-diff { color: var(--muted); }
+.upgrade-diff-kind { display: inline-block; min-width: 54px; font-weight: 700; color: var(--oak-dark); }
+.upgrade-mapping-diff {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+}
+.upgrade-mapping-column {
+  min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; padding: 9px 10px;
+  border: 1px solid var(--line); border-radius: 7px; background: #f4f6f5;
+  font-family: Consolas, monospace; font-size: 12px;
+}
+.upgrade-mapping-column.after { background: #edf6f0; }
 
 @media (max-width: 760px) {
   .batch-columns { display: none; }
@@ -207,4 +233,5 @@ dialog.modal::backdrop { background: rgba(20, 29, 25, .58); }
   .batch-preview.before::before { content: "修改前"; }
   .batch-preview.after::before { content: "修改后"; }
   .modal-actions { flex-wrap: wrap; }
+  .upgrade-mapping-diff { grid-template-columns: 1fr; }
 }

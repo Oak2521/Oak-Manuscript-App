@@ -19,6 +19,7 @@ from copy import deepcopy
 
 from .errors import OakError
 from .fixes import WHITELIST
+from .rulepack import rulepack_identity
 from .util import now_iso, sha256_bytes, sha256_file
 
 PLAN_SCHEMA_VERSION = "1.0"
@@ -124,11 +125,10 @@ def _candidate_items(issues: list[dict], pack: dict, settings: dict) -> list[dic
 def build_fix_plan(project, pack: dict, issues: list[dict]) -> dict:
     """构造当前批量修复计划；只读，不写项目或稿件文件。"""
     items = _candidate_items(issues, pack, project.data["settings"])
-    rulepack = {
-        "name": pack["pack_name"],
-        "version": pack["pack_version"],
-        "sha256": _canonical_sha256(pack),
-    }
+    rulepack = rulepack_identity(pack)
+    # 额外绑定内存中的完整规则定义；即使调用方在同一版本对象上做未落盘修改，
+    # 计划也必须过期。正式 store pack 的 ``sha256`` 仍是原始文件字节身份。
+    rulepack["content_sha256"] = _canonical_sha256(dict(pack))
     binding = {
         "schema_version": PLAN_SCHEMA_VERSION,
         "project_id": project.data["project_id"],

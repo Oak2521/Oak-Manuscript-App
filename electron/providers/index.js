@@ -1,5 +1,5 @@
-// Provider 适配层（方案 §11.4）。第一版全部本地占位：
-// 不发起任何网络请求；登录入口显示「即将开放」；同步仅记录本地偏好。
+// Provider 适配层（方案 §11.4）。Auth/License/Sync 当前不发起网络请求；
+// Evaluation 只返回固定 URL，由 main 在用户点击后校验白名单并交给系统浏览器。
 
 "use strict";
 
@@ -11,7 +11,7 @@ const AuthProvider = {
 };
 
 const SyncProvider = {
-  // 占位：仅本地偏好；未登录永不询问、永不发送（§8.5）
+  // 占位：偏好只存于当前进程；未登录永不询问、永不发送（§8.5）
   _preference: "never_asked",
   getPreference() {
     return this._preference;
@@ -36,9 +36,4 @@ const EvaluationProvider = {
   },
 };
 
-const StandardsProvider = {
-  packName: "oak-rules",
-  packVersion: "1.0.0",
-};
-
-module.exports = { AuthProvider, SyncProvider, LicenseProvider, EvaluationProvider, StandardsProvider };
+module.exports = { AuthProvider, SyncProvider, LicenseProvider, EvaluationProvider };

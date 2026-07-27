@@ -61,4 +61,4 @@
 
 好样本中的额外无障碍元数据是构造基线的一部分，目的是让真正的 Ace 好样本成立；它不代表应用已经完成对所有 EPUB Accessibility 1.1 要求的内建检查。重新生成样本后必须同时重跑核心、EpubCheck 和显式启用的 Ace 测试，不能只比较内部六条 M3 规则。
 
-桌面 smoke 使用这些样本创建真实项目，并读取 `project.json` 及其引用的检查报告，核对 Python core 版本、check ID 与规则包身份；因此样本流程通过不能只由 Renderer 返回值证明。
+桌面 smoke 使用这些样本创建真实项目，并读取 `project.json` 及其引用的检查报告，核对 Python core 版本、check ID，以及 APP/项目/检查/报告的规则包名称、版本、固定标志、规则包 SHA-256、bundle ID、release sequence 与 manifest SHA-256；因此样本流程通过不能只由 Renderer 返回值证明。

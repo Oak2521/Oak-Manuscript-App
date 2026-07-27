@@ -2,6 +2,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { randomBytes } = require("crypto");
 const { spawnSync } = require("child_process");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
@@ -12,6 +13,7 @@ const PASS_MARKER = "SMOKE-RESULT: PASS";
 const FAIL_MARKER = "SMOKE-RESULT: FAIL";
 const EXPECTED_VERSION_ENV = "OAK_EXPECTED_APP_VERSION";
 const EXPECT_PACKAGED_ENV = "OAK_EXPECT_PACKAGED";
+const RUN_ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
 const UNSAFE_ENV_NAMES = new Set([
   "all_proxy",
@@ -60,17 +62,29 @@ function assertInside(base, candidate, label) {
   }
 }
 
-function getSmokePaths(root = PROJECT_ROOT) {
+function createSmokeRunId() {
+  return `${Date.now().toString(36)}-${randomBytes(8).toString("hex")}`;
+}
+
+function validateSmokeRunId(runId) {
+  if (typeof runId !== "string" || !RUN_ID_RE.test(runId)) {
+    throw new Error(`冒烟运行 ID 非法：${String(runId)}`);
+  }
+  return runId;
+}
+
+function getSmokePaths(root = PROJECT_ROOT, runId = "manual") {
+  const validatedRunId = validateSmokeRunId(runId);
   const projectRoot = path.resolve(root);
   const outRoot = path.join(projectRoot, "out");
-  const smokeRoot = path.join(outRoot, "packaged-smoke");
+  const smokeRoot = path.join(outRoot, "packaged-smoke", "runs", validatedRunId);
   const paths = {
     projectRoot,
     executable: path.join(projectRoot, "release", "win-unpacked", PRODUCT_EXE),
     outRoot,
     smokeRoot,
     projectOutput: path.join(smokeRoot, "projects"),
-    temp: path.join(outRoot, "tmp", "packaged-smoke"),
+    temp: path.join(smokeRoot, "tmp"),
     userData: path.join(smokeRoot, "electron-user-data"),
     diskCache: path.join(smokeRoot, "electron-cache"),
     home: path.join(smokeRoot, "home"),
@@ -240,6 +254,7 @@ function runPackagedSmoke({
   timeoutMs = DEFAULT_TIMEOUT_MS,
   inheritedEnv = process.env,
   hostPlatform = process.platform,
+  runId = createSmokeRunId(),
 } = {}) {
   if (hostPlatform !== "win32") {
     throw new Error(`Windows 打包冒烟只能在 win32 主机执行；当前为 ${hostPlatform}`);
@@ -248,7 +263,7 @@ function runPackagedSmoke({
     throw new Error(`冒烟超时值非法：${String(timeoutMs)}`);
   }
 
-  const paths = getSmokePaths(root);
+  const paths = getSmokePaths(root, runId);
   const rootStat = fs.lstatSync(paths.projectRoot);
   if (!rootStat.isDirectory()) throw new Error(`项目根目录不存在：${paths.projectRoot}`);
   const executableReal = (() => {
@@ -321,6 +336,8 @@ function runPackagedSmoke({
     ok: true,
     executable: paths.executable,
     expectedVersion,
+    runId,
+    smokeRoot: paths.smokeRoot,
     outputRoot: paths.projectOutput,
     stdout,
     stderr,
@@ -346,6 +363,7 @@ module.exports = {
   EXPECT_PACKAGED_ENV,
   PASS_MARKER,
   PRODUCT_EXE,
+  createSmokeRunId,
   createSmokeEnvironment,
   ensureLocalDirectory,
   getSmokePaths,
@@ -353,5 +371,6 @@ module.exports = {
   readExpectedAppVersion,
   runPackagedSmoke,
   smokeArguments,
+  validateSmokeRunId,
   verifyWindowsX64Executable,
 };

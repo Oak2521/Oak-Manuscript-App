@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-27
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.2`
+> 当前版本：`0.1.0-alpha.3`
 > 当前分支：`chatgpt/commercial-v1`
-> 源码检查点标签：`chatgpt-v0.1.0-alpha.2`（只标记源码与本地验证状态，不代表安装包或正式发行）
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.3`（只标记源码与本地验证状态，不代表安装包或正式发行）
 
 ## 1. 权威入口与工作区
 
@@ -30,9 +30,19 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 2. 当前现场事实
 
-### 已完成：0.1.0-alpha.2 Windows alpha 资源与离线发布门禁
+### 已完成：0.1.0-alpha.3 标准包可信链、项目固定版本与显式升级
 
-- APP、Python 核心和 lockfile 版本已推进到 `0.1.0-alpha.2`；源码与打包 smoke 契约分别读取 Electron `appVersion`、Python 核心实际生成的项目/报告 `app_version` 和规则包身份，避免以壳版本代替核心证据；源码 smoke 的项目、临时目录、缓存、用户数据和崩溃目录全部限定在 `out/source-smoke/`；
+- APP、Python 核心和 lockfile 版本已推进到 `0.1.0-alpha.3`；规则包继续是 `oak-rules 1.0.0`、发布序列 1，本轮没有借 APP 版本变化伪造标准内容版本；
+- `standards.json` 升级为治理 schema 2.0，保留 13 项标准；`rule-capabilities.json` 对 35 条规则与 6 个机械 fixer 做精确能力映射；canonical manifest 固定 payload、APP 兼容范围、release sequence、规则包哈希与能力集哈希；
+- manifest SHA-256 为 `d33534f081b2122a90652ee03304a0e71177a7fd0d3130fffe77b0fea807d7af`；规则包 SHA-256 为 `7ac5a5bdb126e9f5148a040ce42a634b1a95295c27d7a72c774db54bf7129542`；
+- Electron 标准存储实现严格 JSON/payload 校验、Ed25519 门槛签名、内容寻址存储、release sequence 高水位、撤回/过期/兼容性检查、签署的精确回滚目标、跨进程事务锁和确定性崩溃恢复；未知或身份不一致状态一律 fail-closed；
+- 当前内置包可离线验证并启动；本地签名包预览、安装和全局回滚路径已实现，但生产 trust pin 尚未配置，所以真实本地签名包导入默认禁用；联网检查、下载与自动升级尚未实现；
+- 新项目直接绑定当前已验证包；已有项目先运行一次不带身份绑定的只读 `project-standard-status` 预检以发现 pin（预检前仍先验证全局标准存储），Electron 随后精确核验项目所指 CAS release。真正的业务或变更命令再以净化环境变量携带完全相同的 canonical 七字段身份，由 Python 复核；
+- `project-standard-status`、`plan-rulepack-upgrade` 与 `upgrade-rulepack` 已实现。升级计划绑定项目清单、状态、source/working、issues、最新检查和目标身份；UI 集中显示完整差异并一次确认，目标 digest 由主进程选择；升级创建检查点、归档旧 issues、原子提交新 pin，并强制重检；
+- 全局包更新不会静默改变已有项目。过期、撤回或 APP 不兼容的旧包只可作为受控迁移源，不能放宽签名、路径、payload、能力映射、未来 release 或身份校验；
+- `app:info`、源码 smoke 和打包 smoke 契约核对 APP、项目、检查记录与导出报告的完整七字段身份；源码 smoke 每次使用独立 `out/source-smoke/runs/<run-id>/`，不会被旧 userData 或标准存储污染；
+**继承并回归的 alpha.2 离线资源、安全与发布门禁能力：**
+
 - Electron 正常启动即对默认 session 应用离线 Chromium switches 和 `http/https/ws/wss/ftp` 请求拦截，Renderer CSP 继续禁止远程脚本；未来获授权的联网 Provider 必须使用独立受限通道，不能放宽默认 session；
 - PDF 审阅样张使用非持久、无缓存的隔离 session，禁用 JavaScript、导航、新窗口和网络，并在加载 HTML 后复核文件身份；PDF 通过父目录/目标身份验证后在 `exports/` 同目录暂存、`fsync` 并原子换入；
 - Python 项目打开已改为完整 schema 与路径 fail-closed 验证；项目根、固定子目录、manifest、source/working、报告与检查点均拒绝逃逸、链接/联接、硬链接和身份混淆；所有变更型 CLI 命令共用非阻塞跨进程内核写锁，争用时返回可重试的结构化 `PROJECT_WRITE_LOCKED`；
@@ -48,7 +58,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - Ace tracked lock 不仅固定解析后的 manifest 语义，还固定 `tools/ace/manifest.json` 原始字节哈希；语义等价但字节漂移同样拒绝；
 - macOS 构建拆为 x64/arm64 原生 runner；跨主机聚合只能做不执行探针的静态检查，不能把 Windows 上的静态配置结果写成 macOS 运行验证；
 - Windows alpha 资源门禁实际执行 Python 与 JRE/EpubCheck 探针并通过；sale 门禁按设计拒绝并列出 18 项未完成的正式发布责任，不会把 alpha 资源完备误判为可售卖版本；
-- 经批准的提升权限 `build:win` 已完成本地 JRE/Ace staging 和 Windows alpha 资源探针，随后仅因 `tools/electron-builder/win32-x64` 缺失而明确停止；未联网下载，也没有产生 alpha.2 安装包或 ZIP。
+- 经批准的提升权限 `build:win` 已完成本地 JRE/Ace staging 和 Windows alpha 资源探针，随后仅因 `tools/electron-builder/win32-x64` 缺失而明确停止；未联网下载，也没有产生 alpha.3 安装包或 ZIP。
 
 ### 已完成：0.1.0-alpha.1 P0 可信批量修复闭环（保留历史）
 
@@ -63,12 +73,13 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - Electron preload 保持 `sandbox: true`，没有直接修复 IPC，只有计划、确认应用、列表和恢复四个固定 P0 通道；
 - 当时 APP / Python 核心 / package 版本统一为 `0.1.0-alpha.1`；Node 与 Python 已统一到 `npm test`。
 
-### 现场验证（2026-07-27，最新安全收口后）
+### 现场验证（2026-07-27，alpha.3）
 
-- 原生/沙箱外 `npm test` 统一入口：**PASS**。Node TAP 共 99 项，96 通过、0 失败、3 项跳过；三条均因当前 Windows 权限不能创建或替换 symlink/junction 的 path-policy 条件场景。Python 共 270 项，0 失败、0 错误、3 项条件跳过；
-- `python scripts/run_tests.py`：共 270 项，0 失败、0 错误、3 项条件跳过；
-- 沙箱外隐藏 Chrome 的 `$env:OAK_TEST_ACE='1'; python scripts\run_tests.py`：270 项，0 失败、0 错误、1 项条件跳过，用时 36.112 秒；受限沙箱内 Chrome 超时属于环境限制，核心按设计 fail-closed，不写成工具通过或代码失败；
-- 沙箱外隐藏 Electron `npm run smoke`：`SMOKE-RESULT: PASS`。输出严格位于 `out/source-smoke/projects/`；DOCX/EPUB 均完成检查→集中预览→批量确认修复→恢复→再次修复闭环，两个 `project.json` 均为 `app_version=0.1.0-alpha.2`、`integrity.source_hash_ok=true`；PDF 分别为 258,394 和 161,830 字节；
+- 原生/沙箱外 `npm test` 统一入口：**PASS**。Node TAP 共 186 项，181 通过、0 失败、5 项条件跳过；Python 共 312 项，0 失败、0 错误、3 项条件跳过；
+- `python scripts/run_tests.py`：共 312 项，0 失败、0 错误、3 项条件跳过，用时 77.755 秒；
+- 沙箱外隐藏 Chrome 的 `$env:OAK_TEST_ACE='1'; python scripts\run_tests.py`：312 项，0 失败、0 错误、1 项条件跳过，用时 46.321 秒；早期同类受限运行器诊断无法生成安全报告，核心按设计返回 `not_run`，不写成工具通过或代码失败；
+- `npm run verify:standards`：**PASS**，产出上述 manifest/规则包 digest；
+- 沙箱外隐藏 Electron `npm run smoke`：`SMOKE-RESULT: PASS`。最新运行根为 `out/source-smoke/runs/ms34lrwa-cf3ac49f857dc7fc/projects/`；DOCX/EPUB 均完成检查→集中预览→批量确认修复→恢复→再次修复闭环，两个项目均为 `app_version=0.1.0-alpha.3`、`integrity.source_hash_ok=true`，各含 4 次检查记录，APP/项目/当前检查/报告七字段身份一致；PDF 分别为 258,400 和 161,845 字节；
 - Windows alpha 资源门禁实际执行运行时探针并通过；sale 门禁有 18 项 blocker；提升权限 `build:win` 完成本地 JRE/Ace staging 和资源探针后，仅在缺少 `tools/electron-builder/win32-x64` 处停止，未联网、未生成制品；
 - `npm run verify:resources:mac:static` 在 Windows 上按预期 FAIL，精确缺少 darwin-x64/arm64 Electron dist、两架构 Python runtime 锁和 `tools/jre-darwin-x64` / `tools/jre-darwin-arm64`；这证明跨主机静态逻辑可执行，不证明 macOS 可构建或已发行。两架构仍没有产物、签名、公证或打包版 smoke 证据。
 
@@ -84,18 +95,18 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 6. 同步只允许检查结果和必要元数据，不同步稿件、正文、摘录、文件名、路径或哈希；登录用户必须明确选择是否同步；
 7. 引用体例保留“默认”，由确定性映射自动选择，并在报告中说明；
 8. 标准文件需要签名清单、下载校验、版本固定、回滚和升级提示；已有项目不得被静默换规则；
-9. “接入用户自己的 AI”的六项设计决定已由用户确认，但用户尚未明确批准正式写入 v2.0 方案或实现；当前不得实现或擅自扩展范围；
+9. “接入用户自己的 AI”已确认六项设计：无 AI / 湖岸 AI / 我的 AI 三模式；支持云 API、自托管 OpenAI-compatible 服务和 Ollama/LM Studio；凭据永不同步且 Web 仅会话保存；AI 只给建议、绝不静默改稿；属于 Pro 且不消耗湖岸 AI 配额；失败时不静默回退。用户尚未明确批准把它写入 v2.0 方案或开始实现，当前不得擅自扩展范围；
 10. 不进行 AI 语义改写，自动修复仍只限冻结白名单机械操作。
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.2 已形成可复制、可执行、由 tracked full lock 固定的生产闭包，并通过 Windows alpha 资源门禁与沙箱外隐藏 Chrome 真实条件测试。正式版仍缺最小权限受控 helper、自带且校验过的浏览器运行时、OS 级默认拒绝网络、可信根加固、18 个生成元数据通知包的原始许可证审计，以及全部 236 包的来源/许可证/版权/再分发义务人工审计；
-- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.2 尚无安装器或 ZIP，未做打包版 smoke、干净系统安装/升级/卸载或签名；
+- 打包版 Ace：alpha.3 继承了可复制、可执行、由 tracked full lock 固定的生产闭包，并通过 Windows alpha 资源门禁与沙箱外隐藏 Chrome 真实条件测试。正式版仍缺最小权限受控 helper、自带且校验过的浏览器运行时、OS 级默认拒绝网络、可信根加固、18 个生成元数据通知包的原始许可证审计，以及全部 236 包的来源/许可证/版权/再分发义务人工审计；
+- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.3 尚无安装器或 ZIP，未做打包版 smoke、干净系统安装/升级/卸载或签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：服务端任务 API、隔离执行、限额、零留存和官网嵌入尚未实现；
 - 账号/订阅/同步：UI 入口和 Provider 仍是离线占位，未连接生产 Supabase、支付或网站后台；
-- 标准库：现有 13 条注册表、35 条规则只是最小集合，存在占位说明、来源缺口和 APA/Chicago 覆盖过薄，详见 `docs/STANDARDS_GAP_AUDIT_20260726.md`；
-- 标准升级：签名 manifest、更新器、项目版本固定和回滚尚未编码；
+- 标准库：治理结构已完成，13 项标准、35 条规则和 6 个 fixer 映射一致，旧占位摘要已删除；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，GB/T 来源、APA/Chicago/EPUB 深度、TXT/Markdown/纸质出版/可访问性覆盖和真实人工签核仍不完整；
+- 标准升级：本地验证、签名包导入/回滚骨架、项目固定与显式升级已编码；生产 trust pin、在线获取/下载、签名撤回分发与联网自动更新未实现；
 - 正式发布仍缺隐私/条款最终文本、证书、生产密钥、人工内测、macOS 硬件和网站联调。
 
 ### Windows sale 门禁的 18 项明确阻断
@@ -126,10 +137,10 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 不要重新做宽泛规划，按 v2.0 方案继续：
 
 1. 经用户联网授权后，把固定版本的 Windows builder 工具完整放入仓库本地工具链；
-2. 生成 alpha.2 NSIS 安装器与 ZIP，逐项运行打包资源门禁、应用身份断言、打包版 smoke、SHA-256 和干净环境检查；
+2. 生成 alpha.3 NSIS 安装器与 ZIP，逐项运行打包资源门禁、应用身份断言、打包版 smoke、SHA-256 和干净环境检查；
 3. 完成 Windows 代码签名，并逐项关闭 provenance、许可证、可信根、Ace helper/browser 等 sale blocker；
-4. 实现标准包签名 manifest、本地更新、项目固定版本和回滚；
-5. 按标准缺口审计补来源与规则，新增规则必须有反例、样本和回归测试；
+4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
+5. 补齐默认引用选择的结构信号、原因/置信度与低置信度退回，不把现有稿件类型映射误写成完整商业方案能力；
 6. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
 7. 实现 Auth / License / Sync 的离线契约和生产适配边界，再经授权连接网站；
 8. 实现服务端统一处理的 Web 作业 API、零留存和官网嵌入；完成 Free/Pro、支付、隐私、内测和正式发布门禁。
@@ -156,6 +167,9 @@ python -m oak_manuscript_core plan-fixes --project <项目目录>
 python -m oak_manuscript_core fix --project <项目目录> --plan-id <计划ID>
 python -m oak_manuscript_core list-checkpoints --project <项目目录>
 python -m oak_manuscript_core restore-checkpoint --project <项目目录> --checkpoint-id <检查点ID>
+python -m oak_manuscript_core project-standard-status --project <项目目录>
+python -m oak_manuscript_core plan-rulepack-upgrade --project <项目目录> --to-manifest-sha256 <摘要>
+python -m oak_manuscript_core upgrade-rulepack --project <项目目录> --to-manifest-sha256 <摘要> --plan-id <计划ID>
 ```
 
 ## 7. 交接纪律

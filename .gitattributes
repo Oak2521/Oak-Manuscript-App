@@ -4,4 +4,8 @@
 # These files participate in byte-level SHA-256 trust locks. Their checkout
 # bytes must be identical on Windows and macOS regardless of core.autocrlf.
 config/tool-manifests/*.json text eol=lf
+config/standards.json text eol=lf
+config/rule-capabilities.json text eol=lf
+config/rule-packs/*.json text eol=lf
+config/standard-packs/*.json text eol=lf
 scripts/patches/*.js text eol=lf

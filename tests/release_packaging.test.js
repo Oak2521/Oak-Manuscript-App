@@ -42,6 +42,8 @@ const { pythonExecutableFor } = require("../electron/path-policy");
 const { createPythonEnvironment } = require("../electron/python-bridge");
 const { CORE_BOOTSTRAP, pythonCoreInvocation } = require("../electron/python-invocation");
 const { compareUtf16 } = require("../scripts/deterministic_compare");
+const { verifyStandardAssets } = require("../scripts/standard_assets");
+const { BUNDLED_STANDARD_RELEASE } = require("../electron/standards-provider");
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 const PATCH_BEFORE = "681b52d047d5f6eebbfc62a925b7dc22b82589ab63b36a9ea602297f8cd86ea6";
@@ -405,12 +407,17 @@ function createResourceFixture(t) {
     "python/oak_manuscript_core/project.py",
     "python/oak_manuscript_core/external.py",
   ]) write(root, relative, "# fixture\n");
-  writeJson(root, "config/standards.json", {});
-  writeJson(root, "config/rule-packs/oak-rules-1.0.0.json", {
-    pack_name: "oak-rules",
-    pack_version: "1.0.0",
-    rules: [{ rule_id: "FIXTURE-001" }],
-  });
+  for (const relative of [
+    "config/standards.json",
+    "config/rule-capabilities.json",
+    "config/rule-packs/oak-rules-1.0.0.json",
+    "config/standard-packs/oak-standards-1.0.0.manifest.json",
+  ]) {
+    const source = path.join(REPO_ROOT, ...relative.split("/"));
+    const destination = path.join(root, ...relative.split("/"));
+    fs.mkdirSync(path.dirname(destination), { recursive: true });
+    fs.copyFileSync(source, destination);
+  }
   write(root, "tools/epubcheck-5.3.0/epubcheck.jar");
   write(root, "tools/epubcheck-5.3.0/LICENSE.txt");
   write(root, "tools/epubcheck-5.3.0/lib/dependency.jar");
@@ -473,12 +480,12 @@ function createToolchainFixture(t) {
   return { root, toolchain };
 }
 
-test("electron-builder config is valid and pins alpha.2 Windows installer policy", async () => {
+test("electron-builder config is valid and pins alpha.3 Windows installer policy", async () => {
   const packageJson = require("../package.json");
   const packageLock = require("../package-lock.json");
   await validateConfiguration(packageJson.build, { isEnabled: false, add() {} });
 
-  assert.equal(packageJson.version, "0.1.0-alpha.2");
+  assert.equal(packageJson.version, "0.1.0-alpha.3");
   assert.equal(packageLock.version, packageJson.version);
   assert.equal(packageLock.packages[""].version, packageJson.version);
   const pythonInit = fs.readFileSync(
@@ -501,6 +508,11 @@ test("electron-builder config is valid and pins alpha.2 Windows installer policy
     { target: "nsis", arch: ["x64"] },
     { target: "zip", arch: ["x64"] },
   ]);
+  const standardsGate = verifyStandardAssets(REPO_ROOT);
+  assert.equal(BUNDLED_STANDARD_RELEASE.manifestSha256, standardsGate.manifestSha256);
+  assert.equal(BUNDLED_STANDARD_RELEASE.version, standardsGate.manifest.version);
+  assert.equal(BUNDLED_STANDARD_RELEASE.releaseSequence,
+    standardsGate.manifest.release_sequence);
   assert.equal(packageJson.build.win.artifactName, "Oak-Manuscript-${version}-Windows-${arch}.${ext}");
   assert.equal(packageJson.build.nsis.oneClick, false);
   assert.equal(packageJson.build.nsis.perMachine, false);
@@ -677,6 +689,10 @@ test("Puppeteer install config disables all browser downloads", () => {
 test("hash-pinned manifests and controlled patches always checkout with LF bytes", () => {
   const attributes = fs.readFileSync(path.join(REPO_ROOT, ".gitattributes"), "utf8");
   assert.match(attributes, /^config\/tool-manifests\/\*\.json text eol=lf$/m);
+  assert.match(attributes, /^config\/standards\.json text eol=lf$/m);
+  assert.match(attributes, /^config\/rule-capabilities\.json text eol=lf$/m);
+  assert.match(attributes, /^config\/rule-packs\/\*\.json text eol=lf$/m);
+  assert.match(attributes, /^config\/standard-packs\/\*\.json text eol=lf$/m);
   assert.match(attributes, /^scripts\/patches\/\*\.js text eol=lf$/m);
 });
 
@@ -752,7 +768,7 @@ test("beforePack forwards the builder project root and target platform", () => {
   const calls = [];
   beforePack(
     {
-      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.2" } },
+      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.3" } },
       electronPlatformName: "darwin",
       arch: 1,
     },
@@ -765,7 +781,7 @@ test("beforePack forwards the builder project root and target platform", () => {
     source: true,
     releaseTier: "alpha",
   }]);
-  assert.equal(releaseTierForVersion("0.1.0-alpha.2"), "alpha");
+  assert.equal(releaseTierForVersion("0.1.0-alpha.3"), "alpha");
   assert.equal(releaseTierForVersion("1.0.0"), "sale");
   assert.equal(parseResourceGateArgs(["--release-tier", "auto"]).releaseTier, "alpha");
   assert.equal(parseResourceGateArgs(["--no-runtime-probe"]).executeRuntimes, false);
@@ -831,8 +847,13 @@ test("Python bridge removes inherited Python and Oak injection before setting fi
     PYTHONSTARTUP: "C:/evil.py",
     OAK_APP_PACKAGED: "attacker",
     OAK_ELECTRON_EXEC_PATH: "C:/evil.exe",
+    OAK_STANDARDS_STORE: "C:/evil-standards",
     SAFE_VALUE: "kept",
-  }, { electronExec: "C:/Oak/Oak.exe", packaged: true });
+  }, {
+    electronExec: "C:/Oak/Oak.exe",
+    packaged: true,
+    standardsStoreRoot: path.join(REPO_ROOT, "out", "trusted-standards"),
+  });
   assert.equal(env.Path, "C:/Windows");
   assert.equal(env.SAFE_VALUE, "kept");
   assert.equal(env.PYTHONHOME, undefined);
@@ -842,6 +863,7 @@ test("Python bridge removes inherited Python and Oak injection before setting fi
   assert.equal(env.PYTHONNOUSERSITE, "1");
   assert.equal(env.OAK_APP_PACKAGED, "1");
   assert.equal(env.OAK_ELECTRON_EXEC_PATH, "C:/Oak/Oak.exe");
+  assert.equal(env.OAK_STANDARDS_STORE, path.join(REPO_ROOT, "out", "trusted-standards"));
   const invocation = pythonCoreInvocation({
     executable: "python3",
     coreDir: path.join(REPO_ROOT, "python"),

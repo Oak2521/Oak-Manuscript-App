@@ -28,6 +28,7 @@ const {
   ACE_LAUNCHER_SHA256,
   verifyAceStageLock,
 } = require("./stage_ace");
+const { verifyStandardAssets } = require("./standard_assets");
 
 const LICENSE_FILE_PATTERN = /^(license|licence|copying|notice)([._-]|$)/i;
 const GENERATED_LICENSE_URLS = Object.freeze({
@@ -139,6 +140,20 @@ function verifyCore(root, errors, checks) {
     } catch (error) {
       errors.push(`规则包 JSON 无法解析：${relative}（${error.message}）`);
     }
+  }
+
+  try {
+    const result = verifyStandardAssets(root);
+    checks.push({
+      type: "standards-bundle",
+      path: path.relative(root, result.manifestTarget).split(path.sep).join("/"),
+      bundle_id: result.manifest.bundle_id,
+      release_sequence: result.manifest.release_sequence,
+      version: result.manifest.version,
+      manifest_sha256: result.manifestSha256,
+    });
+  } catch (error) {
+    errors.push(`标准与规则包固定清单门禁失败：${error.message}`);
   }
 }
 

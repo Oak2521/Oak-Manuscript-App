@@ -107,6 +107,27 @@ class OpsFlowTest(unittest.TestCase):
         revised = next(p for p in written if p.name.startswith("revised_"))
         self.assertEqual(revised.read_bytes(), self.proj.working_path.read_bytes())
         self.assertEqual(sha256_file(self.proj.source_path), self.proj.source_sha256)
+        project_identity = self.proj.data["rulepack"]
+        check_identity = self.proj.data["checks"][-1]["rulepack"]
+        check_result = json.loads(
+            (
+                self.proj.root
+                / self.proj.data["checks"][-1]["result_file"]
+            ).read_text(encoding="utf-8")
+        )
+        exported_report = json.loads(
+            (self.proj.root / "exports" / "report.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            set(project_identity),
+            {
+                "name", "version", "pinned", "sha256", "bundle_id",
+                "release_sequence", "manifest_sha256",
+            },
+        )
+        self.assertEqual(check_identity, project_identity)
+        self.assertEqual(check_result["rulepack"], project_identity)
+        self.assertEqual(exported_report["rulepack"], project_identity)
 
     def test_export_requires_prior_check(self):
         with self.assertRaises(OakError):

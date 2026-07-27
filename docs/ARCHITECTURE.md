@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.2` 源码检查点架构；本轮尚未生成 alpha.2 Windows 安装器或 ZIP。macOS、Web、统一账号、订阅、同步与标准自动升级仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.3` 源码检查点架构；本轮尚未生成 alpha.3 Windows 安装器或 ZIP。本地标准验证、项目固定版本、显式升级与回滚已实现；联网标准获取、生产信任根、macOS、Web、统一账号、订阅与同步仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -12,13 +12,19 @@ Electron Main
   ├─ 默认 session 离线门禁 + Renderer CSP
   ├─ PDF：非持久隔离 session / 禁 JS、导航、网络 / 身份校验后原子写
   ├─ appInfo 身份（版本 + 规则包 + app.isPackaged），供源码与打包 smoke 防止错验旧包
+  ├─ StandardsProvider：内置 release 验证 / 本地签名包预览与安装 / 全局回滚
+  ├─ StandardsStore：严格 payload / 签名 / CAS / 高水位 / 撤回 / 事务恢复
+  ├─ standard-bound-core：项目 release 预检 + 七字段 Python 绑定
   ├─ 统一 Python bootstrap：-I -S -X utf8 + 受控 core 目录
   ├─ P0 修复：planFixes / applyFixPlan（必须带 plan_id）
+  ├─ 标准 IPC：项目状态 / 完整差异计划 / 一次确认升级
   └─ 检查点：listCheckpoints / restoreCheckpoint
         ↓ shell=false，参数数组，严格 UTF-8 JSON
 Python Core（oak_manuscript_core）
   ├─ 读取器：DOCX（M1）/ Markdown、TXT（M2）/ EPUB（M3）
   ├─ 规则引擎（确定性）与规则包加载
+  ├─ standards_store：manifest/payload/CAS 重验与项目 release 解析
+  ├─ rulepack_upgrade：只读差异计划 → 检查点/归档 → 原子 pin → 强制重检
   ├─ plan-fixes 只读计划 → plan_id 确认 → fix 原子批量修复
   ├─ 项目管理：完整 schema/路径验证、只读原稿、SHA-256、跨进程内核写锁
   ├─ create：锁前零污染预检 → 锁内单 FD 输入 → source → working
@@ -79,6 +85,24 @@ Python `export_project(..., out_dir=...)` 逐级检查目标父链；项目内�
 
 PDF 使用无 `persist:` 前缀且禁缓存的专用 session，禁 JavaScript、导航、新窗口和网络；专用 CSP 只允许自包含报告所需的内联样式和 `data:` 图片。加载前后复核 `report.html` 文件身份，输出 writer 逐段复核项目根、`exports/` 与目标身份，并以同目录临时文件原子换入 `report_preview.pdf`。
 
+### AD-009 标准 release 以签名 manifest 与内容身份为真相（2026-07-27，冻结）
+
+标准 release 不以界面显示的名称/版本为身份。canonical manifest 固定 `bundle_id`、版本、`release_sequence`、兼容 APP 范围、payload 大小/哈希、规则包 SHA-256、能力集摘要与精确 `rollback_target`；项目、检查和报告保存七字段身份 `name/version/pinned/sha256/bundle_id/release_sequence/manifest_sha256`。任一层只比较 name/version 都属于错误实现。
+
+`StandardsStore` 先严格解析 payload 与 manifest，再验证非内置包的 Ed25519 门槛签名，最后写入以 manifest SHA-256 命名的 CAS。active/previous、高水位、CAS 中所有同 bundle release、撤回表与签署回滚目标在每次使用前交叉验证。跨进程变更使用原子 pending 事务目录、PID 和随机 process token；只为确定死亡的 owner 按精确 intent 恢复，PID 复用或未知变更一律 fail-closed。
+
+磁盘 trust store 自身必须由代码固定原始字节 SHA-256；当前生产 digest 为空，因此本地签名包导入默认禁用。这个禁用状态是可信边界，不可为演示绕过。内置 release 可离线 bootstrap；在线检查、下载和服务端撤回分发属于后续独立 transport，不得修改本地验证规则。
+
+### AD-010 全局标准与项目固定版本分离（2026-07-27，冻结）
+
+全局 active 只决定新项目默认 release，不改变已有项目。新项目直接使用已验证 active identity。已有项目必须先做一次未携带 `OAK_EXPECTED_STANDARD_IDENTITY` 的只读 `project-standard-status` 预检来发现七字段 pin；预检之前 Electron 仍先验证全局标准存储，预检之后要求 `StandardsProvider.verifyReleaseIdentity()` 在 CAS 中精确匹配该 pin。只有通过这两道门禁，后续业务或变更命令才以 canonical `OAK_EXPECTED_STANDARD_IDENTITY` 绑定 Python；Python 再重算 manifest/payload/CAS 身份。这个受限预检是启动信任链的一部分，不能笼统写成“每个 Python 进程都预先绑定”。
+
+项目迁移使用 `project-standard-status` → `plan-rulepack-upgrade` → `upgrade-rulepack`。目标摘要由主进程选择，Renderer 不能提供任意 digest；计划绑定项目 manifest/state、source/working、issues、最新检查和当前/目标身份。提交前重算计划，建立检查点并归档 issues，原子换入新 pin，记录连续 history，设置 `rulepack_check_required=true`。重检完成前修复、导出和外部验证均拒绝继续。撤回、过期或不兼容旧包只可作为迁移源，不能放宽签名、payload、路径、未来 release、能力映射或身份校验。
+
+### AD-011 标准升级承诺可打开状态，不夸大跨文件原子性（2026-07-27）
+
+升级把 `project.json` 的原子换入作为提交点：提交前故障恢复原清单并清理本事务创建物；提交后即使进程被强杀，项目仍可打开且旧 live issues 最多成为未引用冗余。检查点目录、issues 归档和 live issues 删除不是单一文件系统事务，可能留下可安全识别的孤儿，但不能留下清单引用缺失文件或静默混合两套规则。此保证与通用导出的逐文件原子性不同，不得笼统宣传为任意多文件 ACID。
+
 ## 3. Python 核心模块地图（随实现更新）
 
 | 模块 | 职责 |
@@ -92,7 +116,9 @@ PDF 使用无 `persist:` 前缀且禁缓存的专用 session，禁 JavaScript、
 | `oak_manuscript_core/readers/epub_reader.py` | （M3）EPUB 容器 / OPF / nav / 内容文档结构解析 |
 | `oak_manuscript_core/epub_writer.py` | （M3）基础 EPUB 导出（自检零问题） |
 | `oak_manuscript_core/model.py` | 文档模型、问题（Issue）、检查结果的数据类 |
-| `oak_manuscript_core/rulepack.py` | 规则包加载与校验、「默认」体例映射 |
+| `oak_manuscript_core/rulepack.py` | 规则包严格加载、七字段身份绑定、标准注册表校验与「默认」体例映射 |
+| `oak_manuscript_core/standards_store.py` | 内置/用户标准 CAS、manifest/payload 哈希重验、active 与历史 release 解析、期望身份绑定 |
+| `oak_manuscript_core/rulepack_upgrade.py` | 项目标准状态、确定性差异计划、检查点/issues 归档、pin 升降级和崩溃一致提交 |
 | `oak_manuscript_core/engine.py` | 规则调度（按稿件类型 / 语言 / 体例启用），确定性保证 |
 | `oak_manuscript_core/rules/` | 各规则判断逻辑（每规则独立、可单测） |
 | `oak_manuscript_core/fixes.py` | 白名单机械修复原语（幂等） |
@@ -100,7 +126,7 @@ PDF 使用无 `persist:` 前缀且禁缓存的专用 session，禁 JavaScript、
 | `oak_manuscript_core/ops.py` | 检查编排、计划验证、批量修复事务与回滚、安全自选目录与逐文件原子导出 |
 | `oak_manuscript_core/reports.py` | JSON / Markdown / HTML 报告渲染 |
 | `oak_manuscript_core/exporter.py` | 修订稿 DOCX 导出、导出目录校验 |
-| `oak_manuscript_core/__main__.py` | CLI（含 plan-fixes / fix --plan-id / list-checkpoints / restore-checkpoint） |
+| `oak_manuscript_core/__main__.py` | CLI（含修复/检查点，以及 project-standard-status / plan-rulepack-upgrade / upgrade-rulepack） |
 
 ## 4. 安全基线
 
@@ -109,11 +135,12 @@ PDF 使用无 `persist:` 前缀且禁缓存的专用 session，禁 JavaScript、
 - 批量修复失败不得留下部分 working、问题状态或项目清单写入；恢复失败优先用安全检查点回滚；
 - 全部变更型 CLI 命令在完整项目校验后取得跨进程非阻塞内核写锁；锁争用、受污染项目或普通同名锁文件均在业务写入前 fail-closed；
 - Electron 已启用 `contextIsolation`、sandbox、`nodeIntegration=false`、CSP、默认 session 离线门禁与固定 IPC 白名单；项目 IPC 只接受绝对且包含 `project.json` 的项目路径，计划 ID / 检查点 ID 通过格式校验；
+- 标准包在进入项目执行路径前必须通过严格 payload、签名/CAS/高水位/回滚链和七字段身份验证；Renderer 不能选择迁移目标，生产 trust pin 缺失时签名包导入关闭；
 - PDF 在独立非持久 session 中禁用 JavaScript、导航与网络，并通过文件/目录身份快照及原子 writer 写入；
 - Python 退出码 1 是有效业务结果，退出码 2 是运行错误；结构化 `code/message/retryable/details` 贯通到 IPC；
 - 统一测试入口为 `npm test`（Node 契约与 UI 结构测试 + Python 核心测试）；分项为 `npm run test:node`、`npm run test:python`。
 
-## 5. 发布资源可信链（0.1.0-alpha.2）
+## 5. 发布资源可信链（0.1.0-alpha.3）
 
 Windows alpha 资源不是靠“目录存在”通过门禁，而是由四组全量清单固定：
 
@@ -146,7 +173,7 @@ Windows alpha 资源不是靠“目录存在”通过门禁，而是由四组全
 ## 7. 构建与冒烟边界
 
 - `alpha` 资源门禁允许在结构和探针通过后返回仍待解决的正式发布阻断项；`sale` 门禁把同一批阻断项提升为错误。alpha 通过不等于可售卖。
-- 源码 smoke 与打包 smoke 都通过 `app:info` 核对 Electron 版本/规则包；随后读取本次真实生成的 `project.json` 和所引用检查报告，核对 Python core 版本、check ID 以及项目/检查记录/报告三处规则包一致。打包 smoke 还强制证明 `app.isPackaged=true`，防止把旧版、陈旧 core 或错误规则包误记为新打包版。
-- 源码 smoke 的项目、缓存、临时目录、用户数据、HOME/APPDATA/XDG 与 crash dumps 精确限制在 `out/source-smoke/`；打包 smoke 同样受仓库 `out/` 边界控制。Windows EXE 还须先通过 x64 PE32+ 校验。
+- 源码 smoke 与打包 smoke 都通过 `app:info` 核对 Electron 版本和 freshly verified `standardIdentity`；随后读取本次真实生成的 `project.json`、检查记录和导出 `report.json`，核对 Python core 版本、check ID 及四方七字段身份一致。打包 smoke 还强制证明 `app.isPackaged=true`，防止把旧版、陈旧 core 或错误规则包误记为新打包版。
+- 源码 smoke 每次生成独立 `out/source-smoke/runs/<run-id>/`，项目、标准 store、缓存、临时目录、用户数据、HOME/APPDATA/XDG 与 crash dumps 不复用；打包 smoke 同样按运行 ID 隔离并受仓库 `out/` 边界控制。Windows EXE 还须先通过 x64 PE32+ 校验。
 - macOS 构建拆为 `build:mac:x64` 与 `build:mac:arm64`；聚合入口 `build:mac` 只选择当前原生 host 架构，不在一个进程伪造双架构探针。`verify:resources:mac` 只是带 `--no-runtime-probe` 的跨架构静态聚合，不能替代两个原生 runner 的执行证据。
-- 当前 alpha.2 只具备源码、Windows 本地资源和门禁；离线 electron-builder 工具链、Windows 签名和实际 alpha.2 制品尚缺。macOS 分架构配置已存在，但运行资源、原生构建、签名、公证、Gatekeeper 与实机 smoke 均未完成。
+- 当前 alpha.3 具备源码、标准本地可信链、Windows 本地资源和门禁；离线 electron-builder 工具链、Windows 签名和实际 alpha.3 制品尚缺。macOS 分架构配置已存在，但运行资源、原生构建、签名、公证、Gatekeeper 与实机 smoke 均未完成。

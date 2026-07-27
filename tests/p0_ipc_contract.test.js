@@ -8,7 +8,7 @@ const vm = require("node:vm");
 
 const { registerP0Ipc } = require("../electron/p0-ipc");
 
-test("sandboxed preload maps only the four approved P0 IPC payloads", async () => {
+test("sandboxed preload maps approved P0 and project-standard IPC payloads", async () => {
   const calls = [];
   let api = null;
   const preloadPath = path.resolve(__dirname, "../electron/preload.js");
@@ -42,6 +42,9 @@ test("sandboxed preload maps only the four approved P0 IPC payloads", async () =
   await api.applyFixPlan("C:\\projects\\oak", "plan-0001");
   await api.listCheckpoints("C:\\projects\\oak");
   await api.restoreCheckpoint("C:\\projects\\oak", "cp-0001");
+  await api.projectStandardStatus("C:\\projects\\oak");
+  await api.planProjectStandardChange("C:\\projects\\oak");
+  await api.applyProjectStandardChange("C:\\projects\\oak", "rulepack-plan-0001");
 
   assert.deepEqual(JSON.parse(JSON.stringify(calls)), [
     { channel: "core:plan-fixes", payload: { project: "C:\\projects\\oak" } },
@@ -53,6 +56,18 @@ test("sandboxed preload maps only the four approved P0 IPC payloads", async () =
     {
       channel: "core:restore-checkpoint",
       payload: { project: "C:\\projects\\oak", checkpointId: "cp-0001" },
+    },
+    {
+      channel: "standards:project-status",
+      payload: { project: "C:\\projects\\oak" },
+    },
+    {
+      channel: "standards:plan-project-change",
+      payload: { project: "C:\\projects\\oak" },
+    },
+    {
+      channel: "standards:apply-project-change",
+      payload: { project: "C:\\projects\\oak", planId: "rulepack-plan-0001" },
     },
   ]);
   assert.equal(Object.hasOwn(api, "fix"), false, "preload must not expose an unconfirmed direct fix");

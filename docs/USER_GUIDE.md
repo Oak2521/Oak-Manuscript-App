@@ -2,9 +2,9 @@
 
 ## 桌面应用（推荐）
 
-当前开发版本为 `0.1.0-alpha.2`，不是可售卖正式版，也还没有对应安装包或 ZIP。仓库中的 Claude `0.0.1` Windows 便携产物仅是历史基线；新的 Windows 安装器、macOS 安装包和 Web 版仍待构建、签名及真实验收。
+当前开发版本为 `0.1.0-alpha.3`，不是可售卖正式版，也还没有对应安装包或 ZIP。仓库中的 Claude `0.0.1` Windows 便携产物仅是历史基线；新的 Windows 安装器、macOS 安装包和 Web 版仍待构建、签名及真实验收。
 
-**开发运行**：`npm install` 后 `npm start`。统一测试用 `npm test`；分项排障用 `npm run test:node`、`npm run test:python`。当前原生/沙箱外 Node 基线为 TAP 99 项、96 通过、0 失败、3 条 Windows 权限条件跳过；Python 默认为 270 项、0 失败、0 错误、3 条件跳过；`OAK_TEST_ACE=1` 且沙箱外隐藏 Chrome 为 270 项、0 失败、0 错误、1 条件跳过。最新 `npm run smoke` 隐藏 Electron 闭环为 PASS，所有输出位于 `out/source-smoke/`。
+**开发运行**：`npm install` 后 `npm start`。统一测试用 `npm test`；分项排障用 `npm run test:node`、`npm run test:python`。当前原生/沙箱外 Node 基线为 TAP 186 项、181 通过、0 失败、5 条件跳过；Python 默认为 312 项、0 失败、0 错误、3 条件跳过；`OAK_TEST_ACE=1` 且沙箱外隐藏 Chrome 为 312 项、0 失败、0 错误、1 条件跳过。最新 `npm run smoke` 隐藏 Electron 闭环为 PASS，每次输出隔离在 `out/source-smoke/runs/<run-id>/`。
 
 流程：欢迎页（隐私说明）→ 选稿件或匿名样本 → 选项目目录 → 选检查目标 → 检查 →
 问题页可逐条接受/拒绝/暂不处理；选择“预览批量自动修复”时，APP 在一个可滚动窗口集中列出全部白名单机械修改的标题、位置和修改前/后预览。只有点击一次“确认批量修复 N 项”才执行整批写入；取消不写入。修复后可在“撤销与检查点”中撤销上一次批量修复或恢复选定检查点 → 导出中心（修订稿、三种报告、PDF 样张、基础 EPUB 预览、脱敏评估摘要）→ 验证完整性。
@@ -17,7 +17,11 @@
 
 **外部验证（EPUB）**：问题页「外部验证」按钮运行固定的 EpubCheck 5.3.0 与 Ace 1.4.6。开发态优先使用清单校验通过的仓库 JRE，缺失时才允许查找系统 Java；未来打包态只接受捆绑且校验通过的 JRE，不回退系统 `PATH`。Ace 的 stage manifest 还必须匹配仓库受版本控制的 full lock，Python 运行时会在每次调用前复核；Ace 目前仍需要本机 Chrome。缺少工具/锁、完整性校验失败、报告非法或进程异常时，报告如实标注「未运行」。
 
-当前构造样本的真实外部工具预期是：`epub_good.epub` 在 EpubCheck 与 Ace 都通过，`epub_needs_review.epub` 在两者都失败并报告问题。“失败”表示工具确实运行并发现缺陷，不表示程序故障。最新沙箱外隐藏 Chrome 的 Ace 条件套件已通过；受限沙箱内若浏览器超时，核心会 fail-closed 标记未运行，不能把环境超时写成稿件通过或代码通过。
+当前构造样本的真实外部工具预期是：`epub_good.epub` 在 EpubCheck 与 Ace 都通过，`epub_needs_review.epub` 在两者都失败并报告问题。“失败”表示工具确实运行并发现缺陷，不表示程序故障。最新沙箱外隐藏 Chrome 的 Ace 条件套件已通过；受限环境若超时或未生成安全报告，核心会 fail-closed 标记未运行，不能把环境限制写成稿件通过或代码通过。
+
+**标准资源与项目升级**：标准页分别显示“当前新项目默认标准”和“本项目固定标准”。全局标准变化不会自动改已有项目；只有打开项目、查看规则/体例/标准的完整差异并点击一次确认，项目才会建立检查点、归档旧问题并切换，随后自动用新规则重检。取消、关闭对话框或计划过期都不写项目。
+
+标准页也有“安装本地标准包”和“回滚全局标准”入口。alpha.3 已实现严格签名/CAS/回滚验证，但正式生产 trust pin 尚未配置，因此真实本地签名包导入默认禁用；这是预期安全状态。当前没有联网检查或自动下载标准包，不要把入口理解为在线更新已上线。
 
 ## 命令行核心
 
@@ -25,7 +29,7 @@ Python 3.11+。核心零第三方依赖，无需安装任何包。
 
 ## 支持的输入格式（阶段 1 完成，全部四种）
 
-- `.docx`（论文 / 纸质出版物全部检查）
+- `.docx`（支持当前已实现的论文 / 纸质出版物基础检查；不代表覆盖全部外部标准）
 - `.md`、`.txt`（UTF-8；Markdown 支持结构与 APA 引用检查）
 - `.epub`（电子书结构检查：mimetype / 元数据 / 导航 / 语言 / 替代文本 / 内部链接）
 
@@ -36,6 +40,8 @@ EPUB 的 EpubCheck / Ace 外部验证默认未运行，报告会如实标注「�
 
 从仓库根目录调用核心前，先让 Python 找到本地包：PowerShell 使用
 `$env:PYTHONPATH="$PWD\python"`；bash/zsh 使用 `export PYTHONPATH="$PWD/python"`。
+
+下列稿件处理命令可作为本地开发接口直接调用；但 `project-standard-status`、`plan-rulepack-upgrade`、`upgrade-rulepack` 是 Electron 标准信任链后的底层接口，不是独立标准包验签器。正式产品中必须由 Electron 先完成 Ed25519 验签、CAS 选择并固定 `OAK_STANDARDS_STORE` / `OAK_EXPECTED_STANDARD_IDENTITY`，Python 再重算 manifest、payload、能力映射和身份。直接运行 Python 只能安全使用代码摘要锚定的内置包或检查既有存储结构，不能据此安装或信任任意本地更新包；普通用户应使用 APP 标准页。
 
 ```bash
 # 创建检查项目（复制只读原稿、记录 SHA-256）
@@ -65,11 +71,20 @@ python -m oak_manuscript_core list-checkpoints --project <项目目录>
 # 恢复选定检查点；恢复前自动创建安全检查点
 python -m oak_manuscript_core restore-checkpoint --project <项目目录> --checkpoint-id cp-0001
 
+# 只读查看项目固定标准状态
+python -m oak_manuscript_core project-standard-status --project <项目目录>
+
+# 只读生成到 Electron 已验签并固定的目标的完整差异；从 JSON 取得 plan_id
+python -m oak_manuscript_core plan-rulepack-upgrade --project <项目目录> --to-manifest-sha256 <manifest-SHA256>
+
+# 用户确认差异后，在写锁内提交项目 pin；随后必须重检
+python -m oak_manuscript_core upgrade-rulepack --project <项目目录> --to-manifest-sha256 <manifest-SHA256> --plan-id <rulepack-plan-ID>
+
 # 设置某条问题的处理状态（接受 / 拒绝 / 暂不处理）
 python -m oak_manuscript_core issue --project <项目目录> --id check-0001-0003 --status rejected
 ```
 
-`fix` 不接受缺少 `--plan-id` 的直接调用。生成计划后若 working、问题状态或规则包发生变化，旧计划会被拒绝，必须重新运行 `plan-fixes` 并再次确认。计划生成和取消均不创建检查点、不改变问题状态，也不写 working。
+`fix` 不接受缺少 `--plan-id` 的直接调用。生成计划后若 working、问题状态或规则包发生变化，旧计划会被拒绝，必须重新运行 `plan-fixes` 并再次确认。规则包升级计划同样绑定完整项目状态；在正式 APP 路径中，目标 release 必须已经由 Electron 验签并放入受验证标准存储，且 CLI apply 不接受缺少或过期的计划。两类计划生成和取消都严格只读。
 
 ## 发布资源检查（开发者）
 
@@ -91,11 +106,11 @@ npm run verify:resources:win
 
 资源探针默认要求 host platform/arch 与 target 一致。跨主机只做静态检查必须显式使用 `--no-runtime-probe`；该结果只证明文件结构和锁，不证明运行时可以执行。Electron 桥和 Python 资源探针共用固定 `-I -S -X utf8` bootstrap，显式加入受控 core 目录，不依赖用户 `PYTHONPATH` 或 site-packages。
 
-`npm run build:win` 还需要仓库本地的离线 electron-builder 工具链，成功构建后才会继续执行打包后资源门禁与隐藏打包 smoke。最近一次经批准的提升权限构建已完成本地 JRE/Ace staging 和 Windows alpha 资源探针，随后仅因 `tools/electron-builder/win32-x64` 缺失而停止；`release/` 没有 alpha.2 制品，不要尝试运行不存在的 EXE。
+`npm run build:win` 还需要仓库本地的离线 electron-builder 工具链，成功构建后才会继续执行打包后资源门禁与隐藏打包 smoke。最近一次经批准的提升权限构建已完成本地 JRE/Ace staging 和 Windows alpha 资源探针，随后仅因 `tools/electron-builder/win32-x64` 缺失而停止；`release/` 没有 alpha.3 制品，不要尝试运行不存在的 EXE。
 
 macOS 分架构入口为 `npm run verify:resources:mac:x64` / `:arm64` 和 `npm run build:mac:x64` / `:arm64`，必须分别在对应原生 runner 执行。`npm run build:mac` 只选择当前 Mac 的原生架构；`npm run verify:resources:mac` 是显式 `--no-runtime-probe` 的跨架构静态聚合，不算探针或构建通过。当前仍缺 x64/arm64 Python/JRE 资源与锁、构建、签名、公证和实机证据。
 
-打包 smoke 会从 `package.json` 读取期望版本，通过 `appInfo` 核对 Electron 版本、规则包和 `app.isPackaged=true`，再读取本次真实生成的 `project.json` 与检查报告，核对 Python core 版本、check ID 和三处规则包身份一致；因此旧 alpha.1/0.0.1 包、陈旧 core 或错误规则包都不能冒充 alpha.2 验收结果。源码 smoke 的项目、临时目录、用户数据、缓存和崩溃目录严格限定在仓库 `out/source-smoke/`，打包 smoke 同样只能写仓库 `out/`，窗口保持隐藏。
+打包 smoke 会从 `package.json` 读取期望版本，通过 `appInfo` 核对 Electron 版本、freshly verified 七字段标准身份和 `app.isPackaged=true`，再读取本次真实生成的 `project.json`、检查记录与导出 `report.json`，核对 Python core 版本、check ID 和四方标准身份一致；因此旧 alpha.1/0.0.1 包、陈旧 core 或错误规则包都不能冒充 alpha.3 验收结果。源码与打包 smoke 都按运行 ID 把项目、标准 store、临时目录、用户数据、缓存和崩溃目录隔离在仓库 `out/`，窗口保持隐藏。
 
 自选导出目录会逐级拒绝链接、目录联接和非常规目录；若选择项目内部目录，只允许 `exports/` 下。全部输出目标先统一预检，已有链接或硬链接目标不会被覆盖；每个文件在同目录完整暂存并原子换入。PDF 样张另在禁 JavaScript、导航和网络的非持久隔离 session 中生成。
 

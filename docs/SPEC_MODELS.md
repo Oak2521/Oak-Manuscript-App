@@ -1,6 +1,6 @@
-# SPEC_MODELS — 问题 / 规则 / 标准模型（v1.0，冻结）
+# SPEC_MODELS — 问题 / 规则 / 标准模型
 
-> 冻结日期：2026-07-11（阶段 0）。问题、规则和标准模型仍为 v1.0；同步负载于 2026-07-26 按商业方案 v2.0 改为“结果与元数据白名单”，废止旧文件级同步占位。机器可读定义以 `config/` 下 JSON 为准，本文件为语义规范。
+> 问题与规则模型仍为 v1.0；标准注册表于 2026-07-27 升级为治理 schema 2.0。同步负载于 2026-07-26 按商业方案 v2.0 改为“结果与元数据白名单”，废止旧文件级同步占位。机器可读定义以 `config/` 下 JSON 为准，本文件为语义规范。
 
 ## 1. 问题模型（Issue，方案 §6.3）
 
@@ -71,24 +71,38 @@
 - 引擎按 `applies_to` × 项目设置决定启用；未实现里程碑的规则组在报告「本版本未启用的检查」中如实列出。
 - 自动修复白名单 = 规则包中 `auto_fixable: true` 且 `confidence: "high"` 的规则。扩充白名单必须同时提供：规则定义、不应修复的反例样本、幂等测试（方案 §24）。
 
-## 4. 标准模型（Standard，`config/standards.json` 条目，方案 §10.3）
+## 4. 标准模型（Standard schema 2.0，`config/standards.json`）
 
 ```json
 {
   "standard_id": "GBT-7714-2025",
   "title": "信息与文献 参考文献著录规则（GB/T 7714—2025）",
   "source_type": "official | oak_interpretation | technical_spec",
-  "official_source_url": "https://…（官方来源，可为空）",
+  "official_source_url": "",
   "oak_resource_slug": "citation/gbt-7714-2025",
   "version": "2025",
   "updated_at": "2026-07-11",
   "scope": "适用范围一句话",
-  "summary": "APP 内简明解释（分层呈现：官方标准 ≠ 湖岸解释 ≠ 工具规则）"
+  "summary": "APP 内简明解释，不得含 TODO/占位文案",
+  "status": "active | superseded | under_review | deprecated",
+  "publisher": "发布者或待核验责任说明",
+  "reviewed_by": ["审核者或明确的待指定角色"],
+  "copyright_use": "metadata_only | short_excerpt | open_license",
+  "supersedes": [],
+  "superseded_by": null,
+  "rule_ids": ["REF-002", "REF-GBT-001"],
+  "source_verified_at": null,
+  "source_verification_status": "verified | pending | unavailable",
+  "change_history": [
+    { "changed_at": "2026-07-27", "change_type": "schema_migration", "summary": "变更说明" }
+  ]
 }
 ```
 
 - `oak_resource_slug` 是网站资源页的稳定标识；网站目录调整用重定向兼容，规则包不因此升级；
-- 每条 Issue 的 `standard_refs` 必须指向本注册表中存在的 `standard_id`（引擎启动时校验）。
+- 每条 Issue 的 `standard_refs` 必须指向本注册表中存在的 `standard_id`；每项标准反向列出 `rule_ids`，两侧须完全一致；
+- `verified` 必须有真实核验日期；空外部 URL 只允许非湖岸解释项同时为 `under_review + unavailable`；`superseded` 必须指向替代项；
+- schema 字段完整不代表内容已审校。当前 13 项中外部来源核验为 0，reviewed_by 仍含角色占位，不能用结构通过替代事实审核。
 
 ## 5. 「默认」引用体例映射（v1.0.0，随规则包发布，方案 §6.2）
 
@@ -102,6 +116,8 @@
 **语言自动识别（确定性算法，冻结）**：统计正文 CJK 字符数 `c` 与 ASCII 字母数 `a`。`c ≥ 4a` → zh；`a ≥ 4c` → en；否则 mixed。若 `c + a < 200`（文本过短，置信度不足）→ 按 mixed 处理。
 解析结果与映射版本写入 `project.json` 与全部报告（「本次按 ×× 体例检查，由默认规则 v1.0.0 选定」）。
 
+当前 v1.0.0 只按稿件类型和确定性语言分类映射。商业方案要求的结构信号、选择原因、置信度和低置信度退回尚未实现；因此“默认”入口已可用，但不得宣传为完整的智能体例判定。
+
 ## 6. 检查结果文件（reports/check-NNNN.json）
 
 ```json
@@ -110,8 +126,16 @@
   "check_id": "check-0001",
   "kind": "check | recheck",
   "started_at": "…", "finished_at": "…",
-  "app_version": "0.1.0-alpha.2",
-  "rulepack": { "name": "oak-rules", "version": "1.0.0" },
+  "app_version": "0.1.0-alpha.3",
+  "rulepack": {
+    "name": "oak-rules",
+    "version": "1.0.0",
+    "pinned": true,
+    "sha256": "规则包原始字节 SHA-256",
+    "bundle_id": "oak-standards",
+    "release_sequence": 1,
+    "manifest_sha256": "canonical manifest SHA-256"
+  },
   "settings_snapshot": { "…": "创建检查时 project.settings 的完整快照" },
   "citation_note": "本次按 gbt7714-2025 体例检查（由默认规则 v1.0.0 选定）",
   "issues": [ "Issue 对象数组，见第 1 节" ],
@@ -121,9 +145,9 @@
 }
 ```
 
-检查结果一致性约束：报告 `check_id` 必须对应项目 `checks[]` 记录；项目固定规则包、检查记录 `rulepack_version` 和报告规则包必须一致。`project.json.app_version` 记录项目创建版本，报告 `app_version` 记录本次检查所用核心版本，二者在旧项目升级后不要求永久相等。源码/打包 smoke 使用当次新建项目，因此会读取真实项目清单及其引用报告，额外要求两处版本都等于待验 APP 版本；不能仅凭 Renderer 或 `app:info` 自报版本。
+检查结果一致性约束：每份报告的 `check_id` 必须对应自己的项目 `checks[]` 记录。alpha.3 新记录含完整七字段 `checks[].rulepack`，报告必须与其完全一致；alpha.2 及更早的旧记录没有该字段，只允许报告保存精确 `{name, version}`，并由 `version` 对齐 `checks[].rulepack_version`，这种 legacy 证据不能冒充七字段身份。规则包升级后，历史检查和历史报告保留旧身份是正常现象；只有最新的当前检查/报告必须与项目现行 pin 一致，后续修复、外部验证和导出据此放行。`project.json.app_version` 记录项目创建版本，报告 `app_version` 记录本次检查所用核心版本，二者在旧项目升级后不要求永久相等。源码/打包 smoke 使用当次新建项目，会读取真实项目、最新检查与导出报告核对 APP/项目/检查/报告四方身份；不能仅凭 Renderer 或 `app:info` 自报。
 
-## 7. 外部验证状态模型（0.1.0-alpha.2）
+## 7. 外部验证状态模型（0.1.0-alpha.3）
 
 `external_tools` 的每个工具状态只允许 `not_run | passed | failed`，且必须以**本次进程**生成、结构合法的报告为依据：
 

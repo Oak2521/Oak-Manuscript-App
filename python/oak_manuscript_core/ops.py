@@ -20,6 +20,12 @@ from .fix_plans import build_fix_plan
 from .fixes import WHITELIST, apply_fixes
 from .project import MAX_CHECKPOINTS, Project
 from .readers.docx_reader import read_docx
+from .rulepack import (
+    LoadedRulepack,
+    attach_rulepack_identity,
+    rulepack_identity,
+    validate_rulepack_identity,
+)
 from .safety import ensure_within, is_link_or_reparse
 from .util import now_iso, read_json, sha256_file, write_json
 
@@ -29,6 +35,66 @@ DISCLAIMER = (
 )
 
 _STATUS_VALUES = {"open", "accepted", "rejected", "resolved"}
+
+
+def _bind_or_assert_rulepack(project: Project, pack: dict) -> dict:
+    """补齐旧项目 pin，或证明本次 pack 与完整 pin 逐字段一致。
+
+    仅旧 Python API 创建的尚未检查项目允许从空 pin 绑定；正式 CLI 会在
+    ``create`` 时由 standards store 固定 active release。已有完整 pin 永不因
+    check/recheck/export 等普通操作被覆盖。
+    """
+    identity = rulepack_identity(pack)
+    current = project.data.get("rulepack")
+    try:
+        state = validate_rulepack_identity(
+            current,
+            allow_legacy=True,
+            allow_uninitialized=True,
+        )
+    except OakError as exc:
+        raise OakError(f"项目规则包 pin 无效：{exc.message}") from exc
+
+    if state == "uninitialized":
+        project.data["rulepack"] = copy.deepcopy(identity)
+        return identity
+    if state == "legacy":
+        if current["name"] != identity["name"] or current["version"] != identity["version"]:
+            raise OakError(
+                "旧项目固定的规则包名称/版本与本次规则包不一致；"
+                "拒绝猜测或改用默认最新版。"
+            )
+        project.data["rulepack"] = copy.deepcopy(identity)
+        return identity
+
+    mismatches = [
+        field
+        for field in identity
+        if current.get(field) != identity[field]
+    ]
+    if mismatches and isinstance(pack, LoadedRulepack) and pack._oak_identity is None:
+        # 兼容旧 Python 调用方直接传入 load_rulepack() 的结果。它有可信原始
+        # 文件摘要，但还没有 release 身份。这里不能仅凭相同版本号放行：先按
+        # 项目完整 pin 重新验证本地 release，再让 attach 核对原始字节 SHA。
+        from .standards_store import resolve_project_rulepack
+
+        try:
+            release = resolve_project_rulepack(current)
+            attach_rulepack_identity(pack, release.identity)
+            identity = rulepack_identity(pack)
+        except OakError:
+            pass
+        mismatches = [
+            field
+            for field in identity
+            if current.get(field) != identity[field]
+        ]
+    if mismatches:
+        raise OakError(
+            "本次规则包与项目完整 pin 不一致，拒绝静默替换："
+            + "、".join(mismatches)
+        )
+    return identity
 
 
 def _safe_export_directory(path: Path, *, create: bool) -> Path:
@@ -169,7 +235,18 @@ def save_issues(project: Project, issues: list[dict]) -> None:
     write_json(project.issues_path(required=False), issues)
 
 
+def _require_current_check_identity(project: Project) -> None:
+    checks = project.data.get("checks", [])
+    if not checks:
+        return
+    if checks[-1].get("rulepack") != project.data.get("rulepack"):
+        raise OakError("最近一次检查不属于项目当前规则包；必须先重新运行 check。")
+
+
 def set_issue_status(project: Project, issue_id: str, status: str) -> dict:
+    if project.data.get("rulepack_check_required", False):
+        raise OakError("规则包已变更，旧问题状态不可继续使用；请先重新运行 check。")
+    _require_current_check_identity(project)
     if status not in _STATUS_VALUES:
         raise OakError(f"无效的问题状态「{status}」，允许：{sorted(_STATUS_VALUES)}")
     issues = load_issues(project)
@@ -194,6 +271,7 @@ def _citation_note(settings: dict) -> str:
 
 def run_check(project: Project, pack: dict, *, kind: str = "check"):
     """执行检查（或复检），持久化结果。返回 (check 记录, CheckOutcome)。"""
+    identity = _bind_or_assert_rulepack(project, pack)
     doc = _read_document(project)
     project.data["check_seq"] = project.data.get("check_seq", 0) + 1
     check_id = f"check-{project.data['check_seq']:04d}"
@@ -218,10 +296,7 @@ def run_check(project: Project, pack: dict, *, kind: str = "check"):
 
     settings = project.data["settings"]
     settings.update(outcome.resolved)
-    project.data["rulepack"] = {
-        "name": pack["pack_name"], "version": pack["pack_version"], "pinned": True,
-    }
-
+    project.data["rulepack_check_required"] = False
     counts = {"error": 0, "warning": 0, "suggestion": 0}
     for issue in outcome.issues:
         counts[issue["severity"]] += 1
@@ -232,6 +307,7 @@ def run_check(project: Project, pack: dict, *, kind: str = "check"):
         "started_at": started,
         "finished_at": finished,
         "rulepack_version": pack["pack_version"],
+        "rulepack": copy.deepcopy(identity),
         "issue_counts": counts,
         "result_file": f"reports/{check_id}.json",
     }
@@ -242,7 +318,7 @@ def run_check(project: Project, pack: dict, *, kind: str = "check"):
         "started_at": started,
         "finished_at": finished,
         "app_version": __version__,
-        "rulepack": {"name": pack["pack_name"], "version": pack["pack_version"]},
+        "rulepack": copy.deepcopy(identity),
         "settings_snapshot": dict(settings),
         "citation_note": _citation_note(settings),
         "issues": outcome.issues,
@@ -267,16 +343,12 @@ def _ensure_source_unchanged(project: Project) -> None:
 
 def plan_fixes(project: Project, pack: dict) -> dict:
     """返回当前项目的完整批量修复预览；本函数严格只读。"""
+    _bind_or_assert_rulepack(project, pack)
+    if project.data.get("rulepack_check_required", False):
+        raise OakError("规则包已变更，必须先重新运行 check 才能生成修复计划。")
     if not project.data.get("checks") or not project.issues_path(required=False).is_file():
         raise OakError("尚未运行检查，无法生成修复计划。请先执行 check。")
-    pinned = project.data.get("rulepack") or {}
-    if pinned.get("name") and (
-        pinned.get("name") != pack.get("pack_name")
-        or pinned.get("version") != pack.get("pack_version")
-    ):
-        raise OakError(
-            "当前规则包与本次检查固定的规则包不一致，无法生成修复计划。请先复检。"
-        )
+    _require_current_check_identity(project)
     _ensure_source_unchanged(project)
     return build_fix_plan(project, pack, load_issues(project))
 
@@ -374,7 +446,12 @@ def run_fixes(
     if not plan_id:
         raise OakError("缺少已确认的修复计划。请先执行 plan-fixes 并确认完整预览。")
 
-    current_plan = plan_fixes(project, pack)
+    try:
+        current_plan = plan_fixes(project, pack)
+    except OakError as exc:
+        raise OakError(
+            "修复计划已过期或规则包身份不再匹配；请重新生成并确认计划。"
+        ) from exc
     if plan_id != current_plan["plan_id"]:
         raise OakError(
             "修复计划已过期或不属于当前项目。工作副本、问题状态或规则包可能已变化；"
@@ -523,10 +600,18 @@ def run_external(project: Project) -> dict:
     """
     from .external import discover_tools, run_ace, run_epubcheck
 
+    if project.data.get("rulepack_check_required", False):
+        raise OakError("规则包已变更，必须先重新运行 check 才能运行外部验证。")
+    _require_current_check_identity(project)
     if project.source_format != "epub":
         raise OakError("外部验证（EpubCheck / Ace）仅适用于 EPUB 稿件。")
     if not project.data["checks"]:
         raise OakError("请先运行检查，再运行外部验证。")
+    last = project.data["checks"][-1]
+    result_path = project.report_path(last["result_file"], required=True)
+    result = read_json(result_path)
+    if result.get("rulepack") != project.data.get("rulepack"):
+        raise OakError("最近一次检查结果文件不属于项目当前规则包；必须先重新运行 check。")
 
     tools = discover_tools()
     results: dict[str, dict] = {}
@@ -551,9 +636,6 @@ def run_external(project: Project) -> dict:
         results["ace"] = {"status": "not_run", "detail": "未安装 Ace by DAISY"}
 
     # 写回最近一次检查结果文件（状态 + 说明），供报告如实呈现
-    last = project.data["checks"][-1]
-    result_path = project.report_path(last["result_file"], required=True)
-    result = read_json(result_path)
     result["external_tools"] = {name: r["status"] for name, r in results.items()}
     result["external_tools_detail"] = {name: r["detail"] for name, r in results.items()}
     write_json(result_path, result)
@@ -575,8 +657,11 @@ def build_evaluation_summary(project: Project) -> dict:
     默认禁止项在此物理上不存在：不含正文、标题、文件名、路径、
     参考文献原文、任何哈希。第一版仅本地生成，绝不自动发送。
     """
+    if project.data.get("rulepack_check_required", False):
+        raise OakError("规则包已变更，必须先重新运行 check 才能生成评估摘要。")
     if not project.data["checks"]:
         raise OakError("尚未运行检查，无法生成评估摘要。请先执行 check。")
+    _require_current_check_identity(project)
     doc = _read_document(project)
     chars = len("".join(doc.body_text.split()))
     bucket = next((label for limit, label in _WORD_BUCKETS if chars <= limit), "10万字以上")
@@ -607,10 +692,16 @@ def build_evaluation_summary(project: Project) -> dict:
 
 
 def build_report_data(project: Project, pack: dict) -> dict:
+    identity = _bind_or_assert_rulepack(project, pack)
+    if project.data.get("rulepack_check_required", False):
+        raise OakError("规则包已变更，必须先重新运行 check 才能导出报告。")
     if not project.data["checks"]:
         raise OakError("尚未运行检查，无法生成报告。请先执行 check。")
+    _require_current_check_identity(project)
     last = project.data["checks"][-1]
     result = read_json(project.report_path(last["result_file"], required=True))
+    if result.get("rulepack") != identity:
+        raise OakError("最近一次检查结果文件不属于项目当前规则包；必须先重新运行 check。")
     issues = load_issues(project)
 
     pending = {"error": 0, "warning": 0, "suggestion": 0}
@@ -630,7 +721,7 @@ def build_report_data(project: Project, pack: dict) -> dict:
         "file": project.stored_filename,
         "manuscript_type": project.data["settings"]["manuscript_type"],
         "check": last,
-        "rulepack": {"name": pack["pack_name"], "version": pack["pack_version"]},
+        "rulepack": copy.deepcopy(identity),
         "citation_note": result["citation_note"],
         "status_level": manuscript_status_level(issues),
         "pending_counts": pending,

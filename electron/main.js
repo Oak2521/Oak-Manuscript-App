@@ -10,6 +10,9 @@ const pathPolicy = require("./path-policy");
 const bridge = require("./python-bridge");
 const providers = require("./providers");
 const { registerP0Ipc } = require("./p0-ipc");
+const { registerStandardsIpc } = require("./standards-ipc");
+const { StandardsProvider } = require("./standards-provider");
+const { createStandardBoundCore } = require("./standard-bound-core");
 const { readCoreCommandResult, toFailureResponse } = require("./core-result");
 const { createPdfPreview } = require("./pdf-preview");
 const {
@@ -25,6 +28,8 @@ applyOfflineChromiumPolicy(app.commandLine);
 
 
 let mainWindow = null;
+let standardsProvider = null;
+let standardBoundCore = null;
 
 // ---------- 工具 ----------
 
@@ -49,7 +54,19 @@ function fail(err) {
 }
 
 async function core(args) {
-  const data = await readCoreCommandResult(args[0], bridge.runCore(args));
+  if (standardBoundCore === null) throw new Error("标准库验签边界尚未初始化");
+  let resultPromise;
+  if (args[0] === "create") {
+    resultPromise = standardBoundCore.runNewProject(args);
+  } else {
+    const projectIndex = args.indexOf("--project");
+    if (projectIndex < 0 || projectIndex + 1 >= args.length) {
+      throw new Error("标准绑定核心命令缺少项目路径");
+    }
+    const project = assertProjectDir(args[projectIndex + 1]);
+    resultPromise = standardBoundCore.runProject(project, args);
+  }
+  const data = await readCoreCommandResult(args[0], resultPromise);
   return { data };
 }
 
@@ -126,7 +143,29 @@ ipcMain.handle("core:check", async (_e, { project, kind }) => {
 
 // P0：预览计划、一次确认后应用、检查点列表与恢复。
 // 未保留无 planId 的 core:fix 通道，避免渲染端绕过集中确认。
-registerP0Ipc({ ipcMain, bridge, pathPolicy });
+const standardBoundP0Bridge = Object.freeze({
+  planFixes(project) {
+    if (standardBoundCore === null) throw new Error("标准库验签边界尚未初始化");
+    return standardBoundCore.runProject(project, ["plan-fixes", "--project", project]);
+  },
+  applyFixPlan(project, planId) {
+    if (standardBoundCore === null) throw new Error("标准库验签边界尚未初始化");
+    return standardBoundCore.runProject(project, [
+      "fix", "--project", project, "--plan-id", planId,
+    ]);
+  },
+  listCheckpoints(project) {
+    if (standardBoundCore === null) throw new Error("标准库验签边界尚未初始化");
+    return standardBoundCore.runProject(project, ["list-checkpoints", "--project", project]);
+  },
+  restoreCheckpoint(project, checkpointId) {
+    if (standardBoundCore === null) throw new Error("标准库验签边界尚未初始化");
+    return standardBoundCore.runProject(project, [
+      "restore-checkpoint", "--project", project, "--checkpoint-id", checkpointId,
+    ]);
+  },
+});
+registerP0Ipc({ ipcMain, bridge: standardBoundP0Bridge, pathPolicy });
 
 ipcMain.handle("core:export", async (_e, { project, outDir }) => {
   try {
@@ -188,18 +227,11 @@ ipcMain.handle("app:list-samples", () => {
   }
 });
 
-ipcMain.handle("app:standards", () => {
-  try {
-    const file = path.join(pathPolicy.configDir(), "standards.json");
-    return ok({ standards: JSON.parse(fs.readFileSync(file, "utf-8")).standards });
-  } catch (err) {
-    return fail(err);
-  }
-});
-
 ipcMain.handle("report:pdf", async (_e, { project }) => {
   try {
     assertProjectDir(project);
+    if (standardBoundCore === null) throw new Error("标准库验签边界尚未初始化");
+    await standardBoundCore.verifiedProjectStatus(project);
     const target = await createPdfPreview({
       BrowserWindow,
       session,
@@ -224,12 +256,29 @@ ipcMain.handle("app:open-exports", (_e, { project }) => {
   }
 });
 
-ipcMain.handle("app:info", () => {
-  return ok({
-    appVersion: app.getVersion(),
-    rulepack: `${providers.StandardsProvider.packName} ${providers.StandardsProvider.packVersion}`,
-    packaged: app.isPackaged,
-  });
+ipcMain.handle("app:info", async () => {
+  try {
+    if (standardsProvider === null) throw new Error("标准库尚未初始化");
+    const listing = await standardsProvider.listStandards();
+    const standardIdentity = await standardsProvider.verifiedActiveIdentity();
+    const release = listing.release;
+    if (release.bundle_id !== standardIdentity.bundle_id ||
+        release.release_sequence !== standardIdentity.release_sequence ||
+        release.manifest_sha256 !== standardIdentity.manifest_sha256 ||
+        release.rulepack_name !== standardIdentity.name ||
+        release.rulepack_version !== standardIdentity.version) {
+      throw new Error("标准库身份在读取期间发生变化，请重试");
+    }
+    return ok({
+      appVersion: app.getVersion(),
+      rulepack: `${standardIdentity.name} ${standardIdentity.version}`,
+      standardIdentity,
+      standardsRelease: release,
+      packaged: app.isPackaged,
+    });
+  } catch (err) {
+    return fail(err);
+  }
 });
 
 // ---------- IPC：Provider 占位 ----------
@@ -277,8 +326,42 @@ function createWindow() {
 
 console.log("[main] module loaded, smoke =", SMOKE);
 
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (mainWindow === null) return;
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  });
+
 app.whenReady().then(async () => {
   console.log("[main] app ready");
+  const standardsStoreRoot = path.join(app.getPath("userData"), "standards");
+  bridge.configureStandardsStoreRoot(standardsStoreRoot);
+  standardsProvider = new StandardsProvider({
+    rootDir: standardsStoreRoot,
+    configDir: pathPolicy.configDir(),
+    appVersion: app.getVersion(),
+  });
+  standardBoundCore = createStandardBoundCore({ bridge, provider: standardsProvider });
+  registerStandardsIpc({
+    ipcMain,
+    dialog,
+    getWindow: () => mainWindow,
+    provider: standardsProvider,
+    boundCore: standardBoundCore,
+    pathPolicy,
+  });
+  try {
+    await standardsProvider.initialize();
+    console.log("[standards] active release verified");
+  } catch (error) {
+    // Keep the UI available to explain the fail-closed state. The same store
+    // root is still injected into Python, so checks cannot silently fall back.
+    console.error("[standards] initialization failed:", error && error.message);
+  }
   installOfflineRequestBlocker(session.defaultSession.webRequest);
   // CSP：仅允许自身资源（renderer 亦有 meta CSP 双保险）
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
@@ -305,5 +388,6 @@ app.whenReady().then(async () => {
     }
   }
 });
+}
 
 app.on("window-all-closed", () => app.quit());

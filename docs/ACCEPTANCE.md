@@ -2,13 +2,39 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.2 Windows alpha 资源与发布门禁验收（2026-07-27）
+## 0.1.0-alpha.3 标准可信链与项目升级验收（2026-07-27）
+
+> 本节验收 alpha.3 源码、标准身份链与项目升级，不代表安装包或可售卖正式版。证据以 `TEST_REPORT.md` 为准。
+
+- [x] APP、Python 核心和 lockfile 统一为 `0.1.0-alpha.3`；规则包仍为独立版本 `oak-rules 1.0.0`、release sequence 1；
+- [x] standards schema 2.0 含 13 项标准，能力清单与规则包 35 条规则、6 个 fixer 精确一致；重复/缺失/多余 rule ID 或 fixer 漂移均拒绝；
+- [x] canonical manifest 固定 bundle、版本、发布序列、APP 兼容范围、文件大小/哈希和 capability digest；manifest 与规则包 SHA-256 分别为 `d33534f…d7af` / `7ac5a5bd…9542`；
+- [x] payload 对重复键、深度/大小、Unicode 控制字符/非配对 surrogate、日期、canonical HTTPS URL、路径与字段集合严格校验；恶意或模糊输入 fail-closed；
+- [x] 非内置包须满足 Ed25519 门槛签名；磁盘 trust store 原始字节摘要必须由代码固定。当前没有生产 trust pin，真实本地签名包导入按设计禁用；
+- [x] 内容寻址存储、active/previous、高水位、bundle/version/sequence 唯一性、撤回/过期/APP 兼容性和 manifest/payload 身份均在每次使用前重验；
+- [x] 非初始 release 必须签署精确 `rollback_target`；安装、激活和回滚不能绕过目标 digest/sequence/CAS/撤回校验；
+- [x] 同一标准根操作串行化；跨进程事务使用原子 pending 目录、PID 与随机进程 token。活 owner 返回 busy，死 owner 只按严格 intent 恢复，未知变更拒绝猜测；
+- [x] 内置 release 离线启动、本地包预览/安装骨架和全局回滚通过测试；标准包联网检查、下载及生产撤回通道尚未实现，不计作通过；
+- [x] 新项目绑定当前已验证 release；已有项目固定七字段身份 `name/version/pinned/sha256/bundle_id/release_sequence/manifest_sha256`，全局 active 改变不静默换项目规则；
+- [x] 新项目直接绑定已验证 active release；已有项目只允许一次未绑定、只读的 `project-standard-status` 预检来发现 pin，预检前先验证全局存储，预检后精确验证项目 CAS；所有实际业务/变更命令通过 canonical `OAK_EXPECTED_STANDARD_IDENTITY` 绑定，Python 拒绝缺字段、多字段、摘要、序列或 bundle 漂移；
+- [x] `project-standard-status`、`plan-rulepack-upgrade` 和 `upgrade-rulepack` 已实现；计划严格只读并绑定项目 manifest、状态、source/working、issues、最新检查与目标身份；
+- [x] Renderer 只能请求主进程选择的当前 active 目标，集中显示完整差异并一次确认；取消不写入，旧计划、异项目计划或状态变化均拒绝；
+- [x] 升级创建检查点、哈希归档旧 issues、原子提交新 pin、清空陈旧 live issues、记录连续 history，并设置 `rulepack_check_required=true`；升级成功后 UI 自动重检；
+- [x] 升级/降级故障注入、写锁争用、进程中断安全状态、历史 release、撤回/过期迁移源和升级后陈旧报告/修复/导出拒绝均有回归覆盖；
+- [x] `app:info`、项目、检查记录与导出 `report.json` 的完整七字段身份一致；源码 smoke 每次使用 `out/source-smoke/runs/<run-id>/` 独立状态；
+- [x] 最新默认回归为 Node **186/181/0/5**、Python **312/0/0/3**；真实 Ace 条件套件为 **312/0/0/1**；隐藏 Electron smoke 为 PASS；
+- [x] Windows alpha 资源门禁继续通过；sale 门禁仍以 18 项 blocker 按设计失败；macOS 静态门禁仍因两架构资源缺失按设计失败；
+- [ ] alpha.3 Windows NSIS / ZIP 已生成并通过 packaged smoke（当前缺本地 builder 工具，未生成）；
+- [ ] 生产标准 trust pin、在线获取/下载、签名撤回分发及外部官方来源核验已完成；
+- [ ] macOS、Web、统一账号、订阅、结果同步与正式售卖全量门禁通过。
+
+## 0.1.0-alpha.2 Windows alpha 资源与发布门禁验收（2026-07-27，历史检查点）
 
 > 本节验收的是源码检查点与 Windows alpha 资源，不是安装包、ZIP 或可售卖正式版。最终命令结果以 `TEST_REPORT.md` 为准。
 
-- [x] APP、Python 核心和 lockfile 版本统一为 `0.1.0-alpha.2`；源码/打包 smoke 契约会通过 `app:info` 和真实项目/报告核对实际版本；
-- [x] 最新默认分项回归为 Node TAP **99 项：96 通过、0 失败、3 条件跳过**；Python **270 项：0 失败、0 错误、3 条件跳过**；
-- [x] 最新安全收口后的真实 Ace 条件套件和隐藏 Electron 源码 smoke 已最终复跑：沙箱外隐藏 Chrome 为 270 项、0 失败、0 错误、1 条件跳过；隐藏 Electron 为 `SMOKE-RESULT: PASS`，两个项目均保持 `source_hash_ok=true`；
+- [x] 该检查点的 APP、Python 核心和 lockfile 版本统一为 `0.1.0-alpha.2`；源码/打包 smoke 契约会通过 `app:info` 和真实项目/报告核对实际版本；
+- [x] 该检查点默认分项回归为 Node TAP **99 项：96 通过、0 失败、3 条件跳过**；Python **270 项：0 失败、0 错误、3 条件跳过**；
+- [x] 该检查点的真实 Ace 条件套件和隐藏 Electron 源码 smoke 已复跑：沙箱外隐藏 Chrome 为 270 项、0 失败、0 错误、1 条件跳过；隐藏 Electron 为 `SMOKE-RESULT: PASS`，两个项目均保持 `source_hash_ok=true`；
 - [x] Electron 默认 session 启动即应用离线 switches 并阻断网络 scheme；Renderer 固定 CSP 不放宽，源码 smoke 所有状态路径限定在 `out/source-smoke/`；
 - [x] PDF 样张使用非持久、无缓存隔离 session，禁 JavaScript/导航/网络，并在 HTML 身份复核后通过项目/`exports` 路径身份校验和同目录原子写生成；
 - [x] `Project.open()` 完整验证项目 schema、固定目录和全部清单控制路径，拒绝链接/联接/reparse、硬链接、逃逸、source/working 同一文件与原稿大小/哈希失配；
@@ -132,7 +158,7 @@
 
 > 完成标准（方案 §18）：匿名 DOCX 与 EPUB 均能在 UI 中完成完整闭环。
 > 证据：`npm run smoke` 冒烟驱动真实 UI 代码路径（与按钮同一 actions + 真实 IPC + 真实核心），
-> DOCX 与 EPUB 双闭环 PASS；旧 `0.0.1` 打包版历史结果同样 PASS，不能替代 alpha.2 打包验收。
+> DOCX 与 EPUB 双闭环 PASS；旧 `0.0.1` 打包版历史结果同样 PASS，不能替代当前 alpha.3 打包验收。
 
 - [x] Electron 壳安全基线：contextIsolation / sandbox / nodeIntegration=false / IPC 固定通道 + 输入验证 / 子进程 shell=false / CSP / 导航与新窗口拦截 / 外链仅 HTTPS 白名单域名；
 - [x] 七个主页面（中文 UI）：欢迎隐私 / 创建项目 / 检查目标 / 进度（阶段式，无虚假百分比）/ 问题双栏（接受·拒绝·暂不处理）/ 导出中心 / 标准资源与设置；
@@ -174,5 +200,5 @@
 - [x] 未登录状态下全部核心流程可完成，且不出现同步询问（冒烟断言）
 - [ ] 任何结果同步只在登录用户逐字段确认后发生；负载不含稿件、正文/预览、标题、文件名、路径、参考文献原文或哈希（真实同步上线时验收；当前占位不联网）
 - [ ] 网站后台可查看并删除已同步记录（阶段 4 验收）
-- [ ] 正式发布包候选的 Python 单元/集成 + CLI 端到端 + UI 冒烟 E2E 全部通过（alpha.2 源码基线、真实 Ace 与隐藏源码 smoke 已通过；因尚无 alpha.2 安装包或 ZIP，打包版 E2E 仍未运行）
+- [ ] 正式发布包候选的 Python 单元/集成 + CLI 端到端 + UI 冒烟 E2E 全部通过（alpha.3 源码基线、真实 Ace 与隐藏源码 smoke 已通过；因尚无 alpha.3 安装包或 ZIP，打包版 E2E 仍未运行）
 - [ ] 当前正式发布包有版本、说明、校验值和已知限制（`RELEASE_NOTES_0.0.1.md` 仅是历史资料）

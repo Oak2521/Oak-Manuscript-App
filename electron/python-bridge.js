@@ -3,6 +3,7 @@
 "use strict";
 
 const { spawn } = require("child_process");
+const path = require("node:path");
 const pathPolicy = require("./path-policy");
 const {
   createIsolatedPythonEnvironment,
@@ -10,19 +11,46 @@ const {
 } = require("./python-invocation");
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
+let trustedStandardsStoreRoot = null;
+
+function configureStandardsStoreRoot(root) {
+  if (typeof root !== "string" || !path.isAbsolute(root) || root.includes("\0")) {
+    throw new Error("标准库根目录必须是无 NUL 的绝对路径");
+  }
+  const resolved = path.resolve(root);
+  if (trustedStandardsStoreRoot !== null && trustedStandardsStoreRoot !== resolved) {
+    throw new Error("标准库根目录已固定，不能在进程内切换");
+  }
+  trustedStandardsStoreRoot = resolved;
+  return trustedStandardsStoreRoot;
+}
 
 function createPythonEnvironment(
   source = process.env,
-  { electronExec = process.execPath, packaged = pathPolicy.appIsPackaged() } = {},
+  {
+    electronExec = process.execPath,
+    packaged = pathPolicy.appIsPackaged(),
+    standardsStoreRoot = trustedStandardsStoreRoot,
+    expectedStandardIdentity = null,
+  } = {},
 ) {
-  return createIsolatedPythonEnvironment(source, { electronExec, packaged });
+  return createIsolatedPythonEnvironment(source, {
+    electronExec,
+    packaged,
+    standardsStoreRoot,
+    expectedStandardIdentity,
+  });
 }
 
 /**
  * 运行核心子命令。返回 { code, json, stderr }。
  * stdout 必须是单个 JSON 文档（核心的 AD-002 契约）；解析失败视为运行错误。
  */
-function runCore(args, timeoutMs = DEFAULT_TIMEOUT_MS) {
+function runCore(
+  args,
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+  { expectedStandardIdentity = null } = {},
+) {
   return new Promise((resolve, reject) => {
     if (!Array.isArray(args) || args.some((a) => typeof a !== "string")) {
       reject(new Error("非法的核心调用参数"));
@@ -37,7 +65,7 @@ function runCore(args, timeoutMs = DEFAULT_TIMEOUT_MS) {
       cwd: invocation.cwd,
       shell: false,
       windowsHide: true,
-      env: createPythonEnvironment(),
+      env: createPythonEnvironment(process.env, { expectedStandardIdentity }),
     });
     let stdout = "";
     let stderr = "";
@@ -89,6 +117,7 @@ function restoreCheckpoint(projectPath, checkpointId) {
 }
 
 module.exports = {
+  configureStandardsStoreRoot,
   createPythonEnvironment,
   runCore,
   planFixes,

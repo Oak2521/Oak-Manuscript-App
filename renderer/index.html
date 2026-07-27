@@ -157,14 +157,28 @@
     <!-- 7 标准与设置 -->
     <section class="page" id="page-standards">
       <h1>标准资源与设置</h1>
+      <h3>标准包版本与升级</h3>
+      <div class="callout standard-release-card">
+        <p id="standards-active-text">正在核验本地标准包…</p>
+        <p id="standards-update-text" class="muted"></p>
+        <div class="actions compact-actions">
+          <button id="btn-install-standards">导入湖岸签名更新包…</button>
+          <button id="btn-rollback-standards">切换到上一稳定版本</button>
+        </div>
+        <p class="muted">本版本不会自行联网。只有您主动选择签名更新包后才会读取该本地文件；安装后仅新建项目自动采用新版本，已有项目不会静默改变，必须先查看完整差异并另行确认。</p>
+        <div class="project-standard-panel">
+          <p id="project-standard-text" class="muted">打开项目后，可在这里比较该项目固定的规则包与当前默认版本。</p>
+          <button id="btn-project-standard-change" disabled>查看差异并采用当前默认版本</button>
+        </div>
+      </div>
       <h3>订正参考标准</h3>
       <table id="standards-table"><thead>
-        <tr><th>标准</th><th>类型</th><th>版本</th><th>适用范围</th></tr>
+        <tr><th>标准</th><th>类型</th><th>版本</th><th>状态</th><th>适用范围</th></tr>
       </thead><tbody></tbody></table>
       <h3>账号与同步</h3>
       <div class="callout">
         <p id="auth-status-text">湖岸账号即将开放。登录永不强制：未登录时全部核心功能完整可用。</p>
-        <p>检查记录同步：<strong>默认关闭</strong>。开放后需您逐级明确授权，稿件文件级同步每次单独确认。</p>
+        <p>检查结果与必要元数据同步：<strong>默认关闭</strong>。开放后每次均按您的选择执行；稿件、正文、摘录、文件名、路径和文件哈希永不进入账号同步。</p>
         <button id="btn-login2" class="ghost">注册 / 登录湖岸账号</button>
       </div>
       <h3>隐私</h3>
@@ -203,6 +217,36 @@
       <button id="btn-close-checkpoints">关闭</button>
       <button id="btn-undo-last-fix">撤销上一次批量修复</button>
       <button id="btn-restore-checkpoint" class="primary" disabled>恢复选定检查点</button>
+    </div>
+  </dialog>
+
+  <dialog id="rulepack-upgrade-dialog" class="modal rulepack-upgrade-modal" aria-labelledby="rulepack-upgrade-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="rulepack-upgrade-title">切换当前项目的检查标准</h2>
+        <p class="muted">下面完整列出这次规则、标准和默认引用映射的差异。确认后会先创建检查点，再切换项目固定版本；原稿和工作稿内容不会被修改。</p>
+      </div>
+    </div>
+    <div id="rulepack-upgrade-summary" class="callout" aria-live="polite"></div>
+    <section class="upgrade-diff-section">
+      <h3>版本说明</h3>
+      <ul id="rulepack-upgrade-release" class="upgrade-diff-list"></ul>
+    </section>
+    <section class="upgrade-diff-section">
+      <h3>规则差异</h3>
+      <ul id="rulepack-upgrade-rules" class="upgrade-diff-list"></ul>
+    </section>
+    <section class="upgrade-diff-section">
+      <h3>标准条目差异</h3>
+      <ul id="rulepack-upgrade-standards" class="upgrade-diff-list"></ul>
+    </section>
+    <section class="upgrade-diff-section">
+      <h3>默认引用体例映射</h3>
+      <div id="rulepack-upgrade-citation" class="upgrade-mapping-diff"></div>
+    </section>
+    <div class="modal-actions">
+      <button id="btn-cancel-rulepack-upgrade">取消（不改变项目）</button>
+      <button id="btn-confirm-rulepack-upgrade" class="primary">确认切换并重新检查</button>
     </div>
   </dialog>
 

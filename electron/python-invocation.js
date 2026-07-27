@@ -5,6 +5,19 @@
 
 const path = require("path");
 
+const STANDARD_IDENTITY_FIELDS = Object.freeze([
+  "bundle_id",
+  "manifest_sha256",
+  "name",
+  "pinned",
+  "release_sequence",
+  "sha256",
+  "version",
+]);
+const SAFE_ID_RE = /^[a-z0-9][a-z0-9._-]{0,127}$/;
+const SEMVER_RE = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+const SHA256_RE = /^[0-9a-f]{64}$/;
+
 const CORE_BOOTSTRAP = [
   "import runpy,sys",
   "sys.path.insert(0,sys.argv.pop(1))",
@@ -16,6 +29,40 @@ function nonEmptyString(value, label) {
     throw new Error(`${label} 必须是非空且不含 NUL 的字符串`);
   }
   return value;
+}
+
+function isSafeSemver(value) {
+  if (typeof value !== "string" || value.length > 128) return false;
+  const match = SEMVER_RE.exec(value);
+  if (match === null) return false;
+  for (const raw of match.slice(1, 4)) {
+    const parsed = Number(raw);
+    if (!Number.isSafeInteger(parsed)) return false;
+  }
+  const prerelease = value.split("+")[0].split("-").slice(1).join("-");
+  if (prerelease && prerelease.split(".").some((item) => /^\d+$/.test(item) &&
+      item.length > 1 && item.startsWith("0"))) return false;
+  return true;
+}
+
+function serializeStandardIdentity(value) {
+  const invalid = () => { throw new Error("标准包绑定身份非法"); };
+  if (!value || typeof value !== "object" || Array.isArray(value)) invalid();
+  const keys = Object.keys(value).sort();
+  const expected = [...STANDARD_IDENTITY_FIELDS].sort();
+  if (keys.length !== expected.length || keys.some((key, index) => key !== expected[index])) invalid();
+  if (typeof value.name !== "string" || !SAFE_ID_RE.test(value.name) ||
+      !isSafeSemver(value.version) ||
+      value.pinned !== true ||
+      typeof value.sha256 !== "string" || !SHA256_RE.test(value.sha256) ||
+      typeof value.bundle_id !== "string" || !SAFE_ID_RE.test(value.bundle_id) ||
+      !Number.isSafeInteger(value.release_sequence) || value.release_sequence < 1 ||
+      typeof value.manifest_sha256 !== "string" || !SHA256_RE.test(value.manifest_sha256)) {
+    invalid();
+  }
+  const canonical = {};
+  for (const field of STANDARD_IDENTITY_FIELDS) canonical[field] = value[field];
+  return JSON.stringify(canonical);
 }
 
 function isolatedPythonInvocation({ executable, script, cwd, args = [] } = {}) {
@@ -54,7 +101,12 @@ function pythonCoreInvocation({ executable, coreDir, args = [] } = {}) {
 
 function createIsolatedPythonEnvironment(
   source = process.env,
-  { electronExec = null, packaged = false } = {},
+  {
+    electronExec = null,
+    packaged = false,
+    standardsStoreRoot = null,
+    expectedStandardIdentity = null,
+  } = {},
 ) {
   const env = {};
   for (const [key, value] of Object.entries(source)) {
@@ -73,6 +125,14 @@ function createIsolatedPythonEnvironment(
   if (typeof electronExec === "string" && electronExec.trim() !== "") {
     isolated.OAK_ELECTRON_EXEC_PATH = electronExec;
   }
+  if (standardsStoreRoot !== null) {
+    const requested = nonEmptyString(standardsStoreRoot, "标准库根目录");
+    if (!path.isAbsolute(requested)) throw new Error("标准库根目录必须是绝对路径");
+    isolated.OAK_STANDARDS_STORE = path.resolve(requested);
+  }
+  if (expectedStandardIdentity !== null) {
+    isolated.OAK_EXPECTED_STANDARD_IDENTITY = serializeStandardIdentity(expectedStandardIdentity);
+  }
   return isolated;
 }
 
@@ -81,4 +141,5 @@ module.exports = {
   createIsolatedPythonEnvironment,
   isolatedPythonInvocation,
   pythonCoreInvocation,
+  serializeStandardIdentity,
 };

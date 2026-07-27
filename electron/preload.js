@@ -28,7 +28,16 @@ const api = {
 
   // 资源
   listSamples: () => ipcRenderer.invoke("app:list-samples"),
-  getStandards: () => ipcRenderer.invoke("app:standards"),
+  getStandards: () => ipcRenderer.invoke("standards:list"),
+  standardsStatus: () => ipcRenderer.invoke("standards:status"),
+  installStandardUpdate: () => ipcRenderer.invoke("standards:install-local"),
+  rollbackStandardDefault: () => ipcRenderer.invoke("standards:rollback-global"),
+  projectStandardStatus: (project) =>
+    ipcRenderer.invoke("standards:project-status", { project }),
+  planProjectStandardChange: (project) =>
+    ipcRenderer.invoke("standards:plan-project-change", { project }),
+  applyProjectStandardChange: (project, planId) =>
+    ipcRenderer.invoke("standards:apply-project-change", { project, planId }),
   exportPdf: (project) => ipcRenderer.invoke("report:pdf", { project }),
   openExports: (project) => ipcRenderer.invoke("app:open-exports", { project }),
 

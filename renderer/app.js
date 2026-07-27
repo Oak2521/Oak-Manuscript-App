@@ -18,6 +18,9 @@ const state = {
   checkpoints: [],
   selectedCheckpointId: null,
   restoringCheckpoint: false,
+  rulepackUpgradePlan: null,
+  rulepackUpgradePlanning: false,
+  rulepackUpgradeApplying: false,
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -339,7 +342,12 @@ const actions = {
     showPage("issues");
     state.filter = "pending"; state.selectedIssue = null;
     renderIssues(); renderDetail(null);
-    return { statusLevel: chk.result.status_level, issueCount: chk.result.issues.length, page: state.page };
+    return {
+      statusLevel: chk.result.status_level,
+      issueCount: chk.result.issues.length,
+      rulepack: chk.result.rulepack,
+      page: state.page,
+    };
   },
 
   async autoFix() {
@@ -453,7 +461,11 @@ const actions = {
     const chk = unwrap(await window.oak.check(state.project, "recheck"));
     state.lastCheck = chk.result;
     renderIssues(); renderDetail(null);
-    return { statusLevel: chk.result.status_level, issueCount: chk.result.issues.length };
+    return {
+      statusLevel: chk.result.status_level,
+      issueCount: chk.result.issues.length,
+      rulepack: chk.result.rulepack,
+    };
   },
 
   async issueAction(issueId, status) {
@@ -495,6 +507,96 @@ const actions = {
     return v;
   },
 
+  async previewProjectStandardChange() {
+    if (!state.project) throw new Error("请先打开或创建一个项目");
+    if (state.rulepackUpgradePlanning || state.rulepackUpgradeApplying) {
+      throw new Error("项目标准变更正在处理");
+    }
+    state.rulepackUpgradePlanning = true;
+    $("#btn-project-standard-change").disabled = true;
+    try {
+      const response = await window.oak.planProjectStandardChange(state.project);
+      if (!response || response.ok === false) {
+        if (response && response.code === "RULEPACK_UPGRADE_NOT_NEEDED") {
+          toast("当前项目已经使用默认标准版本");
+          await renderProjectStandardStatus();
+          return { needed: false };
+        }
+        throw new Error((response && response.error) || "无法生成项目标准差异");
+      }
+      const plan = response.result;
+      if (!plan || plan.kind !== "oak-rulepack-upgrade-plan" ||
+          typeof plan.plan_id !== "string" || !plan.diff || plan.requires_recheck !== true) {
+        throw new Error("项目标准差异返回格式非法");
+      }
+      state.rulepackUpgradePlan = plan;
+      renderRulepackUpgradePlan(plan);
+      $("#rulepack-upgrade-dialog").showModal();
+      return { needed: true, planId: plan.plan_id, direction: plan.direction };
+    } finally {
+      state.rulepackUpgradePlanning = false;
+      if (!state.rulepackUpgradePlan) await renderProjectStandardStatus();
+    }
+  },
+
+  cancelProjectStandardChange() {
+    if (state.rulepackUpgradeApplying) return false;
+    state.rulepackUpgradePlan = null;
+    const dialog = $("#rulepack-upgrade-dialog");
+    if (dialog.open) dialog.close("cancel");
+    return true;
+  },
+
+  async confirmProjectStandardChange() {
+    const plan = state.rulepackUpgradePlan;
+    if (!plan) throw new Error("没有待确认的项目标准变更计划");
+    if (state.rulepackUpgradeApplying) throw new Error("项目标准变更正在执行");
+    state.rulepackUpgradeApplying = true;
+    $("#btn-cancel-rulepack-upgrade").disabled = true;
+    $("#btn-confirm-rulepack-upgrade").disabled = true;
+    try {
+      const response = unwrap(await window.oak.applyProjectStandardChange(
+        state.project,
+        plan.plan_id,
+      ));
+      if (!response.result.rulepack_check_required) {
+        throw new Error("核心没有要求按新规则包重新检查，已安全停止");
+      }
+      state.rulepackUpgradePlan = null;
+      state.lastCheck = null;
+      state.selectedIssue = null;
+      state.fixPlan = null;
+      state.exportFiles = [];
+      state.pdfPath = null;
+      $("#rulepack-upgrade-dialog").close("applied");
+      enableStep("progress");
+      showPage("progress");
+      renderStages(2);
+      toast("项目标准已切换并建立检查点，正在按新版本完整检查…", 5000);
+      try {
+        const checked = unwrap(await window.oak.check(state.project, "check"));
+        state.lastCheck = checked.result;
+        renderStages(STAGES.length);
+        enableStep("issues"); enableStep("export");
+        showPage("issues");
+        state.filter = "pending";
+        renderIssues(); renderDetail(null);
+        toast(`项目已采用规则包 ${response.result.rulepack.version}，重新检查完成。`, 5000);
+        return {
+          change: response.result.change,
+          issueCount: checked.result.issues.length,
+          statusLevel: checked.result.status_level,
+        };
+      } catch (error) {
+        throw new Error(`项目标准已切换，但重新检查失败：${String(error.message || error)}`);
+      }
+    } finally {
+      state.rulepackUpgradeApplying = false;
+      $("#btn-cancel-rulepack-upgrade").disabled = false;
+      $("#btn-confirm-rulepack-upgrade").disabled = false;
+    }
+  },
+
   getState() {
     return {
       page: state.page, project: state.project,
@@ -503,6 +605,7 @@ const actions = {
       exports: state.exportFiles.length,
       fixPlanCount: state.fixPlan ? state.fixPlan.count : 0,
       checkpoints: state.checkpoints.length,
+      rulepackUpgradePlan: state.rulepackUpgradePlan ? state.rulepackUpgradePlan.plan_id : null,
     };
   },
 };
@@ -538,6 +641,118 @@ function renderExportFiles() {
 
 // ---------- 标准与设置页 ----------
 
+function stableDisplay(value) {
+  try { return JSON.stringify(value, null, 2); } catch { return String(value); }
+}
+
+function diffListItem(kind, text) {
+  const item = document.createElement("li");
+  const badge = document.createElement("span");
+  const content = document.createElement("span");
+  badge.className = "upgrade-diff-kind";
+  badge.textContent = kind;
+  content.textContent = text;
+  item.append(badge, content);
+  return item;
+}
+
+function renderEntityDiff(targetSelector, group, idField) {
+  const target = $(targetSelector);
+  const items = [];
+  const safeGroup = group && typeof group === "object" ? group : {};
+  for (const entry of Array.isArray(safeGroup.added) ? safeGroup.added : []) {
+    items.push(diffListItem("新增", `${entry[idField] || "未知 ID"}\n${stableDisplay(entry)}`));
+  }
+  for (const entry of Array.isArray(safeGroup.removed) ? safeGroup.removed : []) {
+    items.push(diffListItem("移除", `${entry[idField] || "未知 ID"}\n${stableDisplay(entry)}`));
+  }
+  for (const entry of Array.isArray(safeGroup.changed) ? safeGroup.changed : []) {
+    const fields = Array.isArray(entry.changed_fields) ? entry.changed_fields.join("、") : "未说明字段";
+    items.push(diffListItem(
+      "变更",
+      `${entry[idField] || entry.before?.[idField] || entry.after?.[idField] || "未知 ID"}`
+        + `（${fields}）\n修改前：${stableDisplay(entry.before)}\n修改后：${stableDisplay(entry.after)}`,
+    ));
+  }
+  if (!items.length) items.push(diffListItem("无", "本部分没有变化。"));
+  target.replaceChildren(...items);
+}
+
+function renderRulepackUpgradePlan(plan) {
+  const diff = plan.diff || {};
+  const summary = diff.summary || {};
+  const direction = plan.direction === "rollback" ? "回退" : "升级";
+  $("#rulepack-upgrade-summary").textContent =
+    `${direction}：${plan.current_rulepack.version}（序列 ${plan.current_rulepack.release_sequence}） → `
+    + `${plan.target_rulepack.version}（序列 ${plan.target_rulepack.release_sequence}）。`
+    + `规则 +${summary.rules_added || 0} / -${summary.rules_removed || 0} / 改 ${summary.rules_changed || 0}；`
+    + `标准 +${summary.standards_added || 0} / -${summary.standards_removed || 0} / 改 ${summary.standards_changed || 0}。`
+    + "确认后旧问题集会归档，必须重新检查。";
+
+  const releaseItems = (diff.release && Array.isArray(diff.release.target_change_summary))
+    ? diff.release.target_change_summary.map((text) => diffListItem("说明", String(text)))
+    : [];
+  const standardsDiff = diff.standards || {};
+  if (standardsDiff.registry_changed) {
+    releaseItems.push(diffListItem(
+      "注册表",
+      `修改前：${stableDisplay(standardsDiff.registry_before)}\n修改后：${stableDisplay(standardsDiff.registry_after)}`,
+    ));
+  }
+  if (!releaseItems.length) releaseItems.push(diffListItem("说明", "目标版本没有附加发布说明。"));
+  $("#rulepack-upgrade-release").replaceChildren(...releaseItems);
+
+  renderEntityDiff("#rulepack-upgrade-rules", diff.rules, "rule_id");
+  renderEntityDiff("#rulepack-upgrade-standards", standardsDiff, "standard_id");
+
+  const citation = diff.citation_mapping || {};
+  const citationTarget = $("#rulepack-upgrade-citation");
+  if (!citation.changed) {
+    const unchanged = document.createElement("div");
+    unchanged.className = "upgrade-mapping-column";
+    unchanged.textContent = "默认引用体例映射没有变化。";
+    citationTarget.replaceChildren(unchanged);
+  } else {
+    const before = document.createElement("div");
+    const after = document.createElement("div");
+    before.className = "upgrade-mapping-column";
+    after.className = "upgrade-mapping-column after";
+    before.textContent = `修改前\n${stableDisplay(citation.before)}`;
+    after.textContent = `修改后\n${stableDisplay(citation.after)}`;
+    citationTarget.replaceChildren(before, after);
+  }
+  $("#btn-confirm-rulepack-upgrade").textContent =
+    plan.direction === "rollback" ? "确认回退并重新检查" : "确认升级并重新检查";
+}
+
+async function renderProjectStandardStatus() {
+  const text = $("#project-standard-text");
+  const button = $("#btn-project-standard-change");
+  button.disabled = true;
+  if (!state.project) {
+    text.textContent = "打开项目后，可在这里比较该项目固定的规则包与当前默认版本。";
+    return;
+  }
+  try {
+    const response = unwrap(await window.oak.projectStandardStatus(state.project));
+    const current = response.project_identity;
+    const active = response.active_identity;
+    const legacy = response.legacy_migratable ? "；旧格式 pin 已唯一解析但未静默写回" : "";
+    if (response.differs) {
+      const direction = active.release_sequence < current.release_sequence ? "回退" : "升级";
+      text.textContent =
+        `当前项目固定：${current.version}（序列 ${current.release_sequence}）；`
+        + `默认版本：${active.version}（序列 ${active.release_sequence}）。可查看完整差异后${direction}${legacy}。`;
+      button.disabled = state.rulepackUpgradePlanning || state.rulepackUpgradeApplying;
+    } else {
+      text.textContent = `当前项目已固定到默认标准包 ${current.version}（序列 ${current.release_sequence}）${legacy}。`;
+    }
+  } catch (error) {
+    text.textContent = `无法核验当前项目的标准版本：${String(error.message || error)}`;
+    button.disabled = true;
+  }
+}
+
 async function renderStandardsPage() {
   try {
     const r = unwrap(await window.oak.getStandards());
@@ -546,17 +761,42 @@ async function renderStandardsPage() {
     for (const s of r.standards) {
       const tr = document.createElement("tr");
       const typeLabel = { official: "官方标准", oak_interpretation: "湖岸解释", technical_spec: "技术规范" }[s.source_type] || s.source_type;
-      for (const text of [s.title, typeLabel, s.version, s.scope]) {
+      const statusLabel = {
+        active: "有效",
+        under_review: "待复核",
+        superseded: "已被替代",
+        deprecated: "已停用",
+      }[s.status] || s.status;
+      for (const text of [s.title, typeLabel, s.version, statusLabel, s.scope]) {
         const td = document.createElement("td");
         td.textContent = text;
         tr.appendChild(td);
       }
       tbody.appendChild(tr);
     }
+    const standardStatus = r.status || {};
+    const active = standardStatus.active;
+    $("#standards-active-text").textContent = active
+      ? `当前默认标准包：${active.version}（发布序列 ${active.release_sequence}，${active.source === "bundled" ? "APP 内置" : "已签名安装"}）`
+      : "当前没有可用的标准包。";
+    $("#standards-update-text").textContent = standardStatus.error
+      ? `标准库核验失败：${standardStatus.error.message}`
+      : standardStatus.trust_configured
+        ? "本地签名包导入已启用；自动联网更新保持关闭。"
+        : "签名校验与回滚机制已启用，但正式 release 公钥尚未配置；当前只能使用摘要固定的内置标准包。";
+    $("#btn-install-standards").disabled = !standardStatus.local_signed_import_enabled;
+    $("#btn-rollback-standards").disabled = !standardStatus.previous;
     const info = unwrap(await window.oak.appInfo());
-    $("#rulepack-info").textContent = `规则包：${info.rulepack} ｜ APP 版本：${info.appVersion}`;
+    $("#rulepack-info").textContent = `规则包：${info.rulepack} ｜ 标准包 manifest：${r.release.manifest_sha256.slice(0, 16)}… ｜ APP 版本：${info.appVersion}`;
     $("#app-meta").textContent = `规则包 ${info.rulepack}`;
+    await renderProjectStandardStatus();
   } catch (err) {
+    $("#standards-active-text").textContent = "标准库不可用（已安全停止，不会回退到未核验规则）。";
+    $("#standards-update-text").textContent = String(err.message || err);
+    $("#btn-install-standards").disabled = true;
+    $("#btn-rollback-standards").disabled = true;
+    $("#btn-project-standard-change").disabled = true;
+    $("#project-standard-text").textContent = "标准库不可用，项目检查与标准切换已安全停止。";
     toast(String(err.message || err));
   }
 }
@@ -570,12 +810,22 @@ async function loginPlaceholder() {
 
 document.addEventListener("DOMContentLoaded", () => {
   $$(".step").forEach((btn) =>
-    btn.addEventListener("click", () => { if (!btn.disabled) showPage(btn.dataset.page); }));
+    btn.addEventListener("click", () => {
+      if (btn.disabled) return;
+      showPage(btn.dataset.page);
+      if (btn.dataset.page === "standards") {
+        renderStandardsPage().catch((error) => toast(String(error.message || error), 6000));
+      }
+    }));
 
-  $("#btn-own-file").addEventListener("click", () => actions.chooseOwnFile());
-  $("#btn-sample").addEventListener("click", () => actions.showSamples());
-  $("#btn-open-project").addEventListener("click", () => actions.openExistingDialog());
-  $("#btn-pick-dir").addEventListener("click", () => actions.pickProjectDir());
+  $("#btn-own-file").addEventListener("click", () =>
+    actions.chooseOwnFile().catch((error) => toast(String(error.message || error), 5000)));
+  $("#btn-sample").addEventListener("click", () =>
+    actions.showSamples().catch((error) => toast(String(error.message || error), 5000)));
+  $("#btn-open-project").addEventListener("click", () =>
+    actions.openExistingDialog().catch((error) => toast(String(error.message || error), 6000)));
+  $("#btn-pick-dir").addEventListener("click", () =>
+    actions.pickProjectDir().catch((error) => toast(String(error.message || error), 5000)));
   $("#btn-to-target").addEventListener("click", () => { enableStep("target"); showPage("target"); });
   $("#btn-start-check").addEventListener("click", async () => {
     actions.readSettingsFromUi();
@@ -621,8 +871,57 @@ document.addEventListener("DOMContentLoaded", () => {
     toast(r.ok ? "已在浏览器打开湖岸橡树网站（APP 未发送任何稿件数据）" : r.error, 3600);
   });
   $("#btn-cta-dismiss").addEventListener("click", () => toast("好的，本次不再提示"));
-  $("#btn-login").addEventListener("click", loginPlaceholder);
-  $("#btn-login2").addEventListener("click", loginPlaceholder);
+  $("#btn-login").addEventListener("click", () =>
+    loginPlaceholder().catch((error) => toast(String(error.message || error), 5000)));
+  $("#btn-login2").addEventListener("click", () =>
+    loginPlaceholder().catch((error) => toast(String(error.message || error), 5000)));
+  $("#btn-install-standards").addEventListener("click", async () => {
+    const button = $("#btn-install-standards");
+    if (button.disabled) return;
+    button.disabled = true;
+    try {
+      const response = await window.oak.installStandardUpdate();
+      if (!response.ok) { toast(response.error, 6000); return; }
+      if (response.canceled) { toast("未安装标准更新"); return; }
+      toast(`标准包已更新为 ${response.result.active.version}；已有项目尚未改变。`, 5000);
+    } catch (error) {
+      toast(String(error.message || error), 6000);
+    } finally {
+      await renderStandardsPage();
+    }
+  });
+  $("#btn-rollback-standards").addEventListener("click", async () => {
+    const button = $("#btn-rollback-standards");
+    if (button.disabled) return;
+    button.disabled = true;
+    try {
+      const response = await window.oak.rollbackStandardDefault();
+      if (!response.ok) { toast(response.error, 6000); return; }
+      if (response.canceled) { toast("未切换标准版本"); return; }
+      toast(`新建项目的默认标准已切换为 ${response.result.active.version}；已有项目未改变。`, 5000);
+    } catch (error) {
+      toast(String(error.message || error), 6000);
+    } finally {
+      await renderStandardsPage();
+    }
+  });
+  $("#btn-project-standard-change").addEventListener("click", () =>
+    actions.previewProjectStandardChange().catch((error) =>
+      toast(String(error.message || error), 6000)));
+  $("#btn-cancel-rulepack-upgrade").addEventListener("click", () =>
+    actions.cancelProjectStandardChange());
+  $("#btn-confirm-rulepack-upgrade").addEventListener("click", () =>
+    actions.confirmProjectStandardChange().catch((error) =>
+      toast(String(error.message || error), 7000)));
+  $("#rulepack-upgrade-dialog").addEventListener("cancel", (event) => {
+    if (state.rulepackUpgradeApplying) event.preventDefault();
+  });
+  $("#rulepack-upgrade-dialog").addEventListener("close", () => {
+    if (!state.rulepackUpgradeApplying) {
+      state.rulepackUpgradePlan = null;
+      renderProjectStandardStatus().catch((error) => toast(String(error.message || error), 5000));
+    }
+  });
 
   $$("#issue-filters button").forEach((b) =>
     b.addEventListener("click", () => {

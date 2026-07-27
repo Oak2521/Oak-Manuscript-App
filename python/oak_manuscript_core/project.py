@@ -18,6 +18,7 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from .errors import OakError, ProjectValidationError
 from .project_lock import PROJECT_LOCK_FILENAME, validate_existing_lock_file
+from .rulepack import validate_rulepack_identity
 from .safety import is_link_or_reparse
 from .util import now_iso, read_json, sha256_file, write_json
 
@@ -30,6 +31,22 @@ _CHECKPOINT_ID_RE = re.compile(r"^cp-[0-9]{4,}$")
 _CHECK_ID_RE = re.compile(r"^check-[0-9]{4,}$")
 _FIX_ID_RE = re.compile(r"^fix-[0-9]{4,}$")
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+_RULEPACK_CHANGE_ID_RE = re.compile(r"^rulepack-change-[0-9]{4,}$")
+_RULEPACK_PLAN_ID_RE = re.compile(r"^rulepack-plan-[0-9a-f]{64}$")
+_RULEPACK_ISSUES_ARCHIVE_RE = re.compile(
+    r"^reports/issues\.before-rulepack-cp-[0-9]{4,}\.json$"
+)
+_RULEPACK_HISTORY_FIELDS = {
+    "change_id",
+    "direction",
+    "applied_at",
+    "from_rulepack",
+    "to_rulepack",
+    "plan_id",
+    "diff_sha256",
+    "checkpoint_id",
+    "issues_archive",
+}
 _CHECKPOINT_STATE_FIELDS = (
     "settings",
     "rulepack",
@@ -37,6 +54,7 @@ _CHECKPOINT_STATE_FIELDS = (
     "check_seq",
     "issues_file",
     "fixes",
+    "rulepack_check_required",
 )
 
 _DEFAULT_SETTINGS = {
@@ -336,9 +354,27 @@ class Project:
         citation_style: str = "default",
         check_depth: str = "full",
         epub_preview: bool = False,
+        rulepack_identity: dict | None = None,
     ) -> "Project":
         input_path = Path(input_path)
         project_dir = Path(project_dir)
+        if rulepack_identity is None:
+            # ``Project.create`` is also a public Python entrypoint used outside
+            # the CLI.  A newly-created project must never start life with the
+            # old ``name=None/version=None`` sentinel: such a project cannot be
+            # resolved without guessing later.  Resolve and verify the same
+            # active release as the CLI, while keeping the import local to avoid
+            # making the project model depend on the standards-store module at
+            # import time.
+            from .standards_store import resolve_active_release
+
+            rulepack_identity = resolve_active_release().identity
+        validate_rulepack_identity(rulepack_identity)
+        # 正式 Electron spawn 会注入已经由主进程验签的 exact identity；即使
+        # Python API 调用方显式传入 identity，也不得绕过该单次进程绑定。
+        from .standards_store import assert_expected_standard_identity
+
+        assert_expected_standard_identity(rulepack_identity)
         # CLI 在加锁前跑过纯只读门禁；锁内重验扩展名和目标，但输入正文
         # 只打开一次。随后始终从该文件描述符复制到 source，再从受控 source
         # 生成 working，避免检查/复制两次打开之间的来源替换竞态。
@@ -466,7 +502,9 @@ class Project:
                     "size_bytes": source_copy.stat().st_size,
                 },
                 "settings": settings,
-                "rulepack": {"name": None, "version": None, "pinned": True},
+                "rulepack": copy.deepcopy(rulepack_identity),
+                "rulepack_history": [],
+                "rulepack_check_required": False,
                 "checks": [],
                 "check_seq": 0,
                 "issues_file": None,
@@ -541,6 +579,83 @@ class Project:
         for field in ("settings", "rulepack", "sync", "integrity"):
             if not isinstance(data.get(field), dict):
                 raise ProjectValidationError(f"项目清单 {field} 字段必须是对象。")
+        try:
+            validate_rulepack_identity(
+                data["rulepack"],
+                allow_legacy=True,
+                allow_uninitialized=True,
+            )
+        except OakError as exc:
+            raise ProjectValidationError(f"项目清单 rulepack 身份非法：{exc.message}") from exc
+        rulepack_history = data.get("rulepack_history", [])
+        if not isinstance(rulepack_history, list):
+            raise ProjectValidationError("项目清单 rulepack_history 字段必须是数组。")
+        if not isinstance(data.get("rulepack_check_required", False), bool):
+            raise ProjectValidationError("项目清单 rulepack_check_required 字段必须是布尔值。")
+        change_ids: set[str] = set()
+        previous_to_rulepack = None
+        for index, change in enumerate(rulepack_history, start=1):
+            if not isinstance(change, dict) or set(change) != _RULEPACK_HISTORY_FIELDS:
+                raise ProjectValidationError("项目规则包升级历史字段非法。")
+            change_id = change.get("change_id")
+            if not isinstance(change_id, str) or not _RULEPACK_CHANGE_ID_RE.fullmatch(change_id):
+                raise ProjectValidationError("项目规则包升级历史 change_id 非法。")
+            if change_id in change_ids:
+                raise ProjectValidationError(f"项目规则包升级历史 change_id 重复：{change_id}")
+            change_ids.add(change_id)
+            if change_id != f"rulepack-change-{index:04d}":
+                raise ProjectValidationError("项目规则包升级历史 change_id 序列不连续。")
+            if change.get("direction") not in {"upgrade", "rollback"}:
+                raise ProjectValidationError(f"项目规则包升级历史 direction 非法：{change_id}")
+            if not isinstance(change.get("applied_at"), str) or not change["applied_at"]:
+                raise ProjectValidationError(f"项目规则包升级历史 applied_at 非法：{change_id}")
+            try:
+                validate_rulepack_identity(change.get("from_rulepack"))
+                validate_rulepack_identity(change.get("to_rulepack"))
+            except OakError as exc:
+                raise ProjectValidationError(
+                    f"项目规则包升级历史 pin 非法：{change_id}：{exc.message}"
+                ) from exc
+            if change["from_rulepack"] == change["to_rulepack"]:
+                raise ProjectValidationError(f"项目规则包升级历史没有身份变化：{change_id}")
+            if (
+                change["to_rulepack"]["release_sequence"]
+                == change["from_rulepack"]["release_sequence"]
+            ):
+                raise ProjectValidationError(f"项目规则包升级历史 release_sequence 未变化：{change_id}")
+            sequence_increased = (
+                change["to_rulepack"]["release_sequence"]
+                > change["from_rulepack"]["release_sequence"]
+            )
+            if sequence_increased != (change["direction"] == "upgrade"):
+                raise ProjectValidationError(f"项目规则包升级历史方向与序号不一致：{change_id}")
+            if (
+                previous_to_rulepack is not None
+                and change["from_rulepack"] != previous_to_rulepack
+            ):
+                raise ProjectValidationError(f"项目规则包升级历史 pin 链不连续：{change_id}")
+            previous_to_rulepack = copy.deepcopy(change["to_rulepack"])
+            if not isinstance(change.get("plan_id"), str) or not _RULEPACK_PLAN_ID_RE.fullmatch(
+                change["plan_id"]
+            ):
+                raise ProjectValidationError(f"项目规则包升级历史 plan_id 非法：{change_id}")
+            if not isinstance(change.get("diff_sha256"), str) or not _SHA256_RE.fullmatch(
+                change["diff_sha256"]
+            ):
+                raise ProjectValidationError(f"项目规则包升级历史 diff_sha256 非法：{change_id}")
+            if not isinstance(change.get("checkpoint_id"), str) or not _CHECKPOINT_ID_RE.fullmatch(
+                change["checkpoint_id"]
+            ):
+                raise ProjectValidationError(f"项目规则包升级历史 checkpoint_id 非法：{change_id}")
+            archive = change.get("issues_archive")
+            if archive is not None and (
+                not isinstance(archive, str) or not _RULEPACK_ISSUES_ARCHIVE_RE.fullmatch(archive)
+            ):
+                raise ProjectValidationError(f"项目规则包升级历史 issues_archive 非法：{change_id}")
+            if archive is not None:
+                self.report_path(archive, required=True)
+        if rulepack_history and rulepack_history[-1]["to_rulepack"] != data["rulepack"]:
+            raise ProjectValidationError("项目当前 rulepack pin 与升级历史末项不一致。")
         for field in ("checks", "checkpoints", "fixes"):
             if not isinstance(data.get(field), list):
                 raise ProjectValidationError(f"项目清单 {field} 字段必须是数组。")
@@ -703,7 +818,14 @@ class Project:
         return self.report_path(relative, required=required)
 
     def _snapshot_project_state(self) -> dict:
-        return {field: copy.deepcopy(self.data.get(field)) for field in _CHECKPOINT_STATE_FIELDS}
+        return {
+            field: copy.deepcopy(
+                self.data.get(field, False)
+                if field == "rulepack_check_required"
+                else self.data.get(field)
+            )
+            for field in _CHECKPOINT_STATE_FIELDS
+        }
 
     def _validate_checkpoint_state(self, state_doc: object, checkpoint_id: str) -> dict:
         if not isinstance(state_doc, dict) or state_doc.get("schema_version") != CHECKPOINT_STATE_VERSION:
@@ -712,6 +834,8 @@ class Project:
         if not isinstance(state, dict):
             raise OakError(f"检查点状态文件损坏：{checkpoint_id}")
         for field in _CHECKPOINT_STATE_FIELDS:
+            if field == "rulepack_check_required":
+                continue
             if field not in state:
                 raise OakError(f"检查点状态缺少字段 {field}：{checkpoint_id}")
         if not isinstance(state["settings"], dict) or not isinstance(state["rulepack"], dict):
@@ -722,6 +846,18 @@ class Project:
             raise OakError(f"检查点检查序号损坏：{checkpoint_id}")
         if state["issues_file"] not in (None, "reports/issues.json"):
             raise OakError(f"检查点问题文件路径非法：{checkpoint_id}")
+        if "rulepack_check_required" in state:
+            if not isinstance(state["rulepack_check_required"], bool):
+                raise OakError(f"检查点复检状态非法：{checkpoint_id}")
+        else:
+            # 兼容旧 checkpoint state：只有最近一次 check 明确绑定同一完整
+            # identity 时才能证明结论仍适用；其它历史快照一律要求重新检查。
+            last_check = state["checks"][-1] if state["checks"] else None
+            state = copy.deepcopy(state)
+            state["rulepack_check_required"] = not (
+                isinstance(last_check, dict)
+                and last_check.get("rulepack") == state["rulepack"]
+            )
 
         result_snapshots = state_doc.get("check_results")
         if not isinstance(result_snapshots, list):
@@ -868,7 +1004,12 @@ class Project:
             )
         return result
 
-    def _delete_checkpoint_directories(self, entries: list[dict]) -> None:
+    def _delete_checkpoint_directories(
+        self,
+        entries: list[dict],
+        *,
+        ignore_errors: bool = True,
+    ) -> None:
         checkpoint_root = self.safe_subdir("checkpoints")
         for entry in entries:
             try:
@@ -883,7 +1024,7 @@ class Project:
                     raise ProjectValidationError(
                         f"待删除检查点目录不安全：{checkpoint_id}"
                     )
-            shutil.rmtree(cp_dir, ignore_errors=True)
+            shutil.rmtree(cp_dir, ignore_errors=ignore_errors)
 
     def _prune_checkpoints(
         self,
@@ -1082,6 +1223,15 @@ class Project:
 
         # 在任何写入（包括安全检查点）前完整验证目标和原稿。
         target_snapshot = self._load_checkpoint_snapshot(matches[0])
+        target_state = target_snapshot.get("state")
+        if (
+            isinstance(target_state, dict)
+            and target_state.get("rulepack") != self.data.get("rulepack")
+        ):
+            raise OakError(
+                "检查点属于另一规则包身份；规则包回退必须先生成并确认显式升级/回退计划，"
+                "不能通过 restore-checkpoint 静默切换。"
+            )
         source_hash_before = self._assert_source_intact()
 
         operation_data = copy.deepcopy(self.data)
@@ -1191,10 +1341,63 @@ class Project:
         except ProjectValidationError:
             problems.append("工作副本缺失或不安全（working/ 中找不到安全常规文件）。")
         for check in self.data.get("checks", []):
+            check_id = check.get("check_id")
+            relative = check.get("result_file")
             try:
-                self.report_path(check.get("result_file"), required=True)
+                result_path = self.report_path(relative, required=True)
             except (ProjectValidationError, OakError):
-                problems.append(f"检查结果文件缺失：{check['result_file']}")
+                problems.append(f"检查结果文件缺失：{relative}")
+                continue
+            try:
+                result = read_json(result_path)
+            except (OSError, UnicodeError, ValueError, RecursionError):
+                problems.append(f"检查结果文件不是有效 UTF-8 JSON：{relative}")
+                continue
+            if not isinstance(result, dict):
+                problems.append(f"检查结果文件顶层必须是 JSON 对象：{relative}")
+                continue
+            if result.get("schema_version") != "1.0":
+                problems.append(f"检查结果 schema_version 非法：{relative}")
+            if result.get("check_id") != check_id:
+                problems.append(f"检查结果 check_id 与检查记录不一致：{relative}")
+
+            if "rulepack" in check:
+                check_identity = check["rulepack"]
+                try:
+                    validate_rulepack_identity(check_identity)
+                except OakError:
+                    problems.append(f"检查记录规则包身份非法：{check_id}")
+                    continue
+                if check.get("rulepack_version") != check_identity["version"]:
+                    problems.append(f"检查记录规则包显示版本与完整身份不一致：{check_id}")
+                if result.get("rulepack") != check_identity:
+                    problems.append(f"检查结果规则包身份与检查记录不一致：{relative}")
+                continue
+
+            # alpha.2 及更早的 format 1.0 检查记录没有完整 rulepack 字段；
+            # 对应报告只保存 {name, version}。旧记录只能证明这组有限身份，
+            # 不得把项目当前 pin 倒填成从未记录过的七字段历史身份。
+            legacy_version = check.get("rulepack_version")
+            report_identity = result.get("rulepack")
+            if (
+                not isinstance(report_identity, dict)
+                or set(report_identity) != {"name", "version"}
+                or not isinstance(legacy_version, str)
+                or report_identity.get("version") != legacy_version
+            ):
+                problems.append(f"旧检查结果规则包身份与检查记录不一致：{relative}")
+                continue
+            try:
+                validate_rulepack_identity(
+                    {
+                        "name": report_identity.get("name"),
+                        "version": report_identity.get("version"),
+                        "pinned": True,
+                    },
+                    allow_legacy=True,
+                )
+            except OakError:
+                problems.append(f"旧检查结果规则包身份非法：{relative}")
         for cp in self.data.get("checkpoints", []):
             try:
                 self._checkpoint_dir(cp)

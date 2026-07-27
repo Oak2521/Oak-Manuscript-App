@@ -32,6 +32,39 @@ const {
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 const TEST_OUTPUT_ROOT = path.join(REPO_ROOT, "out", "test-fixtures");
+const TEST_SMOKE_RUN_ID = "test-run";
+const TEST_STANDARD_IDENTITY = Object.freeze({
+  bundle_id: "oak-standards",
+  manifest_sha256: "b".repeat(64),
+  name: "oak-rules",
+  pinned: true,
+  release_sequence: 1,
+  sha256: "a".repeat(64),
+  version: "1.0.0",
+});
+
+function testAppInfo({
+  appVersion = DEFAULT_EXPECTED_APP_VERSION,
+  packaged = false,
+  standardIdentity = TEST_STANDARD_IDENTITY,
+  rulepack = `${standardIdentity.name} ${standardIdentity.version}`,
+  standardsRelease = {
+    bundle_id: standardIdentity.bundle_id,
+    release_sequence: standardIdentity.release_sequence,
+    manifest_sha256: standardIdentity.manifest_sha256,
+    rulepack_name: standardIdentity.name,
+    rulepack_version: standardIdentity.version,
+  },
+} = {}) {
+  return {
+    ok: true,
+    appVersion,
+    packaged,
+    standardIdentity,
+    rulepack,
+    standardsRelease,
+  };
+}
 
 function makeRoot(t) {
   fs.mkdirSync(TEST_OUTPUT_ROOT, { recursive: true });
@@ -64,54 +97,53 @@ function prepareExecutable(t) {
 
 test("smoke identity rejects a stale app version and a non-packaged binary", () => {
   assert.equal(DEFAULT_EXPECTED_APP_VERSION, require("../package.json").version);
-  assert.doesNotThrow(() => assertSmokeIdentity({
-    ok: true,
-    appVersion: DEFAULT_EXPECTED_APP_VERSION,
-    packaged: false,
-  }, {
+  assert.doesNotThrow(() => assertSmokeIdentity(testAppInfo(), {
     expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
     expectedPackaged: false,
   }));
-  assert.doesNotThrow(() => assertSmokeIdentity({
-    ok: true,
-    appVersion: DEFAULT_EXPECTED_APP_VERSION,
-    packaged: true,
-  }, {
+  assert.doesNotThrow(() => assertSmokeIdentity(testAppInfo({ packaged: true }), {
     expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
     requirePackaged: true,
   }));
   assert.throws(
-    () => assertSmokeIdentity({
-      ok: true,
+    () => assertSmokeIdentity(testAppInfo({
       appVersion: "0.1.0-alpha.1",
       packaged: true,
-    }, {
+    }), {
       expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
       requirePackaged: true,
     }),
-    /应用版本应为 0\.1\.0-alpha\.2，实际为 0\.1\.0-alpha\.1/,
+    /应用版本应为 0\.1\.0-alpha\.3，实际为 0\.1\.0-alpha\.1/,
   );
   assert.throws(
-    () => assertSmokeIdentity({
-      ok: true,
-      appVersion: DEFAULT_EXPECTED_APP_VERSION,
-      packaged: false,
-    }, {
+    () => assertSmokeIdentity(testAppInfo(), {
       expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
       requirePackaged: true,
     }),
     /app\.isPackaged=true/,
   );
   assert.throws(
-    () => assertSmokeIdentity({
-      ok: true,
-      appVersion: DEFAULT_EXPECTED_APP_VERSION,
-      packaged: true,
-    }, {
+    () => assertSmokeIdentity(testAppInfo({ packaged: true }), {
       expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
       expectedPackaged: false,
     }),
     /app\.isPackaged 应为 false/,
+  );
+  assert.throws(
+    () => assertSmokeIdentity(testAppInfo({ rulepack: "oak-rules 9.9.9" })),
+    /显示值必须由完整标准身份派生/,
+  );
+  assert.throws(
+    () => assertSmokeIdentity(testAppInfo({
+      standardsRelease: {
+        bundle_id: TEST_STANDARD_IDENTITY.bundle_id,
+        release_sequence: 2,
+        manifest_sha256: TEST_STANDARD_IDENTITY.manifest_sha256,
+        rulepack_name: TEST_STANDARD_IDENTITY.name,
+        rulepack_version: TEST_STANDARD_IDENTITY.version,
+      },
+    })),
+    /标准发布信息必须与完整标准身份一致/,
   );
 });
 
@@ -121,17 +153,18 @@ test("smoke reads the actual create/check artifacts and proves Python core plus 
   fs.mkdirSync(reports);
   const manifest = {
     app_version: DEFAULT_EXPECTED_APP_VERSION,
-    rulepack: { name: "oak-rules", version: "1.0.0", pinned: true },
+    rulepack: { ...TEST_STANDARD_IDENTITY },
     checks: [{
       check_id: "check-0001",
       rulepack_version: "1.0.0",
+      rulepack: { ...TEST_STANDARD_IDENTITY },
       result_file: "reports/check-0001.json",
     }],
   };
   const report = {
     app_version: DEFAULT_EXPECTED_APP_VERSION,
     check_id: "check-0001",
-    rulepack: { name: "oak-rules", version: "1.0.0" },
+    rulepack: { ...TEST_STANDARD_IDENTITY },
   };
   const manifestFile = path.join(root, "project.json");
   const reportFile = path.join(reports, "check-0001.json");
@@ -140,10 +173,11 @@ test("smoke reads the actual create/check artifacts and proves Python core plus 
 
   assert.deepEqual(assertCoreIdentityFromProject(root, {
     expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
-    expectedRulepack: "oak-rules 1.0.0",
+    expectedStandardIdentity: TEST_STANDARD_IDENTITY,
   }), {
     coreVersion: DEFAULT_EXPECTED_APP_VERSION,
     rulepack: "oak-rules 1.0.0",
+    standardIdentity: TEST_STANDARD_IDENTITY,
     checkId: "check-0001",
   });
 
@@ -152,9 +186,9 @@ test("smoke reads the actual create/check artifacts and proves Python core plus 
   assert.throws(
     () => assertCoreIdentityFromProject(root, {
       expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
-      expectedRulepack: "oak-rules 1.0.0",
+      expectedStandardIdentity: TEST_STANDARD_IDENTITY,
     }),
-    /Python core 创建项目的版本应为 0\.1\.0-alpha\.2，实际为 0\.1\.0-alpha\.1/,
+    /Python core 创建项目的版本应为 0\.1\.0-alpha\.3，实际为 0\.1\.0-alpha\.1/,
   );
 
   manifest.app_version = DEFAULT_EXPECTED_APP_VERSION;
@@ -163,7 +197,7 @@ test("smoke reads the actual create/check artifacts and proves Python core plus 
   assert.throws(
     () => assertCoreIdentityFromProject(root, {
       expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
-      expectedRulepack: "oak-rules 1.0.0",
+      expectedStandardIdentity: TEST_STANDARD_IDENTITY,
     }),
     /检查结果文件必须位于冒烟项目目录内/,
   );
@@ -175,9 +209,9 @@ test("smoke reads the actual create/check artifacts and proves Python core plus 
   assert.throws(
     () => assertCoreIdentityFromProject(root, {
       expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
-      expectedRulepack: "oak-rules 1.0.0",
+      expectedStandardIdentity: TEST_STANDARD_IDENTITY,
     }),
-    /Python core 检查报告的版本应为 0\.1\.0-alpha\.2，实际为 0\.1\.0-alpha\.1/,
+    /Python core 检查报告的版本应为 0\.1\.0-alpha\.3，实际为 0\.1\.0-alpha\.1/,
   );
 
   report.app_version = DEFAULT_EXPECTED_APP_VERSION;
@@ -186,10 +220,30 @@ test("smoke reads the actual create/check artifacts and proves Python core plus 
   assert.throws(
     () => assertCoreIdentityFromProject(root, {
       expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
-      expectedRulepack: "oak-rules 1.0.0",
+      expectedStandardIdentity: TEST_STANDARD_IDENTITY,
     }),
-    /检查报告、检查记录与项目清单的规则包身份必须一致/,
+    /项目清单标准身份与预期标准身份不一致/,
   );
+
+  const sameVersionDrifts = [
+    ["payload sha256", (identity) => { identity.sha256 = "c".repeat(64); }],
+    ["manifest sha256", (identity) => { identity.manifest_sha256 = "d".repeat(64); }],
+    ["release_sequence", (identity) => { identity.release_sequence = 2; }],
+    ["pinned", (identity) => { identity.pinned = false; }],
+  ];
+  for (const [label, mutate] of sameVersionDrifts) {
+    report.rulepack = { ...TEST_STANDARD_IDENTITY };
+    mutate(report.rulepack);
+    fs.writeFileSync(reportFile, `${JSON.stringify(report, null, 2)}\n`);
+    assert.throws(
+      () => assertCoreIdentityFromProject(root, {
+        expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
+        expectedStandardIdentity: TEST_STANDARD_IDENTITY,
+      }),
+      /标准身份/,
+      `name/version 不变时，${label} 漂移也必须失败`,
+    );
+  }
 });
 
 test("packaged smoke requires an injected absolute output root and never falls back to temp", () => {
@@ -219,6 +273,28 @@ test("packaged smoke requires an injected absolute output root and never falls b
     repoRoot: path.resolve("fixture"),
     env: { [PACKAGED_OUTPUT_ENV]: sourceOutput },
   }), sourceOutput);
+});
+
+test("each smoke run receives an isolated user-data and standards-store root", (t) => {
+  const { root } = prepareExecutable(t);
+  const electronExecutable = path.join(root, "node_modules", "electron", "dist", "electron.exe");
+  fs.mkdirSync(path.dirname(electronExecutable), { recursive: true });
+  fs.writeFileSync(electronExecutable, "source smoke fixture\n");
+
+  const packagedA = getSmokePaths(root, "run-a");
+  const packagedB = getSmokePaths(root, "run-b");
+  const sourceA = getSourceSmokePaths(root, electronExecutable, "run-a");
+  const sourceB = getSourceSmokePaths(root, electronExecutable, "run-b");
+  assert.notEqual(packagedA.userData, packagedB.userData);
+  assert.notEqual(sourceA.userData, sourceB.userData);
+  assert.notEqual(packagedA.smokeRoot, sourceA.smokeRoot);
+  assert.match(packagedA.userData, /packaged-smoke[\\/]runs[\\/]run-a/);
+  assert.match(sourceA.userData, /source-smoke[\\/]runs[\\/]run-a/);
+  assert.throws(() => getSmokePaths(root, "../escape"), /运行 ID 非法/);
+  assert.throws(
+    () => getSourceSmokePaths(root, electronExecutable, "run_a"),
+    /运行 ID 非法/,
+  );
 });
 
 test("smoke cleanup rejects links before touching their external sentinel", (t) => {
@@ -330,6 +406,7 @@ test("packaged runner launches the fixed executable hidden and accepts exit 0 pl
   let invocation;
   const result = runPackagedSmoke({
     root,
+    runId: TEST_SMOKE_RUN_ID,
     hostPlatform: "win32",
     inheritedEnv: { SAFE_VALUE: "yes", NODE_OPTIONS: "--require=evil.js" },
     spawn(command, args, options) {
@@ -338,7 +415,7 @@ test("packaged runner launches the fixed executable hidden and accepts exit 0 pl
     },
   });
 
-  const paths = getSmokePaths(root);
+  const paths = getSmokePaths(root, TEST_SMOKE_RUN_ID);
   assert.equal(result.ok, true);
   assert.equal(result.expectedVersion, DEFAULT_EXPECTED_APP_VERSION);
   assert.equal(result.executable, executable);
@@ -365,6 +442,7 @@ test("source smoke keeps every writable Electron path inside repo/out and launch
   const result = runSourceSmoke({
     root,
     electronExecutable,
+    runId: TEST_SMOKE_RUN_ID,
     inheritedEnv: {
       SAFE_VALUE: "kept",
       ELECTRON_RUN_AS_NODE: "1",
@@ -376,7 +454,7 @@ test("source smoke keeps every writable Electron path inside repo/out and launch
       return { status: 0, signal: null, stdout: `${PASS_MARKER}\n`, stderr: "" };
     },
   });
-  const paths = getSourceSmokePaths(root, electronExecutable);
+  const paths = getSourceSmokePaths(root, electronExecutable, TEST_SMOKE_RUN_ID);
   assert.equal(result.ok, true);
   assert.equal(invocation.command, electronExecutable);
   assert.deepEqual(invocation.args, [root, ...smokeArguments(paths)]);

@@ -4,6 +4,37 @@
 
 ## [未发布]
 
+### 2026-07-27 — 0.1.0-alpha.3（ChatGPT 标准可信链与项目升级检查点）
+
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.3`。该标签只表示经测试的源码状态，不表示已经生成安装包或正式发行。
+
+**标准资产与可信存储**
+
+- 将 APP、Python 核心和 lockfile 统一为 `0.1.0-alpha.3`；规则包仍独立保持 `oak-rules 1.0.0`、release sequence 1；
+- 将标准注册表升级为 schema 2.0，补充生命周期、发布者、审核角色、版权使用、替代关系、规则反向关联、来源核验状态与变更历史，删除书稿/EPUB 占位摘要；
+- 新增 35 规则/6 fixer 精确能力清单和 canonical standard release manifest；manifest SHA-256 为 `d33534f081b2122a90652ee03304a0e71177a7fd0d3130fffe77b0fea807d7af`，规则包 SHA-256 为 `7ac5a5bdb126e9f5148a040ce42a634b1a95295c27d7a72c774db54bf7129542`；
+- 新增严格 JSON/payload 校验、Ed25519 门槛签名、内容寻址存储、release sequence 高水位、撤回/过期/兼容性、签署 rollback target 与内置 release 对账；重复键、非配对 surrogate、路径/URL/日期歧义、未知字段、能力漂移和同序列异身份均 fail-closed；
+- 标准根操作进程内串行；跨进程事务使用原子 pending 目录、PID 与随机 process token。活 owner 不抢占，死 owner 仅按严格 intent 恢复，未知变更拒绝猜测；
+- `StandardsProvider` 支持离线内置启动、本地签名包预览/安装和全局回滚。生产 trust digest 尚未配置，因此真实本地签名包导入默认禁用；在线检查/下载和生产撤回通道尚未实现。
+
+**项目固定版本与显式升级**
+
+- 项目规则包 pin 扩为七字段 `name/version/pinned/sha256/bundle_id/release_sequence/manifest_sha256`；已有项目先用一次只读、未绑定的 `project-standard-status` 发现 pin，Electron 精确验证对应 release 后，所有实际业务/变更命令均携带 canonical 期望身份，Python 再重验 manifest/payload/CAS；
+- 新增 `project-standard-status`、`plan-rulepack-upgrade`、`upgrade-rulepack`。计划绑定项目 manifest/state、source/working、issues、最新检查与目标身份；过期、异项目或横向替换计划拒绝；
+- 升级建立检查点、哈希归档旧 issues、原子提交新 pin、记录连续 history，并设置强制重检；全局 active 改变不会静默改变旧项目；
+- Renderer 标准页显示项目 pin 与当前 active 的完整差异，只允许一次确认；目标 digest 由主进程选择。升级后清除陈旧状态并自动重检；
+- `app:info`、项目、检查记录和导出 `report.json` 的完整身份加入 smoke；源码/打包 smoke 按 `out/*-smoke/runs/<run-id>/` 隔离 userData、标准 store 和项目，防止旧状态污染。
+- 修复迁移源错误放宽能力映射的漏洞：迁移仅可放宽撤回、过期与 APP 兼容性，规则 capability digest 和逐规则 milestone/fixer 映射始终强制校验；
+- `Project.verify()` 现在逐份解析历史检查报告，校验 UTF-8 JSON 对象、schema、check ID 与各自检查记录的规则包身份；alpha.3 严格核对七字段，alpha.2 及更早记录仅按其真实 `{name, version}` 证据兼容，不把当前 pin 倒填成历史身份。
+
+**验证与边界**
+
+- 原生/沙箱外 `npm test` PASS：Node 186 项、181 通过、0 失败、5 条件跳过；Python 312 项、0 失败、0 错误、3 条件跳过；
+- 沙箱外隐藏 Chrome 的真实 Ace 条件套件：312 项、0 失败、0 错误、1 跳过、46.321 秒；受限运行器无法生成安全报告时按设计 `not_run`；隐藏 Electron 源码 smoke PASS，DOCX/EPUB 当前四方身份一致，PDF 为 258,400 / 161,845 字节；
+- `verify:standards` 和 Windows alpha 资源门禁 PASS；sale 门禁仍按设计保留 18 项 blocker；macOS 静态门禁仍因两架构资源缺失失败；
+- `build:win` 完成 JRE/Ace staging 与资源探针后，仅因仓库缺 `tools/electron-builder/win32-x64` 停止；未联网、未生成 alpha.3 NSIS/ZIP，未运行打包 smoke、干净系统或签名验收；
+- 标准内容仍非完整：外部来源核验 0 项（12 pending、1 unavailable），4 项外部标准 under_review，真实编辑签核、默认体例结构信号、生产 trust pin 和联网更新均待完成。
+
 ### 2026-07-27 — 0.1.0-alpha.2（ChatGPT Windows 离线资源检查点）
 
 > 源码检查点标签：`chatgpt-v0.1.0-alpha.2`。该标签只表示经测试的源码状态，不表示已经生成安装包或正式发行。

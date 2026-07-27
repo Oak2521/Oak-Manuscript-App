@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.2` 源码检查点已实现的桌面隐私与安全边界。当前没有 alpha.2 安装包或 ZIP；商业方案中的 Web 上传、统一账号、订阅与同步尚未实现，必须在各自阶段另行完成威胁建模和验收。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.3` 源码检查点已实现的桌面隐私与安全边界。当前没有 alpha.3 安装包或 ZIP；商业方案中的 Web 上传、统一账号、订阅与同步尚未实现，必须在各自阶段另行完成威胁建模和验收。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -48,7 +48,7 @@
 
 contextIsolation: true；sandbox: true；nodeIntegration: false；IPC 固定通道 + 输入验证；Python 子进程 shell=false 参数数组；外部链接仅 HTTPS + 湖岸白名单域名；CSP 禁任意远程脚本；不加载远程网页作为主界面。
 
-正常 Electron 启动在 `app.ready` 前应用固定离线 Chromium switches；默认 session 取消 `http/https/ws/wss/ftp` 请求。未来用户主动授权的网络 Provider 必须使用独立、最小权限的传输/session，不得放宽默认 session。源码 smoke 的项目、临时目录、userData、缓存、HOME/APPDATA/XDG 与 crash dumps 全部限定在仓库 `out/source-smoke/`。
+正常 Electron 启动在 `app.ready` 前应用固定离线 Chromium switches；默认 session 取消 `http/https/ws/wss/ftp` 请求。未来用户主动授权的网络 Provider 必须使用独立、最小权限的传输/session，不得放宽默认 session。源码 smoke 每次把项目、标准 store、临时目录、userData、缓存、HOME/APPDATA/XDG 与 crash dumps 隔离在仓库 `out/source-smoke/runs/<run-id>/`。
 
 PDF 审阅样张使用非持久、禁缓存的独立 session；`javascript=false`，专用 CSP 禁止脚本、连接、对象、frame、媒体和表单，窗口拒绝导航、重定向与新窗口。`report.html` 在加载前后核对文件身份，PDF writer 逐段核对项目根、`exports/` 与目标身份，拒绝链接/联接/硬链接和目录换入，并同目录原子写入。
 
@@ -73,6 +73,17 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - 所有锁和清单使用 locale-independent UTF-16 code unit 排序；Ace tracked lock 同时固定 stage manifest 原始字节哈希，JSON 语义等价但字节漂移也拒绝。JRE/Ace 的候选 stage 与受版本控制锁在显式更新时事务提交，失败恢复旧目录和旧锁，避免身份撕裂。
 - Ace 的空/未知 license 声明和空许可证文件直接拒绝。现有许可证文件或生成元数据通知只满足 alpha 可追溯性；全部 236 包仍需正式逐包人工审计。
 
-## 10. Alpha 与正式售卖可信根
+## 10. 标准包、项目 pin 与升级安全
+
+- 标准包 payload 和 manifest 使用严格字段集合、重复键拒绝、大小/深度上限、Unicode/日期/canonical HTTPS/路径校验；解析“成功”不等于可信，非内置包还必须满足代码允许算法与门槛的 Ed25519 签名；
+- release 以 canonical manifest SHA-256 为 CAS key；active/previous、高水位、同 bundle 的全部版本/序列、撤回表、payload 哈希和签署 `rollback_target` 在每次使用前交叉验证。不能仅凭状态文件中的“已验证”字段或显示版本继续；
+- 磁盘 trust store 的原始字节摘要必须由代码固定。当前生产 trust digest 未配置，真实本地签名包导入默认禁用；不得把这一状态绕过或写成“可在线升级”；
+- 同一标准根进程内串行，跨进程使用原子 pending 目录、PID 与随机 process token。活 owner 返回 `STORE_BUSY`；只为确定死亡的 owner 按严格 intent 恢复。PID 复用/token 不符或未知变更 fail-closed，必要时人工恢复；
+- 七字段项目身份为 `name/version/pinned/sha256/bundle_id/release_sequence/manifest_sha256`。新项目直接绑定已验证 active identity；已有项目先在已验证全局存储的前提下运行一次未绑定、只读的 `project-standard-status` 来发现 pin，再精确验证项目 CAS。此后的业务/变更命令用 canonical 环境绑定 Python；Python 重验 manifest、payload、能力映射与期望身份，避免跨信任边界只比较名称/版本；
+- 全局 active 更新只影响新项目。已有项目必须先生成绑定完整状态的只读差异计划，经用户一次确认，建立检查点并归档旧 issues 后原子提交新 pin；升级后强制重检，陈旧问题、修复、外部验证和导出不能继续使用；
+- 迁移源可在显式迁移路径中放宽“已撤回/已过期/APP 不兼容”三项，以便把项目救出旧 release；签名、代码锚、payload、能力映射、路径、未来发布时间和七字段身份始终不能放宽；
+- 标准包联网检查、下载、断网重试和生产撤回分发尚未实现。未来 transport 必须与上述本地验证分层，并继续遵循用户主动触发、最小网络权限和不传稿件原则。
+
+## 11. Alpha 与正式售卖可信根
 
 当前全量锁能发现本地资源漂移，但 Ace full lock、Python/JRE/EpubCheck 锁及 loose 应用资源尚未锚定到代码签名、asar integrity 与 Electron fuses 共同保护的不可篡改可信根；Electron 分发和 builder 工具链也缺正式来源/全树可信锁。CPython、EpubCheck、Temurin JDK/JRE 与 Ace 依赖的来源、许可证和再分发材料仍需正式审计。`alpha` 门禁会显式报告这些阻断，`sale` 门禁会将当前 18 项 Windows 阻断提升为错误。Windows Authenticode、macOS 签名/公证和对应实机验证完成前，不得宣称为可售卖正式版。

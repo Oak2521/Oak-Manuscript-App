@@ -2,32 +2,44 @@
 
 > 最近更新：2026-07-27。只记录真实执行结果；未运行项不得写成通过。
 
-## 1. 最新验证结论：0.1.0-alpha.2 源码与 Windows alpha 资源
+## 1. 最新验证结论：0.1.0-alpha.3 源码、标准可信链与 Windows alpha 资源
 
 环境：Windows 11；Python 3.14.6；Node 24.16.0；npm 11.13.0；Electron 43.1.0；Java 21.0.11。
 
 | 命令 | 结果 | 说明 |
 |---|---|---|
-| 原生/沙箱外 `npm run test:node` | **TAP 99 项：96 通过、0 失败、3 跳过** | 三项均因当前 Windows 权限不能创建或替换测试用 symlink/junction 的 path-policy 条件场景；普通受限沙箱另多跳过 isolated Python，不能作为发布基线 |
-| `python scripts/run_tests.py` | **270 项：0 失败、0 错误、3 跳过** | 默认条件套件；三项跳过不计作通过 |
-| 沙箱外隐藏 Chrome：`$env:OAK_TEST_ACE='1'; python scripts\run_tests.py` | **270 项：0 失败、0 错误、1 跳过；36.112 秒** | 真实 Ace 好/坏样本执行；受限沙箱内 Chrome 超时按设计 fail-closed，不记作工具通过或代码失败 |
-| 原生/沙箱外 `npm test` | **PASS** | 统一入口得到同一 Node 99/96/0/3 与 Python 270/0/0/3 基线 |
-| 沙箱外隐藏 Electron `npm run smoke` | **SMOKE-RESULT PASS** | 输出严格位于 `out/source-smoke/projects/`；DOCX/EPUB 完成检查、集中预览、批量修复、恢复、再修复、导出与 verify |
+| 原生/沙箱外 `npm run test:node` | **TAP 186 项：181 通过、0 失败、5 跳过** | 跳过项均有平台、权限或打包制品前置条件，不计作通过；普通受限沙箱结果不能替代此发布基线 |
+| `python scripts/run_tests.py` | **312 项：0 失败、0 错误、3 跳过；77.755 秒** | 默认条件套件；三项跳过不计作通过 |
+| 沙箱外隐藏 Chrome：`$env:OAK_TEST_ACE='1'; python scripts\run_tests.py` | **312 项：0 失败、0 错误、1 跳过；46.321 秒** | 真实 Ace 好/坏样本执行，发布基线以本次原生隐藏浏览器结果为准 |
+| 早期受限运行器 Ace 诊断（逐报告回归加入前） | **304 项中预期 FAIL：2 断言失败、0 错误、1 跳过** | 两个工具结果均为 `not_run`，原因是未生成安全的本次报告；该历史诊断只证明环境受限时不会伪造 passed/failed，不替代最新 312 项原生基线 |
+| 原生/沙箱外 `npm test` | **PASS** | 统一入口得到同一 Node 186/181/0/5 与 Python 312/0/0/3 基线 |
+| `npm run verify:standards` | **PASS** | canonical manifest 与 standards/rulepack/capability 身份一致 |
+| 沙箱外隐藏 Electron `npm run smoke` | **SMOKE-RESULT PASS** | 每次运行隔离在 `out/source-smoke/runs/<run-id>/`；DOCX/EPUB 完成完整闭环并核对四方七字段标准身份 |
 | `npm run verify:resources:win` | **PASS（alpha）** | Windows x64 Python/JRE/EpubCheck/Ace 全量文件和真实探针通过 |
 | `node scripts/verify_packaged_resources.js --platform win32 --arch x64 --release-tier sale` | **预期 FAIL：18 blockers** | alpha 资源正确不等于可售卖；正式审计、可信根、Electron/builder、Ace 隔离和签名仍未完成 |
 | 提升权限 `npm run build:win` | **预期停止** | 本地 JRE/Ace staging 与 Windows alpha 资源探针均完成；随后仅因 `tools/electron-builder/win32-x64` 缺失停止，未联网、未生成安装包或 ZIP |
 | `npm run verify:resources:mac:static` | **按预期 FAIL，不执行探针** | 精确缺 darwin-x64/arm64 Electron dist、两架构 Python runtime 锁、`tools/jre-darwin-x64` 与 `tools/jre-darwin-arm64`；静态逻辑可执行不等于 macOS 可构建 |
 
-当前 `0.1.0-alpha.2` 的源码检查点标签为 `chatgpt-v0.1.0-alpha.2`，用途仅是标记源码与本地验证状态。测试没有产生同版本 NSIS、ZIP 或其他可分发二进制。
+当前 `0.1.0-alpha.3` 的源码检查点标签为 `chatgpt-v0.1.0-alpha.3`，用途仅是标记源码与本地验证状态。测试没有产生同版本 NSIS、ZIP 或其他可分发二进制。
 
-## 2. alpha.2 运行资源与发布门禁覆盖
+## 2. alpha.3 标准可信链、运行资源与发布门禁覆盖
+
+### 标准包身份、存储与项目升级
+
+- `config/standard-packs/oak-standards-1.0.0.manifest.json` canonical SHA-256 为 `d33534f081b2122a90652ee03304a0e71177a7fd0d3130fffe77b0fea807d7af`；规则包原始字节 SHA-256 为 `7ac5a5bdb126e9f5148a040ce42a634b1a95295c27d7a72c774db54bf7129542`；
+- Node 正向/反向测试覆盖严格重复键与 Unicode/深度/大小/日期/HTTPS 校验、能力映射、Ed25519 门槛签名、内容寻址存储、bundle/版本/序列唯一性、高水位、撤回/过期/APP 兼容性、精确 rollback target、跨进程 owner token、崩溃恢复与未知状态 fail-closed；
+- 内置 release 离线 bootstrap、重新验证 active identity、本地签名包预览/安装与全局回滚路径通过；由于生产 trust digest 为空，真实本地签名包导入按设计禁用，未被误记为可用；
+- Python 测试覆盖 manifest/payload/CAS 重验、七字段项目 pin、Electron `OAK_EXPECTED_STANDARD_IDENTITY` 精确绑定、历史 release 解析、升级/降级差异、计划过期、写锁争用、检查点、issues 归档、原子提交、升级后强制重检，以及检查/报告/修复/导出拒绝陈旧身份；
+- migration-source 回归证明撤回、过期与 APP 兼容性可以在显式迁移路径中受控放宽，但 capability digest 和逐规则 milestone/auto-fix/fix ID 映射永不放宽；
+- Renderer/IPC 测试证明项目目标 digest 由主进程选择，UI 只显示项目与 active 的完整差异并一次确认。全局升级不会静默改变已有项目；
+- 当前没有标准包在线检查、下载、断网重试或生产签名/撤回服务，因此这些网络路径没有运行，也不能写成通过。
 
 ### Windows Python 运行时
 
 - 受版本控制的清单覆盖 **34 个文件、21,260,753 字节**，逐文件固定相对路径、大小和 SHA-256；
 - 检查平台/架构、PE 文件、Python 版本、必需 DLL/ZIP/许可证及 `python313._pth` 隔离语义；
 - 缺文件、多文件、哈希篡改和不安全 `_pth` 配置均有 Node 反向测试并会被拒绝；
-- 只有全量资源和所有全局门禁均无错误后才允许执行 Python 探针；本轮 Windows alpha 门禁已实际执行探针并读到核心版本 `0.1.0-alpha.2`；
+- 只有全量资源和所有全局门禁均无错误后才允许执行 Python 探针；本轮 Windows alpha 门禁已实际执行探针并读到核心版本 `0.1.0-alpha.3`；
 - Electron、smoke 与资源探针统一通过净化环境及 `-I -S -X utf8` 固定 bootstrap 调用核心，拒绝工作目录、用户 site 和继承的 Python/OAK 环境注入；
 - macOS x64/arm64 CPython 目标版本均固定为 `3.13.14`；这是清单契约与反向测试证据，不是实际 macOS 运行时已经到位的证据。
 
@@ -45,7 +57,7 @@
 - 所有包、文件、许可证材料和依赖可达性均校验；staging 与资源 gate 都拒绝空许可证文件；stage 与 tracked lock 事务失败会恢复旧目录和旧 lock；
 - 固定、审核并哈希校验一个 XHTML 隔离替换：作者 XHTML 在 JavaScript 禁用状态下加载，作者脚本/事件处理器/危险嵌入被移除，加载协议限制到受控范围；
 - packaged 模式只能使用随包资源，不会回退到开发树或 PATH；非零 Ace 退出一律记为 `not_run`，不把运行异常伪装成“发现无障碍问题”；
-- 最新安全收口后的沙箱外隐藏 Chrome `OAK_TEST_ACE=1` 已真实执行 Ace 好/坏样本并通过；受限沙箱内 Chrome 超时由环境限制触发，核心按设计 fail-closed。18 个使用生成元数据通知的包仍缺原始许可证审计，全部 236 包仍缺来源、许可证、版权和再分发义务人工审计；OS 级网络隔离、受控 helper 和自带浏览器也仍属于正式发布阻断项。
+- 最新沙箱外隐藏 Chrome `OAK_TEST_ACE=1` 已真实执行 Ace 好/坏样本并通过；同轮受限运行器没有生成安全报告，两个 Ace 断言如实得到 `not_run`，随后在原生隐藏浏览器环境重跑通过。18 个使用生成元数据通知的包仍缺原始许可证审计，全部 236 包仍缺来源、许可证、版权和再分发义务人工审计；OS 级网络隔离、受控 helper 和自带浏览器也仍属于正式发布阻断项。
 - tracked full lock 同时固定解析语义与 `tools/ace/manifest.json` 原始字节 SHA-256；仅改变空白/序列化而保持 JSON 语义等价也会被拒绝。
 
 ### 确定性清单与 macOS 执行边界
@@ -80,7 +92,7 @@ alpha 门禁实际执行运行时探针并通过；sale 门禁以以下 18 项�
 
 因此当前只可表述为“Windows alpha 源码资源门禁通过”，不能表述为“安装包已完成”“正式版已通过”或“可售卖”。
 
-## 3. alpha.2 项目、路径、IPC 与桌面安全覆盖
+## 3. alpha.3 项目、路径、IPC 与桌面安全覆盖
 
 ### Electron 默认离线与 PDF 隔离
 
@@ -102,10 +114,11 @@ alpha 门禁实际执行运行时探针并通过；sale 门禁以以下 18 项�
 ### CLI / IPC 结果与回归证据
 
 - Python 结构化错误固定为 `code/message/retryable/details`；项目验证、锁争用和锁协议异常不再只返回不可分类字符串；
+- `Project.verify()` 逐份读取对应检查报告，拒绝坏 JSON、非对象、错误 schema/check ID 与规则包身份漂移；新记录严格核对七字段，真实旧 `1.0` 记录按 `{name, version}` 降级证明兼容，规则包升级后的新旧两代历史报告可并存；
 - Electron 桥保留退出码 1 的有效业务 JSON（包括 `verify` 的非致命完整性结果），退出码 2 或 `ok=false` 错误按失败处理；结构化错误字段完整传到 IPC 外层；
 - 主要反向测试位于 `tests/offline_policy.test.js`、`tests/renderer_security.test.js`、`tests/pdf_preview.test.js`、`tests/path_policy.test.js`、`tests/core_result.test.js`、`tests/p0_ipc_contract.test.js`、`python/tests/test_project_validation.py` 和 `python/tests/test_project_write_lock.py`；当前计数见第 1 节。
 
-## 4. P0 批量修复覆盖（alpha.1 起，alpha.2 默认回归通过）
+## 4. P0 批量修复覆盖（alpha.1 起，alpha.3 默认回归通过）
 
 ### 批量计划与确认
 
@@ -146,16 +159,16 @@ DOCX：check 21 → 集中预览/确认 5 → recheck 16
 EPUB：check 7 → 集中预览/确认 2 → recheck 5
 两类：取消计划零写入 → 确认 → 检查点列表 → 撤销 → 重新计划并应用
 两类：导出 5 文件 + PDF 样张 + verify 通过
-Provider：未登录、不同步占位纪律通过
-Electron：appVersion = 0.1.0-alpha.2；源码模式 packaged = false
-Python core：项目 manifest.app_version = 0.1.0-alpha.2；检查报告 app_version = 0.1.0-alpha.2
-规则包：项目清单/检查报告/最新检查记录均为 oak-rules 1.0.0
+Provider：未登录、不同步占位纪律通过；标准 Provider 离线验证通过
+Electron：appVersion = 0.1.0-alpha.3；源码模式 packaged = false
+Python core：项目 manifest.app_version = 0.1.0-alpha.3；检查报告 app_version = 0.1.0-alpha.3
+标准身份：APP / 项目 / 检查记录 / 导出 report.json 七字段完全一致
 SMOKE-RESULT: PASS
 ```
 
 冒烟运行在 `show: false` 的独立隐藏窗口，不抢占用户当前应用窗口。最新包装器把项目、缓存、临时目录、用户数据和崩溃目录全部限制在 `out/source-smoke/`；路径契约与完整 UI 均已实际验证。
 
-实际输出根为 `out/source-smoke/projects/`；DOCX 与 EPUB 的 `project.json` 均记录 `app_version=0.1.0-alpha.2`、`integrity.source_hash_ok=true`。`report_preview.pdf` 分别为 258,394 字节和 161,830 字节。
+最新实际输出根为 `out/source-smoke/runs/ms34lrwa-cf3ac49f857dc7fc/projects/`；DOCX 与 EPUB 的 `project.json` 均记录 `app_version=0.1.0-alpha.3`、`integrity.source_hash_ok=true`，各有 4 次检查记录。`report_preview.pdf` 分别为 258,400 字节和 161,845 字节。完整身份为 `oak-rules 1.0.0`、`pinned=true`、release sequence 1，以及第 2 节列出的规则包/manifest digest。
 
 ### 首次失败与修复记录
 
@@ -169,20 +182,20 @@ SMOKE-RESULT: PASS
 
 | 工具 | 本轮事实 | 发布包事实 |
 |---|---|---|
-| EpubCheck 5.3.0 | Java 21 环境下真实运行；好样本通过、缺陷样本报告错误，双向状态矩阵通过 | alpha.2 完整分发和 JRE 已进入资源门禁，但尚无 alpha.2 包；来源/再分发和可信根审计未完成 |
-| Ace by DAISY 1.4.6 | tracked full lock、manifest 原始字节身份、空许可证拒绝和事务 stage 由默认回归覆盖；沙箱外隐藏 Chrome 的 `OAK_TEST_ACE=1` 好/坏样本真实通过 | alpha.2 生产闭包和隔离替换通过资源门禁，但尚无 alpha.2 包；helper/browser/OS 网络隔离/可信根、18 包原始许可证及全闭包人工审计未完成 |
+| EpubCheck 5.3.0 | Java 21 环境下真实运行；好样本通过、缺陷样本报告错误，双向状态矩阵通过 | alpha.3 完整分发和 JRE 已进入资源门禁，但尚无 alpha.3 包；来源/再分发和可信根审计未完成 |
+| Ace by DAISY 1.4.6 | tracked full lock、manifest 原始字节身份、空许可证拒绝和事务 stage 由默认回归覆盖；沙箱外隐藏 Chrome 的 `OAK_TEST_ACE=1` 好/坏样本真实通过 | alpha.3 生产闭包和隔离替换通过资源门禁，但尚无 alpha.3 包；helper/browser/OS 网络隔离/可信根、18 包原始许可证及全闭包人工审计未完成 |
 
-因此当前可以说“alpha.2 源码资源集已固定，开发环境真实工具测试与 alpha 门禁通过”，不能说“alpha.2 发布包已经生成或通过正式售卖验收”。
+因此当前可以说“alpha.3 源码、标准身份链和 Windows 资源集已固定，开发环境真实工具测试与 alpha 门禁通过”，不能说“alpha.3 发布包已经生成或通过正式售卖验收”。
 
 ## 7. 尚未运行或尚未通过的发布级测试
 
-- 0.1.0-alpha.2 Windows unpacked / ZIP / NSIS：**未生成**，因此打包后资源门禁与 packaged smoke **未运行**；
+- 0.1.0-alpha.3 Windows unpacked / ZIP / NSIS：**未生成**，因此打包后资源门禁与 packaged smoke **未运行**；
 - Windows 干净系统首次安装、卸载、升级、无 Python/Node 环境运行：**未运行**；
 - Windows 代码签名与 SmartScreen 信誉：**未运行**；
 - macOS arm64 / x64：原生 runner、静态聚合、分架构 lock 路径和 CPython `3.13.14` 固定契约已实现；实际 Electron/Python/JRE 仍缺，构建、签名、公证、staple、Gatekeeper 和实机 smoke **未运行**；
 - Web 服务端并发、隔离、TTL 删除、零留存、限额和账号联调：**未运行**；
 - Free/Pro 订阅、支付 webhook、离线宽限和账号删除：**未运行**；
-- 标准包签名更新、断网、损坏包、回滚和项目版本固定：**未实现，未运行**；
+- 标准包严格校验、损坏/恶意包拒绝、本地签名存储、回滚、项目版本固定与显式升级：**已实现并通过自动化测试**；生产 trust pin、在线检查/下载、断网重试和服务端签名撤回分发：**未实现，未运行**；
 - 受控作者/编辑人工内测：**未运行**。
 
 ## 8. 历史基线纠错

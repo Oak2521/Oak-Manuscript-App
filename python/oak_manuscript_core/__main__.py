@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import sys
 from pathlib import Path
@@ -18,9 +19,10 @@ from . import ops
 from .errors import OakError, StructuredOakError
 from .project import Project
 from .project_lock import ProjectWriteLock
-from .rulepack import load_rulepack
+from .rulepack import attach_rulepack_identity, load_rulepack, validate_rulepack_identity
+from .rulepack_upgrade import apply_rulepack_upgrade, plan_rulepack_upgrade
+from .standards_store import resolve_active_release, resolve_project_rulepack
 
-_REPO = Path(__file__).resolve().parents[2]
 _MUTATING_COMMANDS = {
     "create",
     "check",
@@ -29,19 +31,10 @@ _MUTATING_COMMANDS = {
     "export",
     "verify",  # verify 会更新 integrity 状态，并非纯读。
     "restore-checkpoint",
+    "upgrade-rulepack",
     "external",
     "issue",
 }
-
-
-def _default_rulepack() -> Path:
-    pack_dir = _REPO / "config" / "rule-packs"
-    candidates = sorted(pack_dir.glob("oak-rules-*.json"))
-    if not candidates:
-        raise OakError(f"找不到规则包：{pack_dir}")
-    return candidates[-1]
-
-
 def _emit(payload: dict) -> None:
     print(json.dumps(payload, ensure_ascii=False, indent=2))
 
@@ -53,11 +46,13 @@ def _pending_error_exists(issues: list[dict]) -> bool:
 
 
 def _cmd_create(args) -> int:
+    release = resolve_active_release()
     proj = Project.create(
         Path(args.input), Path(args.project),
         manuscript_type=args.type, language=args.language,
         citation_style=args.citation, check_depth=args.depth,
         epub_preview=args.epub_preview,
+        rulepack_identity=release.identity,
     )
     _emit({
         "ok": True,
@@ -65,6 +60,7 @@ def _cmd_create(args) -> int:
         "project_id": proj.data["project_id"],
         "source_sha256": proj.source_sha256,
         "settings": proj.data["settings"],
+        "rulepack": proj.data["rulepack"],
     })
     print("项目已创建，原稿只读副本与 SHA-256 已记录。", file=sys.stderr)
     return 0
@@ -72,7 +68,7 @@ def _cmd_create(args) -> int:
 
 def _cmd_check(args, kind: str) -> int:
     proj = Project.open(Path(args.project))
-    pack = load_rulepack(Path(args.rulepack) if args.rulepack else _default_rulepack())
+    pack = _project_rulepack(proj, args.rulepack)
     record, outcome = ops.run_check(proj, pack, kind=kind)
     from .engine import manuscript_status_level
 
@@ -82,6 +78,7 @@ def _cmd_check(args, kind: str) -> int:
         "kind": kind,
         "status_level": manuscript_status_level(outcome.issues),
         "issue_counts": record["issue_counts"],
+        "rulepack": copy.deepcopy(record["rulepack"]),
         "citation_note": ops._citation_note(proj.data["settings"]),
         "issues": outcome.issues,
         "skipped_rule_groups": outcome.skipped_rule_groups,
@@ -91,7 +88,7 @@ def _cmd_check(args, kind: str) -> int:
 
 def _cmd_fix(args) -> int:
     proj = Project.open(Path(args.project))
-    pack = load_rulepack(Path(args.rulepack) if args.rulepack else _default_rulepack())
+    pack = _project_rulepack(proj, args.rulepack)
     record, counts = ops.run_fixes(
         proj,
         pack,
@@ -113,9 +110,18 @@ def _cmd_fix(args) -> int:
     return 0
 
 
+def _project_rulepack(proj: Project, requested_path: str | None) -> dict:
+    """按项目 pin 解析；旧 ``--rulepack`` 只能提供完全相同的 payload。"""
+    release = resolve_project_rulepack(proj.data["rulepack"])
+    if requested_path is None:
+        return release.rulepack
+    pack = load_rulepack(Path(requested_path))
+    return attach_rulepack_identity(pack, release.identity)
+
+
 def _cmd_plan_fixes(args) -> int:
     proj = Project.open(Path(args.project))
-    pack = load_rulepack(Path(args.rulepack) if args.rulepack else _default_rulepack())
+    pack = _project_rulepack(proj, args.rulepack)
     plan = ops.plan_fixes(proj, pack)
     _emit({"ok": True, **plan})
     print(
@@ -126,9 +132,63 @@ def _cmd_plan_fixes(args) -> int:
     return 0
 
 
+def _cmd_plan_rulepack_upgrade(args) -> int:
+    proj = Project.open(Path(args.project))
+    plan = plan_rulepack_upgrade(proj, args.to_manifest_sha256)
+    _emit({"ok": True, **plan})
+    print(
+        f"已生成规则包{('升级' if plan['direction'] == 'upgrade' else '回退')}计划；"
+        "尚未修改项目。",
+        file=sys.stderr,
+    )
+    return 0
+
+
+def _cmd_project_standard_status(args) -> int:
+    proj = Project.open(Path(args.project))
+    stored = copy.deepcopy(proj.data["rulepack"])
+    state = validate_rulepack_identity(
+        stored,
+        allow_legacy=True,
+        allow_uninitialized=True,
+    )
+    # status 只做身份探测，不执行检查；允许解析已撤回/过期/与当前 APP
+    # 不兼容的完整旧 pin，才能让用户生成迁移计划离开该版本。
+    release = resolve_project_rulepack(
+        stored,
+        _allow_inactive_for_migration=True,
+    )
+    _emit(
+        {
+            "ok": True,
+            "project": str(proj.root),
+            "standard_identity": copy.deepcopy(release.identity),
+            "stored_identity": stored,
+            "legacy_migratable": state == "legacy",
+        }
+    )
+    print("项目标准身份已只读解析；未修改项目。", file=sys.stderr)
+    return 0
+
+
+def _cmd_upgrade_rulepack(args) -> int:
+    proj = Project.open(Path(args.project))
+    result = apply_rulepack_upgrade(
+        proj,
+        args.to_manifest_sha256,
+        plan_id=args.plan_id,
+    )
+    _emit(result)
+    print(
+        "项目规则包 pin 已变更；旧问题已归档，必须重新运行 check。",
+        file=sys.stderr,
+    )
+    return 0
+
+
 def _cmd_export(args) -> int:
     proj = Project.open(Path(args.project))
-    pack = load_rulepack(Path(args.rulepack) if args.rulepack else _default_rulepack())
+    pack = _project_rulepack(proj, args.rulepack)
     out_dir = Path(args.out) if args.out else None
     files = ops.export_project(proj, pack, out_dir)
     _emit({"ok": True, "files": [str(f) for f in files]})
@@ -210,6 +270,27 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--project", required=True)
     p.add_argument("--rulepack")
 
+    p = sub.add_parser(
+        "plan-rulepack-upgrade",
+        help="按显式 manifest digest 生成项目规则包升级/回退计划（严格只读）",
+    )
+    p.add_argument("--project", required=True)
+    p.add_argument("--to-manifest-sha256", required=True)
+
+    p = sub.add_parser(
+        "project-standard-status",
+        help="只读解析项目已固定的标准/规则包完整身份",
+    )
+    p.add_argument("--project", required=True)
+
+    p = sub.add_parser(
+        "upgrade-rulepack",
+        help="应用已确认的项目规则包升级/回退计划",
+    )
+    p.add_argument("--project", required=True)
+    p.add_argument("--to-manifest-sha256", required=True)
+    p.add_argument("--plan-id", required=True)
+
     p = sub.add_parser("fix", help="执行已集中确认的批量机械修复（自动建检查点）")
     p.add_argument("--project", required=True)
     p.add_argument("--rulepack")
@@ -256,6 +337,9 @@ def main(argv: list[str] | None = None) -> int:
         "check": lambda a: _cmd_check(a, "check"),
         "recheck": lambda a: _cmd_check(a, "recheck"),
         "plan-fixes": _cmd_plan_fixes,
+        "plan-rulepack-upgrade": _cmd_plan_rulepack_upgrade,
+        "project-standard-status": _cmd_project_standard_status,
+        "upgrade-rulepack": _cmd_upgrade_rulepack,
         "fix": _cmd_fix,
         "export": _cmd_export,
         "verify": _cmd_verify,

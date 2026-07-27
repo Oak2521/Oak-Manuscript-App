@@ -1,6 +1,6 @@
 # tests/ — Node 契约、发布资源与打包验证
 
-`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。当前原生/沙箱外 Node 精确结果为 **99 total / 96 pass / 0 fail / 3 skip**；三条跳过均因当前 Windows 权限不能创建或替换测试用 symlink/junction 的 path-policy 条件场景。普通受限沙箱还会额外跳过 isolated Python 子进程，不能把该结果当作发布基线。Python 默认结果为 **270 项 / 0 失败 / 0 错误 / 3 跳过**；准确命令输出仍以 `docs/TEST_REPORT.md` 为准。
+`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。当前原生/沙箱外 Node 精确结果为 **186 total / 181 pass / 0 fail / 5 skip**；跳过项均有平台、权限或打包制品前置条件，不计作通过。普通受限沙箱可能额外跳过 isolated Python 子进程，不能把该结果当作发布基线。Python 默认结果为 **312 项 / 0 失败 / 0 错误 / 3 跳过**；准确命令输出仍以 `docs/TEST_REPORT.md` 为准。
 
 本目录覆盖：
 
@@ -16,7 +16,9 @@
 - Ace 作者 XHTML 清洗、JavaScript 启用顺序、协议/`basedir` 限制、固定补丁哈希，以及 stage manifest 原始字节身份；
 - macOS x64/arm64 原生构建分流，静态聚合不得冒充运行证据；
 - 打包脚本契约、Windows x64 PE32+ 校验、受控输出目录、唯一 PASS 标志、`appInfo` 版本/`app.isPackaged`，以及从真实 `project.json`/报告验证 core 与规则包身份。
+- 标准包 payload/manifest/capability 严格校验、Ed25519 门槛签名、内容寻址存储、高水位、撤回/过期/兼容性、跨进程事务恢复、精确回滚及恶意包反向场景；
+- APP/项目/检查/报告七字段标准身份绑定，以及项目升级计划过期、写锁争用、检查点、issues 归档、升级后强制复查和 Renderer 不可选目标 digest。
 
 Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零污染创建、锁内单 FD 输入、OneDrive/reparse 来源、精确失败清理和安全原子导出覆盖在 `python/tests/test_project_validation.py` 与 `python/tests/test_project_write_lock.py`。
 
-真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。最新沙箱外隐藏 Chrome 结果为 **270 项 / 0 失败 / 0 错误 / 1 跳过 / 36.112 秒**；受限沙箱中的 Chrome 超时按设计 fail-closed，不记作工具通过，也不等同于代码失败。缺少 alpha.2 EXE 时，`smoke:packaged:win` 应失败而不是复用历史制品。
+真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。最新沙箱外隐藏 Chrome 结果为 **312 项 / 0 失败 / 0 错误 / 1 跳过 / 46.321 秒**；受限沙箱中的 Chrome 若超时或不能生成安全报告，核心按设计标为 `not_run`，不记作工具通过，也不等同于代码失败。缺少 alpha.3 EXE 时，`smoke:packaged:win` 应失败而不是复用历史制品。

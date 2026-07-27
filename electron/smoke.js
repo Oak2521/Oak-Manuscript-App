@@ -7,10 +7,12 @@
 const path = require("path");
 const fs = require("fs");
 
+const { serializeStandardIdentity } = require("./python-invocation");
+
 const PACKAGED_OUTPUT_ENV = "OAK_SMOKE_OUTPUT_ROOT";
 const EXPECTED_VERSION_ENV = "OAK_EXPECTED_APP_VERSION";
 const EXPECT_PACKAGED_ENV = "OAK_EXPECT_PACKAGED";
-const DEFAULT_EXPECTED_APP_VERSION = "0.1.0-alpha.2";
+const DEFAULT_EXPECTED_APP_VERSION = "0.1.0-alpha.3";
 
 const SCENARIOS = [
   {
@@ -44,6 +46,21 @@ function assertSmokeIdentity(
   } = {},
 ) {
   assert(info && info.ok === true, "appInfo IPC 应成功返回应用身份");
+  serializeStandardIdentity(info.standardIdentity);
+  const identity = info.standardIdentity;
+  assert(
+    info.rulepack === `${identity.name} ${identity.version}`,
+    "appInfo 的规则包显示值必须由完整标准身份派生",
+  );
+  const release = info.standardsRelease;
+  assert(
+    release && release.bundle_id === identity.bundle_id
+      && release.release_sequence === identity.release_sequence
+      && release.manifest_sha256 === identity.manifest_sha256
+      && release.rulepack_name === identity.name
+      && release.rulepack_version === identity.version,
+    "appInfo 的标准发布信息必须与完整标准身份一致",
+  );
   assert(
     info.appVersion === expectedVersion,
     `应用版本应为 ${expectedVersion}，实际为 ${String(info && info.appVersion)}`,
@@ -58,6 +75,19 @@ function assertSmokeIdentity(
     );
   }
   return info;
+}
+
+function assertSameStandardIdentity(actual, expected, label) {
+  let actualCanonical;
+  let expectedCanonical;
+  try {
+    actualCanonical = serializeStandardIdentity(actual);
+    expectedCanonical = serializeStandardIdentity(expected);
+  } catch (error) {
+    throw new Error(`冒烟断言失败：${label}必须包含完整且规范的标准身份`, { cause: error });
+  }
+  assert(actualCanonical === expectedCanonical, `${label}与预期标准身份不一致`);
+  return actual;
 }
 
 function readSmokeJson(file, label) {
@@ -91,7 +121,7 @@ function assertCoreIdentityFromProject(
   projectDir,
   {
     expectedVersion = DEFAULT_EXPECTED_APP_VERSION,
-    expectedRulepack,
+    expectedStandardIdentity,
   } = {},
 ) {
   const manifest = readSmokeJson(path.join(projectDir, "project.json"), "项目清单");
@@ -112,32 +142,27 @@ function assertCoreIdentityFromProject(
   assert(report.check_id === check.check_id, "检查报告 check_id 必须与项目清单一致");
 
   const manifestRulepack = manifest.rulepack;
+  const checkRulepack = check.rulepack;
   const reportRulepack = report.rulepack;
-  assert(
-    manifestRulepack && typeof manifestRulepack.name === "string"
-      && typeof manifestRulepack.version === "string",
-    "项目清单必须记录实际规则包身份",
-  );
-  assert(
-    reportRulepack && typeof reportRulepack.name === "string"
-      && typeof reportRulepack.version === "string",
-    "检查报告必须记录实际规则包身份",
-  );
-  assert(
-    reportRulepack.name === manifestRulepack.name
-      && reportRulepack.version === manifestRulepack.version
-      && check.rulepack_version === manifestRulepack.version,
-    "检查报告、检查记录与项目清单的规则包身份必须一致",
-  );
+  assertSameStandardIdentity(manifestRulepack, reportRulepack, "项目清单标准身份");
+  assertSameStandardIdentity(checkRulepack, reportRulepack, "检查记录标准身份");
+  assert(check.rulepack_version === manifestRulepack.version,
+    "检查记录的兼容版本字段必须与完整标准身份一致");
 
   const rulepack = `${reportRulepack.name} ${reportRulepack.version}`;
-  if (expectedRulepack !== undefined) {
-    assert(
-      rulepack === expectedRulepack,
-      `Python core 实际规则包应为 ${String(expectedRulepack)}，实际为 ${rulepack}`,
+  if (expectedStandardIdentity !== undefined) {
+    assertSameStandardIdentity(
+      reportRulepack,
+      expectedStandardIdentity,
+      "Python core 实际标准身份",
     );
   }
-  return { coreVersion: report.app_version, rulepack, checkId: report.check_id };
+  return {
+    coreVersion: report.app_version,
+    rulepack,
+    standardIdentity: reportRulepack,
+    checkId: report.check_id,
+  };
 }
 
 function safeRemoveSmokeTree(outputRoot, target) {
@@ -270,10 +295,15 @@ async function runSmoke(win, pathPolicy) {
     const check = await js("__oakActions.startCheck()");
     assert(check.issueCount > 0, `${sc.name}：应检出问题`);
     assert(check.page === "issues", `${sc.name}：应停在问题页`);
+    assertSameStandardIdentity(
+      check.rulepack,
+      appInfo.standardIdentity,
+      `${sc.name} 初次检查 IPC 标准身份`,
+    );
     console.log(`[smoke]   check：${check.issueCount} 项，状态「${check.statusLevel}」`);
     const coreIdentity = assertCoreIdentityFromProject(projectDir, {
       expectedVersion,
-      expectedRulepack: appInfo.rulepack,
+      expectedStandardIdentity: appInfo.standardIdentity,
     });
     console.log(
       `[smoke]   Python core 身份：version=${coreIdentity.coreVersion}，rulepack=${coreIdentity.rulepack}`,
@@ -304,11 +334,38 @@ async function runSmoke(win, pathPolicy) {
       fix = await js("__oakActions.confirmFixPlan()");
       assert(fix.after.issueCount < check.issueCount, `${sc.name}：重新确认后问题应再次减少`);
     }
+    assertSameStandardIdentity(
+      fix.after.rulepack,
+      appInfo.standardIdentity,
+      `${sc.name} 最终复检 IPC 标准身份`,
+    );
     console.log(`[smoke]   plan：集中确认 ${plan.count} 项；fix：修复 ${fix.applied} 项，复检剩 ${fix.after.issueCount} 项`);
+
+    const finalCoreIdentity = assertCoreIdentityFromProject(projectDir, {
+      expectedVersion,
+      expectedStandardIdentity: appInfo.standardIdentity,
+    });
+    assert(
+      finalCoreIdentity.checkId !== coreIdentity.checkId,
+      `${sc.name}：自动修复闭环必须生成新的复检记录`,
+    );
 
     const exp = await js("__oakActions.doExport()");
     assert(exp.files.length >= 4, `${sc.name}：导出应含修订稿与三种报告`);
     for (const f of exp.files) assert(fs.existsSync(f), `导出文件缺失：${f}`);
+    const exportedReports = exp.files.filter((file) => path.basename(file) === "report.json");
+    assert(exportedReports.length === 1, `${sc.name}：导出必须且只能包含一个 report.json`);
+    const exportedReport = readSmokeJson(exportedReports[0], "导出报告");
+    assertSameStandardIdentity(
+      exportedReport.rulepack,
+      appInfo.standardIdentity,
+      `${sc.name} 导出报告标准身份`,
+    );
+    assertSameStandardIdentity(
+      exportedReport.check?.rulepack,
+      appInfo.standardIdentity,
+      `${sc.name} 导出报告内嵌检查标准身份`,
+    );
 
     const pdf = await js("__oakActions.makePdf()");
     assert(fs.existsSync(pdf.path), `${sc.name}：PDF 样张未生成`);

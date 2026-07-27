@@ -61,14 +61,29 @@ class CliClosedLoopTest(unittest.TestCase):
         self.assertEqual(code, 0, err)
         self.assertTrue(out["ok"])
         source_sha = out["source_sha256"]
+        pinned_identity = out["rulepack"]
+        self.assertEqual(
+            set(pinned_identity),
+            {
+                "name", "version", "pinned", "sha256", "bundle_id",
+                "release_sequence", "manifest_sha256",
+            },
+        )
+        self.assertTrue(pinned_identity["pinned"])
+        self.assertEqual(len(pinned_identity["sha256"]), 64)
+        self.assertEqual(len(pinned_identity["manifest_sha256"]), 64)
 
         # 2. check：存在 error（REF-002）→ 退出码 1
         code, out, err = run_cli("check", "--project", str(self.pdir))
         self.assertEqual(code, 1, err)
         self.assertEqual(out["check_id"], "check-0001")
+        self.assertEqual(out["rulepack"], pinned_identity)
         self.assertEqual(out["status_level"], "尚未具备提交条件")
         self.assertGreater(out["issue_counts"]["warning"], 0)
         self.assertIn("gbt7714-2025", out["citation_note"])
+        project_doc = json.loads((self.pdir / "project.json").read_text(encoding="utf-8"))
+        self.assertEqual(project_doc["rulepack"], pinned_identity)
+        self.assertEqual(project_doc["checks"][-1]["rulepack"], pinned_identity)
 
         # 3. 集中预览：只读，返回绑定当前状态的 plan_id
         code, plan, err = run_cli("plan-fixes", "--project", str(self.pdir))
@@ -88,6 +103,7 @@ class CliClosedLoopTest(unittest.TestCase):
         # 5. recheck：白名单问题消失，error 仍在 → 退出码 1
         code, out, err = run_cli("recheck", "--project", str(self.pdir))
         self.assertEqual(code, 1, err)
+        self.assertEqual(out["rulepack"], pinned_identity)
         rules = {i["rule_id"] for i in out["issues"]}
         self.assertNotIn("DOCX-SPACE-001", rules)
         self.assertIn("REF-002", rules)
