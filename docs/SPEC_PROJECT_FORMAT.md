@@ -1,6 +1,6 @@
 # SPEC_PROJECT_FORMAT — 项目文件格式（v1.0，冻结）
 
-> 冻结日期：2026-07-11；`0.1.0-alpha.1` 加入向后兼容的检查点可选字段，`alpha.2` 加强路径/锁/导出安全，`0.1.0-alpha.3` 把规则包 pin 扩为完整七字段并增加向后兼容的升级历史与强制重检状态。以上均不提升 `format_version`；旧 `1.0` 项目由受控 legacy 迁移补齐身份。破坏性字段变更须升版本号并提供兼容读取。商业跨端、账号与同步仍待实现，不得提前改变本格式。
+> 冻结日期：2026-07-11；`0.1.0-alpha.1` 加入向后兼容的检查点可选字段，`alpha.2` 加强路径/锁/导出安全，`0.1.0-alpha.3` 把规则包 pin 扩为完整七字段并增加向后兼容的升级历史与强制重检状态。`0.1.0-alpha.4` 只加固 Electron 与 builder 发布资源可信链，不改变项目字段、`format_version` 或标准内容。旧 `1.0` 项目由受控 legacy 迁移补齐身份。破坏性字段变更须升版本号并提供兼容读取。商业跨端、账号与同步仍待实现，不得提前改变本格式。
 
 ## 1. 项目目录结构
 
@@ -21,7 +21,7 @@ project-root/
 ```json
 {
   "format_version": "1.0",
-  "app_version": "0.1.0-alpha.3",
+  "app_version": "0.1.0-alpha.4",
   "project_id": "8 字节十六进制随机 ID",
   "created_at": "ISO8601 本地时间",
   "updated_at": "ISO8601",
@@ -131,10 +131,10 @@ project-root/
 - 所有路径字段一律为**项目内相对路径**，正斜杠分隔；project.json 中不出现项目外绝对路径（隐私要求）；
 - 所有 JSON 文件 UTF-8 无 BOM，换行 LF；
 - `citation_style_resolved`、`citation_resolved_by`、`citation_mapping_version` 在体例为 `default` 并完成解析后必填——这是「由默认规则选定」可追溯性的载体；
-- `sync.history` 在当前 `0.1.0-alpha.3` 为空数组（SyncProvider 占位不联网）；未来真实账号同步必须保持 schema 版本化和向后兼容。
+- `sync.history` 在当前 `0.1.0-alpha.4` 为空数组（SyncProvider 占位不联网）；未来真实账号同步必须保持 schema 版本化和向后兼容。
 - `plan-fixes` 产生的未确认计划不落盘；只有成功执行后的 `plan_id` 写入 `fixes[]`，取消预览不会改变 project.json。
 - 旧 `1.0` 项目中的检查点可以缺少新增的大小、问题哈希与状态快照字段；新建检查点必须写全，读取与恢复逻辑保留旧检查点兼容路径。
-- `config/tool-manifests/`、JRE/Ace 阶段清单和打包 smoke 记录属于应用发布资源，不进入用户项目，也不得被复制进 `project.json`。这些锁按 locale-independent UTF-16 顺序生成，并与候选 stage 事务提交；这属于发布资源身份，不改变用户项目 schema。
+- `config/tool-manifests/`、Electron/CPython/JRE/Ace 运行资源锁、builder 独立 tracked lock 和打包 smoke 记录属于应用发布资源，不进入用户项目，也不得被复制进 `project.json`。这些锁按 locale-independent UTF-16 顺序生成；需要更新候选树时通过显式授权的受控事务提交。这属于发布资源身份，alpha.4 的加固不改变用户项目 schema 或标准 release 身份。
 - `project.json.app_version` 记录项目创建版本；检查报告 `app_version` 记录该次检查所用核心版本，旧项目被新版打开后两者可以不同。`checks[].result_file` 指向的报告必须留在项目内，`check_id` 必须匹配对应检查记录。alpha.3 新记录含完整 `checks[].rulepack`，报告必须与其七字段完全一致；alpha.2 及更早的冻结格式没有该字段，报告只允许精确 `{name, version}`，并以 `version` 对齐 `checks[].rulepack_version`，不得倒填伪造七字段。规则包升级后允许历史检查/报告保留旧身份；最新当前检查/报告才必须与项目现行 pin 一致。`rulepack_version` 对新记录只是兼容显示字段，不能单独证明完整身份。
 - `rulepack_history` 必须从第一项起连续编号，前项 `to_rulepack` 等于后项 `from_rulepack`，末项 `to_rulepack` 等于当前 pin；相同 release sequence 的横向替换禁止。`issues_archive` 只能使用受控文件名并与升级时哈希绑定。
 - `rulepack_check_required=true` 表示 pin 已变化而新规则尚未完成一次检查；此时修复计划、修复、外部验证、出版评估与导出必须拒绝。成功 check/recheck 写入同一七字段身份后才清零。

@@ -190,6 +190,19 @@ function verifyElectronDistribution(root, platform, arch, errors, checks) {
         arch: targetArch,
         version: result.version,
       });
+      checks.push({
+        type: "electron-runtime-lock",
+        evidence_scope: "source-build-input",
+        evidence_root: path.resolve(root),
+        path: path.relative(root, result.runtimeLock.manifestTarget).split(path.sep).join("/"),
+        platform,
+        arch: targetArch,
+        version: result.runtimeLock.manifest.runtime.version,
+        manifest_sha256: result.runtimeLock.manifestSha256,
+        directory_count: result.runtimeLock.manifest.directory_count,
+        file_count: result.runtimeLock.manifest.file_count,
+        total_bytes: result.runtimeLock.manifest.total_bytes,
+      });
     } catch (error) {
       errors.push(`Electron dist ${platform}-${targetArch} 不可用：${error.message}`);
     }
@@ -1342,7 +1355,13 @@ function verifyAceStage(root, errors, checks, { releaseTier, blockers }) {
   });
 }
 
-function addCurrentReleaseBlockers(platform, releaseTier, blockers, errors) {
+function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors, checks) {
+  const requiredElectronArches = arch ? [arch] : platform === "darwin" ? ["x64", "arm64"] : ["x64"];
+  const electronRuntimeTrustRootHardened = requiredElectronArches.every((targetArch) =>
+    checks.some((item) => item.type === "electron-runtime-lock" &&
+      item.platform === platform && item.arch === targetArch &&
+      typeof item.manifest_sha256 === "string" && /^[a-f0-9]{64}$/.test(item.manifest_sha256)),
+  );
   const pending = [
     {
       code: "PYTHON_RUNTIME_PROVENANCE_AUDIT_REQUIRED",
@@ -1376,10 +1395,10 @@ function addCurrentReleaseBlockers(platform, releaseTier, blockers, errors) {
       code: "ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED",
       message: "Electron 原生分发的官方来源、校验和与再分发证据尚未完成正式审计",
     },
-    {
+    ...(electronRuntimeTrustRootHardened ? [] : [{
       code: "ELECTRON_RUNTIME_TRUST_ROOT_NOT_HARDENED",
-      message: "Electron 原生分发尚无受版本控制的全树哈希锁，少量文件和架构检查不能替代构建输入可信根",
-    },
+      message: "Electron 原生分发尚无本次验证通过的受版本控制全树哈希锁，少量文件和架构检查不能替代构建输入可信根",
+    }]),
     {
       code: "BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED",
       message: platform === "darwin"
@@ -1390,7 +1409,7 @@ function addCurrentReleaseBlockers(platform, releaseTier, blockers, errors) {
       code: "BUILDER_TOOLCHAIN_TRUST_ROOT_NOT_HARDENED",
       message: platform === "darwin"
         ? "macOS builder、签名和公证构建输入尚未形成受版本控制的独立版本与校验锁"
-        : "离线 Windows builder 工具链当前仅自带可写 manifest，尚无受版本控制的独立来源/哈希锁",
+        : "离线 Windows builder 工具链尚未从三份固定归档导入，且缺少由该导入事务生成的受版本控制独立全树锁",
     },
     {
       code: "ACE_FULL_LICENSE_AUDIT_REQUIRED",
@@ -1433,6 +1452,7 @@ function verifyPackagedResources({
   platform = "win32",
   arch = null,
   source = true,
+  electronSourceRoot = path.resolve(__dirname, ".."),
   releaseTier = "sale",
   executeRuntimes = true,
   hostPlatform = process.platform,
@@ -1444,12 +1464,16 @@ function verifyPackagedResources({
   const blockers = [];
   const pythonRuntimeStates = [];
   const jreRuntimeStates = [];
+  const electronDistributionRoot = source ? projectRoot : path.resolve(electronSourceRoot);
   if (releaseTier !== "alpha" && releaseTier !== "sale") {
     errors.push(`不支持的发布门禁层级：${String(releaseTier)}`);
   }
   verifyCore(projectRoot, errors, checks);
   verifyEpubCheck(projectRoot, errors, checks);
-  if (source) verifyElectronDistribution(projectRoot, platform, arch, errors, checks);
+  // A packaged resources directory does not contain Electron itself. Re-run the
+  // repository-tracked source distribution lock instead of trusting a loose
+  // manifest copied into writable packaged resources.
+  verifyElectronDistribution(electronDistributionRoot, platform, arch, errors, checks);
 
   if (platform === "win32") {
     const pythonState = verifyWindowsRuntime(projectRoot, errors, checks, { execute: false });
@@ -1487,7 +1511,7 @@ function verifyPackagedResources({
   } else {
     errors.push(`不支持的打包平台：${platform}`);
   }
-  addCurrentReleaseBlockers(platform, releaseTier, blockers, errors);
+  addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors, checks);
 
   let runtimeProbeExecuted = false;
   if (executeRuntimes && errors.length === 0) {
@@ -1532,6 +1556,7 @@ function verifyPackagedResources({
     runtime_probe_requested: executeRuntimes,
     runtime_probe_executed: runtimeProbeExecuted,
     root: projectRoot,
+    electron_source_root: electronDistributionRoot,
     checks,
     blockers,
     errors,
@@ -1548,6 +1573,7 @@ function parseArgs(argv) {
     source: true,
     releaseTier: "sale",
     executeRuntimes: true,
+    electronSourceRoot: path.resolve(__dirname, ".."),
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -1578,6 +1604,7 @@ if (require.main === module) {
 module.exports = {
   PYTHON_IDENTITY_PROBE,
   ResourceGateError,
+  addCurrentReleaseBlockers,
   jreLockRelative,
   parseArgs,
   probePythonRuntime,

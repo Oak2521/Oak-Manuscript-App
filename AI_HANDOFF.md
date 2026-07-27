@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-27
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.3`
+> 当前版本：`0.1.0-alpha.4`
 > 当前分支：`chatgpt/commercial-v1`
-> 源码检查点标签：`chatgpt-v0.1.0-alpha.3`（只标记源码与本地验证状态，不代表安装包或正式发行）
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.4`（只标记源码与本地验证状态，不代表安装包或正式发行）
 
 ## 1. 权威入口与工作区
 
@@ -30,7 +30,17 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 2. 当前现场事实
 
-### 已完成：0.1.0-alpha.3 标准包可信链、项目固定版本与显式升级
+### 已完成：0.1.0-alpha.4 Electron 与 Windows builder 构建输入可信链
+
+- APP、Python 核心和 lockfile 已统一到 `0.1.0-alpha.4`；标准内容没有变化，仍是 `oak-rules 1.0.0`、release sequence 1；
+- Windows x64 Electron 43.1.0 新增受版本控制的完整树锁：2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95`；默认命令只读验证，tracked manifest 以严格 JSON 拒绝重复键，以 exact schema 拒绝未知字段，并要求生成器定义的唯一 canonical UTF-8/LF 原始字节；
+- `electronDist` 和源码/packaged 资源门禁都会在使用前核对 package-lock、运行时完整目录树、大小和 SHA-256。缺失、多出、篡改、硬链接、Node 可识别的 symlink/junction/reparse 或路径逃逸均 fail-closed，electron-builder 不会回退下载；只有显式 `--update-lock` 才能重写 tracked manifest，更新前验证安全父链并拒绝目标 symlink/hardlink，使用独占候选文件、`fsync`、原子替换和换入后复验；失败恢复旧字节，回滚自身失败则明确报错并保留事务证据；
+- 新增 Windows builder 安全导入器，独立固定三份归档及 SHA-256：`nsis-3.0.4.1.7z`（`9877df…c5fa`）、`nsis-resources-3.4.1.7z`（`593a9a…4103`）、`winCodeSign-2.6.0.7z`（`cdaec7…43a4`）；
+- 导入器固定本地 7z 组件，解压前后拒绝路径逃逸、链接、冲突/保留名、备用流、加密/反条目、异常容量、硬链接和清单漂移；UNC/device 目录在读取前拒绝。工具树 manifest 与受版本控制独立 lock 交叉绑定，且仅显式 `--update-lock` 才能作为同一事务换入；普通 build/test 不调用导入器；
+- 安全复核发现的两项 P1 已修复：verifier 遇到不安全祖先路径会在读取前停止；旧工具树/旧 lock 在任何 rename 前做父链、realpath、单链接和全树预检。4 个前向与 4 个回滚 rename 均有故障注入，回滚自身失败会明确报错并保留恢复证据；
+- 本机没有三份真实归档，因此**没有**真实 builder 工具树、独立 tracked lock、NSIS 或 ZIP。该边界是当前正确的 fail-closed 状态，不得伪造 lock 或把导入器实现写成制品完成。
+
+### 已完成：0.1.0-alpha.3 标准包可信链、项目固定版本与显式升级（历史检查点）
 
 - APP、Python 核心和 lockfile 版本已推进到 `0.1.0-alpha.3`；规则包继续是 `oak-rules 1.0.0`、发布序列 1，本轮没有借 APP 版本变化伪造标准内容版本；
 - `standards.json` 升级为治理 schema 2.0，保留 13 项标准；`rule-capabilities.json` 对 35 条规则与 6 个机械 fixer 做精确能力映射；canonical manifest 固定 payload、APP 兼容范围、release sequence、规则包哈希与能力集哈希；
@@ -73,7 +83,19 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - Electron preload 保持 `sandbox: true`，没有直接修复 IPC，只有计划、确认应用、列表和恢复四个固定 P0 通道；
 - 当时 APP / Python 核心 / package 版本统一为 `0.1.0-alpha.1`；Node 与 Python 已统一到 `npm test`。
 
-### 现场验证（2026-07-27，alpha.3）
+### 现场验证（2026-07-27，alpha.4）
+
+- `npm run test:node`：**PASS**，239 项、233 通过、0 失败、6 条件跳过，2.606 秒；新增覆盖 Electron 全树锁、严格 JSON/exact schema/canonical 字节、安全 tracked-file 更新事务，以及 builder 独立 lock、旧资产预检和全部前向/回滚 rename 故障；
+- Electron runtime 锁专项：**37 项、36 通过、0 失败、1 跳过**；hardlink 与 junction 反向路径在本机实测通过，文件 symlink 因 Windows `EPERM` 条件跳过，不计作通过；
+- 最终 `npm test`：**PASS**，Node 239/233/0/6；Python 312 项、0 失败、0 错误、3 条件跳过，Python 段 80.125 秒；
+- 沙箱外隐藏 Chrome 的 `$env:OAK_TEST_ACE='1'; npm run test:python`：**PASS**，312 项、0 失败、0 错误、1 条件跳过，44.807 秒；受限沙箱运行曾因未生成安全报告得到 2 个 `not_run` 断言失败，随后沙箱外实跑通过，这不是工具通过证据的替代；
+- `npm run verify:standards` 与 `npm run verify:electron-runtime`：**PASS**；Electron 固定锁统计与上述 digest 一致；
+- `npm run verify:resources:win`：**PASS**，实际执行 Python 与 JRE/EpubCheck 探针，Python core 报告 `0.1.0-alpha.4`；当前 sale 门禁按设计以 17 项 blocker 退出 1；
+- 沙箱外独立隐藏 Electron `npm run smoke`：`SMOKE-RESULT: PASS`。输出根为 `out/source-smoke/runs/ms37h0mu-201a90896825d190/projects/`；DOCX/EPUB 均为 `app_version=0.1.0-alpha.4`、`source_hash_ok=true`、4 次检查，四方七字段标准身份一致；PDF 分别为 258,404 / 161,836 字节；
+- macOS 静态门禁按预期退出 1：仍缺 darwin x64/arm64 Electron dist、两架构 Python runtime lock 和两架构 JRE；
+- `node scripts/run_electron_builder.js --win --x64` 在启动 electron-builder 前按预期退出 1，理由是没有真实工具树与 tracked lock。全程未联网、未生成 alpha.4 制品，也未运行 packaged smoke、干净系统或签名验收。
+
+### 现场验证（2026-07-27，alpha.3 历史检查点）
 
 - 原生/沙箱外 `npm test` 统一入口：**PASS**。Node TAP 共 186 项，181 通过、0 失败、5 项条件跳过；Python 共 312 项，0 失败、0 错误、3 项条件跳过；
 - `python scripts/run_tests.py`：共 312 项，0 失败、0 错误、3 项条件跳过，用时 77.755 秒；
@@ -100,8 +122,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.3 继承了可复制、可执行、由 tracked full lock 固定的生产闭包，并通过 Windows alpha 资源门禁与沙箱外隐藏 Chrome 真实条件测试。正式版仍缺最小权限受控 helper、自带且校验过的浏览器运行时、OS 级默认拒绝网络、可信根加固、18 个生成元数据通知包的原始许可证审计，以及全部 236 包的来源/许可证/版权/再分发义务人工审计；
-- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.3 尚无安装器或 ZIP，未做打包版 smoke、干净系统安装/升级/卸载或签名；
+- 打包版 Ace：alpha.4 继承了可复制、可执行、由 tracked full lock 固定的生产闭包，并通过 Windows alpha 资源门禁与沙箱外隐藏 Chrome 真实条件测试。正式版仍缺最小权限受控 helper、自带且校验过的浏览器运行时、OS 级默认拒绝网络、可信根加固、18 个生成元数据通知包的原始许可证审计，以及全部 236 包的来源/许可证/版权/再分发义务人工审计；
+- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.4 尚无安装器或 ZIP，未做打包版 smoke、干净系统安装/升级/卸载或签名。安全 builder 导入器已实现，但三份固定归档、真实工具树和独立 tracked lock 尚缺；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：服务端任务 API、隔离执行、限额、零留存和官网嵌入尚未实现；
 - 账号/订阅/同步：UI 入口和 Provider 仍是离线占位，未连接生产 Supabase、支付或网站后台；
@@ -109,7 +131,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - 标准升级：本地验证、签名包导入/回滚骨架、项目固定与显式升级已编码；生产 trust pin、在线获取/下载、签名撤回分发与联网自动更新未实现；
 - 正式发布仍缺隐私/条款最终文本、证书、生产密钥、人工内测、macOS 硬件和网站联调。
 
-### Windows sale 门禁的 18 项明确阻断
+### Windows sale 门禁的 17 项明确阻断
 
 以下机器码来自当前 `verify_packaged_resources.js` 与实测 sale 输出，不得合并或省略：
 
@@ -122,22 +144,21 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 7. `PYTHON_RUNTIME_TRUST_ROOT_NOT_HARDENED`；
 8. `APP_RESOURCES_TRUST_ROOT_NOT_HARDENED`；
 9. `ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED`；
-10. `ELECTRON_RUNTIME_TRUST_ROOT_NOT_HARDENED`；
-11. `BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED`；
-12. `BUILDER_TOOLCHAIN_TRUST_ROOT_NOT_HARDENED`；
-13. `ACE_FULL_LICENSE_AUDIT_REQUIRED`：Ace 全部生产依赖闭包的正式人工审计；
-14. `ACE_TRUST_ROOT_NOT_HARDENED`；
-15. `ACE_CONTROLLED_HELPER_PENDING`；
-16. `ACE_BROWSER_RUNTIME_PENDING`；
-17. `ACE_OS_NETWORK_ISOLATION_PENDING`；
-18. `WINDOWS_CODE_SIGNING_PENDING`。
+10. `BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED`；
+11. `BUILDER_TOOLCHAIN_TRUST_ROOT_NOT_HARDENED`；
+12. `ACE_FULL_LICENSE_AUDIT_REQUIRED`：Ace 全部生产依赖闭包的正式人工审计；
+13. `ACE_TRUST_ROOT_NOT_HARDENED`；
+14. `ACE_CONTROLLED_HELPER_PENDING`；
+15. `ACE_BROWSER_RUNTIME_PENDING`；
+16. `ACE_OS_NETWORK_ISOLATION_PENDING`；
+17. `WINDOWS_CODE_SIGNING_PENDING`。
 
 ## 5. 下一执行顺序
 
 不要重新做宽泛规划，按 v2.0 方案继续：
 
-1. 经用户联网授权后，把固定版本的 Windows builder 工具完整放入仓库本地工具链；
-2. 生成 alpha.3 NSIS 安装器与 ZIP，逐项运行打包资源门禁、应用身份断言、打包版 smoke、SHA-256 和干净环境检查；
+1. 经用户联网授权后只下载三份已固定名称/哈希的 builder 归档，离线复核后运行 `node scripts/import_windows_builder_toolchain.js --archive-dir <目录> --update-lock`，提交并复核真实独立 lock；
+2. 生成 alpha.4 NSIS 安装器与 ZIP，逐项运行打包资源门禁、应用身份断言、打包版 smoke、SHA-256 和干净环境检查；
 3. 完成 Windows 代码签名，并逐项关闭 provenance、许可证、可信根、Ace helper/browser 等 sale blocker；
 4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
 5. 补齐默认引用选择的结构信号、原因/置信度与低置信度退回，不把现有稿件类型映射误写成完整商业方案能力；
@@ -154,6 +175,7 @@ npm test
 npm run test:node
 npm run test:python
 $env:OAK_TEST_ACE='1'; python scripts\run_tests.py
+npm run verify:electron-runtime
 npm run smoke
 npm run verify:resources:win
 npm run build:win

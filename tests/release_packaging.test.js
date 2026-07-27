@@ -10,6 +10,9 @@ const path = require("node:path");
 const { validateConfiguration } = require("app-builder-lib/out/util/config/config");
 const beforePack = require("../scripts/before_pack");
 const electronDistHook = require("../scripts/electron_dist");
+const {
+  writePinnedManifest: writeElectronRuntimeManifest,
+} = require("../scripts/electron_runtime_manifest");
 const { writePinnedManifest } = require("../scripts/epubcheck_distribution");
 const {
   manifestRelative: pythonRuntimeManifestRelative,
@@ -27,7 +30,7 @@ const {
   releaseTierForVersion,
   verifyJreRuntime,
   verifyMacRuntimes,
-  verifyPackagedResources,
+  verifyPackagedResources: verifyPackagedResourcesRaw,
 } = require("../scripts/verify_packaged_resources");
 const {
   NETWORK_SIGNING_ENV,
@@ -37,6 +40,11 @@ const {
   runElectronBuilder,
 } = require("../scripts/run_electron_builder");
 const { runNativeMacBuild } = require("../scripts/run_native_mac_build");
+const {
+  LOCK_RELATIVE: BUILDER_LOCK_RELATIVE,
+  SOURCE_ARCHIVES: BUILDER_SOURCE_ARCHIVES,
+  TOOLCHAIN_RELATIVE: BUILDER_TOOLCHAIN_RELATIVE,
+} = require("../scripts/builder_toolchain_contract");
 const { verifyWindowsToolchain } = require("../scripts/verify_builder_toolchain");
 const { pythonExecutableFor } = require("../electron/path-policy");
 const { createPythonEnvironment } = require("../electron/python-bridge");
@@ -48,6 +56,13 @@ const { BUNDLED_STANDARD_RELEASE } = require("../electron/standards-provider");
 const REPO_ROOT = path.resolve(__dirname, "..");
 const PATCH_BEFORE = "681b52d047d5f6eebbfc62a925b7dc22b82589ab63b36a9ea602297f8cd86ea6";
 const PATCH_AFTER = "025a0766beaa48e8eb48f640d2bacf72029a61486aec276a393450d406ac67cc";
+
+function verifyPackagedResources(options) {
+  if (options?.source === false && options.electronSourceRoot === undefined) {
+    return verifyPackagedResourcesRaw({ ...options, electronSourceRoot: options.root });
+  }
+  return verifyPackagedResourcesRaw(options);
+}
 
 function sha256(target) {
   return crypto.createHash("sha256").update(fs.readFileSync(target)).digest("hex");
@@ -448,6 +463,30 @@ function createResourceFixture(t) {
   );
   writePinnedManifest(root);
   writePythonRuntimeManifest(root, { platform: "win32", arch: "x64" });
+  writeJson(root, "package-lock.json", {
+    name: "fixture",
+    lockfileVersion: 3,
+    packages: {
+      "": { devDependencies: { electron: "^43.1.0" } },
+      "node_modules/electron": {
+        version: "43.1.0",
+        resolved: "https://registry.npmjs.org/electron/-/electron-43.1.0.tgz",
+        integrity: `sha512-${Buffer.alloc(64, 9).toString("base64")}`,
+      },
+    },
+  });
+  writeJson(root, "node_modules/electron/package.json", { version: "43.1.0" });
+  for (const relative of [
+    "LICENSE",
+    "LICENSES.chromium.html",
+    "icudtl.dat",
+    "resources.pak",
+    "resources/default_app.asar",
+    "locales/en-US.pak",
+  ]) write(root, `node_modules/electron/dist/${relative}`);
+  write(root, "node_modules/electron/dist/electron.exe", fakePe());
+  write(root, "node_modules/electron/dist/version", "43.1.0\n");
+  writeElectronRuntimeManifest(root, { platform: "win32", arch: "x64" });
   createJreStage(root);
   createAceStage(root);
   return root;
@@ -468,11 +507,34 @@ function createToolchainFixture(t) {
   write(toolchain, "nsis/Contrib/fixture.txt");
   write(toolchain, "nsis-resources/plugins/x86-unicode/fixture.dll");
   const files = inventory(toolchain);
-  writeJson(toolchain, "manifest.json", {
+  const sourceArchives = BUILDER_SOURCE_ARCHIVES.map((item, index) => ({
+    name: item.name,
+    size_bytes: 1000 + index,
+    sha256: item.sha256,
+  }));
+  const manifest = {
     schema_version: "1.0",
     host_platform: "win32",
     host_arch: "x64",
     electron_builder_version: require("electron-builder/package.json").version,
+    source_archives: sourceArchives,
+    file_count: files.length,
+    total_bytes: files.reduce((sum, item) => sum + item.size_bytes, 0),
+    files,
+  };
+  const manifestTarget = writeJson(toolchain, "manifest.json", manifest);
+  const manifestStat = fs.statSync(manifestTarget);
+  writeJson(root, BUILDER_LOCK_RELATIVE, {
+    schema_version: "1.0",
+    host_platform: "win32",
+    host_arch: "x64",
+    electron_builder_version: require("electron-builder/package.json").version,
+    source_archives: sourceArchives,
+    tool_manifest: {
+      path: `${BUILDER_TOOLCHAIN_RELATIVE}/manifest.json`,
+      size_bytes: manifestStat.size,
+      sha256: sha256(manifestTarget),
+    },
     file_count: files.length,
     total_bytes: files.reduce((sum, item) => sum + item.size_bytes, 0),
     files,
@@ -480,12 +542,12 @@ function createToolchainFixture(t) {
   return { root, toolchain };
 }
 
-test("electron-builder config is valid and pins alpha.3 Windows installer policy", async () => {
+test("electron-builder config is valid and pins alpha.4 Windows installer policy", async () => {
   const packageJson = require("../package.json");
   const packageLock = require("../package-lock.json");
   await validateConfiguration(packageJson.build, { isEnabled: false, add() {} });
 
-  assert.equal(packageJson.version, "0.1.0-alpha.3");
+  assert.equal(packageJson.version, "0.1.0-alpha.4");
   assert.equal(packageLock.version, packageJson.version);
   assert.equal(packageLock.packages[""].version, packageJson.version);
   const pythonInit = fs.readFileSync(
@@ -768,7 +830,7 @@ test("beforePack forwards the builder project root and target platform", () => {
   const calls = [];
   beforePack(
     {
-      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.3" } },
+      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.4" } },
       electronPlatformName: "darwin",
       arch: 1,
     },
@@ -781,10 +843,14 @@ test("beforePack forwards the builder project root and target platform", () => {
     source: true,
     releaseTier: "alpha",
   }]);
-  assert.equal(releaseTierForVersion("0.1.0-alpha.3"), "alpha");
+  assert.equal(releaseTierForVersion("0.1.0-alpha.4"), "alpha");
   assert.equal(releaseTierForVersion("1.0.0"), "sale");
   assert.equal(parseResourceGateArgs(["--release-tier", "auto"]).releaseTier, "alpha");
   assert.equal(parseResourceGateArgs(["--no-runtime-probe"]).executeRuntimes, false);
+  assert.throws(
+    () => parseResourceGateArgs(["--electron-source-root", "untrusted"]),
+    /未知参数/,
+  );
 });
 
 test("electronDist hook uses native installed Electron and returns a missing sentinel for cross targets", () => {
@@ -959,8 +1025,9 @@ test("runtime probes fail closed on a non-native host unless static-only is expl
 });
 
 test("Windows resource gate accepts a complete offline fixture", (t) => {
+  const root = createResourceFixture(t);
   const report = verifyPackagedResources({
-    root: createResourceFixture(t),
+    root,
     platform: "win32",
     arch: "x64",
     source: false,
@@ -980,7 +1047,6 @@ test("Windows resource gate accepts a complete offline fixture", (t) => {
     "PYTHON_RUNTIME_TRUST_ROOT_NOT_HARDENED",
     "APP_RESOURCES_TRUST_ROOT_NOT_HARDENED",
     "ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED",
-    "ELECTRON_RUNTIME_TRUST_ROOT_NOT_HARDENED",
     "BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED",
     "BUILDER_TOOLCHAIN_TRUST_ROOT_NOT_HARDENED",
     "ACE_FULL_LICENSE_AUDIT_REQUIRED",
@@ -990,6 +1056,36 @@ test("Windows resource gate accepts a complete offline fixture", (t) => {
     "ACE_OS_NETWORK_ISOLATION_PENDING",
     "WINDOWS_CODE_SIGNING_PENDING",
   ]));
+  assert.equal(report.blockers.length, 17);
+  const electronEvidence = report.checks.find((item) => item.type === "electron-runtime-lock");
+  assert.equal(electronEvidence?.evidence_scope, "source-build-input");
+  assert.equal(electronEvidence?.evidence_root, root);
+  assert.equal(electronEvidence?.path,
+    "config/tool-manifests/electron-43.1.0-win32-x64.json");
+});
+
+test("packaged resource gate keeps Electron trust-root blocker when source evidence is missing", (t) => {
+  const root = createResourceFixture(t);
+  const missingSourceRoot = path.join(root, "missing-source-build-input");
+  assert.throws(
+    () => verifyPackagedResources({
+      root,
+      electronSourceRoot: missingSourceRoot,
+      platform: "win32",
+      arch: "x64",
+      source: false,
+      releaseTier: "alpha",
+      executeRuntimes: false,
+    }),
+    (error) => error instanceof ResourceGateError &&
+      error.report.electron_source_root === missingSourceRoot &&
+      error.report.checks.every((item) => item.type !== "electron-runtime-lock") &&
+      error.report.blockers.some((item) =>
+        item.code === "ELECTRON_RUNTIME_TRUST_ROOT_NOT_HARDENED") &&
+      error.report.blockers.some((item) =>
+        item.code === "ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED") &&
+      error.report.blockers.some((item) => item.code === "WINDOWS_CODE_SIGNING_PENDING"),
+  );
 });
 
 test("sale resource tier rejects generated license notices that alpha reports as blockers", (t) => {
@@ -1014,7 +1110,6 @@ test("sale resource tier rejects generated license notices that alpha reports as
         "PYTHON_RUNTIME_TRUST_ROOT_NOT_HARDENED",
         "APP_RESOURCES_TRUST_ROOT_NOT_HARDENED",
         "ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED",
-        "ELECTRON_RUNTIME_TRUST_ROOT_NOT_HARDENED",
         "BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED",
         "BUILDER_TOOLCHAIN_TRUST_ROOT_NOT_HARDENED",
         "ACE_FULL_LICENSE_AUDIT_REQUIRED",

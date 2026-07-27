@@ -4,6 +4,35 @@
 
 ## [未发布]
 
+### 2026-07-27 — 0.1.0-alpha.4（ChatGPT Electron 与 builder 构建输入可信链检查点）
+
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.4`。该标签只表示经测试的源码状态，不表示已经生成安装包或正式发行。
+
+**Electron 运行时固定锁**
+
+- 将 APP、Python 核心和 lockfile 统一为 `0.1.0-alpha.4`；规则包与标准内容不变，仍为 `oak-rules 1.0.0`、release sequence 1；
+- 新增 `config/tool-manifests/electron-43.1.0-win32-x64.json` 与只读默认验证器，固定 2 个目录、75 个文件、364,083,658 字节；manifest SHA-256 为 `ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95`；
+- tracked manifest 使用严格 JSON 拒绝重复键、以 exact schema 拒绝未知字段，并要求生成器定义的唯一 canonical UTF-8/LF 原始字节；
+- `electronDist` 在把本地 Electron 交给 electron-builder 前强制验证 package-lock、完整目录/文件树、大小和 SHA-256；缺失、多出、篡改、硬链接、Node 可识别的 symlink/junction/reparse 或路径逃逸均拒绝，并返回不存在的 sentinel，禁止下载回退；
+- 显式 `--update-lock` 先验证安全父链并拒绝目标 symlink/hardlink，再以独占候选文件、`fsync`、原子替换和换入后复验更新；任何失败恢复旧字节，回滚自身失败则明确报错并保留事务证据；
+- 源码与打包资源门禁都重新核对仓库源码构建输入，不信任可写 packaged resources 自报；因此仅关闭 `ELECTRON_RUNTIME_TRUST_ROOT_NOT_HARDENED`，官方来源/再分发审计和签名阻断继续保留。
+
+**Windows builder 安全导入合同**
+
+- 固定 `nsis-3.0.4.1.7z`、`nsis-resources-3.4.1.7z`、`winCodeSign-2.6.0.7z` 的名称与 SHA-256，新增显式、一次性的离线安全导入器；普通 build/test 不会调用、下载或自动刷新它；
+- 导入器固定本地 7z 可执行文件和 DLL，解压前后拒绝路径逃逸、Windows 保留名、冲突路径、链接、备用流、加密/反条目、异常容量、硬链接及清单漂移；UNC/device 归档目录在任何读取前拒绝；
+- 工具树 `manifest.json` 与 `config/tool-manifests/electron-builder-win32-x64.json` 独立 tracked lock 交叉绑定来源归档、原始 manifest 字节和完整文件树。只有显式 `--update-lock` 才能写入 tracked lock；工具树和 lock 作为同一事务换入；
+- 修复安全审计发现的两项 P1：不安全祖先路径在读取前立即终止；旧工具树和旧 lock 在任何 rename 前执行父链、realpath、单链接及全树检查。四个前向 rename 与四个回滚 rename 均有故障注入；前向失败完整恢复，回滚自身失败明确报错并保留恢复证据。
+
+**验证与边界**
+
+- 最终 `npm test` 统一回归：Node 239 项、233 通过、0 失败、6 条件跳过、2.606 秒；Python 312 项、0 失败、0 错误、3 跳过、80.125 秒；
+- Electron runtime 锁专项为 37 项、36 通过、0 失败、1 条件跳过；hardlink 与 junction 反向路径在本机实测通过，文件 symlink 因 Windows `EPERM` 条件跳过，不计作通过；
+- 沙箱外隐藏 Chrome 真实 Ace：312 项、0 失败、0 错误、1 跳过、44.807 秒；受限沙箱无法产生安全报告时按设计失败，不能冒充通过；
+- 隐藏 Electron 源码 smoke PASS，输出为 `out/source-smoke/runs/ms37h0mu-201a90896825d190/projects/`；DOCX/EPUB 均保持原稿哈希、各含 4 次检查，PDF 分别为 258,404 / 161,836 字节；
+- `verify:standards`、`verify:electron-runtime` 与 Windows alpha 资源门禁 PASS；sale 门禁仍按设计以 17 项 blocker 失败；macOS 静态门禁仍因两架构 Electron/Python/JRE 资源缺失失败；
+- 本机没有三份真实 builder 归档，因此没有生成工具树、独立 tracked lock、NSIS 或 ZIP；builder 包装器在 electron-builder 启动前 fail-closed。全程未联网，也未运行 packaged smoke、干净系统或签名验收。
+
 ### 2026-07-27 — 0.1.0-alpha.3（ChatGPT 标准可信链与项目升级检查点）
 
 > 源码检查点标签：`chatgpt-v0.1.0-alpha.3`。该标签只表示经测试的源码状态，不表示已经生成安装包或正式发行。

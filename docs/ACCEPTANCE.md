@@ -2,6 +2,28 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.4 Electron 与 builder 构建输入可信链验收（2026-07-27）
+
+> 本节只验收 alpha.4 源码、构建输入锁与本机 alpha 门禁，不代表安装包、代码签名或可售卖正式版。
+
+- [x] APP、Python 核心和 lockfile 统一为 `0.1.0-alpha.4`；规则包/标准内容保持 `oak-rules 1.0.0`、release sequence 1；
+- [x] Electron 43.1.0 win32-x64 由受版本控制的完整树锁固定：2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `ae67132…520d95`；tracked manifest 使用严格 JSON、exact schema 和唯一 canonical UTF-8/LF 原始字节；
+- [x] Electron 锁默认只读验证，缺失、多出、篡改、硬链接、Node 可识别的 symlink/junction/reparse、路径逃逸或 package-lock 漂移均 fail-closed；失败时 electron-builder 不会下载回退；
+- [x] Electron 锁只有显式 `--update-lock` 才能更新；写入前验证安全父链并拒绝目标 symlink/hardlink，随后以独占候选文件、`fsync`、原子替换和换入后复验提交；失败恢复旧字节，回滚自身失败保留事务证据并明确报错；
+- [x] 源码和 packaged 资源门禁均重验仓库源码 Electron 构建输入；只有存在有效全树锁证据时才关闭 `ELECTRON_RUNTIME_TRUST_ROOT_NOT_HARDENED`，provenance 与签名阻断仍保留；
+- [x] Windows builder 导入器独立固定三份归档名称/完整 SHA-256，并固定本地 7z EXE/DLL；普通 build/test 不调用导入器；
+- [x] 导入器在解压前后拒绝路径逃逸、绝对/保留/冲突路径、链接、备用流、加密/反条目、异常容量、清单外文件和哈希漂移；UNC/device 路径在读取前拒绝；
+- [x] 工具树 manifest 与受版本控制独立 tracked lock 交叉绑定来源归档、manifest 原始字节和完整树；只有显式 `--update-lock` 才能写 lock，并与工具树联合事务换入；
+- [x] 不安全祖先路径在读取前短路；旧工具树/旧 lock 在任何 rename 前通过父链、realpath、单链接和全树预检；
+- [x] 四个前向 rename 失败均恢复旧 tree/lock；四个回滚 rename 自身失败均明确报错并保留恢复证据；
+- [x] Node **239/233/0/6（2.606 秒）**、Python 默认 **312/0/0/3（80.125 秒）**、沙箱外隐藏 Chrome 真实 Ace **312/0/0/1** 均通过；
+- [x] Electron runtime 锁专项 **37/36/0/1**；hardlink 与 junction 在本机实测通过，文件 symlink 因 Windows `EPERM` 条件跳过，不计作通过；
+- [x] alpha.4 隐藏 Electron 源码 smoke PASS；运行根为 `out/source-smoke/runs/ms37h0mu-201a90896825d190/projects/`，DOCX/EPUB 均保持原稿哈希、各有 4 次检查，APP/项目/检查/报告七字段身份一致，PDF 分别为 258,404 / 161,836 字节；
+- [x] Windows alpha 资源门禁实际执行运行时探针并通过；sale 门禁按设计以 17 项 blocker 失败；macOS 静态门禁因两架构资源缺失按设计失败；
+- [ ] 三份真实 builder 归档已取得并通过安全导入，真实 tracked lock 已生成（当前没有联网授权，未取得）；
+- [ ] alpha.4 Windows NSIS / ZIP 已生成并通过 packaged 资源门禁、packaged smoke、SHA-256、干净系统及签名验收；
+- [ ] macOS、Web、统一账号、订阅、结果同步与正式售卖全量门禁通过。
+
 ## 0.1.0-alpha.3 标准可信链与项目升级验收（2026-07-27）
 
 > 本节验收 alpha.3 源码、标准身份链与项目升级，不代表安装包或可售卖正式版。证据以 `TEST_REPORT.md` 为准。
@@ -22,9 +44,9 @@
 - [x] 升级创建检查点、哈希归档旧 issues、原子提交新 pin、清空陈旧 live issues、记录连续 history，并设置 `rulepack_check_required=true`；升级成功后 UI 自动重检；
 - [x] 升级/降级故障注入、写锁争用、进程中断安全状态、历史 release、撤回/过期迁移源和升级后陈旧报告/修复/导出拒绝均有回归覆盖；
 - [x] `app:info`、项目、检查记录与导出 `report.json` 的完整七字段身份一致；源码 smoke 每次使用 `out/source-smoke/runs/<run-id>/` 独立状态；
-- [x] 最新默认回归为 Node **186/181/0/5**、Python **312/0/0/3**；真实 Ace 条件套件为 **312/0/0/1**；隐藏 Electron smoke 为 PASS；
-- [x] Windows alpha 资源门禁继续通过；sale 门禁仍以 18 项 blocker 按设计失败；macOS 静态门禁仍因两架构资源缺失按设计失败；
-- [ ] alpha.3 Windows NSIS / ZIP 已生成并通过 packaged smoke（当前缺本地 builder 工具，未生成）；
+- [x] 该检查点默认回归为 Node **186/181/0/5**、Python **312/0/0/3**；真实 Ace 条件套件为 **312/0/0/1**；隐藏 Electron smoke 为 PASS；
+- [x] 该检查点 Windows alpha 资源门禁通过；sale 门禁以当时 18 项 blocker 按设计失败；macOS 静态门禁因两架构资源缺失按设计失败；
+- [ ] alpha.3 Windows NSIS / ZIP 已生成并通过 packaged smoke（该检查点当时缺本地 builder 工具，未生成）；
 - [ ] 生产标准 trust pin、在线获取/下载、签名撤回分发及外部官方来源核验已完成；
 - [ ] macOS、Web、统一账号、订阅、结果同步与正式售卖全量门禁通过。
 
@@ -158,7 +180,7 @@
 
 > 完成标准（方案 §18）：匿名 DOCX 与 EPUB 均能在 UI 中完成完整闭环。
 > 证据：`npm run smoke` 冒烟驱动真实 UI 代码路径（与按钮同一 actions + 真实 IPC + 真实核心），
-> DOCX 与 EPUB 双闭环 PASS；旧 `0.0.1` 打包版历史结果同样 PASS，不能替代当前 alpha.3 打包验收。
+> DOCX 与 EPUB 双闭环 PASS；旧 `0.0.1` 打包版历史结果同样 PASS，不能替代当前 alpha.4 打包验收。
 
 - [x] Electron 壳安全基线：contextIsolation / sandbox / nodeIntegration=false / IPC 固定通道 + 输入验证 / 子进程 shell=false / CSP / 导航与新窗口拦截 / 外链仅 HTTPS 白名单域名；
 - [x] 七个主页面（中文 UI）：欢迎隐私 / 创建项目 / 检查目标 / 进度（阶段式，无虚假百分比）/ 问题双栏（接受·拒绝·暂不处理）/ 导出中心 / 标准资源与设置；
@@ -200,5 +222,5 @@
 - [x] 未登录状态下全部核心流程可完成，且不出现同步询问（冒烟断言）
 - [ ] 任何结果同步只在登录用户逐字段确认后发生；负载不含稿件、正文/预览、标题、文件名、路径、参考文献原文或哈希（真实同步上线时验收；当前占位不联网）
 - [ ] 网站后台可查看并删除已同步记录（阶段 4 验收）
-- [ ] 正式发布包候选的 Python 单元/集成 + CLI 端到端 + UI 冒烟 E2E 全部通过（alpha.3 源码基线、真实 Ace 与隐藏源码 smoke 已通过；因尚无 alpha.3 安装包或 ZIP，打包版 E2E 仍未运行）
+- [ ] 正式发布包候选的 Python 单元/集成 + CLI 端到端 + UI 冒烟 E2E 全部通过（alpha.4 源码基线、真实 Ace 与隐藏源码 smoke 已通过；因尚无 alpha.4 安装包或 ZIP，打包版 E2E 仍未运行）
 - [ ] 当前正式发布包有版本、说明、校验值和已知限制（`RELEASE_NOTES_0.0.1.md` 仅是历史资料）

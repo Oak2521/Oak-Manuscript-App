@@ -1,6 +1,6 @@
 # 内置标准与规则覆盖审计
 
-> 初审日期：2026-07-26；按 alpha.3 现场复核：2026-07-27（America/Toronto）
+> 初审日期：2026-07-26；按 alpha.3 现场复核：2026-07-27（America/Toronto）；alpha.4 仅加固 Electron/builder 发布资源可信链，未改标准内容或审计计数
 > 审计范围：`config/standards.json`、`config/rule-packs/oak-rules-1.0.0.json`、`config/rule-capabilities.json`、标准 release manifest、本地存储/升级实现及测试
 > 网络状态：未联网；外部 URL 的当前有效性与标准是否已有后续版本，本次未核验
 
@@ -10,6 +10,8 @@
 
 - **结构与治理骨架已完成**：schema 2.0、13 项标准、35 条规则、6 个 fixer 的能力映射、canonical manifest、本地签名/CAS/回滚链、项目固定版本和显式升级均已有代码与测试；旧占位摘要已删除。
 - **标准内容仍不完整**：没有任何外部来源完成真实核验，4 项外部标准仍在审阅，审核者字段仍是角色占位；现有规则不足以支撑“覆盖论文、纸质出版物、电子书全部主流标准”或“标准库完整”的正式销售表述。
+
+`0.1.0-alpha.4` 没有修改 `config/standards.json`、规则包、能力映射或标准 release 身份；因此下列 alpha.3 内容审计证据继续有效，但不能把发布资源可信链加固解释为标准来源已核验或覆盖深度已提高。
 
 已确认数据：
 

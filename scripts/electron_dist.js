@@ -3,6 +3,7 @@
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
+const { verifyRuntime: verifyElectronRuntime } = require("./electron_runtime_manifest");
 
 const SUPPORTED_PLATFORMS = new Set(["win32", "darwin"]);
 const SUPPORTED_ARCHES = new Set(["x64", "arm64"]);
@@ -211,7 +212,20 @@ function validateElectronDist({
       throw new Error("跨目标 Electron dist 标识与目标或可执行文件不一致");
     }
   }
-  return { dist: target, version: actualVersion, platform, arch, executable };
+  const runtimeLock = verifyElectronRuntime(root, {
+    platform,
+    arch,
+    distribution: target,
+    ignoredLocalMetadata: requireMarker ? ["OAK_ELECTRON_DIST.json"] : [],
+  });
+  return {
+    dist: target,
+    version: actualVersion,
+    platform,
+    arch,
+    executable,
+    runtimeLock,
+  };
 }
 
 function resolveElectronDist({

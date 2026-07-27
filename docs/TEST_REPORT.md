@@ -2,27 +2,46 @@
 
 > 最近更新：2026-07-27。只记录真实执行结果；未运行项不得写成通过。
 
-## 1. 最新验证结论：0.1.0-alpha.3 源码、标准可信链与 Windows alpha 资源
+## 1. 最新验证结论：0.1.0-alpha.4 源码、构建输入可信链与 Windows alpha 资源
 
 环境：Windows 11；Python 3.14.6；Node 24.16.0；npm 11.13.0；Electron 43.1.0；Java 21.0.11。
 
 | 命令 | 结果 | 说明 |
 |---|---|---|
-| 原生/沙箱外 `npm run test:node` | **TAP 186 项：181 通过、0 失败、5 跳过** | 跳过项均有平台、权限或打包制品前置条件，不计作通过；普通受限沙箱结果不能替代此发布基线 |
-| `python scripts/run_tests.py` | **312 项：0 失败、0 错误、3 跳过；77.755 秒** | 默认条件套件；三项跳过不计作通过 |
-| 沙箱外隐藏 Chrome：`$env:OAK_TEST_ACE='1'; python scripts\run_tests.py` | **312 项：0 失败、0 错误、1 跳过；46.321 秒** | 真实 Ace 好/坏样本执行，发布基线以本次原生隐藏浏览器结果为准 |
-| 早期受限运行器 Ace 诊断（逐报告回归加入前） | **304 项中预期 FAIL：2 断言失败、0 错误、1 跳过** | 两个工具结果均为 `not_run`，原因是未生成安全的本次报告；该历史诊断只证明环境受限时不会伪造 passed/failed，不替代最新 312 项原生基线 |
-| 原生/沙箱外 `npm test` | **PASS** | 统一入口得到同一 Node 186/181/0/5 与 Python 312/0/0/3 基线 |
+| 最终 `npm test` 的 Node 段 | **TAP 239 项：233 通过、0 失败、6 跳过；2.606 秒** | 含 Electron runtime、builder importer/lock、tracked-file 安全更新和前向/回滚故障矩阵；跳过项不计作通过 |
+| Electron runtime 锁专项 | **37 项：36 通过、0 失败、1 跳过** | hardlink 与 junction 反向路径本机实测通过；文件 symlink 因 Windows `EPERM` 条件跳过，不计作通过 |
+| 最终 `npm test` 的 Python 段 | **312 项：0 失败、0 错误、3 跳过；80.125 秒** | 默认条件套件；三项跳过不计作通过 |
+| 沙箱外隐藏 Chrome：`$env:OAK_TEST_ACE='1'; npm run test:python` | **312 项：0 失败、0 错误、1 跳过；44.807 秒** | 真实 Ace 好/坏样本执行，发布基线以本次隐藏浏览器结果为准 |
+| 同一 Ace 命令的受限沙箱诊断 | **预期环境失败：2 断言失败、0 错误、1 跳过** | 两个结果均为 `not_run`，原因是未生成安全的本次报告；随后沙箱外实跑通过，受限结果不替代真实工具证据 |
+| `npm test` | **PASS** | 最终统一入口复核同一 Node 239/233/0/6 与 Python 312/0/0/3 基线 |
 | `npm run verify:standards` | **PASS** | canonical manifest 与 standards/rulepack/capability 身份一致 |
-| 沙箱外隐藏 Electron `npm run smoke` | **SMOKE-RESULT PASS** | 每次运行隔离在 `out/source-smoke/runs/<run-id>/`；DOCX/EPUB 完成完整闭环并核对四方七字段标准身份 |
+| `npm run verify:electron-runtime` | **PASS** | Electron 43.1.0 win32-x64：2 目录、75 文件、364,083,658 字节；manifest SHA-256 `ae67132b…520d95` |
+| 沙箱外隐藏 Electron `npm run smoke` | **SMOKE-RESULT PASS** | 最新运行根 `out/source-smoke/runs/ms37h0mu-201a90896825d190/projects/`；DOCX/EPUB 各 4 次检查、`source_hash_ok=true`，PDF 为 258,404 / 161,836 字节 |
 | `npm run verify:resources:win` | **PASS（alpha）** | Windows x64 Python/JRE/EpubCheck/Ace 全量文件和真实探针通过 |
-| `node scripts/verify_packaged_resources.js --platform win32 --arch x64 --release-tier sale` | **预期 FAIL：18 blockers** | alpha 资源正确不等于可售卖；正式审计、可信根、Electron/builder、Ace 隔离和签名仍未完成 |
-| 提升权限 `npm run build:win` | **预期停止** | 本地 JRE/Ace staging 与 Windows alpha 资源探针均完成；随后仅因 `tools/electron-builder/win32-x64` 缺失停止，未联网、未生成安装包或 ZIP |
+| `node scripts/verify_packaged_resources.js --platform win32 --arch x64 --release-tier sale --no-runtime-probe` | **预期退出 1：17 blockers** | Electron 全树锁只关闭 trust-root 缺失项；正式来源审计、builder、Ace 隔离和签名仍未完成 |
+| `node scripts/run_electron_builder.js --win --x64` | **预期退出 1** | 真实 builder 工具树和 tracked lock 缺失；在 electron-builder 启动前 fail-closed，未联网、未生成安装包或 ZIP |
 | `npm run verify:resources:mac:static` | **按预期 FAIL，不执行探针** | 精确缺 darwin-x64/arm64 Electron dist、两架构 Python runtime 锁、`tools/jre-darwin-x64` 与 `tools/jre-darwin-arm64`；静态逻辑可执行不等于 macOS 可构建 |
 
-当前 `0.1.0-alpha.3` 的源码检查点标签为 `chatgpt-v0.1.0-alpha.3`，用途仅是标记源码与本地验证状态。测试没有产生同版本 NSIS、ZIP 或其他可分发二进制。
+当前 `0.1.0-alpha.4` 的源码检查点标签为 `chatgpt-v0.1.0-alpha.4`，用途仅是标记源码与本地验证状态。测试没有产生同版本 NSIS、ZIP 或其他可分发二进制。
 
-## 2. alpha.3 标准可信链、运行资源与发布门禁覆盖
+## 2. alpha.4 构建输入、标准可信链、运行资源与发布门禁覆盖
+
+### Electron 运行时完整树锁
+
+- `config/tool-manifests/electron-43.1.0-win32-x64.json` 固定 2 个目录、75 个文件、364,083,658 字节，原始文件 SHA-256 为 `ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95`；
+- tracked manifest 必须通过严格 JSON 重复键拒绝、owned levels 的 exact schema 和生成器定义的唯一 canonical UTF-8/LF 原始字节校验；
+- 锁同时核对 package-lock 的 Electron 版本、resolved 与 integrity，以及实际 dist 的必需文件、目录集合、文件集合、大小和逐文件 SHA-256；默认命令只读，只有显式 `--update-lock` 才写入；
+- `--update-lock` 在任何写入前验证安全父链与 realpath 并拒绝目标 symlink/hardlink；候选文件独占创建、写入后 `fsync`，复核父链/目标身份后原子替换，再做换入后严格 JSON/schema/canonical 字节及全树验证。失败恢复旧字节；回滚自身失败会明确报错并保留候选/备份等事务证据；
+- Node 反向测试覆盖文件增删/篡改、目录多出、manifest 重复/多列、非 canonical 字节、package-lock 漂移、硬链接、junction/symlink、cross-dist marker 自刷、tracked-file 更新故障和 `electronDist` 禁下载 sentinel；专项结果为 37/36/0/1，hardlink/junction 本机实测通过，文件 symlink 因 Windows `EPERM` 条件跳过；
+- 源码和 packaged 资源门禁都重验仓库源码构建输入。有效锁证据仅关闭 `ELECTRON_RUNTIME_TRUST_ROOT_NOT_HARDENED`；官方来源、校验和、再分发与签名责任仍保留。
+
+### Windows builder 固定归档导入与独立 lock
+
+- 来源合同独立固定三份归档：`nsis-3.0.4.1.7z` SHA-256 `9877df902530f96357d13a7a31ae2b9df67f48b11ffc9a1700a7c961574ec5fa`、`nsis-resources-3.4.1.7z` SHA-256 `593a9a92ef958321293ac6a2ee61e64bf1bd543142a5bd6b3d310709cc924103`、`winCodeSign-2.6.0.7z` SHA-256 `cdaec7154dda7cc31f88d886e2489379a0625a737d610b5ae7f62a12f16743a4`；
+- 显式导入器固定本地 7z EXE/DLL，预检归档技术清单，拒绝 UNC/device 来源、逃逸/绝对/保留/冲突路径、链接、备用流、加密/反条目和容量异常；解压后再核对全树、大小、realpath、硬链接与归档哈希；
+- 组装的 manifest 和 `config/tool-manifests/electron-builder-win32-x64.json` 独立 lock 交叉绑定来源归档、manifest 原始字节和完整工具树。只有显式 `--update-lock` 才能联合事务提交；普通 build/test 不会导入或刷新；
+- 反向测试覆盖缺档/多档/错哈希、路径与链接、缺关键载荷、严格 JSON/schema、manifest 字节漂移、不安全祖先 junction、旧 tree/lock 硬链接，以及 4 个前向/4 个回滚 rename 故障；回滚自身失败会保留事务恢复证据；
+- 本机没有真实三归档，所以没有实际工具树或 tracked lock。导入测试使用构造载荷验证算法，不是正式来源或可打包证据。
 
 ### 标准包身份、存储与项目升级
 
@@ -39,7 +58,7 @@
 - 受版本控制的清单覆盖 **34 个文件、21,260,753 字节**，逐文件固定相对路径、大小和 SHA-256；
 - 检查平台/架构、PE 文件、Python 版本、必需 DLL/ZIP/许可证及 `python313._pth` 隔离语义；
 - 缺文件、多文件、哈希篡改和不安全 `_pth` 配置均有 Node 反向测试并会被拒绝；
-- 只有全量资源和所有全局门禁均无错误后才允许执行 Python 探针；本轮 Windows alpha 门禁已实际执行探针并读到核心版本 `0.1.0-alpha.3`；
+- 只有全量资源和所有全局门禁均无错误后才允许执行 Python 探针；本轮 Windows alpha 门禁已实际执行探针并读到核心版本 `0.1.0-alpha.4`；
 - Electron、smoke 与资源探针统一通过净化环境及 `-I -S -X utf8` 固定 bootstrap 调用核心，拒绝工作目录、用户 site 和继承的 Python/OAK 环境注入；
 - macOS x64/arm64 CPython 目标版本均固定为 `3.13.14`；这是清单契约与反向测试证据，不是实际 macOS 运行时已经到位的证据。
 
@@ -69,7 +88,7 @@
 
 ### Windows sale 门禁
 
-alpha 门禁实际执行运行时探针并通过；sale 门禁以以下 18 项机器可读 blocker 按设计失败：
+alpha 门禁实际执行运行时探针并通过；sale 门禁以以下 17 项机器可读 blocker 按设计失败：
 
 1. `FORMAL_LICENSE_AUDIT_REQUIRED`：Ace 18 个依赖包仍需正式人工许可证审计；
 2. `PYTHON_RUNTIME_PROVENANCE_AUDIT_REQUIRED`；
@@ -80,19 +99,18 @@ alpha 门禁实际执行运行时探针并通过；sale 门禁以以下 18 项�
 7. `PYTHON_RUNTIME_TRUST_ROOT_NOT_HARDENED`；
 8. `APP_RESOURCES_TRUST_ROOT_NOT_HARDENED`；
 9. `ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED`；
-10. `ELECTRON_RUNTIME_TRUST_ROOT_NOT_HARDENED`；
-11. `BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED`；
-12. `BUILDER_TOOLCHAIN_TRUST_ROOT_NOT_HARDENED`；
-13. `ACE_FULL_LICENSE_AUDIT_REQUIRED`：Ace 完整生产依赖闭包的正式人工审计；
-14. `ACE_TRUST_ROOT_NOT_HARDENED`；
-15. `ACE_CONTROLLED_HELPER_PENDING`；
-16. `ACE_BROWSER_RUNTIME_PENDING`；
-17. `ACE_OS_NETWORK_ISOLATION_PENDING`；
-18. `WINDOWS_CODE_SIGNING_PENDING`。
+10. `BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED`；
+11. `BUILDER_TOOLCHAIN_TRUST_ROOT_NOT_HARDENED`；
+12. `ACE_FULL_LICENSE_AUDIT_REQUIRED`：Ace 完整生产依赖闭包的正式人工审计；
+13. `ACE_TRUST_ROOT_NOT_HARDENED`；
+14. `ACE_CONTROLLED_HELPER_PENDING`；
+15. `ACE_BROWSER_RUNTIME_PENDING`；
+16. `ACE_OS_NETWORK_ISOLATION_PENDING`；
+17. `WINDOWS_CODE_SIGNING_PENDING`。
 
 因此当前只可表述为“Windows alpha 源码资源门禁通过”，不能表述为“安装包已完成”“正式版已通过”或“可售卖”。
 
-## 3. alpha.3 项目、路径、IPC 与桌面安全覆盖
+## 3. alpha.4 项目、路径、IPC 与桌面安全覆盖
 
 ### Electron 默认离线与 PDF 隔离
 
@@ -118,7 +136,7 @@ alpha 门禁实际执行运行时探针并通过；sale 门禁以以下 18 项�
 - Electron 桥保留退出码 1 的有效业务 JSON（包括 `verify` 的非致命完整性结果），退出码 2 或 `ok=false` 错误按失败处理；结构化错误字段完整传到 IPC 外层；
 - 主要反向测试位于 `tests/offline_policy.test.js`、`tests/renderer_security.test.js`、`tests/pdf_preview.test.js`、`tests/path_policy.test.js`、`tests/core_result.test.js`、`tests/p0_ipc_contract.test.js`、`python/tests/test_project_validation.py` 和 `python/tests/test_project_write_lock.py`；当前计数见第 1 节。
 
-## 4. P0 批量修复覆盖（alpha.1 起，alpha.3 默认回归通过）
+## 4. P0 批量修复覆盖（alpha.1 起，alpha.4 默认回归通过）
 
 ### 批量计划与确认
 
@@ -160,15 +178,15 @@ EPUB：check 7 → 集中预览/确认 2 → recheck 5
 两类：取消计划零写入 → 确认 → 检查点列表 → 撤销 → 重新计划并应用
 两类：导出 5 文件 + PDF 样张 + verify 通过
 Provider：未登录、不同步占位纪律通过；标准 Provider 离线验证通过
-Electron：appVersion = 0.1.0-alpha.3；源码模式 packaged = false
-Python core：项目 manifest.app_version = 0.1.0-alpha.3；检查报告 app_version = 0.1.0-alpha.3
+Electron：appVersion = 0.1.0-alpha.4；源码模式 packaged = false
+Python core：项目 manifest.app_version = 0.1.0-alpha.4；检查报告 app_version = 0.1.0-alpha.4
 标准身份：APP / 项目 / 检查记录 / 导出 report.json 七字段完全一致
 SMOKE-RESULT: PASS
 ```
 
 冒烟运行在 `show: false` 的独立隐藏窗口，不抢占用户当前应用窗口。最新包装器把项目、缓存、临时目录、用户数据和崩溃目录全部限制在 `out/source-smoke/`；路径契约与完整 UI 均已实际验证。
 
-最新实际输出根为 `out/source-smoke/runs/ms34lrwa-cf3ac49f857dc7fc/projects/`；DOCX 与 EPUB 的 `project.json` 均记录 `app_version=0.1.0-alpha.3`、`integrity.source_hash_ok=true`，各有 4 次检查记录。`report_preview.pdf` 分别为 258,400 字节和 161,845 字节。完整身份为 `oak-rules 1.0.0`、`pinned=true`、release sequence 1，以及第 2 节列出的规则包/manifest digest。
+最新实际输出根为 `out/source-smoke/runs/ms37h0mu-201a90896825d190/projects/`；DOCX 与 EPUB 的 `project.json` 均记录 `app_version=0.1.0-alpha.4`、`integrity.source_hash_ok=true`，各有 4 次检查记录。`report_preview.pdf` 分别为 258,404 字节和 161,836 字节。完整身份为 `oak-rules 1.0.0`、`pinned=true`、release sequence 1，以及第 2 节列出的规则包/manifest digest。
 
 ### 首次失败与修复记录
 
@@ -182,14 +200,14 @@ SMOKE-RESULT: PASS
 
 | 工具 | 本轮事实 | 发布包事实 |
 |---|---|---|
-| EpubCheck 5.3.0 | Java 21 环境下真实运行；好样本通过、缺陷样本报告错误，双向状态矩阵通过 | alpha.3 完整分发和 JRE 已进入资源门禁，但尚无 alpha.3 包；来源/再分发和可信根审计未完成 |
-| Ace by DAISY 1.4.6 | tracked full lock、manifest 原始字节身份、空许可证拒绝和事务 stage 由默认回归覆盖；沙箱外隐藏 Chrome 的 `OAK_TEST_ACE=1` 好/坏样本真实通过 | alpha.3 生产闭包和隔离替换通过资源门禁，但尚无 alpha.3 包；helper/browser/OS 网络隔离/可信根、18 包原始许可证及全闭包人工审计未完成 |
+| EpubCheck 5.3.0 | Java 21 环境下真实运行；好样本通过、缺陷样本报告错误，双向状态矩阵通过 | alpha.4 完整分发和 JRE 已进入资源门禁，但尚无 alpha.4 包；来源/再分发和可信根审计未完成 |
+| Ace by DAISY 1.4.6 | tracked full lock、manifest 原始字节身份、空许可证拒绝和事务 stage 由默认回归覆盖；沙箱外隐藏 Chrome 的 `OAK_TEST_ACE=1` 好/坏样本真实通过 | alpha.4 生产闭包和隔离替换通过资源门禁，但尚无 alpha.4 包；helper/browser/OS 网络隔离/可信根、18 包原始许可证及全闭包人工审计未完成 |
 
-因此当前可以说“alpha.3 源码、标准身份链和 Windows 资源集已固定，开发环境真实工具测试与 alpha 门禁通过”，不能说“alpha.3 发布包已经生成或通过正式售卖验收”。
+因此当前可以说“alpha.4 源码、标准身份链、Electron 构建输入和 Windows 资源集已固定，开发环境真实工具测试与 alpha 门禁通过”，不能说“alpha.4 发布包已经生成或通过正式售卖验收”。
 
 ## 7. 尚未运行或尚未通过的发布级测试
 
-- 0.1.0-alpha.3 Windows unpacked / ZIP / NSIS：**未生成**，因此打包后资源门禁与 packaged smoke **未运行**；
+- 0.1.0-alpha.4 Windows unpacked / ZIP / NSIS：**未生成**，因此打包后资源门禁与 packaged smoke **未运行**；
 - Windows 干净系统首次安装、卸载、升级、无 Python/Node 环境运行：**未运行**；
 - Windows 代码签名与 SmartScreen 信誉：**未运行**；
 - macOS arm64 / x64：原生 runner、静态聚合、分架构 lock 路径和 CPython `3.13.14` 固定契约已实现；实际 Electron/Python/JRE 仍缺，构建、签名、公证、staple、Gatekeeper 和实机 smoke **未运行**；

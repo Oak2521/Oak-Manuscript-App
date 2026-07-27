@@ -4,9 +4,9 @@
 
 ## 当前版本与基线
 
-- 当前版本：`0.1.0-alpha.3`
+- 当前版本：`0.1.0-alpha.4`
 - 当前分支：`chatgpt/commercial-v1`
-- 源码检查点标签：`chatgpt-v0.1.0-alpha.3`，只标记源码与本地验证状态；尚无同版本安装包或 ZIP
+- 源码检查点标签：`chatgpt-v0.1.0-alpha.4`，只标记源码与本地验证状态；尚无同版本安装包或 ZIP
 - 商业版权威方案：`docs/湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`
 - 只读 Claude 基线：0.0.1，提交 `16736147ed734a3be3535d43152719cf4b97a07e`，标签 `claude-0.0.1-baseline`
 - 规则包仍为 `oak-rules 1.0.0`：35 条规则、6 个白名单机械 fixer；本轮没有扩大规则或白名单。
@@ -18,13 +18,13 @@
 | P0：集中预览与一次批量确认 | **完成（代码与测试）** | `plan-fixes` 只读；`fix` 强制 `plan_id`；全部离散修改可见；取消零写入 |
 | P0：事务批量修复 | **完成（正常异常模型）** | working / issues / project 失败回滚；已有 5 个检查点时恢复被裁剪目录 |
 | P0：检查点列表、撤销与恢复 | **完成（代码与测试）** | 完整状态快照；恢复前安全点；损坏项 UI 禁用；恢复失败项目树不变 |
-| P0：Node + Python 统一测试 | **完成（最新分项回归通过）** | Node 186 项：181 通过/0 失败/5 条件跳过；Python 312 项：0 失败/0 错误/3 条件跳过 |
-| P0：真实桌面 UI 冒烟 | **完成（alpha.3 PASS）** | 沙箱外隐藏 Electron 完成 DOCX + EPUB 全闭环；每次输出隔离在 `out/source-smoke/runs/<run-id>/`，并核对 APP/项目/检查/报告七字段标准身份 |
+| P0：Node + Python 统一测试 | **完成（最新分项回归通过）** | Node 239 项：233 通过/0 失败/6 条件跳过；Python 312 项：0 失败/0 错误/3 条件跳过 |
+| P0：真实桌面 UI 冒烟 | **完成（alpha.4 PASS）** | 沙箱外隐藏 Electron 完成 DOCX + EPUB 全闭环；每次输出隔离在 `out/source-smoke/runs/<run-id>/`，并核对 APP/项目/检查/报告七字段标准身份 |
 | P0：文档与测试基线纠错 | **完成** | 权威改为 v2.0；纠正“185 + Ace = 186”错误 |
 | Windows alpha 运行资源 | **完成（源码资源门禁）** | Python/JRE/EpubCheck/Ace 均有全量哈希/锁；Python 与 EpubCheck 双向探针实际执行并通过 |
 | Ace 正式发布条件 | **部分完成** | tracked full lock、生产闭包、隔离替换、空许可证拒绝和真实好/坏样本已验证；全闭包人工审计、受控 helper、自带浏览器、OS 网络隔离与可信根未完成 |
-| Windows NSIS / ZIP | **未完成** | 只有旧 0.0.1 便携包历史证据；提升权限构建完成 JRE/Ace staging 和资源探针后，仅因 `tools/electron-builder/win32-x64` 缺失停止，未生成产物 |
-| Windows sale 门禁 | **未通过（如实阻断）** | alpha 资源门禁运行探针通过；sale 门禁仍有 18 项 blocker，签名和正式审计未完成 |
+| Windows NSIS / ZIP | **未完成** | 安全 builder 导入器已实现；真实三归档、工具树与独立 tracked lock 缺失，包装器在 electron-builder 启动前 fail-closed，未生成产物 |
+| Windows sale 门禁 | **未通过（如实阻断）** | alpha 资源门禁运行探针通过；Electron 全树锁关闭 1 项，sale 门禁仍有 17 项 blocker，签名和正式审计未完成 |
 | macOS arm64/x64 安装版 | **基础设施完成，发行未完成** | 已拆原生 x64/arm64 runner；静态聚合不执行探针；缺 Electron/Python/JRE、`.app`/DMG、签名、公证和真实硬件证据 |
 | 标准包本地验证、升级与回滚 | **完成（代码与测试）** | canonical manifest、签名/CAS/高水位/回滚、项目七字段 pin、差异确认、升级后强制重检均已实现；生产 trust pin 与联网传输未实现 |
 | 标准与规则补全 | **治理结构完成，内容补全未完成** | 13 标准/35 规则/6 fixer 映射一致；外部来源核验 0 项，4 项仍 under_review，真实审校签核与多类标准深度不足 |
@@ -34,24 +34,30 @@
 
 ## 最新测试基线
 
-- 原生/沙箱外 `npm test`：**PASS**。Node TAP 共 186 项，181 通过、0 失败、5 项条件跳过；Python 共 312 项，0 失败、0 错误、3 项条件跳过。
-- `python scripts/run_tests.py`：**共 312 项，0 失败、0 错误、3 项条件跳过，77.755 秒**。
-- 沙箱外隐藏 Chrome `$env:OAK_TEST_ACE='1'; python scripts\run_tests.py`：**312 项，0 失败、0 错误、1 项条件跳过，46.321 秒**；受限运行器无法生成安全报告时，核心按设计返回 `not_run`，不记作工具通过或代码失败。
+- `npm run test:node`：**PASS**。Node TAP 共 239 项，233 通过、0 失败、6 项条件跳过，2.606 秒。
+- Electron runtime 锁专项：**37 项、36 通过、0 失败、1 条件跳过**；hardlink 与 junction 反向路径本机实测通过，文件 symlink 因 Windows `EPERM` 条件跳过，不计作通过。
+- 最终 `npm test`：**PASS**；Node 239/233/0/6，Python 312 项、0 失败、0 错误、3 项条件跳过，Python 段 80.125 秒。
+- 沙箱外隐藏 Chrome `$env:OAK_TEST_ACE='1'; npm run test:python`：**312 项，0 失败、0 错误、1 项条件跳过，44.807 秒**；同一命令在受限沙箱中因无法生成安全报告出现 2 个 `not_run` 断言失败，随后沙箱外真实执行通过，不能把受限失败写成工具通过。
 - `npm run verify:standards`：**PASS**；manifest SHA-256 `d33534f081b2122a90652ee03304a0e71177a7fd0d3130fffe77b0fea807d7af`，规则包 SHA-256 `7ac5a5bdb126e9f5148a040ce42a634b1a95295c27d7a72c774db54bf7129542`。
-- 沙箱外隐藏 Electron `npm run smoke`：**SMOKE-RESULT PASS**；最新输出为 `out/source-smoke/runs/ms34lrwa-cf3ac49f857dc7fc/projects/`，两个项目均为 `app_version=0.1.0-alpha.3`、`integrity.source_hash_ok=true`、4 次检查记录，且 APP/项目/当前检查/报告七字段标准身份一致；DOCX/EPUB PDF 分别 258,400 / 161,845 字节。
+- `npm run verify:electron-runtime`：**PASS**；Electron 43.1.0 win32-x64 固定锁覆盖 2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95`；tracked manifest 使用严格 JSON、exact schema 和 canonical UTF-8/LF 原始字节。
+- 沙箱外隐藏 Electron `npm run smoke`：**SMOKE-RESULT PASS**；最新输出为 `out/source-smoke/runs/ms37h0mu-201a90896825d190/projects/`，两个项目均为 `app_version=0.1.0-alpha.4`、`integrity.source_hash_ok=true`、4 次检查记录，且 APP/项目/当前检查/报告七字段标准身份一致；DOCX/EPUB PDF 分别 258,404 / 161,836 字节。
 - 当前测试环境：Windows 11，Python 3.14.6，Node 24.16.0，npm 11.13.0，Electron 43.1.0，Java 21.0.11。
 - Windows alpha 资源门禁：**PASS**。
   - Python：34 个文件 / 21,260,753 字节；
   - JRE：207 个文件 / 52,384,264 字节；
   - EpubCheck：49 个文件 / 36,263,890 字节；
   - Ace：236 个包 / 6,672 个文件 / 58,964,235 字节。
-- Windows sale 资源门禁：**按设计 FAIL**，18 项正式发布 blocker 尚未关闭。
-- 提升权限 `npm run build:win`：完成本地 JRE/Ace staging 和 Windows alpha 资源探针，随后仅在缺少 `tools/electron-builder/win32-x64` 处明确停止；没有联网，也没有 alpha.3 安装包或 ZIP。
+- Windows sale 资源门禁：**按设计 FAIL**，17 项正式发布 blocker 尚未关闭；`ELECTRON_RUNTIME_TRUST_ROOT_NOT_HARDENED` 已由本次全树锁证据关闭，Electron provenance 与签名仍保留。
+- `node scripts/run_electron_builder.js --win --x64`：在启动 electron-builder 前因真实工具树和 tracked lock 缺失明确退出 1；没有联网，也没有 alpha.4 安装包或 ZIP。
 - macOS：`verify:resources:mac:static` 可执行并按预期 FAIL，精确缺 darwin-x64/arm64 Electron dist、两架构 Python runtime 锁和两架构 JRE；未构建、未签名、未公证、未运行打包版 smoke。
 - 详细证据与首次失败修复记录见 `docs/TEST_REPORT.md`。
 
 ## 本轮关键实现
 
+- Electron 43.1.0 win32-x64 由受版本控制的完整树锁固定；tracked manifest 严格拒绝重复键/未知字段并固定 canonical UTF-8/LF 字节；默认验证只读，`electronDist` 验证失败返回不存在 sentinel，禁止 builder 下载回退；packaged 资源门禁重验仓库源码构建输入而不信任可写包内自报；
+- Electron manifest 的显式 `--update-lock` 先验证安全父链并拒绝目标 symlink/hardlink，再以独占候选文件、`fsync`、原子替换和换入后复验提交；失败恢复旧字节，回滚自身失败会明确报错并保留事务证据；
+- Windows builder 导入器独立固定三份 legacy 归档名称/哈希与本地 7z 字节；解压前后做清单、路径、链接、大小及哈希门禁，拒绝 UNC/device 来源；工具树 manifest 与 tracked lock 双向绑定，只有显式 `--update-lock` 才能联合事务换入；
+- builder verifier 对不安全祖先路径在任何读取前 fail-closed；旧工具树/lock 在 rename 前做完整预检；4 个前向和 4 个回滚 rename 失败均有故障注入，前向失败恢复旧资产，回滚自身失败保留恢复证据；
 - 标准资产采用 schema 2.0 注册表、35 规则能力映射和 canonical release manifest；内置 release 的 manifest/规则包摘要分别固定为 `d33534f…d7af` / `7ac5a5bd…9542`；
 - Electron `StandardsStore` 对严格 payload、Ed25519 门槛签名、内容寻址目录、高水位、撤回/过期/兼容范围、签署回滚目标、跨进程事务 owner token 与崩溃恢复做 fail-closed 验证；未知状态或 identity 撕裂不自动修复；
 - `StandardsProvider` 支持离线内置启动、本地签名包预览/安装和全局回滚；当前没有代码固定的生产 trust digest，所以真实本地签名包导入默认禁用；没有标准包联网检查或下载；
@@ -75,7 +81,7 @@
 - JRE 的 runtime+tracked lock 与 Ace 的 stage+tracked lock 均事务换入，任一提交失败会恢复原目录和原锁；
 - macOS 采用 x64/arm64 分架构 Python/JRE 锁、原生构建/探针 runner 和不执行探针的跨主机静态聚合，不把 Windows 资源或静态结果误写为 macOS 运行验证；
 - Electron smoke 分别断言 Electron `appVersion`、Python 核心实际 manifest/report 的 `app_version`，以及 APP/项目/检查/导出报告的七字段标准身份；打包版模式还必须证明 `app.isPackaged`；
-- 当前 18 项 sale blocker 由门禁机器可读地保留，不允许 alpha 通过掩盖正式售卖责任。
+- 当前 17 项 sale blocker 由门禁机器可读地保留，不允许 alpha 通过掩盖正式售卖责任。
 
 上一阶段保留的批量修复实现：
 
@@ -92,10 +98,11 @@
 
 按 v2.0 方案直接继续 Windows 可安装 alpha 和正式发布阻断项，不重新规划总体路线：
 
-1. 经用户授权联网后，下载并锁定 Windows builder 的 NSIS、NSIS resources、rcedit 和签名工具到 `tools/electron-builder/win32-x64`；
-2. 生成 alpha.3 NSIS + ZIP，逐个执行打包后资源门禁、版本/packaged 身份断言和完整 smoke；
-3. 生成 SHA-256 与资源清单，并在干净 Windows 环境完成安装、升级、卸载和无系统 Python/Node 验证；
-4. 逐项关闭 18 个 sale blocker；源码标签和 alpha 产物不得表述为可售卖正式版。
+1. 经用户授权联网后，仅下载三份已固定名称与 SHA-256 的 Windows builder 原始归档；
+2. 离线复核后显式运行 `node scripts/import_windows_builder_toolchain.js --archive-dir <目录> --update-lock`，提交并复核真实工具树独立 lock；
+3. 生成 alpha.4 NSIS + ZIP，逐个执行打包后资源门禁、版本/packaged 身份断言和完整 smoke；
+4. 生成 SHA-256 与资源清单，并在干净 Windows 环境完成安装、升级、卸载和无系统 Python/Node 验证；
+5. 逐项关闭 17 个 sale blocker；源码标签和 alpha 产物不得表述为可售卖正式版。
 
 如构建需要联网下载、安装新依赖、签名或发布，先取得用户授权。
 
@@ -105,7 +112,7 @@
 - Ace 已脱离开发树依赖，但仍使用通用 helper 和用户系统 Chrome；最小权限 helper、自带浏览器、OS 级默认拒绝网络及可信根加固未完成；
 - Ace 有 18 个依赖包只有生成的许可证通知，且整个 236 包生产闭包的来源、许可证、版权与再分发义务均尚需正式人工审计；
 - CPython、EpubCheck、Temurin JDK/JRE、Electron 与 builder 工具链的官方来源和再分发/校验证据尚需人工审计；Python、EpubCheck、JRE、Ace、Electron 和 loose app resources 等信任根尚未完成签名/asar integrity/fuses 加固；
-- Windows Authenticode 和安装包签名尚未完成；alpha.3 没有安装包或 ZIP；
+- Windows Authenticode 和安装包签名尚未完成；alpha.4 没有安装包或 ZIP；
 - 标准治理 schema、完整身份和本地升级链已实现，但没有任何外部来源完成核验，4 项外部标准仍在审阅，reviewer 仅为角色占位，GB/T、APA、Chicago、EPUB、TXT/Markdown、纸质出版和可访问性覆盖仍不够，不能宣传为“标准库完整”；
 - 标准包生产 trust pin、联网检查/下载和签名撤回分发尚未实现；当前本地签名包导入按设计禁用；
 - Windows 开发机无法替代真实 macOS 构建、签名、公证和实机 smoke；
@@ -114,6 +121,7 @@
 
 ## 历史里程碑
 
+- 2026-07-27：推进到 `0.1.0-alpha.4`；完成 Electron 43.1.0 Windows 全树锁、严格/canonical tracked manifest 与安全原子更新事务，以及 Windows builder 固定归档安全导入器、独立 tracked lock 合同、旧资产预检及完整 rename/rollback 故障矩阵；Node 239、Python 312、真实 Ace 与隐藏 Electron smoke 通过；sale blocker 降为 17；真实 builder 归档和二进制仍缺。
 - 2026-07-27：推进到 `0.1.0-alpha.3`；完成 standards schema 2.0、canonical manifest、能力映射、本地签名/CAS/高水位/回滚存储、七字段项目 pin、显式升级、强制重检与逐报告身份诊断；统一回归 Node 186、Python 312，真实 Ace 与隐藏 Electron smoke 通过；仍无 alpha.3 二进制、生产标准 trust pin 或联网更新。
 - 2026-07-27：推进到 `0.1.0-alpha.2`；完成 Windows Python/JRE/EpubCheck/Ace 全量资源锁、运行探针 alpha 门禁、默认离线 Electron、受限 PDF、项目 schema/路径验证、跨进程写锁、无污染单 FD 创建与安全导出；保留 18 项 sale blocker；建立 macOS 分架构原生 runner 与静态聚合边界；因 `tools/electron-builder/win32-x64` 缺失，未生成新二进制。
 - 2026-07-26：完成 `0.1.0-alpha.1` P0 可信批量修复、检查点恢复、Node 测试和真实 UI 冒烟。

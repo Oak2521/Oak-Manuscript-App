@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.3` 源码检查点已实现的桌面隐私与安全边界。当前没有 alpha.3 安装包或 ZIP；商业方案中的 Web 上传、统一账号、订阅与同步尚未实现，必须在各自阶段另行完成威胁建模和验收。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.4` 源码检查点已实现的桌面隐私与安全边界。当前没有 alpha.4 安装包或 ZIP；alpha.4 不改变项目格式或标准内容。商业方案中的 Web 上传、统一账号、订阅与同步尚未实现，必须在各自阶段另行完成威胁建模和验收。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -64,7 +64,8 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 
 ## 9. 运行时完整性与执行顺序
 
-- CPython、EpubCheck、JRE 和 Ace 的完整文件集合、大小与 SHA-256 均被清单覆盖；目标平台相关锁按 `platform/arch` 分开选择。Windows 锁不能替代 macOS 锁。
+- CPython、EpubCheck、JRE、Ace 和 Electron 的完整文件集合、大小与 SHA-256 均被清单覆盖；目标平台相关锁按 `platform/arch` 分开选择。Windows 锁不能替代 macOS 锁。Electron 43.1.0 `win32-x64` 锁固定 2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95`；tracked manifest 必须通过严格 JSON 重复键拒绝、exact schema 与 canonical UTF-8/LF 原始字节校验，`electronDist` 返回构建输入前必须重新验证该锁。
+- Electron tracked manifest 默认只读；只有显式 `--update-lock` 才能更新。更新前验证完整安全父链与 realpath，拒绝目标 symlink/hardlink；候选文件独占创建、写入并 `fsync`，复核后原子替换并做换入后全量验证。任一步失败恢复旧字节；回滚自身失败必须明确报错并保留事务证据，不能静默留下撕裂状态。
 - 资源门禁先做不启动任何运行时的全量静态验证；只有**全部**静态错误为零，才执行 Python 版本探针及 JRE/EpubCheck 好样本/缺陷样本探针。静态校验失败必须阻止执行可疑二进制。
 - 运行探针只能在与目标相同的原生 platform/arch 上执行；非原生 host 必须失败。跨主机纯静态检查须显式使用 `--no-runtime-probe`，其通过不构成运行证据。
 - Windows 嵌入式 Python 的 `python313._pth` 只允许标准库 ZIP、当前目录和受控 `../python` 核心路径，并禁止 `import site`，避免继承用户安装包与启动钩子。
@@ -72,6 +73,8 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - Java 与 Ace/Node/Electron 外部工具进程也清理类路径、模块和启动参数注入变量，并以固定参数数组、`shell=false` 启动。
 - 所有锁和清单使用 locale-independent UTF-16 code unit 排序；Ace tracked lock 同时固定 stage manifest 原始字节哈希，JSON 语义等价但字节漂移也拒绝。JRE/Ace 的候选 stage 与受版本控制锁在显式更新时事务提交，失败恢复旧目录和旧锁，避免身份撕裂。
 - Ace 的空/未知 license 声明和空许可证文件直接拒绝。现有许可证文件或生成元数据通知只满足 alpha 可追溯性；全部 236 包仍需正式逐包人工审计。
+- Windows builder 导入器独立固定三份归档的名称和 SHA-256，只接受显式 `--archive-dir`，拒绝 UNC/设备形式（包括直接网络共享写法）、未知归档、路径穿越、链接/reparse、备用流、加密条目、Windows 名称冲突和解压膨胀。普通构建不会调用导入器；只有显式 `--update-lock` 才可建立或更新独立 tracked lock。候选/旧工具树与候选/旧锁在换入前完整预检，全部 forward rename 和 rollback rename 故障路径均 fail-closed；回滚失败会保留人工恢复证据。路径字符串不能识别映射为盘符的网络共享，实际导入必须人工确认使用本地非映射目录。
+- 上述 builder 契约不等于工具链已经取得：当前三份真实归档、`tools/electron-builder/win32-x64` 工具树和 `config/tool-manifests/electron-builder-win32-x64.json` tracked lock 均不存在，不能绕过门禁或把测试夹具当作发布资产。
 
 ## 10. 标准包、项目 pin 与升级安全
 
@@ -86,4 +89,4 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 
 ## 11. Alpha 与正式售卖可信根
 
-当前全量锁能发现本地资源漂移，但 Ace full lock、Python/JRE/EpubCheck 锁及 loose 应用资源尚未锚定到代码签名、asar integrity 与 Electron fuses 共同保护的不可篡改可信根；Electron 分发和 builder 工具链也缺正式来源/全树可信锁。CPython、EpubCheck、Temurin JDK/JRE 与 Ace 依赖的来源、许可证和再分发材料仍需正式审计。`alpha` 门禁会显式报告这些阻断，`sale` 门禁会将当前 18 项 Windows 阻断提升为错误。Windows Authenticode、macOS 签名/公证和对应实机验证完成前，不得宣称为可售卖正式版。
+当前全量锁能发现本地资源漂移，但 Ace full lock、Python/JRE/EpubCheck 锁及 loose 应用资源尚未锚定到代码签名、asar integrity 与 Electron fuses 共同保护的不可篡改可信根。Electron 43.1.0 `win32-x64` 分发已新增受版本控制的全树锁，因此对应的 `ELECTRON_RUNTIME_TRUST_ROOT_NOT_HARDENED` 阻断已用本次实际锁验证证据关闭；Electron 官方来源、上游校验和与再分发证据仍未完成，provenance 阻断继续保留。builder 导入器和独立锁契约已经实现，但真实归档、工具树与 tracked lock 尚缺，不能关闭 builder 的来源或可信根阻断。CPython、EpubCheck、Temurin JDK/JRE 与 Ace 依赖的来源、许可证和再分发材料仍需正式审计。`alpha` 门禁会显式报告这些阻断，`sale` 门禁会将当前 17 项 Windows 阻断提升为错误。Windows Authenticode、macOS 签名/公证和对应实机验证完成前，不得宣称为可售卖正式版。

@@ -56,4 +56,4 @@ release/     # 发布产物（不入库）
 
 ## 6. 里程碑与当前阶段
 
-当前开发版本为 `0.1.0-alpha.3`。P0 已完成离线发布资源可信链，以及标准包本地验证、版本固定、显式项目升级与回滚链路；具体事实仍须以代码、`npm test` 和 `docs/DEVELOPMENT_STATUS.md` 交叉核对。标准包联网获取与生产信任根、Windows 正式安装器、macOS 可安装版本、Web、统一账号、订阅和结果同步仍未完成，未经真实验收不得写成已完成。
+当前开发版本为 `0.1.0-alpha.4`。P0 已完成离线发布资源可信链、标准包本地验证、版本固定、显式项目升级与回滚链路，并为 Windows x64 Electron 运行时加入受版本控制的全树锁；该 tracked manifest 使用严格 JSON、精确 schema 和唯一 canonical UTF-8/LF 字节，显式更新采用安全父链、独占候选写入、`fsync`、原子替换、换入后复验与失败回滚。Windows builder 的固定归档安全导入器已实现，但真实归档、工具树和独立 tracked lock 尚未取得或生成。具体事实仍须以代码、`npm test` 和 `docs/DEVELOPMENT_STATUS.md` 交叉核对。标准包联网获取与生产信任根、Windows 正式安装器、macOS 可安装版本、Web、统一账号、订阅和结果同步仍未完成，未经真实验收不得写成已完成。

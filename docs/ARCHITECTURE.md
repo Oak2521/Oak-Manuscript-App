@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.3` 源码检查点架构；本轮尚未生成 alpha.3 Windows 安装器或 ZIP。本地标准验证、项目固定版本、显式升级与回滚已实现；联网标准获取、生产信任根、macOS、Web、统一账号、订阅与同步仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.4` 源码检查点架构；本轮尚未生成 alpha.4 Windows 安装器或 ZIP。本地标准验证、项目固定版本、显式升级与回滚已实现；alpha.4 只加固发布资源可信链，不改变项目格式或标准内容。联网标准获取、生产信任根、macOS、Web、统一账号、订阅与同步仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -140,9 +140,9 @@ PDF 使用无 `persist:` 前缀且禁缓存的专用 session，禁 JavaScript、
 - Python 退出码 1 是有效业务结果，退出码 2 是运行错误；结构化 `code/message/retryable/details` 贯通到 IPC；
 - 统一测试入口为 `npm test`（Node 契约与 UI 结构测试 + Python 核心测试）；分项为 `npm run test:node`、`npm run test:python`。
 
-## 5. 发布资源可信链（0.1.0-alpha.3）
+## 5. 发布资源可信链（0.1.0-alpha.4）
 
-Windows alpha 资源不是靠“目录存在”通过门禁，而是由四组全量清单固定：
+Windows alpha 资源不是靠“目录存在”通过门禁，而是由五组全量清单固定：
 
 | 资源 | 固定方式 | 当前 Windows 状态 |
 |---|---|---|
@@ -150,10 +150,17 @@ Windows alpha 资源不是靠“目录存在”通过门禁，而是由四组全
 | EpubCheck 5.3.0 | `config/tool-manifests/epubcheck-5.3.0.json` 固定 JAR、完整依赖闭包及许可证材料 | 49 个文件均纳入清单 |
 | Temurin JRE 21.0.11+10 | JRE 自带 `manifest.json` 固定生成产物；仓库 `config/tool-manifests/jre-<platform>-<arch>.json` 另行固定源 JDK 与 JRE manifest | `win32-x64` 锁存在；固定保守模块集合 |
 | Ace 1.4.6 | `tools/ace/manifest.json` 描述阶段产物；受版本控制的 `config/tool-manifests/ace-1.4.6.json` 另行固定 stage manifest 原始字节哈希、236 包闭包、全部文件与补丁 | Node 门禁和 Python 实际运行路径均复核 full lock；语义相同但原始字节漂移也拒绝；正式可信根签名及 236 包逐包人工审计仍未完成 |
+| Electron 43.1.0 | `config/tool-manifests/electron-43.1.0-win32-x64.json` 以 `package-lock.json` 的精确版本为起点，固定完整目录树、文件大小和 SHA-256；tracked manifest 必须通过严格 JSON、exact schema 与 canonical UTF-8/LF 字节校验；`electronDist` 返回前强制复核 | `win32-x64` 已固定 2 个目录、75 个文件、364,083,658 字节；manifest SHA-256 为 `ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95`；链接/reparse、硬链接、漏列、多列及哈希/大小漂移均 fail-closed |
 
 所有平台相关锁按 `platform/arch` 选择，不能用 Windows 锁替代 macOS 锁。当前仓库没有 `darwin-x64`、`darwin-arm64` 的 Python/JRE 运行资源和对应锁；macOS 门禁因此应当失败关闭，而不是跳过。
 
 所有会进入哈希或锁身份的目录与清单统一按 JavaScript UTF-16 code unit 比较排序，不使用随操作系统、ICU 或用户 locale 改变的 `localeCompare`。JRE 和 Ace 的 staging 先在候选目录完成；显式更新锁时，stage 目录与受版本控制锁作为一个事务提交，任一步失败恢复旧目录和旧锁，不能留下“新运行时 + 旧锁”或相反组合。普通 staging 只接受已存在且匹配的锁。
+
+Electron tracked manifest 的显式 `--update-lock` 使用单文件安全更新事务：先验证完整父链和 realpath，拒绝目标 symlink 或多链接文件；候选文件以独占创建写入 canonical 字节并 `fsync`，复核父链与目标身份后原子替换，再对换入文件做严格 JSON、exact schema、canonical 字节和运行时全树复验。任一步失败恢复原始字节；若回滚自身失败，则保留候选/备份等事务证据并明确失败，不能把身份撕裂写成成功。
+
+Windows electron-builder 工具链使用独立的受控导入契约，不由普通构建自动下载或“扫描后自证”。`builder_toolchain_contract.js` 固定三份旧版上游归档及 SHA-256：`nsis-3.0.4.1.7z` / `9877df902530f96357d13a7a31ae2b9df67f48b11ffc9a1700a7c961574ec5fa`、`nsis-resources-3.4.1.7z` / `593a9a92ef958321293ac6a2ee61e64bf1bd543142a5bd6b3d310709cc924103`、`winCodeSign-2.6.0.7z` / `cdaec7154dda7cc31f88d886e2489379a0625a737d610b5ae7f62a12f16743a4`。导入器只接受显式 `--archive-dir`，拒绝 UNC/设备形式（包括直接网络共享写法）、未知归档、路径穿越、链接/reparse、备用流、加密条目、Windows 名称冲突、过量条目和解压膨胀；固定 7z 解压器本身也先按代码内摘要复核。仅凭路径字符串无法识别映射成盘符的网络共享，因此实际导入还必须由操作者选择本地非映射目录；当前没有自动导入入口。
+
+首次建立或审计更新工具树与独立 tracked lock 必须显式传入 `--update-lock`。候选树先完整预检，再共同换入 `tools/electron-builder/win32-x64` 与 `config/tool-manifests/electron-builder-win32-x64.json`；旧树、旧锁、候选树、候选锁的全部 forward rename 与 rollback rename 故障均有注入测试。回滚本身失败时保留恢复证据并明确报错，不能假装事务成功。当前这些代码和测试已存在，但三份真实归档、实际工具树与 tracked lock 均不存在，因此普通构建仍应 fail-closed。
 
 资源门禁分成两个阶段：
 
@@ -176,4 +183,5 @@ Windows alpha 资源不是靠“目录存在”通过门禁，而是由四组全
 - 源码 smoke 与打包 smoke 都通过 `app:info` 核对 Electron 版本和 freshly verified `standardIdentity`；随后读取本次真实生成的 `project.json`、检查记录和导出 `report.json`，核对 Python core 版本、check ID 及四方七字段身份一致。打包 smoke 还强制证明 `app.isPackaged=true`，防止把旧版、陈旧 core 或错误规则包误记为新打包版。
 - 源码 smoke 每次生成独立 `out/source-smoke/runs/<run-id>/`，项目、标准 store、缓存、临时目录、用户数据、HOME/APPDATA/XDG 与 crash dumps 不复用；打包 smoke 同样按运行 ID 隔离并受仓库 `out/` 边界控制。Windows EXE 还须先通过 x64 PE32+ 校验。
 - macOS 构建拆为 `build:mac:x64` 与 `build:mac:arm64`；聚合入口 `build:mac` 只选择当前原生 host 架构，不在一个进程伪造双架构探针。`verify:resources:mac` 只是带 `--no-runtime-probe` 的跨架构静态聚合，不能替代两个原生 runner 的执行证据。
-- 当前 alpha.3 具备源码、标准本地可信链、Windows 本地资源和门禁；离线 electron-builder 工具链、Windows 签名和实际 alpha.3 制品尚缺。macOS 分架构配置已存在，但运行资源、原生构建、签名、公证、Gatekeeper 与实机 smoke 均未完成。
+- alpha.4 隐藏源码 smoke 已 PASS：`out/source-smoke/runs/ms37h0mu-201a90896825d190/projects/` 中 DOCX/EPUB 各有 4 次检查、`source_hash_ok=true`，PDF 分别为 258,404 / 161,836 字节。最终 `npm test` 为 Node 239 total / 233 pass / 0 fail / 6 skip（2.606 秒），Python 312 / 0 failures / 0 errors / 3 skipped（Python 段 80.125 秒）；真实 Ace 沙箱外隐藏 Chrome 为 312 / 0 / 0 / 1（44.807 秒）。Electron runtime 锁专项为 37 / 36 / 0 / 1，hardlink 与 junction 本机实测通过，文件 symlink 因 Windows `EPERM` 条件跳过。
+- 当前 alpha.4 具备源码、标准本地可信链、Windows 本地资源门禁、Electron 运行时全树锁和 builder 安全导入契约；真实离线 builder 归档/工具树/tracked lock、Windows 签名和实际 alpha.4 制品尚缺。Windows sale 门禁仍有 17 项阻断。macOS 分架构配置已存在，但运行资源、原生构建、签名、公证、Gatekeeper 与实机 smoke 均未完成。
