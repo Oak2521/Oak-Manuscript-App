@@ -1,6 +1,6 @@
 # tests/ — Node 契约、发布资源与打包验证
 
-`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.12 最终统一结果为 Node **306 total / 300 pass / 0 fail / 6 skip / 3.096 秒**，Python **351 项 / 0 失败 / 0 错误 / 3 跳过 / 39.652 秒**，墙钟 89.434 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
+`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.13 最终统一结果为 Node **310 total / 303 pass / 0 fail / 7 skip / 3.236 秒**，Python **351 项 / 0 失败 / 0 错误 / 3 跳过 / 104.469 秒**，墙钟 157.8 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
 
 本目录覆盖：
 
@@ -8,7 +8,7 @@
 - 默认引用解析 IPC/UI 的计划—确认顺序、六种体例参数白名单、packaged smoke 同契约，以及切换稿件/项目时清空旧 session；
 - Auth 登录/退出/过期/撤销状态、Free/Pro/宽限/过期权益、SyncRecord v1 exact schema 和反内容泄露、可信来源 IPC、伪造 Renderer 负载拒绝、四选一授权、幂等队列与安全 UI 渲染；
 - Electron 默认 session 离线 switches/网络请求拦截、Renderer CSP、源码 smoke 的 `out/source-smoke/` 路径边界；
-- ASAR/integrity 与 Electron fuse exact 配置、真实二进制 wire 读取、未知 fuse 的 alpha blocker/sale fail-closed、文件身份和构建顺序；
+- ASAR/integrity、顶层 2.1.3 afterPack 全 9 fuse 严格写入/回读、未来未知 fuse 的 alpha/sale fail-closed、实际 Framework 文件身份和构建顺序；
 - ASAR 内资源锚点、58 文件应用 loose 清单、四类平台锁绑定、真实 `app.asar` 读取、loose 伪锚点拒绝、启动前验证及 5 个可信根 blocker 的严格关闭条件；
 - Ace 外部验证 IPC 的可信项目来源、Python plan/prepare/finalize 绑定、固定 utilityProcess、注入环境清理、输出/时间上限、受控 loopback Chrome、精确 child/profile 清理及路径换入拒绝；
 - PDF 非持久隔离 session、禁 JavaScript/导航/网络、报告身份快照、项目/`exports` 父链校验、链接/硬链接/目录换入拒绝和原子 writer；
@@ -29,6 +29,6 @@
 
 Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零污染创建、锁内单 FD 输入、OneDrive/reparse 来源、精确失败清理和安全原子导出覆盖在 `python/tests/test_project_validation.py` 与 `python/tests/test_project_write_lock.py`。
 
-真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。alpha.12 packaged smoke 强制通过受控链路运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言；缺失或陈旧 EXE 不得复用。
+真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。alpha.13 packaged smoke 强制通过受控链路运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言；缺失或陈旧 EXE 不得复用。
 
-alpha.12 隐藏 packaged smoke 为 **PASS**，运行根为 `out/packaged-smoke/runs/ms4lg2cv-ab0de58b69b46495/projects/`；DOCX/EPUB 均先确认引用计划，各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，且 EPUB 外部工具确实运行。退出后项目路径进程残留为 0。
+alpha.13 最终隐藏 packaged smoke 为 **PASS**，运行根为 `out/packaged-smoke/runs/ms4mqaar-f6f3d43d55a2726d/projects/`；DOCX/EPUB 均先确认引用计划，各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，且 EPUB 外部工具确实运行。退出后项目路径进程残留为 0。

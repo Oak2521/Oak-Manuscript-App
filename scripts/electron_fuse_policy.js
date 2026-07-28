@@ -2,7 +2,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
-const { getCurrentFuseWire } = require("@electron/fuses");
+const { getCurrentFuseWire, pathToFuseFile } = require("@electron/fuses");
 const { ensureSafeDirectoryChain } = require("./safe_tracked_file");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
@@ -10,6 +10,7 @@ const ENABLE = "1".charCodeAt(0);
 const DISABLE = "0".charCodeAt(0);
 const REMOVED = "r".charCodeAt(0);
 const INHERIT = 0x90;
+const FUSE_POLICY_VERSION = "1.1";
 
 // Ace 已迁移到受控 utilityProcess；所有已知 fuse 均显式固定，避免默认值漂移。
 const EXPECTED_FUSE_CONFIG = Object.freeze({
@@ -33,6 +34,7 @@ const KNOWN_FUSES = Object.freeze([
   [5, "OnlyLoadAppFromAsar", true],
   [6, "LoadBrowserProcessSpecificV8Snapshot", false],
   [7, "GrantFileProtocolExtraPrivileges", false],
+  [8, "WasmTrapHandlers", true],
 ]);
 
 class FusePolicyError extends Error {
@@ -60,6 +62,9 @@ function exactKeys(value, expected, label) {
 
 function verifyBuilderFuseConfiguration(build) {
   exactObject(build, "build");
+  if (build.afterPack !== "scripts/after_pack.js") {
+    throw new FusePolicyError("正式打包必须注册完整 fuse afterPack 写入与回读门禁");
+  }
   if (build.asar !== true) throw new FusePolicyError("正式打包必须显式启用 ASAR");
   if (build.disableAsarIntegrity !== false) {
     throw new FusePolicyError("正式打包不得关闭 ASAR 完整性元数据");
@@ -73,7 +78,7 @@ function verifyBuilderFuseConfiguration(build) {
   }
   return {
     ok: true,
-    policy_version: "1.0",
+    policy_version: FUSE_POLICY_VERSION,
     asar: true,
     embedded_asar_integrity: true,
     only_load_app_from_asar: true,
@@ -95,7 +100,7 @@ function verifyFuseWire(wire, { releaseTier = "sale" } = {}) {
   const knownIndices = new Set(KNOWN_FUSES.map(([index]) => String(index)));
   const report = {
     ok: true,
-    policy_version: "1.0",
+    policy_version: FUSE_POLICY_VERSION,
     fuse_wire_version: wire.version,
     known_fuses: [],
     unknown_fuses: [],
@@ -159,36 +164,47 @@ function assertInside(root, target) {
   }
 }
 
-async function verifyPackagedFuseBinary(executable, {
-  root = PROJECT_ROOT,
-  releaseTier = "sale",
-  readWire = getCurrentFuseWire,
-} = {}) {
+function assertSafePackagedFuseFile(target, { root = PROJECT_ROOT, label = "Electron fuse 文件" } = {}) {
   const projectRoot = path.resolve(root);
-  const absolute = path.resolve(executable);
+  const absolute = path.resolve(target);
   assertInside(projectRoot, absolute);
-  ensureSafeDirectoryChain(projectRoot, path.dirname(absolute), {
-    label: "打包可执行文件父目录",
-  });
-  const before = fs.lstatSync(absolute, { bigint: true, throwIfNoEntry: false });
-  if (!before || !before.isFile() || before.isSymbolicLink() ||
-      before.size <= 0n || before.nlink !== 1n) {
-    throw new FusePolicyError("打包可执行文件必须是非空、单链接常规文件且不得为链接或硬链接");
+  ensureSafeDirectoryChain(projectRoot, path.dirname(absolute), { label: `${label}父目录` });
+  const stat = fs.lstatSync(absolute, { bigint: true, throwIfNoEntry: false });
+  if (!stat || !stat.isFile() || stat.isSymbolicLink() || stat.size <= 0n || stat.nlink !== 1n) {
+    throw new FusePolicyError(`${label}必须是非空、单链接常规文件且不得为链接或硬链接`);
   }
   const expectedReal = path.join(
     fs.realpathSync.native(projectRoot),
     path.relative(projectRoot, absolute),
   );
   if (normalized(fs.realpathSync.native(absolute)) !== normalized(expectedReal)) {
-    throw new FusePolicyError("打包可执行文件经过链接或 reparse 重定向");
+    throw new FusePolicyError(`${label}经过链接或 reparse 重定向`);
   }
+  return { absolute, stat };
+}
+
+async function verifyPackagedFuseBinary(executable, {
+  root = PROJECT_ROOT,
+  releaseTier = "sale",
+  readWire = getCurrentFuseWire,
+  resolveFuseFile = pathToFuseFile,
+} = {}) {
+  const projectRoot = path.resolve(root);
+  const absolute = path.resolve(executable);
+  assertSafePackagedFuseFile(absolute, { root: projectRoot, label: "打包可执行文件" });
+  const fuseFile = path.resolve(resolveFuseFile(absolute));
+  const { stat: before } = assertSafePackagedFuseFile(fuseFile, {
+    root: projectRoot,
+    label: "实际 Electron fuse 文件",
+  });
   const wire = await readWire(absolute);
-  const after = fs.lstatSync(absolute, { bigint: true, throwIfNoEntry: false });
+  const after = fs.lstatSync(fuseFile, { bigint: true, throwIfNoEntry: false });
   if (!sameIdentity(before, after)) {
-    throw new FusePolicyError("打包可执行文件在 fuse 读取期间发生身份变化");
+    throw new FusePolicyError("实际 Electron fuse 文件在读取期间发生身份变化");
   }
   return {
     executable: path.relative(projectRoot, absolute).split(path.sep).join("/"),
+    fuse_file: path.relative(projectRoot, fuseFile).split(path.sep).join("/"),
     ...verifyFuseWire(wire, { releaseTier }),
   };
 }
@@ -236,8 +252,10 @@ if (require.main === module) {
 
 module.exports = {
   EXPECTED_FUSE_CONFIG,
+  FUSE_POLICY_VERSION,
   KNOWN_FUSES,
   FusePolicyError,
+  assertSafePackagedFuseFile,
   parseArgs,
   tierFromPackage,
   verifyBuilderFuseConfiguration,

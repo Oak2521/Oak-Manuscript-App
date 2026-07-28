@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.13（ChatGPT Electron 43 全 fuse 固定检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.13`。已生成未签名 Windows x64 NSIS 与 ZIP；仍不是可售卖正式版。
+
+- 精确锁定顶层 `@electron/fuses 2.1.3`，确认 Electron 43 wire 索引 8 为 `WasmTrapHandlers` 并固定启用；9 项策略全部具名，未来未知项在 sale 继续 fail-closed；
+- 新增 electron-builder `afterPack`：代码签名前用 `strictlyRequireAllFuses=true` 显式写入全部 9 项并立即回读；API/索引漂移、非法 wire 数、路径逃逸、链接/硬链接和回读漂移均拒绝；macOS arm64 按工具合同重置临时 ad-hoc 签名；
+- 二进制验证在 macOS 同时验证应用入口和实际 `Electron Framework` fuse 文件，读取前后核对实际文件身份；
+- 全量回归：Node 310 total / 303 pass / 0 fail / 7 skip；Python 351 total / 0 failures / 0 errors / 3 skipped；真实 packaged smoke 通过且原稿哈希不变；
+- 最终 NSIS：189,944,918 字节，SHA-256 `2a5ffcfa2ca47e925f1b65b3e44521038fc20fc760cbfdd86307ec0ae50e1851`；ZIP：233,758,073 字节，SHA-256 `0ecbbcd5eae20af3da5d50c9d398d64f76c3d93d3f978a3fa103ebd27745ddae`；证据清单复验通过；
+- Electron fuse 兼容性 blocker 已关闭；packaged 资源仍保留 11 项 sale blocker，Windows 签名、干净机安装、正式来源/许可证审计、自带浏览器与 OS 级网络隔离仍未完成。
+
 ### 2026-07-28 — 0.1.0-alpha.12（ChatGPT Windows 可安装 alpha 检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.12`。已生成未签名 Windows x64 NSIS 与 ZIP；仍不是可售卖正式版。

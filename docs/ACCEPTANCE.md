@@ -2,7 +2,18 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.12 Windows 可安装 alpha 验收（2026-07-28）
+## 0.1.0-alpha.13 Electron 43 全 fuse 固定验收（2026-07-28）
+
+- [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.13`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 顶层精确锁定 `@electron/fuses 2.1.3`，索引 8 由可信本地工具定义为 `WasmTrapHandlers=true`；
+- [x] electron-builder 注册 `afterPack`，以 `strictlyRequireAllFuses=true` 写入全部 9 项并立即回读；未来新项和 API/索引漂移 fail-closed；
+- [x] Windows 真实 EXE 独立回读 9 项全部匹配，unknown 0、blocker 0；路径、链接/硬链接和 macOS 实际 Framework 身份纳入门禁；
+- [x] 最终 `npm test` 为 Node 310 / Python 351，0 失败；真实 NSIS/ZIP、packaged 资源、强制 EpubCheck/Ace smoke 与发布证据通过；
+- [x] NSIS/ZIP/SHA256SUMS 的精确字节数和 SHA-256 记录在 `TEST_REPORT.md`，并已独立复验；
+- [ ] Windows Authenticode、干净机安装/升级/卸载及无开发运行时验收完成；
+- [ ] packaged 资源门禁其余 11 项、macOS/Web/生产账号与同步正式门禁全部关闭。
+
+## 0.1.0-alpha.12 Windows 可安装 alpha 验收（历史，2026-07-28）
 
 - [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.12`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] 三份固定 Windows builder 归档下载并验哈希；安全导入 Windows payload，生成受版本控制的 385 文件独立全树锁；

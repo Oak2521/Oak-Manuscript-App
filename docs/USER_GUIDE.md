@@ -2,9 +2,9 @@
 
 ## 桌面应用（推荐）
 
-当前开发版本为 `0.1.0-alpha.12`，已有未签名 Windows x64 NSIS 安装器和 ZIP，但不是可售卖正式版。macOS 安装包、Web 版、Windows 签名和干净机验收仍待完成。alpha.12 保持标准包 2.0.0、默认引用解析、账号/同步离线契约和 Ace 受控 utilityProcess；普通测试、启动和构建不会触发联网下载。
+当前开发版本为 `0.1.0-alpha.13`，已有未签名 Windows x64 NSIS 安装器和 ZIP，但不是可售卖正式版。macOS 安装包、Web 版、Windows 签名和干净机验收仍待完成。alpha.13 保持标准包 2.0.0、默认引用解析、账号/同步离线契约和 Ace 受控 utilityProcess，并显式固定 Electron 43 全部 9 项 fuse；普通测试、启动和构建不会触发联网下载。
 
-**开发运行**：`npm install` 后 `npm start`。统一测试用 `npm test`；分项排障用 `npm run test:node`、`npm run test:python`。alpha.12 最终统一结果为 Node 306/300/0/6、Python 351/0 failures/0 errors/3 skipped，墙钟 90.130 秒；跳过项不计作通过。真实 packaged smoke 已 PASS，并在应用内运行 EpubCheck/Ace；这仍不等于签名或干净机安装验收。
+**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。统一测试用 `npm test`；分项排障用 `npm run test:node`、`npm run test:python`。alpha.13 最终统一结果为 Node 310/303/0/7、Python 351/0 failures/0 errors/3 skipped，墙钟 157.8 秒；跳过项不计作通过。真实 packaged smoke 已 PASS，并在应用内运行 EpubCheck/Ace；这仍不等于签名或干净机安装验收。
 
 **账号与结果同步（当前边界）**：欢迎页、导出页和设置页保留湖岸账号入口。由于生产认证尚未配置，点击登录只会明确显示 `configuration_required`，不会打开浏览器或联网；真实登录状态只在自动化测试实例中模拟。登录用户导出后才会看到 SyncRecord v1 的逐字段预览，并可选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。当前确认项只进入当前进程的 `pending_transport` 队列，关闭 APP 即消失，绝未上传到网站。
 
@@ -21,7 +21,7 @@
 
 **外部验证（EPUB）**：问题页「外部验证」按钮运行固定的 EpubCheck 5.3.0 与 Ace 1.4.6。开发态优先使用清单校验通过的仓库 JRE，缺失时才允许查找系统 Java；未来打包态只接受捆绑且校验通过的 JRE，不回退系统 `PATH`。Ace 的 stage manifest 必须匹配受版本控制的 full lock；主进程生成绑定当前项目/标准/工具身份的计划，在固定 utilityProcess 中运行 Ace，并用受控隐藏 Chrome 的本地 loopback 端点承载浏览器。Ace 目前仍需要本机 Chrome。缺少工具/锁、完整性校验失败、计划过期、报告非法或进程异常时，报告如实标注「未运行」。
 
-当前构造样本的真实外部工具预期是：`epub_good.epub` 在 EpubCheck 与 Ace 都通过，`epub_needs_review.epub` 在两者都失败并报告问题。“失败”表示工具确实运行并发现缺陷，不表示程序故障。alpha.10 的隐藏 UI 条件 smoke 已让缺陷样本得到 EpubCheck 5 error 和 Ace 8 项失败断言，证明新受控链路真实运行；这仍不是打包版证据。受限环境若超时或未生成安全报告，核心会 fail-closed 标记未运行。
+当前构造样本的真实外部工具预期是：`epub_good.epub` 在 EpubCheck 与 Ace 都通过，`epub_needs_review.epub` 在两者都失败并报告问题。“失败”表示工具确实运行并发现缺陷，不表示程序故障。alpha.13 的真实 packaged smoke 已让缺陷样本得到 EpubCheck 5 error 和 Ace 8 项失败断言，证明打包受控链路真实运行；它仍不等于自带浏览器、OS 级网络隔离、签名绑定或干净机验收。受限环境若超时或未生成安全报告，核心会 fail-closed 标记未运行。
 
 **标准资源与项目升级**：标准页分别显示“当前新项目默认标准”和“本项目固定标准”。全局标准变化不会自动改已有项目；只有打开项目、查看规则/体例/标准的完整差异并点击一次确认，项目才会建立检查点、归档旧问题并切换，随后自动用新规则重检。取消、关闭对话框或计划过期都不写项目。
 
@@ -125,11 +125,11 @@ npm run download:builder:win
 node scripts/import_windows_builder_toolchain.js --archive-dir out/downloads/windows-builder --update-lock
 ```
 
-下载器只允许契约中固定的 GitHub 官方 HTTPS 起始 URL、有限的 GitHub release 资产跳转域、最多 5 次跳转、单文件 128 MiB 和 30 秒 socket 静默上限；拒绝凭据、查询串、fragment、越界/链接输出目录、未知文件、硬链接和已有错误哈希。三份候选全部下载并校验后才以独占方式提交，冲突或失败只回滚本次事务文件。导入器随后拒绝 UNC/设备形式（包括直接网络共享写法）、未知归档、路径穿越、链接/reparse、备用流、加密条目、Windows 名称冲突和解压膨胀；安装前预检旧树/旧锁，候选树与 tracked lock 共同换入，全部 forward rename 和 rollback rename 故障都有 fail-closed 回归。路径字符串不能识别映射成盘符的网络共享，因此归档目录必须人工确认为本地非映射目录。当前三份真实归档、实际工具树及 `config/tool-manifests/electron-builder-win32-x64.json` 仍不存在，不要运行普通构建并期待它自动补齐这些资产。
+下载器只允许契约中固定的 GitHub 官方 HTTPS 起始 URL、有限的 GitHub release 资产跳转域、最多 5 次跳转、单文件 128 MiB 和 30 秒 socket 静默上限；拒绝凭据、查询串、fragment、越界/链接输出目录、未知文件、硬链接和已有错误哈希。三份候选全部下载并校验后才以独占方式提交，冲突或失败只回滚本次事务文件。导入器随后拒绝 UNC/设备形式（包括直接网络共享写法）、未知归档、路径穿越、链接/reparse、备用流、加密条目、Windows 名称冲突和解压膨胀；安装前预检旧树/旧锁，候选树与 tracked lock 共同换入，全部 forward rename 和 rollback rename 故障都有 fail-closed 回归。路径字符串不能识别映射成盘符的网络共享，因此归档目录必须人工确认为本地非映射目录。当前三份真实归档已由用户批准下载，工具树与 `config/tool-manifests/electron-builder-win32-x64.json` 已建立并复验；普通构建只消费该离线锁，缺失或漂移时失败，不会自动补齐。
 
-`verify:resources:win` 使用 `--release-tier auto`：prerelease 自动选择 `alpha`，资源正确时可通过并列出 sale 阻断；正式 semver 自动选择 `sale`。alpha.12 源码门禁为 16 项 blocker，真实 packaged ASAR/全树证据关闭其中 5 项后保留 11 项；未知 Electron fuse 由另一门禁额外阻断。不要把 alpha 门禁通过理解为“可以销售”。
+`verify:resources:win` 使用 `--release-tier auto`：prerelease 自动选择 `alpha`，资源正确时可通过并列出 sale 阻断；正式 semver 自动选择 `sale`。alpha.13 源码门禁为 16 项 blocker，真实 packaged ASAR/全树证据关闭其中 5 项后保留 11 项；原 Electron fuse 兼容性阻断已经独立关闭。不要把 alpha 门禁通过理解为“可以销售”。
 
-`npm run verify:fuses:config` 可单独验证 ASAR integrity 与 Electron fuse 构建合同。实际 `build:win` / `build:mac:*` 会在 builder 后自动读取真实应用二进制，并验证 `app.asar` 资源锚点；当前 Electron 43 有一个本地工具无法识别的 fuse，alpha 会保留 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING`，sale 失败关闭。`RunAsNode=false` 仍须在真实制品上复核。详见 `ELECTRON_FUSE_POLICY.md`。
+`npm run verify:fuses:config` 可单独验证 ASAR integrity、全量 `afterPack` 注册与 Electron fuse 构建合同。实际 `build:win` / `build:mac:*` 会在 builder 完成、签名前用精确锁定的 `@electron/fuses 2.1.3` 和 `strictlyRequireAllFuses=true` 写入全部 9 项，立即回读，再由独立门禁读取真实应用二进制并验证 `app.asar` 资源锚点。当前索引 8 为 `WasmTrapHandlers=true`，真实 alpha.13 EXE 无未知项；未来新增项仍会 fail-closed。详见 `ELECTRON_FUSE_POLICY.md`。
 
 资源探针默认要求 host platform/arch 与 target 一致。跨主机只做静态检查必须显式使用 `--no-runtime-probe`；该结果只证明文件结构和锁，不证明运行时可以执行。Electron 桥和 Python 资源探针共用固定 `-I -S -X utf8` bootstrap，显式加入受控 core 目录，不依赖用户 `PYTHONPATH` 或 site-packages。
 
@@ -141,11 +141,11 @@ node scripts/import_windows_builder_toolchain.js --archive-dir out/downloads/win
 npm run release:evidence:verify:win
 ```
 
-验证器会重新稳定读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。alpha.12 的真实 `release/` 证据已通过；若目录混入同系列旧版本，生成器会拒绝而不是合并摘要。
+验证器会重新稳定读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。alpha.13 的真实 `release/` 证据已通过；alpha.12 已归档到项目内 `release/archive/0.1.0-alpha.12/`。若根目录混入同系列旧版本，生成器会拒绝而不是合并摘要。
 
 macOS 分架构入口为 `npm run verify:resources:mac:x64` / `:arm64` 和 `npm run build:mac:x64` / `:arm64`，必须分别在对应原生 runner 执行。`npm run build:mac` 只选择当前 Mac 的原生架构；`npm run verify:resources:mac` 是显式 `--no-runtime-probe` 的跨架构静态聚合，不算探针或构建通过。当前仍缺 x64/arm64 Python/JRE 资源与锁、构建、签名、公证和实机证据。
 
-打包 smoke 从 `package.json` 读取期望版本，通过 `appInfo` 核对七字段标准身份和 `app.isPackaged=true`，再执行引用解析确认和项目闭环。alpha.12 起 packaged runner 强制 EpubCheck/Ace，调用者不能静默降级；项目、标准 store、临时目录、用户数据、缓存和崩溃目录按运行 ID 隔离在仓库 `out/`，窗口保持隐藏。
+打包 smoke 从 `package.json` 读取期望版本，通过 `appInfo` 核对七字段标准身份和 `app.isPackaged=true`，再执行引用解析确认和项目闭环。alpha.12 起 packaged runner 强制 EpubCheck/Ace，调用者不能静默降级；alpha.13 真实运行已通过。项目、标准 store、临时目录、用户数据、缓存和崩溃目录按运行 ID 隔离在仓库 `out/`，窗口保持隐藏。
 
 自选导出目录会逐级拒绝链接、目录联接和非常规目录；若选择项目内部目录，只允许 `exports/` 下。全部输出目标先统一预检，已有链接或硬链接目标不会被覆盖；每个文件在同目录完整暂存并原子换入。PDF 样张另在禁 JavaScript、导航和网络的非持久隔离 session 中生成。
 

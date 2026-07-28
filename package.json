@@ -1,7 +1,7 @@
 {
   "name": "oak-manuscript",
   "productName": "湖岸稿件 Oak Manuscript",
-  "version": "0.1.0-alpha.12",
+  "version": "0.1.0-alpha.13",
   "private": true,
   "description": "本地优先的稿件检查与修订桌面应用（Electron 壳 + Python 零依赖检查核心）",
   "main": "electron/main.js",
@@ -42,6 +42,7 @@
   },
   "devDependencies": {
     "@daisy/ace-cli": "^1.4.6",
+    "@electron/fuses": "2.1.3",
     "electron": "^43.1.0",
     "electron-builder": "^26.15.3"
   },
@@ -50,6 +51,7 @@
     "productName": "湖岸稿件 Oak Manuscript",
     "directories": { "output": "release" },
     "beforePack": "scripts/before_pack.js",
+    "afterPack": "scripts/after_pack.js",
     "asar": true,
     "disableAsarIntegrity": false,
     "electronFuses": {

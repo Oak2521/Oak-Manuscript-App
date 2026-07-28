@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.12` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约、Windows builder 独立锁、ASAR/fuse/资源可信链、受限应用协议、Ace 受控 utilityProcess，以及真实未签名 NSIS/ZIP 和 packaged smoke 已实现。生产认证/同步、联网标准获取、代码签名、macOS 和 Web 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.13` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约、Windows builder 独立锁、ASAR/全 9 fuse/资源可信链、受限应用协议、Ace 受控 utilityProcess，以及真实未签名 NSIS/ZIP 和 packaged smoke 已实现。生产认证/同步、联网标准获取、代码签名、macOS 和 Web 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -238,5 +238,5 @@ alpha.7 在构建输出端增加独立证据链。`build:win` 首先调用 `rele
 - 源码 smoke 与打包 smoke 都通过 `app:info` 核对 Electron 版本和 freshly verified `standardIdentity`；随后读取本次真实生成的 `project.json`、检查记录和导出 `report.json`，核对 Python core 版本、check ID 及四方七字段身份一致。打包 smoke 还强制证明 `app.isPackaged=true`，防止把旧版、陈旧 core 或错误规则包误记为新打包版。
 - 源码 smoke 每次生成独立 `out/source-smoke/runs/<run-id>/`，项目、标准 store、缓存、临时目录、用户数据、HOME/APPDATA/XDG 与 crash dumps 不复用；打包 smoke 同样按运行 ID 隔离并受仓库 `out/` 边界控制。Windows EXE 还须先通过 x64 PE32+ 校验。
 - macOS 构建拆为 `build:mac:x64` 与 `build:mac:arm64`；聚合入口 `build:mac` 只选择当前原生 host 架构，不在一个进程伪造双架构探针。`verify:resources:mac` 只是带 `--no-runtime-probe` 的跨架构静态聚合，不能替代两个原生 runner 的执行证据。
-- alpha.12 隐藏 packaged smoke 已 PASS：`out/packaged-smoke/runs/ms4lg2cv-ab0de58b69b46495/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,654/178,232 字节；EPUB 通过受控 utilityProcess 实际运行 EpubCheck/Ace，缺陷结果分别为 5 error/8 项失败断言。
-- alpha.12 以 `oak-manuscript://renderer/` 的四文件白名单替代 `file://...app.asar/...` 页面加载，在 `GrantFileProtocolExtraPrivileges=false` 下保持 ASAR UI 可用；Python `-B` 防止运行时修改 loose 可信树。真实 builder 锁、NSIS/ZIP、packaged 资源与证据已成立；仍无生产凭证、持久队列、上传 transport、Windows 签名、macOS 或 Web。packaged 资源门禁为 11 项，未知 fuse 另行阻止 sale。
+- alpha.13 最终隐藏 packaged smoke 已 PASS：`out/packaged-smoke/runs/ms4mqaar-f6f3d43d55a2726d/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,655/178,394 字节；EPUB 通过受控 utilityProcess 实际运行 EpubCheck/Ace，缺陷结果分别为 5 error/8 项失败断言。
+- alpha.13 以 `oak-manuscript://renderer/` 的四文件白名单在 `GrantFileProtocolExtraPrivileges=false` 下保持 ASAR UI 可用；Python `-B` 防止运行时修改 loose 可信树；顶层 2.1.3 afterPack 严格写入并回读 Electron 43 全 9 fuse。真实 builder 锁、NSIS/ZIP、packaged 资源与证据已成立；仍无生产凭证、持久队列、上传 transport、Windows 签名、macOS 或 Web。packaged 资源门禁仍为 11 项。

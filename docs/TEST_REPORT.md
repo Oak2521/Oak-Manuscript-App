@@ -2,7 +2,47 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.12 Windows 可安装 alpha
+## 最新验证结论：0.1.0-alpha.13 Electron 43 全 fuse 固定检查点
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已批准本轮依赖下载；实际 Windows 构建使用仓库内已锁定离线工具，Electron 与 Chrome 均以隐藏进程运行。
+
+| 命令 / 检查 | 结果 | 关键事实 |
+|---|---|---|
+| `npm install --save-exact @electron/fuses@2.1.3` | **完成** | 顶层锁定 2.1.3；electron-builder 内部 1.8.0 保持隔离；未执行 `audit fix --force` |
+| fuse / afterPack / packaging 定向测试 | **PASS** | 42 total / 41 pass / 0 fail / 1 skip；含全 9 项写入、单 wire/未来未知项、API 漂移、实际 Framework 路径与 macOS arm64 临时签名策略 |
+| 最终 `npm test` | **PASS** | 墙钟 157.8 秒；Node 310 total / 303 pass / 0 fail / 7 skip（3.236 秒）；Python 351 total / 0 failures / 0 errors / 3 skipped（104.469 秒） |
+| `npm run verify:resource-trust` | **PASS** | 59 文件 / 1,942,368 字节；manifest `1117ec70…4397`；ASAR anchor `89d17399…2179` |
+| 最终 `npm run build:win` | **PASS** | 300.3 秒；afterPack 文件身份复核、独立 fuse 回读、packaged 资源、隐藏 smoke 和证据生成全部通过 |
+| `npm run verify:packaged:fuses:win` | **PASS** | Electron 43 wire v1 索引 0—8 全部精确匹配；`WasmTrapHandlers=true`；unknown 0、blocker 0、fully known |
+| `npm run verify:packaged:win` | **PASS（alpha）** | 真实 `app.asar` 锚点、59 个 loose 应用文件和四类运行锁通过；packaged blocker 11 项 |
+| `npm run smoke:packaged:win` | **SMOKE-RESULT PASS** | 强制应用内 EpubCheck/Ace；DOCX/EPUB 全闭环；项目路径进程残留 0 |
+| `npm run release:evidence:verify:win` | **PASS** | 独立稳定读取 NSIS/ZIP、SHA256SUMS 与 canonical manifest 并交叉核对 |
+
+最终 packaged smoke 运行根：`out/packaged-smoke/runs/ms4mqaar-f6f3d43d55a2726d/projects/`。
+
+| 项目 | APP/core | 检查 | 修复批次 | 应用 fixes | 检查点 | 当前问题 | PDF 字节 | 引用模式 | 外部验证 | 原稿 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---|---|
+| `ui-smoke-docx` | 0.1.0-alpha.13 | 4 | 1 | 5 | 3 | 13 | 251,655 | `structure_only` | 不适用 | unchanged |
+| `ui-smoke-epub` | 0.1.0-alpha.13 | 4 | 1 | 2 | 3 | 5 | 178,394 | `structure_only` | EpubCheck failed：0 fatal / 5 error / 0 warning；Ace failed：8 项断言 | unchanged |
+
+最终制品：
+
+| 文件 | 字节 | SHA-256 |
+|---|---:|---|
+| `Oak-Manuscript-0.1.0-alpha.13-Windows-x64.exe` | 189,944,918 | `2a5ffcfa2ca47e925f1b65b3e44521038fc20fc760cbfdd86307ec0ae50e1851` |
+| `Oak-Manuscript-0.1.0-alpha.13-Windows-x64.zip` | 233,758,073 | `0ecbbcd5eae20af3da5d50c9d398d64f76c3d93d3f978a3fa103ebd27745ddae` |
+| `SHA256SUMS.txt` | 224 | `c37b7a4cee9ca2ca8617fd913c9293f74fbc55fc7ea3bc0d6ad0fc5d7076fed4` |
+
+证据边界：
+
+- 第一次全量回归按设计发现版本变更后的受信资源清单陈旧；使用显式 `resource_trust_manifest.js --update-lock` 事务更新后复验和全量回归通过，没有放宽校验；
+- 顶层新版工具明确索引 8 为 `WasmTrapHandlers`。afterPack 设置 `strictlyRequireAllFuses=true`，写后立即回读；真实 EXE 的独立回读同样无未知项；
+- packaged 资源门禁仍保留 11 项 sale blocker，制品未签名；fuse 兼容性 blocker 已关闭不等于可售卖；
+- 打包资源 `.pyc` 为 0，烟测退出后项目路径进程为 0；
+- 尚未执行干净 Windows 安装、升级、卸载、无开发环境验证或 Authenticode；macOS/Web/生产账号同步也未验收；
+- `npm install` 报告 28 项依赖审计告警（11 moderate、17 high）。本轮没有用自动强制修复改写依赖树；正式依赖来源/漏洞/许可证审计仍是 sale blocker 的一部分。
+
+## 历史验证结论：0.1.0-alpha.12 Windows 可安装 alpha
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已批准下载；构建、Electron 与 Chrome 均以隐藏进程运行。
 

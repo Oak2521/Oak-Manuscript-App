@@ -561,12 +561,12 @@ function createToolchainFixture(t, existingRoot = null) {
   return { root, toolchain };
 }
 
-test("electron-builder config is valid and pins alpha.12 Windows installer policy", async () => {
+test("electron-builder config is valid and pins alpha.13 Windows installer policy", async () => {
   const packageJson = require("../package.json");
   const packageLock = require("../package-lock.json");
   await validateConfiguration(packageJson.build, { isEnabled: false, add() {} });
 
-  assert.equal(packageJson.version, "0.1.0-alpha.12");
+  assert.equal(packageJson.version, "0.1.0-alpha.13");
   assert.equal(packageLock.version, packageJson.version);
   assert.equal(packageLock.packages[""].version, packageJson.version);
   const pythonInit = fs.readFileSync(
@@ -584,6 +584,7 @@ test("electron-builder config is valid and pins alpha.12 Windows installer polic
   );
 
   assert.equal(packageJson.build.beforePack, "scripts/before_pack.js");
+  assert.equal(packageJson.build.afterPack, "scripts/after_pack.js");
   assert.equal(Object.hasOwn(packageJson.build, "electronDist"), false);
   assert.deepEqual(packageJson.build.win.target, [
     { target: "nsis", arch: ["x64"] },
@@ -940,7 +941,7 @@ test("beforePack forwards the builder project root and target platform", () => {
   const calls = [];
   beforePack(
     {
-      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.12" } },
+      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.13" } },
       electronPlatformName: "darwin",
       arch: 1,
     },

@@ -27,6 +27,7 @@ function expectedWire(extra = {}) {
     5: ENABLE,
     6: DISABLE,
     7: DISABLE,
+    8: ENABLE,
     version: "1",
     ...extra,
   };
@@ -46,10 +47,15 @@ test("packaging fixes an explicit ASAR and known Electron fuse policy", () => {
 
 test("builder fuse policy rejects omissions, drift and integrity bypass", () => {
   const base = {
+    afterPack: "scripts/after_pack.js",
     asar: true,
     disableAsarIntegrity: false,
     electronFuses: { ...EXPECTED_FUSE_CONFIG },
   };
+  assert.throws(
+    () => verifyBuilderFuseConfiguration({ ...base, afterPack: undefined }),
+    /afterPack/,
+  );
   assert.throws(
     () => verifyBuilderFuseConfiguration({ ...base, asar: false }),
     /ASAR/,
@@ -84,15 +90,21 @@ test("known fuse bytes must match exactly and cannot inherit or be removed", () 
   );
 });
 
-test("unknown Electron 43 fuse remains an alpha blocker and fails the sale gate", () => {
-  const wire = expectedWire({ 8: ENABLE });
+test("Electron 43 WasmTrapHandlers is explicit and future unknown fuses fail sale", () => {
+  const known = verifyFuseWire(expectedWire(), { releaseTier: "sale" });
+  assert.equal(known.ok, true);
+  assert.equal(known.fully_known, true);
+  assert.equal(known.known_fuses.at(-1).name, "WasmTrapHandlers");
+  assert.equal(known.known_fuses.at(-1).enabled, true);
+
+  const wire = expectedWire({ 9: ENABLE });
   const alpha = verifyFuseWire(wire, { releaseTier: "alpha" });
   assert.equal(alpha.ok, true);
   assert.equal(alpha.fully_known, false);
   assert.deepEqual(alpha.blockers.map((item) => item.code), [
     "ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING",
   ]);
-  assert.deepEqual(alpha.unknown_fuses, [{ index: 8, state: ENABLE }]);
+  assert.deepEqual(alpha.unknown_fuses, [{ index: 9, state: ENABLE }]);
   assert.throws(
     () => verifyFuseWire(wire, { releaseTier: "sale" }),
     (error) => error instanceof FusePolicyError &&
@@ -108,7 +120,8 @@ test("packaged fuse verification rejects unsafe files before reading the wire", 
   let calls = 0;
   const report = await verifyPackagedFuseBinary(executable, {
     releaseTier: "alpha",
-    readWire: async () => { calls += 1; return expectedWire({ 8: ENABLE }); },
+    readWire: async () => { calls += 1; return expectedWire(); },
+    resolveFuseFile: (target) => target,
   });
   assert.equal(report.ok, true);
   assert.equal(calls, 1);
@@ -118,6 +131,7 @@ test("packaged fuse verification rejects unsafe files before reading the wire", 
     verifyPackagedFuseBinary(missing, {
       releaseTier: "alpha",
       readWire: async () => { calls += 1; return expectedWire(); },
+      resolveFuseFile: (target) => target,
     }),
     /常规文件/,
   );
@@ -129,13 +143,16 @@ test("packaged fuse verification rejects unsafe files before reading the wire", 
     verifyPackagedFuseBinary(executable, {
       releaseTier: "alpha",
       readWire: async () => expectedWire(),
+      resolveFuseFile: (target) => target,
     }),
     /硬链接|单链接/,
   );
 });
 
 test("build chains verify packaged fuses before resource and smoke claims", () => {
+  const build = require("../package.json").build;
   const scripts = require("../package.json").scripts;
+  assert.equal(build.afterPack, "scripts/after_pack.js");
   assert.equal(
     scripts["verify:packaged:fuses:win"],
     "node scripts/electron_fuse_policy.js --binary \"release/win-unpacked/湖岸稿件 Oak Manuscript.exe\" --release-tier auto",
