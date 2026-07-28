@@ -28,14 +28,12 @@ function configureStandardsStoreRoot(root) {
 function createPythonEnvironment(
   source = process.env,
   {
-    electronExec = process.execPath,
     packaged = pathPolicy.appIsPackaged(),
     standardsStoreRoot = trustedStandardsStoreRoot,
     expectedStandardIdentity = null,
   } = {},
 ) {
   return createIsolatedPythonEnvironment(source, {
-    electronExec,
     packaged,
     standardsStoreRoot,
     expectedStandardIdentity,

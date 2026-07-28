@@ -102,7 +102,6 @@ function pythonCoreInvocation({ executable, coreDir, args = [] } = {}) {
 function createIsolatedPythonEnvironment(
   source = process.env,
   {
-    electronExec = null,
     packaged = false,
     standardsStoreRoot = null,
     expectedStandardIdentity = null,
@@ -122,9 +121,6 @@ function createIsolatedPythonEnvironment(
     PYTHONUTF8: "1",
     OAK_APP_PACKAGED: packaged ? "1" : "0",
   };
-  if (typeof electronExec === "string" && electronExec.trim() !== "") {
-    isolated.OAK_ELECTRON_EXEC_PATH = electronExec;
-  }
   if (standardsStoreRoot !== null) {
     const requested = nonEmptyString(standardsStoreRoot, "标准库根目录");
     if (!path.isAbsolute(requested)) throw new Error("标准库根目录必须是绝对路径");

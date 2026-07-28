@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.9`
+> 当前版本：`0.1.0-alpha.10`
 > 当前分支：`chatgpt/commercial-v1`
-> 源码检查点标签：`chatgpt-v0.1.0-alpha.9`（只标记源码与本地验证状态，不代表安装包或正式发行）
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.10`（只标记源码与本地验证状态，不代表安装包或正式发行）
 
 ## 1. 权威入口与工作区
 
@@ -30,7 +30,25 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 2. 当前现场事实
 
-### 已完成：0.1.0-alpha.9 Electron ASAR 与 fuse 发布硬化合同
+### 已完成：0.1.0-alpha.10 Ace 受控 utilityProcess 与 RunAsNode 关闭
+
+- APP、Python 核心和 lockfile 统一到 `0.1.0-alpha.10`；标准内容、35 条规则、6 个 fixer、账号和同步合同未变化；
+- Renderer 的外部验证只提交受路径门禁保护的项目目录；主进程生成绑定项目/working/报告/标准与 Java、JAR、Ace、Chrome 文件身份的计划，准备输出后才启动固定 helper，完成后再由 Python 重验计划并解析报告；
+- Ace 在 Electron `utilityProcess` 中运行固定入口和参数；环境清除 Node/Electron/Puppeteer/Oak/Ace 注入，合并输出上限 64 KiB、最长 5 分钟，目录身份换入、路径替换、超时、异常退出或报告非法均 fail-closed；
+- 系统 Chrome 由主进程以固定隐藏参数、独立 profile、随机 loopback DevTools 端点启动；utility 只能连接该严格本地端点，结束后停止精确子进程并清理 profile；这不是互联网传输，也不等于 OS 级无网沙箱；
+- Electron fuse 已改为 `RunAsNode=false`；配置门禁与 wire 合同相应更新。Electron 43 未知索引 8 仍按 alpha blocker / sale fail-closed 处理；
+- `ACE_CONTROLLED_HELPER_PENDING` 没有被伪关闭：源码 helper 和真实源码 UI 功能已验证，但缺真实打包制品上的功能、安全与 fuse 联合证据。
+
+### 现场验证（2026-07-28，alpha.10）
+
+- 最终统一 `npm test`：**PASS，退出码 0，墙钟 119.4 秒**；Node 295 total / 288 pass / 0 fail / 7 skip（2.461 秒），Python 351 total / 0 failures / 0 errors / 3 skipped（112.121 秒）；
+- `verify:standards`、`stage:ace`、`verify:electron-runtime`、`verify:resources:win` 和 `verify:fuses:config` 均 **PASS**；Fuse 报告 `run_as_node_disabled=true`，Windows alpha 资源门禁仍如实列出 17 项 sale blocker；
+- 独立隐藏条件源码 smoke：**SMOKE-RESULT PASS**，运行根 `out/source-smoke/runs/ms4cz6o9-c2ad021ca7e2e83c/projects/`；DOCX/EPUB 均 4 次检查、1 次修复、3 个检查点、原稿哈希不变，当前问题 13/5、应用 fixes 5/2、PDF 251,649/178,228 字节；
+- 同一 smoke 中 EPUB 缺陷样本实际执行 EpubCheck 5.3.0 和 Ace 1.4.6：EpubCheck `failed`（0 fatal / 5 error / 0 warning），Ace `failed`（整体 fail，8 项断言）；运行结束没有遗留 `oak-ace-chrome-*` profile；
+- `release:evidence:verify:win` 与 `verify:packaged:fuses:win` 按设计拒绝缺失 alpha.10 安装包/`win-unpacked`；没有用源码运行冒充 packaged 证据；
+- 本轮没有联网、没有下载 builder 归档、没有运行 electron-builder，也没有生成安装器、ZIP 或发布证据。
+
+### 已完成：0.1.0-alpha.9 Electron ASAR 与 fuse 发布硬化合同（历史检查点）
 
 - APP、Python 核心和 lockfile 统一到 `0.1.0-alpha.9`；标准内容、35 条规则、6 个 fixer、账号和同步合同未变化；
 - 新增 `scripts/electron_fuse_policy.js`：要求 `build.asar=true`、`disableAsarIntegrity=false`，并精确固定全部本地已知 fuse；配置缺项、多项、漂移、inherit 或 removed 状态均拒绝；
@@ -212,8 +230,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.9 继承了可复制、可执行、由 tracked full lock 固定的生产闭包，并通过 Windows alpha 资源门禁；正式版仍缺最小权限受控 helper、自带且校验过的浏览器运行时、OS 级默认拒绝网络、可信根加固和正式人工许可审计；
-- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.9 尚无安装器或 ZIP，未做真实打包 fuse、packaged smoke、干净系统安装/升级/卸载或签名。受控下载/导入及构建尾部发布证据链已实现，但本轮未联网，三份固定归档、真实工具树和独立 tracked lock 尚缺；
+- 打包版 Ace：alpha.10 已有受控 `utilityProcess`、主进程 Chrome controller、两阶段计划绑定和真实源码 UI 运行证据；正式版仍缺真实打包制品上的联合验证、自带且校验过的浏览器运行时、OS 级默认拒绝网络、可信根加固和正式人工许可审计；
+- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.10 尚无安装器或 ZIP，未做真实打包 fuse、packaged smoke、干净系统安装/升级/卸载或签名。受控下载/导入及构建尾部发布证据链已实现，但本轮未联网，三份固定归档、真实工具树和独立 tracked lock 尚缺；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：服务端任务 API、隔离执行、限额、零留存和官网嵌入尚未实现；
 - 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览和当前进程队列契约已实现；生产 Supabase、OS 凭据存储、签名授权、支付、持久队列、网络 transport 和网站后台未连接；
@@ -251,7 +269,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 1. 经用户联网授权后显式运行 `npm run download:builder:win`，仅从合同固定的 electron-builder 官方 GitHub release URL 下载三份归档到仓库 `out/downloads/windows-builder/`；
 2. 下载器全部验哈希后运行 `node scripts/import_windows_builder_toolchain.js --archive-dir out/downloads/windows-builder --update-lock`，提交并复核真实独立 lock；
-3. 生成 alpha.9 NSIS 安装器与 ZIP；构建链必须依次通过 fuse 配置、真实打包二进制 fuse、打包资源门禁、应用身份断言、隐藏 packaged smoke，最后生成并复验 `SHA256SUMS.txt` 与 canonical release manifest；
+3. 生成 alpha.10 NSIS 安装器与 ZIP；构建链必须依次通过 fuse 配置、真实打包二进制 fuse、打包资源门禁、应用身份断言、含 EpubCheck/Ace 的隐藏 packaged smoke，最后生成并复验 `SHA256SUMS.txt` 与 canonical release manifest；
 4. 完成 Windows 代码签名，并逐项关闭 provenance、许可证、可信根、Ace helper/browser 等 sale blocker；
 5. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
 6. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；

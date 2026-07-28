@@ -814,6 +814,12 @@ const actions = {
     return this.prepareCitationPlan("recheck", state.settings.citation);
   },
 
+  async runExternal() {
+    if (!state.project) throw new Error("请先创建或打开 EPUB 项目");
+    const response = unwrap(await window.oak.runExternal(state.project));
+    return response.result.results;
+  },
+
   async issueAction(issueId, status) {
     unwrap(await window.oak.setIssueStatus(state.project, issueId, status));
     const issue = state.lastCheck.issues.find((i) => i.issue_id === issueId);
@@ -1342,10 +1348,13 @@ document.addEventListener("DOMContentLoaded", () => {
     actions.requestCitationRecheck().catch((e) => toast(String(e.message || e), 5000)));
   $("#btn-external").addEventListener("click", async () => {
     toast("正在运行外部验证（EpubCheck / Ace），可能需要数十秒…", 4000);
-    const r = await window.oak.runExternal(state.project);
-    if (!r.ok) { toast(r.error, 5000); return; }
-    const lines = Object.entries(r.result.results).map(([k, v]) => `${k}：${v.detail}`);
-    toast(lines.join(" ｜ "), 9000);
+    try {
+      const results = await actions.runExternal();
+      const lines = Object.entries(results).map(([k, v]) => `${k}：${v.detail}`);
+      toast(lines.join(" ｜ "), 9000);
+    } catch (error) {
+      toast(String(error.message || error), 5000);
+    }
   });
   $("#btn-to-export").addEventListener("click", () => { renderExportSummary(); showPage("export"); });
   $("#btn-export-all").addEventListener("click", () => actions.doExport().catch((e) => toast(String(e.message || e), 5000)));

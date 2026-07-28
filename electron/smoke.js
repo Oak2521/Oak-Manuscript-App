@@ -12,7 +12,8 @@ const { serializeStandardIdentity } = require("./python-invocation");
 const PACKAGED_OUTPUT_ENV = "OAK_SMOKE_OUTPUT_ROOT";
 const EXPECTED_VERSION_ENV = "OAK_EXPECTED_APP_VERSION";
 const EXPECT_PACKAGED_ENV = "OAK_EXPECT_PACKAGED";
-const DEFAULT_EXPECTED_APP_VERSION = "0.1.0-alpha.9";
+const EXTERNAL_VALIDATION_ENV = "OAK_SMOKE_EXTERNAL_VALIDATION";
+const DEFAULT_EXPECTED_APP_VERSION = "0.1.0-alpha.10";
 
 const SCENARIOS = [
   {
@@ -374,6 +375,19 @@ async function runSmoke(win, pathPolicy) {
       `${sc.name}：自动修复闭环必须生成新的复检记录`,
     );
 
+    if (sc.type === "ebook" && process.env[EXTERNAL_VALIDATION_ENV] === "1") {
+      const external = await js("__oakActions.runExternal()");
+      for (const name of ["epubcheck", "ace"]) {
+        assert(
+          external[name] && new Set(["passed", "failed"]).has(external[name].status),
+          `${sc.name}：${name} 必须真实运行，不能是 not_run`,
+        );
+      }
+      console.log(
+        `[smoke]   external：EpubCheck=${external.epubcheck.status}；Ace=${external.ace.status}`,
+      );
+    }
+
     const exp = await js("__oakActions.doExport()");
     assert(exp.files.length >= 4, `${sc.name}：导出应含修订稿与三种报告`);
     for (const f of exp.files) assert(fs.existsSync(f), `导出文件缺失：${f}`);
@@ -424,6 +438,7 @@ module.exports = {
   DEFAULT_EXPECTED_APP_VERSION,
   EXPECTED_VERSION_ENV,
   EXPECT_PACKAGED_ENV,
+  EXTERNAL_VALIDATION_ENV,
   PACKAGED_OUTPUT_ENV,
   assertCoreIdentityFromProject,
   assertSmokeIdentity,

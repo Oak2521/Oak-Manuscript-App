@@ -2,7 +2,24 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.9 Electron ASAR 与 fuse 发布硬化验收（2026-07-28）
+## 0.1.0-alpha.10 Ace 受控 utilityProcess 与 RunAsNode 关闭验收（2026-07-28）
+
+> 本节验收源码实现与真实隐藏 Electron UI 链路；没有 alpha.10 安装包，不把源码 smoke 冒充 packaged fuse、安装器或正式发布证据。
+
+- [x] APP、Python 核心和 lockfile 统一为 `0.1.0-alpha.10`；标准 release、规则/fixer、账号与同步合同未变化；
+- [x] Renderer 的外部验证 IPC 只接受受控项目路径，不能提交模块、命令、环境、退出状态或报告结论；
+- [x] Python `external-plan` / `external-prepare` / `external-finalize` 绑定项目状态、标准身份及 Java/JAR/Ace/Chrome 文件身份，状态漂移或路径替换 fail-closed；
+- [x] Ace 使用固定 Electron `utilityProcess`，固定入口/参数、净化环境、64 KiB 输出上限和 5 分钟超时均有正反向测试；
+- [x] 主进程以固定隐藏参数启动精确 Chrome，使用独立 profile 和随机 loopback DevTools 端点；utility 只能连接严格本地端点，退出后精确停止并清理；
+- [x] `RunAsNode=false` 已由配置门禁和测试固定；
+- [x] 最终 `npm test` 为 Node 295 / Python 351，0 失败；标准、Ace、Electron runtime、Windows alpha 资源和 fuse 配置门禁均通过；
+- [x] 隐藏条件源码 smoke 真实执行 EpubCheck/Ace：缺陷 EPUB 得到 EpubCheck 5 error 与 Ace 8 项失败断言，原稿哈希不变，无 profile 残留；
+- [ ] 已对真实 alpha.10 Windows EXE 和两个 macOS `.app` 二进制运行 packaged fuse 与 Ace 功能/安全回归并留存证据；
+- [ ] Electron 43 未知 fuse 已有可信工具定义并固定期望状态；
+- [ ] Ace 自带校验浏览器、OS 级默认拒绝网络、可信根和许可证/来源人工审计已完成；
+- [ ] 17 项 Windows sale blocker、签名和正式发布门禁全部关闭。
+
+## 0.1.0-alpha.9 Electron ASAR 与 fuse 发布硬化验收（历史，2026-07-28）
 
 > 本节只验收源码配置、验证器和构建顺序；没有真实 alpha.9 打包产物，不把源码 Electron runtime 或构造 wire 冒充 packaged fuse 证据。
 
@@ -265,11 +282,11 @@
 
 > 完成标准（方案 §18）：匿名 DOCX 与 EPUB 均能在 UI 中完成完整闭环。
 > 证据：`npm run smoke` 冒烟驱动真实 UI 代码路径（与按钮同一 actions + 真实 IPC + 真实核心），
-> DOCX 与 EPUB 双闭环 PASS；旧 `0.0.1` 打包版历史结果同样 PASS，不能替代当前 alpha.9 打包验收。
+> DOCX 与 EPUB 双闭环 PASS；旧 `0.0.1` 打包版历史结果同样 PASS，不能替代当前 alpha.10 打包验收。
 
 - [x] Electron 壳安全基线：contextIsolation / sandbox / nodeIntegration=false / IPC 固定通道 + 输入验证 / 子进程 shell=false / CSP / 导航与新窗口拦截 / 外链仅 HTTPS 白名单域名；
 - [x] 七个主页面（中文 UI）：欢迎隐私 / 创建项目 / 检查目标 / 进度（阶段式，无虚假百分比）/ 问题双栏（接受·拒绝·暂不处理）/ 导出中心 / 标准资源与设置；
-- [x] 历史 0.0.1 登录入口为「即将开放」占位；当前 alpha.9 继承不联网的账号/同步离线契约，未登录仍不出现同步询问（冒烟自动断言）；
+- [x] 历史 0.0.1 登录入口为「即将开放」占位；当前 alpha.10 继承不联网的账号/同步离线契约，未登录仍不出现同步询问（冒烟自动断言）；
 - [x] 出版评估软转化位按 §8.1–8.2 位置与文案，仅打开白名单网站页面；
 - [x] PDF 审阅样张（printToPDF，≤16 页，标注非印前文件）；
 - [x] 匿名样本体验入口；错误以可理解文案呈现（toast + 文件安全说明）。

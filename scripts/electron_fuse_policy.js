@@ -11,10 +11,9 @@ const DISABLE = "0".charCodeAt(0);
 const REMOVED = "r".charCodeAt(0);
 const INHERIT = 0x90;
 
-// RunAsNode 暂时保留给当前 Ace 外部验证入口；它是明确 blocker，不能被
-// ASAR/fuse 加固掩盖。其余已知 fuse 全部显式固定，避免 Electron 默认值漂移。
+// Ace 已迁移到受控 utilityProcess；所有已知 fuse 均显式固定，避免默认值漂移。
 const EXPECTED_FUSE_CONFIG = Object.freeze({
-  runAsNode: true,
+  runAsNode: false,
   enableCookieEncryption: true,
   enableNodeOptionsEnvironmentVariable: false,
   enableNodeCliInspectArguments: false,
@@ -26,7 +25,7 @@ const EXPECTED_FUSE_CONFIG = Object.freeze({
 });
 
 const KNOWN_FUSES = Object.freeze([
-  [0, "RunAsNode", true],
+  [0, "RunAsNode", false],
   [1, "EnableCookieEncryption", true],
   [2, "EnableNodeOptionsEnvironmentVariable", false],
   [3, "EnableNodeCliInspectArguments", false],
@@ -78,7 +77,7 @@ function verifyBuilderFuseConfiguration(build) {
     asar: true,
     embedded_asar_integrity: true,
     only_load_app_from_asar: true,
-    run_as_node_temporary: true,
+    run_as_node_disabled: true,
   };
 }
 

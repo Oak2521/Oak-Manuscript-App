@@ -2,7 +2,37 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.9 Electron ASAR 与 fuse 发布硬化合同
+## 最新验证结论：0.1.0-alpha.10 Ace 受控 utilityProcess 与 RunAsNode 关闭
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未下载 builder 归档、未运行 electron-builder，也未生成安装器、ZIP 或发布证据。
+
+| 命令 / 检查 | 结果 | 关键事实 |
+|---|---|---|
+| `npm test` | **PASS** | 墙钟 119.4 秒；Node 295 total / 288 pass / 0 fail / 7 skip（2.461 秒）；Python 351 total / 0 failures / 0 errors / 3 skipped（112.121 秒） |
+| `npm run verify:standards` | **PASS** | `oak-standards 2.0.0`，manifest SHA-256 `0aff75eb181a62869147e9af27330c717bc808bdd23865197534fc9868568427` |
+| `npm run stage:ace` | **PASS** | Ace 1.4.6：236 包、6,672 文件、58,969,045 字节；stage 与 tracked lock 一致 |
+| `npm run verify:electron-runtime` | **PASS** | Electron 43.1.0 win32-x64：2 目录、75 文件、364,083,658 字节 |
+| `npm run verify:fuses:config` | **PASS** | ASAR/integrity/known fuses exact；`run_as_node_disabled=true` |
+| `npm run verify:resources:win` | **PASS（alpha）** | Python core `0.1.0-alpha.10`；运行探针通过；17 项 sale blocker 仍机器可读保留 |
+| `$env:OAK_SMOKE_EXTERNAL_VALIDATION='1'; npm run smoke` | **PASS** | 隐藏 Electron 完成 DOCX/EPUB UI 闭环，并真实执行 EPUB 外部验证 |
+| `npm run release:evidence:verify:win` | **按设计退出 1** | 缺 `Oak-Manuscript-0.1.0-alpha.10-Windows-x64.exe`；没有生成伪证据 |
+| `npm run verify:packaged:fuses:win` | **按设计退出 1** | `release/win-unpacked` 不存在；没有真实 packaged fuse 证据 |
+
+真实隐藏 smoke 运行根：`out/source-smoke/runs/ms4cz6o9-c2ad021ca7e2e83c/projects/`。
+
+| 项目 | 格式 | APP/core | 检查次数 | 修复批次 | 检查点 | 当前问题 | 实际应用 fixes | PDF 字节 | 外部验证 | 原稿 |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| `ui-smoke-docx` | DOCX | 0.1.0-alpha.10 | 4 | 1 | 3 | 13 | 5 | 251,649 | 不适用 | unchanged |
+| `ui-smoke-epub` | EPUB | 0.1.0-alpha.10 | 4 | 1 | 3 | 5 | 2 | 178,228 | EpubCheck failed：0 fatal / 5 error / 0 warning；Ace failed：整体 fail、8 项断言 | unchanged |
+
+本轮新增证据边界：
+
+- Renderer 不能提交 Ace 模块、命令、环境或状态；主进程生成并持有绑定项目状态、标准身份和工具文件身份的计划，Python prepare/finalize 复核同一计划；
+- Ace 只在固定 Electron `utilityProcess` 中执行；合并输出上限 64 KiB，最长 5 分钟，净化注入环境；主进程启动精确系统 Chrome，使用独立 profile 和随机 loopback DevTools 端点，结束后 profile 残留为 0；
+- 源码 smoke 证明受控链路能真实运行并正确报告缺陷，但不证明打包路径、ASAR/fuse 联合边界、自带浏览器或 OS 级网络隔离；因此 `ACE_CONTROLLED_HELPER_PENDING` 仍作为 packaged 证据 blocker 保留；
+- Electron 43 未知 fuse 仍是资源门禁之外的独立 sale 条件阻断；本轮没有猜测其语义。
+
+## 历史验证结论：0.1.0-alpha.9 Electron ASAR 与 fuse 发布硬化合同
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未下载 builder 归档、未运行 electron-builder，也未生成安装器、ZIP 或发布证据。
 

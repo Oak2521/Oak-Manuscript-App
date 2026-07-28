@@ -55,6 +55,11 @@ const AUTHOR_DOCUMENT_CSP = [
 ].join('; ');
 
 let browser;
+let browserLaunchPromise;
+let browserClosePromise;
+let browserProfileDirectory;
+let browserProfileOwned = false;
+const BROWSER_PROFILE_PREFIX = 'oak-ace-chrome-';
 
 const isDev = process && process.env
     && (process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true');
@@ -64,6 +69,71 @@ function positiveIntegerEnvironment(name, fallback) {
     if (!raw) return fallback;
     const parsed = Number.parseInt(raw, 10);
     return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function createBrowserProfileDirectory() {
+    const temporaryRoot = fs.realpathSync(os.tmpdir());
+    const rootStat = fs.lstatSync(temporaryRoot);
+    if (!rootStat.isDirectory() || rootStat.isSymbolicLink()) {
+        throw new Error('Ace browser temporary root is unsafe');
+    }
+    const configuredRoot = process && process.env
+        ? process.env.OAK_ACE_BROWSER_PROFILE_ROOT
+        : undefined;
+    if (configuredRoot && !path.isAbsolute(configuredRoot)) {
+        throw new Error('Ace browser profile root must be absolute');
+    }
+    let expectedParent = temporaryRoot;
+    let expectedPrefix = BROWSER_PROFILE_PREFIX;
+    if (configuredRoot) {
+        const canonicalRoot = fs.realpathSync(path.resolve(configuredRoot));
+        const configuredStat = fs.lstatSync(canonicalRoot);
+        if (configuredStat.isSymbolicLink() || !configuredStat.isDirectory()
+            || path.dirname(canonicalRoot) !== temporaryRoot
+            || !path.basename(canonicalRoot).startsWith(BROWSER_PROFILE_PREFIX)) {
+            throw new Error('Ace browser profile root is unsafe');
+        }
+        expectedParent = canonicalRoot;
+        expectedPrefix = 'instance-';
+    }
+    const requested = fs.mkdtempSync(path.join(expectedParent, expectedPrefix));
+    const canonical = fs.realpathSync(requested);
+    const createdStat = fs.lstatSync(canonical);
+    if (createdStat.isSymbolicLink() || !createdStat.isDirectory()
+        || path.dirname(canonical) !== expectedParent
+        || !path.basename(canonical).startsWith(expectedPrefix)) {
+        throw new Error('Ace browser profile directory is unsafe');
+    }
+    browserProfileDirectory = canonical;
+    browserProfileOwned = !configuredRoot;
+    return canonical;
+}
+
+async function removeBrowserProfileDirectory() {
+    const target = browserProfileDirectory;
+    const owned = browserProfileOwned;
+    browserProfileDirectory = undefined;
+    browserProfileOwned = false;
+    if (!target || !owned) return;
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+        if (!fs.existsSync(target)) return;
+        const temporaryRoot = fs.realpathSync(os.tmpdir());
+        const targetStat = fs.lstatSync(target);
+        const canonical = fs.realpathSync(target);
+        if (targetStat.isSymbolicLink() || !targetStat.isDirectory()
+            || path.dirname(canonical) !== temporaryRoot
+            || !path.basename(canonical).startsWith(BROWSER_PROFILE_PREFIX)) {
+            throw new Error('Ace browser profile cleanup path is unsafe');
+        }
+        try {
+            fs.rmSync(canonical, { recursive: true, force: true });
+            return;
+        } catch (error) {
+            if (!error || !['EBUSY', 'ENOTEMPTY', 'EPERM'].includes(error.code)
+                || attempt === 19) throw error;
+            await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+    }
 }
 
 const MILLISECONDS_TIMEOUT_INITIAL = positiveIntegerEnvironment('ACE_TIMEOUT_INITIAL', 5000);
@@ -236,6 +306,30 @@ module.exports = {
     },
     concurrency: 4,
     async launch() {
+        if (browser) return;
+        if (browserLaunchPromise) {
+            await browserLaunchPromise;
+            return;
+        }
+        const browserWSEndpoint = process && process.env
+            ? process.env.OAK_ACE_BROWSER_WS_ENDPOINT
+            : undefined;
+        if (browserWSEndpoint) {
+            if (!/^ws:\/\/127\.0\.0\.1:[1-9][0-9]{0,4}\/devtools\/browser\/[0-9A-Za-z-]{8,128}$/.test(browserWSEndpoint)) {
+                throw new Error('Ace browser WebSocket endpoint is unsafe');
+            }
+            try {
+                browserLaunchPromise = puppeteer.connect({
+                    browserWSEndpoint,
+                    protocolTimeout: cliOptionMillisecondsTimeoutExtension
+                        || MILLISECONDS_TIMEOUT_EXTENSION,
+                });
+                browser = await browserLaunchPromise;
+                return;
+            } finally {
+                browserLaunchPromise = undefined;
+            }
+        }
         const args = [...CHROMIUM_SECURITY_ARGS];
         // Windows and macOS retain Chromium's sandbox. Unsupported Unix hosts
         // keep upstream compatibility; formal builds remain Windows/macOS only.
@@ -243,17 +337,42 @@ module.exports = {
             args.push('--no-sandbox');
             args.push('--disable-setuid-sandbox');
         }
-        browser = await puppeteer.launch({
-            args,
-            headless: true,
-            timeout: MILLISECONDS_TIMEOUT_INITIAL,
-            protocolTimeout: cliOptionMillisecondsTimeoutExtension
-                || MILLISECONDS_TIMEOUT_EXTENSION,
-        });
+        const userDataDir = createBrowserProfileDirectory();
+        try {
+            browserLaunchPromise = puppeteer.launch({
+                args,
+                headless: true,
+                timeout: MILLISECONDS_TIMEOUT_INITIAL,
+                protocolTimeout: cliOptionMillisecondsTimeoutExtension
+                    || MILLISECONDS_TIMEOUT_EXTENSION,
+                userDataDir,
+            });
+            browser = await browserLaunchPromise;
+        } catch (error) {
+            await removeBrowserProfileDirectory();
+            throw error;
+        } finally {
+            browserLaunchPromise = undefined;
+        }
     },
     async close() {
-        if (browser) await browser.close();
-        browser = undefined;
+        if (browserClosePromise) {
+            await browserClosePromise;
+            return;
+        }
+        browserClosePromise = (async () => {
+            try {
+                if (browser) await browser.close();
+            } finally {
+                browser = undefined;
+                await removeBrowserProfileDirectory();
+            }
+        })();
+        try {
+            await browserClosePromise;
+        } finally {
+            browserClosePromise = undefined;
+        }
     },
     async run(url, scripts, scriptContents, basedir) {
         if (!browser) throw new Error('Ace browser is not running');
@@ -327,6 +446,7 @@ module.exports = {
     },
     __oakSecurity: Object.freeze({
         ALLOWED_NON_FILE_PROTOCOLS,
+        BROWSER_PROFILE_PREFIX,
         CHROMIUM_SECURITY_ARGS,
         allowedNonFileProtocol,
         handleRequest,

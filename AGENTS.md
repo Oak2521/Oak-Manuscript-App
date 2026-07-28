@@ -56,4 +56,4 @@ release/     # 发布产物（不入库）
 
 ## 6. 里程碑与当前阶段
 
-当前开发版本为 `0.1.0-alpha.9`。P0、离线标准可信链、Windows alpha 资源/构建输入门禁、统一账号/Free-Pro/`SyncRecord v1` 离线契约，以及 ASAR/fuse 配置与打包后二进制验证合同已经实现。尚无真实 alpha.9 打包二进制；Electron 43 的未知 fuse 与临时 `RunAsNode=true` 均未关闭正式售卖阻断。账号生产服务、同步 transport、持久队列和网站后台也未实现。Windows builder 下载仍须用户先批准并显式运行；普通 build/test 永不联网。具体事实必须以代码、`npm test` 和 `docs/DEVELOPMENT_STATUS.md` 交叉核对，未经真实验收不得写成已完成。
+当前开发版本为 `0.1.0-alpha.10`。P0、离线标准可信链、Windows alpha 资源/构建输入门禁、统一账号/Free-Pro/`SyncRecord v1` 离线契约、ASAR/fuse 配置与打包后二进制验证合同，以及关闭 `RunAsNode` 的 Ace 受控 `utilityProcess` 源码链路已经实现。尚无真实 alpha.10 打包二进制；Electron 43 的未知 fuse、Ace 打包后功能/安全证据、自带浏览器与 OS 级网络隔离仍是正式售卖阻断。账号生产服务、同步 transport、持久队列和网站后台也未实现。Windows builder 下载仍须用户先批准并显式运行；普通 build/test 永不联网。具体事实必须以代码、`npm test` 和 `docs/DEVELOPMENT_STATUS.md` 交叉核对，未经真实验收不得写成已完成。

@@ -141,6 +141,8 @@ class ProjectWriteLockProcessTest(unittest.TestCase):
                 "restore-checkpoint",
                 "upgrade-rulepack",
                 "external",
+                "external-prepare",
+                "external-finalize",
                 "issue",
             },
         )

@@ -26,9 +26,11 @@ from oak_manuscript_core.external import (
     _trusted_staged_ace,
     build_ace_command,
     discover_tools,
+    evaluate_ace_report,
     run_ace,
     run_epubcheck,
 )
+from oak_manuscript_core.errors import OakError
 from oak_manuscript_core.project import Project
 from oak_manuscript_core.reports import render_markdown
 from oak_manuscript_core.rulepack import load_rulepack
@@ -43,7 +45,7 @@ ACE_PATCH_BEFORE_SHA256 = (
     "681b52d047d5f6eebbfc62a925b7dc22b82589ab63b36a9ea602297f8cd86ea6"
 )
 ACE_PATCH_AFTER_SHA256 = (
-    "025a0766beaa48e8eb48f640d2bacf72029a61486aec276a393450d406ac67cc"
+    "6c7da7364d05548355fb1ab90c3d6d77366e2fd01b6f67551b648c5fb8285614"
 )
 TOOLS = discover_tools()
 HAS_EPUBCHECK = bool(TOOLS["epubcheck_jar"] and TOOLS["java"])
@@ -539,30 +541,28 @@ class AceDiscoveryAndCommandTest(unittest.TestCase):
         self.tmp = Path(tempfile.mkdtemp(prefix="oak-ace-discovery-"))
         self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
         self.entry = make_staged_ace(self.tmp)
-        self.electron = self.tmp / "Oak Manuscript.exe"
         self.node = self.tmp / "node.exe"
-        self.electron.write_bytes(b"host")
         self.node.write_bytes(b"node")
         self.program_files = self.tmp / "ProgramFiles"
         self.chrome = self.program_files / "Google" / "Chrome" / "Application" / "chrome.exe"
         self.chrome.parent.mkdir(parents=True)
         self.chrome.write_bytes(b"chrome")
 
-    def test_packaged_discovery_prefers_host_electron_and_finds_windows_chrome(self):
+    def test_packaged_discovery_exposes_fixed_entry_for_utility_process(self):
         tools = discover_tools(
             self.tmp,
             environ={
                 "OAK_APP_PACKAGED": "1",
-                "OAK_ELECTRON_EXEC_PATH": str(self.electron),
                 "ProgramFiles": str(self.program_files),
                 "ProgramFiles(x86)": str(self.tmp / "ProgramFilesX86"),
             },
             platform_name="Windows",
             which_func=lambda _name: None,
         )
-        self.assertEqual(tools["ace"], str(self.entry))
-        self.assertEqual(tools["ace_runtime"], str(self.electron.resolve()))
-        self.assertEqual(tools["ace_runtime_kind"], "electron")
+        self.assertIsNone(tools["ace"])
+        self.assertEqual(tools["ace_entry"], str(self.entry))
+        self.assertIsNone(tools["ace_runtime"])
+        self.assertIsNone(tools["ace_runtime_kind"])
         self.assertEqual(tools["chrome"], str(self.chrome))
 
         without_host = discover_tools(
@@ -589,13 +589,13 @@ class AceDiscoveryAndCommandTest(unittest.TestCase):
         self.assertEqual(tools["ace_runtime_kind"], "node")
         self.assertEqual(tools["ace_runtime"], str(self.node.resolve()))
 
-    def test_command_uses_fixed_entry_and_electron_node_mode(self):
+    def test_command_uses_fixed_entry_and_development_node(self):
         command, updates, kind = build_ace_command(
-            self.entry, electron_exec=self.electron, node_exec=self.node
+            self.entry, node_exec=self.node
         )
-        self.assertEqual(command, [str(self.electron.resolve()), str(self.entry.resolve())])
-        self.assertEqual(updates, {"ELECTRON_RUN_AS_NODE": "1"})
-        self.assertEqual(kind, "electron")
+        self.assertEqual(command, [str(self.node.resolve()), str(self.entry.resolve())])
+        self.assertEqual(updates, {})
+        self.assertEqual(kind, "node")
 
     def test_macos_chrome_candidates_cover_system_and_user_applications(self):
         candidates = [path.as_posix() for path in _chrome_candidates(
@@ -625,10 +625,10 @@ class AceInvocationSafetyTest(unittest.TestCase):
         self.tmp = Path(tempfile.mkdtemp(prefix="oak-ace-run-"))
         self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
         self.entry = make_staged_ace(self.tmp)
-        self.electron = self.tmp / "electron.exe"
+        self.node = self.tmp / "node.exe"
         self.chrome = self.tmp / "chrome.exe"
         self.epub = self.tmp / "book.epub"
-        for path in (self.electron, self.chrome, self.epub):
+        for path in (self.node, self.chrome, self.epub):
             path.write_bytes(b"fixture")
         self.out = self.tmp / "report"
 
@@ -651,7 +651,8 @@ class AceInvocationSafetyTest(unittest.TestCase):
             "ELECTRON_RUN_AS_NODE": "attacker-value",
             "ELECTRON_NO_ASAR": "1",
             "PUPPETEER_EXECUTABLE_PATH": "C:/evil-chrome.exe",
-            "OAK_ELECTRON_EXEC_PATH": str(self.electron),
+            "OAK_UNTRUSTED_VALUE": "must-not-inherit",
+            "ACE_TIMEOUT_INITIAL": "1",
             "LD_PRELOAD": "/tmp/evil.so",
         }
         with patch.dict(os.environ, injected, clear=False):
@@ -661,22 +662,23 @@ class AceInvocationSafetyTest(unittest.TestCase):
                     self.out,
                     ace=str(self.entry),
                     chrome=str(self.chrome),
-                    electron_exec=str(self.electron),
+                    node_exec=str(self.node),
                 )
 
         self.assertEqual(result["status"], "passed")
         self.assertEqual(captured["command"], [
-            str(self.electron.resolve()),
+            str(self.node.resolve()),
             str(self.entry.resolve()),
             "-f", "-o", str(self.out), str(self.epub),
         ])
         self.assertIs(captured["shell"], False)
         child_env = captured["env"]
         for key in injected:
-            if key not in {"ELECTRON_RUN_AS_NODE", "PUPPETEER_EXECUTABLE_PATH"}:
+            if key not in {"PUPPETEER_EXECUTABLE_PATH", "ACE_TIMEOUT_INITIAL"}:
                 self.assertNotIn(key, child_env)
-        self.assertEqual(child_env["ELECTRON_RUN_AS_NODE"], "1")
+        self.assertNotIn("ELECTRON_RUN_AS_NODE", child_env)
         self.assertEqual(child_env["PUPPETEER_EXECUTABLE_PATH"], str(self.chrome.resolve()))
+        self.assertEqual(child_env["ACE_TIMEOUT_INITIAL"], "30000")
 
     def test_stale_pass_report_cannot_mask_nonzero_process(self):
         self.out.mkdir(parents=True)
@@ -699,7 +701,7 @@ class AceInvocationSafetyTest(unittest.TestCase):
                 self.out,
                 ace=str(self.entry),
                 chrome=str(self.chrome),
-                electron_exec=str(self.electron),
+                node_exec=str(self.node),
             )
         self.assertEqual(result["status"], "not_run")
         self.assertIn("未生成安全的本次报告", result["detail"])
@@ -721,7 +723,7 @@ class AceInvocationSafetyTest(unittest.TestCase):
                 self.out,
                 ace=str(self.entry),
                 chrome=str(self.chrome),
-                electron_exec=str(self.electron),
+                node_exec=str(self.node),
             )
         self.assertEqual(result["status"], "not_run")
         self.assertIn("报告为 fail", result["detail"])
@@ -743,7 +745,7 @@ class AceInvocationSafetyTest(unittest.TestCase):
                 self.out,
                 ace=str(self.entry),
                 chrome=str(self.chrome),
-                electron_exec=str(self.electron),
+                node_exec=str(self.node),
             )
         self.assertEqual(result["status"], "failed")
         self.assertIn("整体 fail", result["detail"])
@@ -771,7 +773,7 @@ class AceInvocationSafetyTest(unittest.TestCase):
                         self.out,
                         ace=str(self.entry),
                         chrome=str(self.chrome),
-                        electron_exec=str(self.electron),
+                        node_exec=str(self.node),
                     )
                 self.assertEqual(result["status"], "not_run")
                 self.assertIn("outcome 与断言数量不一致", result["detail"])
@@ -784,7 +786,7 @@ class AceInvocationSafetyTest(unittest.TestCase):
                 self.out,
                 ace=str(self.entry),
                 chrome=str(self.chrome),
-                electron_exec=str(self.electron),
+                node_exec=str(self.node),
             )
         self.assertEqual(result["status"], "not_run")
         run.assert_not_called()
@@ -792,11 +794,11 @@ class AceInvocationSafetyTest(unittest.TestCase):
     def test_timeout_is_not_misreported_as_a_manuscript_failure(self):
         with patch(
             "oak_manuscript_core.external.subprocess.run",
-            side_effect=subprocess.TimeoutExpired([str(self.electron)], 300),
+            side_effect=subprocess.TimeoutExpired([str(self.node)], 300),
         ):
             result = run_ace(
                 self.epub, self.out, ace=str(self.entry), chrome=str(self.chrome),
-                electron_exec=str(self.electron),
+                node_exec=str(self.node),
             )
         self.assertEqual(result["status"], "not_run")
         self.assertIn("超时", result["detail"])
@@ -805,7 +807,7 @@ class AceInvocationSafetyTest(unittest.TestCase):
         with patch("oak_manuscript_core.external.subprocess.run") as run:
             missing_chrome = run_ace(
                 self.epub, self.out, ace=str(self.entry), chrome=None,
-                electron_exec=str(self.electron),
+                node_exec=str(self.node),
             )
             with patch.dict(os.environ, {}, clear=True):
                 with patch("oak_manuscript_core.external.shutil.which", return_value=None):
@@ -821,10 +823,10 @@ class AceInvocationSafetyTest(unittest.TestCase):
                 self.out,
                 ace=str(self.entry),
                 chrome=str(self.chrome),
-                node_exec=str(self.electron),
+                node_exec=str(self.node),
             )
         self.assertEqual(packaged_without_host["status"], "not_run")
-        self.assertIn("缺少可执行 Ace", packaged_without_host["detail"])
+        self.assertIn("受控 Node.js 宿主", packaged_without_host["detail"])
         run.assert_not_called()
 
     def test_arbitrary_script_is_never_executed(self):
@@ -833,7 +835,7 @@ class AceInvocationSafetyTest(unittest.TestCase):
         with patch("oak_manuscript_core.external.subprocess.run") as run:
             result = run_ace(
                 self.epub, self.out, ace=str(arbitrary), chrome=str(self.chrome),
-                electron_exec=str(self.electron),
+                node_exec=str(self.node),
             )
         self.assertEqual(result["status"], "not_run")
         run.assert_not_called()
@@ -1027,6 +1029,94 @@ class EpubcheckTest(unittest.TestCase):
         r = run_epubcheck(preview, self.tmp / "p.json",
                           jar=TOOLS["epubcheck_jar"], java=TOOLS["java"])
         self.assertEqual(r["status"], "passed", r["detail"])
+
+
+class ExternalTwoPhaseProtocolTest(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="oak-external-plan-"))
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+        self.project = Project.create(
+            SAMPLES / "epub_good.epub", self.tmp / "project", manuscript_type="ebook"
+        )
+        ops.run_check(self.project, PACK)
+        self.entry = make_staged_ace(self.tmp / "runtime")
+        self.chrome = self.tmp / "chrome.exe"
+        self.java = self.tmp / "java.exe"
+        self.jar = self.tmp / "epubcheck.jar"
+        for target in (self.chrome, self.java, self.jar):
+            target.write_bytes(b"fixed external tool\n")
+        self.tools = {
+            "java": str(self.java),
+            "java_source": "bundled",
+            "epubcheck_jar": str(self.jar),
+            "ace": None,
+            "ace_entry": str(self.entry),
+            "ace_runtime": None,
+            "ace_runtime_kind": None,
+            "chrome": str(self.chrome),
+        }
+
+    def test_plan_prepare_finalize_binds_one_current_run_and_clears_stale_report(self):
+        plan = ops.plan_external_validation(self.project, tools=self.tools)
+        self.assertRegex(plan["plan_id"], r"^external-plan-[0-9a-f]{64}$")
+        self.assertEqual(plan["ace_request"]["entry"], str(self.entry.resolve()))
+
+        out_dir = Path(plan["ace_request"]["out_dir"])
+        out_dir.mkdir()
+        (out_dir / "report.json").write_text('{"stale":true}', encoding="utf-8")
+        prepared = ops.prepare_external_ace(
+            self.project, plan["plan_id"], tools=self.tools
+        )
+        self.assertTrue(prepared["prepared"])
+        self.assertFalse((out_dir / "report.json").exists())
+
+        (out_dir / "report.json").write_text(json.dumps({
+            "earl:result": {"earl:outcome": "pass"},
+            "assertions": [],
+        }), encoding="utf-8")
+        with patch(
+            "oak_manuscript_core.external.run_epubcheck",
+            return_value={"status": "passed", "detail": "fixture"},
+        ):
+            results = ops.finalize_external_validation(
+                self.project,
+                plan["plan_id"],
+                ace_exit_code=0,
+                tools=self.tools,
+            )
+        self.assertEqual(results["epubcheck"]["status"], "passed")
+        self.assertEqual(results["ace"]["status"], "passed")
+        latest = self.project.data["checks"][-1]
+        stored = json.loads(self.project.report_path(latest["result_file"]).read_text(
+            encoding="utf-8"
+        ))
+        self.assertEqual(stored["external_tools"]["ace"], "passed")
+
+    def test_missing_helper_exit_is_truthfully_not_run_but_epubcheck_still_finishes(self):
+        plan = ops.plan_external_validation(self.project, tools=self.tools)
+        ops.prepare_external_ace(self.project, plan["plan_id"], tools=self.tools)
+        with patch(
+            "oak_manuscript_core.external.run_epubcheck",
+            return_value={"status": "passed", "detail": "fixture"},
+        ):
+            results = ops.finalize_external_validation(
+                self.project, plan["plan_id"], tools=self.tools
+            )
+        self.assertEqual(results["epubcheck"]["status"], "passed")
+        self.assertEqual(results["ace"]["status"], "not_run")
+        self.assertIn("helper", results["ace"]["detail"])
+
+    def test_plan_rejects_tool_identity_drift_and_invalid_exit_code(self):
+        plan = ops.plan_external_validation(self.project, tools=self.tools)
+        self.chrome.write_bytes(b"changed external tool\n")
+        with self.assertRaises(OakError):
+            ops.prepare_external_ace(self.project, plan["plan_id"], tools=self.tools)
+
+        current = ops.plan_external_validation(self.project, tools=self.tools)
+        with self.assertRaises(OakError):
+            ops.finalize_external_validation(
+                self.project, current["plan_id"], ace_exit_code=256, tools=self.tools
+            )
 
 
 @unittest.skipUnless(HAS_EPUBCHECK, "本机没有 EpubCheck + Java，跳过")

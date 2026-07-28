@@ -223,6 +223,33 @@ function assertSafeExistingProjectFileUnchanged(snapshot, { fsImpl = fs } = {}) 
   return current;
 }
 
+function assertSafeProjectDirectory(projectRoot, candidate, {
+  expectedParentRelative,
+  fsImpl = fs,
+} = {}) {
+  if (typeof candidate !== "string" || !path.isAbsolute(candidate)) {
+    throw new Error("项目目录路径必须是绝对路径");
+  }
+  const resolvedRoot = path.resolve(projectRoot);
+  const resolvedCandidate = path.resolve(candidate);
+  assertExpectedParent(resolvedRoot, path.dirname(resolvedCandidate), expectedParentRelative);
+  const chain = inspectProjectDirectoryChain(resolvedRoot, resolvedCandidate, { fsImpl });
+  return { chain, expectedParentRelative };
+}
+
+function assertSafeProjectDirectoryUnchanged(snapshot, { fsImpl = fs } = {}) {
+  if (!snapshot || !snapshot.chain) throw new TypeError("项目目录安全快照非法");
+  const current = assertSafeProjectDirectory(
+    snapshot.chain.projectRoot,
+    snapshot.chain.parent,
+    { expectedParentRelative: snapshot.expectedParentRelative, fsImpl },
+  );
+  if (!sameDirectoryChain(snapshot.chain, current.chain)) {
+    throw new Error("项目目录在操作期间发生变化");
+  }
+  return current;
+}
+
 function inspectOptionalTarget(fsImpl, chain, target) {
   const stat = lstatOrNull(fsImpl, target);
   if (!stat) return null;
@@ -350,6 +377,8 @@ module.exports = {
   isWithin,
   assertSafeExistingProjectFile,
   assertSafeExistingProjectFileUnchanged,
+  assertSafeProjectDirectory,
+  assertSafeProjectDirectoryUnchanged,
   writeProjectFileAtomicSync,
   looksLikeProject,
 };

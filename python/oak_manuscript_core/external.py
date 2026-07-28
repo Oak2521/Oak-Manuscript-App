@@ -16,7 +16,6 @@ from pathlib import Path, PurePosixPath
 
 _REPO = Path(__file__).resolve().parents[2]
 _TIMEOUT = 300
-_ACE_ELECTRON_ENV = "OAK_ELECTRON_EXEC_PATH"
 _ACE_ROOT_PACKAGE = "@daisy/ace-cli"
 _ACE_ROOT_VERSION = "1.4.6"
 _ACE_LOCK_SCHEMA_VERSION = "1.0"
@@ -33,7 +32,7 @@ _ACE_PATCH_BEFORE_SHA256 = (
     "681b52d047d5f6eebbfc62a925b7dc22b82589ab63b36a9ea602297f8cd86ea6"
 )
 _ACE_PATCH_AFTER_SHA256 = (
-    "025a0766beaa48e8eb48f640d2bacf72029a61486aec276a393450d406ac67cc"
+    "6c7da7364d05548355fb1ab90c3d6d77366e2fd01b6f67551b648c5fb8285614"
 )
 _ACE_PATCH_SOURCE = "scripts/patches/ace-axe-runner-puppeteer-1.4.6.js"
 _ACE_SANITIZER_PACKAGE = "@xmldom/xmldom"
@@ -645,13 +644,10 @@ def _trusted_bundled_java(
 def build_ace_command(
     ace: str | Path,
     *,
-    electron_exec: str | Path | None = None,
     node_exec: str | Path | None = None,
 ) -> tuple[list[str], dict[str, str], str] | None:
     """构造 shell=False 的固定 Ace 入口命令，不接受额外脚本或 CLI 参数。"""
     entry = str(Path(ace).resolve())
-    if electron_exec:
-        return [str(Path(electron_exec).resolve()), entry], {"ELECTRON_RUN_AS_NODE": "1"}, "electron"
     if node_exec:
         return [str(Path(node_exec).resolve()), entry], {}, "node"
     return None
@@ -660,7 +656,6 @@ def build_ace_command(
 def _sanitized_process_env(source: dict[str, str] | None = None) -> dict[str, str]:
     """剔除可向 Node/Electron/Puppeteer 注入代码或参数的继承环境。"""
     unsafe_exact = {
-        _ACE_ELECTRON_ENV,
         "NPM_CONFIG_NODE_OPTIONS",
         "CHROME_PATH",
         "GOOGLE_CHROME_SHIM",
@@ -675,6 +670,8 @@ def _sanitized_process_env(source: dict[str, str] | None = None) -> dict[str, st
             or upper.startswith("NODE_")
             or upper.startswith("ELECTRON_")
             or upper.startswith("PUPPETEER_")
+            or upper.startswith("OAK_")
+            or upper.startswith("ACE_")
         ):
             continue
         cleaned[key] = value
@@ -735,16 +732,13 @@ def discover_tools(
     jar = str(trusted_epubcheck) if trusted_epubcheck is not None else None
     # 只信任 stage_ace.js 生成、清单和安全补丁哈希均匹配的固定入口。
     ace_entry = _trusted_staged_ace(root)
-    electron_exec = env.get(_ACE_ELECTRON_ENV)
-    if electron_exec and not Path(electron_exec).is_file():
-        electron_exec = None
-    # 打包态只允许由 Electron 主进程注入的受控宿主；绝不回退系统 Node。
+    # 打包态由 Electron 主进程的 utilityProcess 执行固定入口；Python 直跑
+    # 仅用于源码/CLI 开发，并且绝不在打包态回退系统 Node。
     node_exec = None if packaged else which("node")
     invocation = None
     if ace_entry is not None:
         invocation = build_ace_command(
             ace_entry,
-            electron_exec=electron_exec,
             node_exec=node_exec,
         )
     ace = str(ace_entry) if invocation is not None else None
@@ -901,58 +895,32 @@ def _prepare_clean_ace_output(out_dir: Path) -> tuple[Path, tuple[int, int]]:
     return target, (stat.st_dev, stat.st_ino)
 
 
-def run_ace(
-    epub_path: Path,
+def prepare_ace_output(out_dir: Path) -> Path:
+    """为受控 Electron helper 建立独占空目录；失败交给调用方显式处理。"""
+    clean_out, _identity = _prepare_clean_ace_output(Path(out_dir))
+    return clean_out
+
+
+def evaluate_ace_report(
     out_dir: Path,
+    returncode: int,
     *,
-    ace: str,
-    chrome: str | None = None,
-    electron_exec: str | None = None,
-    node_exec: str | None = None,
+    output_identity: tuple[int, int] | None = None,
 ) -> dict:
-    """运行阶段化 Ace；固定入口、固定参数、shell=False，绝不接受用户脚本。"""
-    entry = _validated_ace_entry(ace)
-    if entry is None:
-        return {"status": "not_run", "detail": "Ace 阶段化入口或安全清单无效"}
-    if not chrome or not Path(chrome).is_file():
-        return {"status": "not_run", "detail": "缺少可用的系统 Chrome"}
-
-    electron = electron_exec or os.environ.get(_ACE_ELECTRON_ENV)
-    if electron and not Path(electron).is_file():
-        electron = None
-    packaged = os.environ.get("OAK_APP_PACKAGED") == "1"
-    node = None if packaged else (node_exec or shutil.which("node"))
-    invocation = build_ace_command(entry, electron_exec=electron, node_exec=node)
-    if invocation is None:
-        return {"status": "not_run", "detail": "缺少可执行 Ace 的宿主 Electron 或 Node.js"}
-    command, env_updates, _runtime_kind = invocation
-
-    try:
-        clean_out, output_identity = _prepare_clean_ace_output(Path(out_dir))
-    except OSError as exc:
-        return {"status": "not_run", "detail": f"Ace 未完成：输出目录无法安全清理（{exc}）"}
-
-    env = _sanitized_process_env()
-    env.update(env_updates)
-    env["PUPPETEER_EXECUTABLE_PATH"] = str(Path(chrome).resolve())
-    try:
-        proc = subprocess.run(
-            [*command, "-f", "-o", str(clean_out), str(epub_path)],
-            capture_output=True, text=True, encoding="utf-8", errors="replace",
-            timeout=_TIMEOUT, shell=False, env=env,
-        )
-    except subprocess.TimeoutExpired:
-        return {"status": "not_run", "detail": f"Ace 未完成：运行超时（{_TIMEOUT} 秒）"}
-    except OSError as exc:
-        return {"status": "not_run", "detail": f"Ace 未完成：无法启动（{exc}）"}
-
+    """只按当前安全报告和受信任主进程提供的退出码判定 Ace 状态。"""
+    if not isinstance(returncode, int) or isinstance(returncode, bool) or not 0 <= returncode <= 255:
+        return {"status": "not_run", "detail": "Ace 未完成：退出码非法"}
+    clean_out = Path(out_dir)
     report_path = clean_out / "report.json"
     try:
         out_stat = clean_out.stat()
         if (
             clean_out.is_symlink()
             or not clean_out.is_dir()
-            or (out_stat.st_dev, out_stat.st_ino) != output_identity
+            or (
+                output_identity is not None
+                and (out_stat.st_dev, out_stat.st_ino) != output_identity
+            )
             or report_path.is_symlink()
             or not report_path.is_file()
             or report_path.resolve() != clean_out.resolve() / "report.json"
@@ -977,13 +945,13 @@ def run_ace(
     except (OSError, json.JSONDecodeError, TypeError, ValueError):
         return {
             "status": "not_run",
-            "detail": f"Ace 未完成：本次报告非法（退出码 {proc.returncode}）",
+            "detail": f"Ace 未完成：本次报告非法（退出码 {returncode}）",
         }
-    if proc.returncode != 0:
+    if returncode != 0:
         return {
             "status": "not_run",
             "detail": (
-                f"Ace 未完成：报告为 {outcome}，但进程退出码为 {proc.returncode}"
+                f"Ace 未完成：报告为 {outcome}，但进程退出码为 {returncode}"
                 "（仅接受退出码 0）"
             ),
         }
@@ -998,3 +966,52 @@ def run_ace(
     status = "passed" if outcome == "pass" else "failed"
     detail = f"Ace：整体 {outcome}，{violations} 项断言（含可访问性元数据检查）"
     return {"status": status, "detail": detail}
+
+
+def run_ace(
+    epub_path: Path,
+    out_dir: Path,
+    *,
+    ace: str,
+    chrome: str | None = None,
+    node_exec: str | None = None,
+) -> dict:
+    """运行阶段化 Ace；固定入口、固定参数、shell=False，绝不接受用户脚本。"""
+    entry = _validated_ace_entry(ace)
+    if entry is None:
+        return {"status": "not_run", "detail": "Ace 阶段化入口或安全清单无效"}
+    if not chrome or not Path(chrome).is_file():
+        return {"status": "not_run", "detail": "缺少可用的系统 Chrome"}
+
+    packaged = os.environ.get("OAK_APP_PACKAGED") == "1"
+    node = None if packaged else (node_exec or shutil.which("node"))
+    invocation = build_ace_command(entry, node_exec=node)
+    if invocation is None:
+        return {"status": "not_run", "detail": "缺少可执行 Ace 的受控 Node.js 宿主"}
+    command, env_updates, _runtime_kind = invocation
+
+    try:
+        clean_out, output_identity = _prepare_clean_ace_output(Path(out_dir))
+    except OSError as exc:
+        return {"status": "not_run", "detail": f"Ace 未完成：输出目录无法安全清理（{exc}）"}
+
+    env = _sanitized_process_env()
+    env.update(env_updates)
+    env["PUPPETEER_EXECUTABLE_PATH"] = str(Path(chrome).resolve())
+    env["ACE_TIMEOUT_INITIAL"] = "30000"
+    try:
+        proc = subprocess.run(
+            [*command, "-f", "-o", str(clean_out), str(epub_path)],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+            timeout=_TIMEOUT, shell=False, env=env,
+        )
+    except subprocess.TimeoutExpired:
+        return {"status": "not_run", "detail": f"Ace 未完成：运行超时（{_TIMEOUT} 秒）"}
+    except OSError as exc:
+        return {"status": "not_run", "detail": f"Ace 未完成：无法启动（{exc}）"}
+
+    return evaluate_ace_report(
+        clean_out,
+        proc.returncode,
+        output_identity=output_identity,
+    )

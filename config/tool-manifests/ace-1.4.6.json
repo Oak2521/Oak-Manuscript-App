@@ -5,11 +5,11 @@
     "name": "@daisy/ace-cli",
     "version": "1.4.6"
   },
-  "stage_manifest_sha256": "de2beb5216c15e0453b6f0fc1fd5c66e6e6647df09c5e8345251013fa55d7ad2",
+  "stage_manifest_sha256": "0e7544d122c2b1eda2a4c222456e6ea236f22dc8554a561dfde9e509b31da2e0",
   "entry": "ace.js",
   "package_count": 236,
   "file_count": 6672,
-  "total_bytes": 58964235,
+  "total_bytes": 58969045,
   "package_closure": [
     {
       "name": "@babel/code-frame",
@@ -1199,7 +1199,7 @@
       "target_version": "1.4.6",
       "target_file": "node_modules/@daisy/ace-axe-runner-puppeteer/lib/index.js",
       "before_sha256": "681b52d047d5f6eebbfc62a925b7dc22b82589ab63b36a9ea602297f8cd86ea6",
-      "after_sha256": "025a0766beaa48e8eb48f640d2bacf72029a61486aec276a393450d406ac67cc",
+      "after_sha256": "6c7da7364d05548355fb1ab90c3d6d77366e2fd01b6f67551b648c5fb8285614",
       "controlled_replacement": "scripts/patches/ace-axe-runner-puppeteer-1.4.6.js",
       "sanitizer": {
         "package_name": "@xmldom/xmldom",
@@ -1591,8 +1591,8 @@
     },
     {
       "path": "node_modules/@daisy/ace-axe-runner-puppeteer/lib/index.js",
-      "size_bytes": 12769,
-      "sha256": "025a0766beaa48e8eb48f640d2bacf72029a61486aec276a393450d406ac67cc"
+      "size_bytes": 17579,
+      "sha256": "6c7da7364d05548355fb1ab90c3d6d77366e2fd01b6f67551b648c5fb8285614"
     },
     {
       "path": "node_modules/@daisy/ace-axe-runner-puppeteer/package.json",

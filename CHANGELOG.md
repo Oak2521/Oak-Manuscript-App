@@ -4,6 +4,25 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.10（ChatGPT Ace 受控 utilityProcess 与 RunAsNode 关闭检查点）
+
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.10`。该标签只表示经本地验证的源码状态；当前没有 alpha.10 安装包、ZIP 或真实打包二进制证据。
+
+**受控外部验证**
+
+- Renderer 只提交项目路径；主进程生成绑定项目/working/标准与 Java、JAR、Ace、Chrome 文件身份的计划，prepare 清理安全输出后才运行固定 helper，finalize 重验同一计划并解析报告；
+- Ace 迁移到 Electron `utilityProcess`，固定入口/参数、净化环境、64 KiB 输出上限和 5 分钟超时；目录换入、工具替换、状态漂移、异常退出或非法报告均 fail-closed；
+- 主进程新增受控 Chrome controller：固定隐藏参数、独立 profile、随机 loopback DevTools 端点、精确子进程停止和清理；Ace utility 只连接这个本地端点；
+- Electron Fuse 将 `RunAsNode` 从临时 `true` 改为 `false`。Electron 43 未知索引 8 仍按 alpha blocker / sale fail-closed，不猜测语义。
+
+**验证**
+
+- `npm test` PASS：Node 295 total / 288 pass / 0 fail / 7 skip；Python 351 total / 0 failures / 0 errors / 3 skipped；
+- 标准、Ace stage、Electron runtime、Windows alpha 资源和 Fuse 配置门禁全部 PASS；17 项 sale blocker 未减少；
+- 隐藏条件源码 smoke PASS：`out/source-smoke/runs/ms4cz6o9-c2ad021ca7e2e83c/projects/`；DOCX/EPUB 各 4 次检查、1 次修复、3 个检查点，问题 13/5、应用 fixes 5/2、PDF 251,649/178,228 字节，原稿哈希不变；
+- EPUB 缺陷样本真实得到 EpubCheck 5 error 和 Ace 8 项失败断言，结束后无 Chrome profile 残留；
+- 发布证据与 packaged fuse 门禁按设计拒绝缺失 alpha.10 制品。本轮未联网、未下载 builder、未构建或签名。
+
 ### 2026-07-28 — 0.1.0-alpha.9（ChatGPT Electron ASAR 与 fuse 发布硬化检查点）
 
 > 源码检查点标签：`chatgpt-v0.1.0-alpha.9`。该标签只表示经本地验证的源码状态；当前没有 alpha.9 安装包、ZIP 或真实打包二进制 fuse 证据。

@@ -43,6 +43,7 @@ DISCLAIMER = (
 
 _STATUS_VALUES = {"open", "accepted", "rejected", "resolved"}
 _CITATION_PLAN_ID_RE = re.compile(r"^citation-plan-[0-9a-f]{64}$")
+_EXTERNAL_PLAN_ID_RE = re.compile(r"^external-plan-[0-9a-f]{64}$")
 
 
 def _bind_or_assert_rulepack(project: Project, pack: dict) -> dict:
@@ -741,13 +742,7 @@ def run_fixes(
             shutil.rmtree(checkpoint_backup_root, ignore_errors=True)
 
 
-def run_external(project: Project) -> dict:
-    """对 EPUB 项目运行可用的外部验证工具，把真实状态写回最近一次检查结果。
-
-    工具缺失时保持 not_run（绝不虚报）；返回各工具的状态与说明。
-    """
-    from .external import discover_tools, run_ace, run_epubcheck
-
+def _external_context(project: Project) -> tuple[dict, Path, dict]:
     if project.data.get("rulepack_check_required", False):
         raise OakError("规则包已变更，必须先重新运行 check 才能运行外部验证。")
     _require_current_check_identity(project)
@@ -760,6 +755,189 @@ def run_external(project: Project) -> dict:
     result = read_json(result_path)
     if result.get("rulepack") != project.data.get("rulepack"):
         raise OakError("最近一次检查结果文件不属于项目当前规则包；必须先重新运行 check。")
+    return last, result_path, result
+
+
+def _external_file_identity(value: object, *, digest: bool = False) -> dict | None:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        requested = Path(value)
+        if not requested.is_absolute():
+            return None
+        lexical = Path(os.path.abspath(requested))
+        info = requested.lstat()
+        resolved = requested.resolve(strict=True)
+        if (
+            requested.is_symlink()
+            or not requested.is_file()
+            or info.st_nlink != 1
+            or os.path.normcase(str(resolved)) != os.path.normcase(str(lexical))
+        ):
+            return None
+        identity = {
+            "path": str(resolved),
+            "device": int(info.st_dev),
+            "inode": int(info.st_ino),
+            "size": int(info.st_size),
+            "mtime_ns": int(info.st_mtime_ns),
+        }
+        if digest:
+            identity["sha256"] = sha256_file(resolved)
+        return identity
+    except (OSError, TypeError, ValueError):
+        return None
+
+
+def plan_external_validation(project: Project, *, tools: dict | None = None) -> dict:
+    """生成绑定当前项目、检查结果与工具身份的只读外部验证计划。"""
+    from .external import discover_tools
+
+    last, result_path, _result = _external_context(project)
+    discovered = discover_tools() if tools is None else copy.deepcopy(tools)
+    identities = {
+        "java": _external_file_identity(discovered.get("java")),
+        "epubcheck_jar": _external_file_identity(
+            discovered.get("epubcheck_jar"), digest=True
+        ),
+        "ace_entry": _external_file_identity(discovered.get("ace_entry"), digest=True),
+        "chrome": _external_file_identity(discovered.get("chrome")),
+    }
+    payload = {
+        "schema_version": "1.0",
+        "project_id": project.data.get("project_id"),
+        "check_id": last.get("check_id"),
+        "working_sha256": sha256_file(project.working_path),
+        "result_sha256": sha256_file(result_path),
+        "rulepack": copy.deepcopy(project.data.get("rulepack")),
+        "tools": identities,
+    }
+    canonical = json.dumps(
+        payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    plan_id = f"external-plan-{hashlib.sha256(canonical).hexdigest()}"
+    ace_request = None
+    if identities["ace_entry"] is not None and identities["chrome"] is not None:
+        ace_request = {
+            "entry": identities["ace_entry"]["path"],
+            "chrome": identities["chrome"]["path"],
+            "epub": str(project.working_path),
+            "out_dir": str(project.safe_report_directory("ace")),
+        }
+    return {
+        "schema_version": "1.0",
+        "plan_id": plan_id,
+        "ace_request": ace_request,
+    }
+
+
+def _require_external_plan(
+    project: Project,
+    plan_id: str,
+    *,
+    tools: dict | None = None,
+) -> dict:
+    if not isinstance(plan_id, str) or not _EXTERNAL_PLAN_ID_RE.fullmatch(plan_id):
+        raise OakError("外部验证计划 ID 非法。")
+    current = plan_external_validation(project, tools=tools)
+    if current["plan_id"] != plan_id:
+        raise OakError("外部验证计划已失效；项目、检查结果或工具身份发生变化。")
+    return current
+
+
+def prepare_external_ace(
+    project: Project,
+    plan_id: str,
+    *,
+    tools: dict | None = None,
+) -> dict:
+    """在锁内复核计划并清空 Ace 输出，杜绝旧报告冒充本次结果。"""
+    from .external import prepare_ace_output
+
+    plan = _require_external_plan(project, plan_id, tools=tools)
+    request = plan["ace_request"]
+    if request is None:
+        return {"plan_id": plan_id, "prepared": False, "out_dir": None}
+    clean = prepare_ace_output(Path(request["out_dir"]))
+    return {"plan_id": plan_id, "prepared": True, "out_dir": str(clean)}
+
+
+def _write_external_results(
+    project: Project,
+    result_path: Path,
+    result: dict,
+    results: dict[str, dict],
+) -> dict:
+    result["external_tools"] = {name: item["status"] for name, item in results.items()}
+    result["external_tools_detail"] = {
+        name: item["detail"] for name, item in results.items()
+    }
+    write_json(result_path, result)
+    project.save()
+    return results
+
+
+def finalize_external_validation(
+    project: Project,
+    plan_id: str,
+    *,
+    ace_exit_code: int | None = None,
+    tools: dict | None = None,
+) -> dict:
+    """复核原计划、运行 EpubCheck，并只接受主进程掌握的 Ace 退出码。"""
+    from .external import discover_tools, evaluate_ace_report, run_epubcheck
+
+    plan = _require_external_plan(project, plan_id, tools=tools)
+    _last, result_path, result = _external_context(project)
+    discovered = discover_tools() if tools is None else copy.deepcopy(tools)
+    results: dict[str, dict] = {}
+
+    if discovered.get("epubcheck_jar") and discovered.get("java"):
+        results["epubcheck"] = run_epubcheck(
+            project.working_path,
+            project.report_path("reports/epubcheck.json", required=False),
+            jar=discovered["epubcheck_jar"],
+            java=discovered["java"],
+        )
+    else:
+        missing = (
+            "缺少 Java 运行时"
+            if discovered.get("epubcheck_jar")
+            else "未安装 EpubCheck"
+        )
+        results["epubcheck"] = {"status": "not_run", "detail": missing}
+
+    request = plan["ace_request"]
+    if request is None:
+        detail = (
+            "缺少可用的 Chrome / Chromium"
+            if discovered.get("ace_entry")
+            else "未安装 Ace by DAISY"
+        )
+        results["ace"] = {"status": "not_run", "detail": detail}
+    elif ace_exit_code is None:
+        results["ace"] = {
+            "status": "not_run",
+            "detail": "Ace 未完成：受控 Electron helper 未返回合法退出码",
+        }
+    elif (
+        not isinstance(ace_exit_code, int)
+        or isinstance(ace_exit_code, bool)
+        or not 0 <= ace_exit_code <= 255
+    ):
+        raise OakError("Ace helper 退出码非法。")
+    else:
+        results["ace"] = evaluate_ace_report(
+            Path(request["out_dir"]), ace_exit_code
+        )
+    return _write_external_results(project, result_path, result, results)
+
+
+def run_external(project: Project) -> dict:
+    """源码/CLI 直跑外部工具；打包 GUI 使用受控两阶段 helper。"""
+    from .external import discover_tools, run_ace, run_epubcheck
+
+    _last, result_path, result = _external_context(project)
 
     tools = discover_tools()
     results: dict[str, dict] = {}
@@ -783,12 +961,7 @@ def run_external(project: Project) -> dict:
     else:
         results["ace"] = {"status": "not_run", "detail": "未安装 Ace by DAISY"}
 
-    # 写回最近一次检查结果文件（状态 + 说明），供报告如实呈现
-    result["external_tools"] = {name: r["status"] for name, r in results.items()}
-    result["external_tools_detail"] = {name: r["detail"] for name, r in results.items()}
-    write_json(result_path, result)
-    project.save()
-    return results
+    return _write_external_results(project, result_path, result, results)
 
 
 _WORD_BUCKETS = (

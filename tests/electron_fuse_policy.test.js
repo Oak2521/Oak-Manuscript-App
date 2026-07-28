@@ -19,7 +19,7 @@ const DISABLE = "0".charCodeAt(0);
 
 function expectedWire(extra = {}) {
   return {
-    0: ENABLE,
+    0: DISABLE,
     1: ENABLE,
     2: DISABLE,
     3: DISABLE,
@@ -39,7 +39,7 @@ test("packaging fixes an explicit ASAR and known Electron fuse policy", () => {
   assert.deepEqual(build.electronFuses, EXPECTED_FUSE_CONFIG);
   const report = verifyBuilderFuseConfiguration(build);
   assert.equal(report.ok, true);
-  assert.equal(report.run_as_node_temporary, true);
+  assert.equal(report.run_as_node_disabled, true);
   assert.equal(report.embedded_asar_integrity, true);
   assert.equal(report.only_load_app_from_asar, true);
 });

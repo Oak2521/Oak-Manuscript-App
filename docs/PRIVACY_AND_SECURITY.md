@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.9` 源码检查点已实现的桌面隐私与安全边界。当前没有 alpha.9 安装包或 ZIP。Windows builder 下载器是开发者显式运行的构建输入工具，不在 APP/default session 中运行、不读取稿件，本轮未实际联网；发布证据生成器和 fuse 验证器只读取构建配置或 `release/`/打包目录内的二进制，不接触项目或稿件。统一账号、Free/Pro 与 SyncRecord v1 的严格离线契约已经实现，生产凭证、持久队列、同步 transport、计费和 Web 上传仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.10` 源码检查点已实现的桌面隐私与安全边界。当前没有 alpha.10 安装包或 ZIP。Windows builder 下载器是开发者显式运行的构建输入工具，不在 APP/default session 中运行、不读取稿件，本轮未实际联网；发布证据生成器和 fuse 验证器只读取构建配置或 `release/`/打包目录内的二进制，不接触项目或稿件。统一账号、Free/Pro 与 SyncRecord v1 的严格离线契约已经实现，生产凭证、持久队列、同步 transport、计费和 Web 上传仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -76,7 +76,8 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - EpubCheck 只接受固定 5.3.0 分发及其完整依赖/许可证清单；打包态只使用已校验的捆绑 JRE，缺失或失配时不得回退系统 `PATH`。
 - Ace 只接受 `stage_ace.js` 生成的生产依赖闭包，并要求 `tools/ace/manifest.json` 与受版本控制的 `config/tool-manifests/ace-1.4.6.json` full lock 完全匹配。Node 门禁和 Python 实际运行路径都会复核 stage manifest、236 包闭包、补丁、文件集合、大小与 SHA-256。作者 XHTML 在 JavaScript 关闭时解析，移除可执行节点、事件属性、危险 URL、处理指令、meta refresh 和作者 CSP 后才注入固定 Ace/axe 脚本。
 - Ace 浏览器请求只允许解包 EPUB `basedir` 真实路径内的 `file:` 与运行所需的 `data:`、`blob:`、`about:`；其它协议、UNC/目录逃逸、service worker 和 Chromium 后台网络请求均在当前控制层拒绝或抑制。
-- 上述控制不等同于 OS 级无网沙箱。当前仍依赖用户系统 Chrome 和通用 Electron/Node helper；受控浏览器运行时、最小权限 helper 与 OS 级网络隔离未完成，因此是正式售卖阻断项。
+- alpha.10 的 Renderer 不能提供工具、命令、环境或结论。主进程持有绑定项目状态和工具文件身份的 plan，在固定 `utilityProcess` 中运行 Ace；主进程启动精确系统 Chrome，使用独立 profile 和随机 loopback DevTools 端点，utility 只能连接该本地端点，结束后停止精确子进程并清理 profile。loopback 不上传稿件。
+- 上述控制不等同于 OS 级无网沙箱。当前仍依赖用户系统 Chrome；真实 packaged 联合验证、自带受校验浏览器运行时与 OS 级网络隔离未完成，因此仍是正式售卖阻断项。
 
 ## 9. 运行时完整性与执行顺序
 
@@ -86,7 +87,7 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - 运行探针只能在与目标相同的原生 platform/arch 上执行；非原生 host 必须失败。跨主机纯静态检查须显式使用 `--no-runtime-probe`，其通过不构成运行证据。
 - Windows 嵌入式 Python 的 `python313._pth` 只允许标准库 ZIP、当前目录和受控 `../python` 核心路径，并禁止 `import site`，避免继承用户安装包与启动钩子。
 - Electron 桥和门禁共用固定 Python bootstrap：`-I -S -X utf8`，显式把经路径策略验证的 core 绝对目录插入 `sys.path[0]` 后用 `runpy` 执行；同时清理可注入模块或启动参数的继承环境，并始终以参数数组和 `shell=false` 启动。CPython 探针核对 `sys.implementation`、精确三段版本、`releaselevel=final` 与 `serial=0`，不只匹配宽松版本字符串。
-- 打包配置必须显式开启 ASAR、保持 embedded ASAR integrity，并固定全部已知 Electron fuse。builder 前验证配置，builder 后从真实应用二进制读回 wire；路径逃逸、不安全父链、链接/硬链接、文件身份变化和状态漂移均拒绝。Electron 43 当前有一个本地工具无法识别的索引 8：alpha 产生明确 blocker，sale 失败关闭；`RunAsNode=true` 仍是 Ace helper 的临时欠账。完整合同见 `ELECTRON_FUSE_POLICY.md`。
+- 打包配置必须显式开启 ASAR、保持 embedded ASAR integrity，并固定全部已知 Electron fuse。builder 前验证配置，builder 后从真实应用二进制读回 wire；路径逃逸、不安全父链、链接/硬链接、文件身份变化和状态漂移均拒绝。Electron 43 当前有一个本地工具无法识别的索引 8：alpha 产生明确 blocker，sale 失败关闭；alpha.10 已固定 `RunAsNode=false`。完整合同见 `ELECTRON_FUSE_POLICY.md`。
 - Java 与 Ace/Node/Electron 外部工具进程也清理类路径、模块和启动参数注入变量，并以固定参数数组、`shell=false` 启动。
 - 所有锁和清单使用 locale-independent UTF-16 code unit 排序；Ace tracked lock 同时固定 stage manifest 原始字节哈希，JSON 语义等价但字节漂移也拒绝。JRE/Ace 的候选 stage 与受版本控制锁在显式更新时事务提交，失败恢复旧目录和旧锁，避免身份撕裂。
 - Ace 的空/未知 license 声明和空许可证文件直接拒绝。现有许可证文件或生成元数据通知只满足 alpha 可追溯性；全部 236 包仍需正式逐包人工审计。
@@ -107,4 +108,4 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 
 ## 11. Alpha 与正式售卖可信根
 
-当前全量锁能发现本地资源漂移；alpha.9 已固定 ASAR integrity/fuse 配置并实现打包二进制读回，但没有真实制品证据，未知 fuse 与临时 `RunAsNode=true` 尚未关闭。Electron 43.1.0 `win32-x64` 全树锁关闭了对应的 runtime trust-root 资源阻断，但 Electron 官方来源、上游校验和与再分发证据仍未完成。builder 真实归档、工具树与 tracked lock 尚缺；CPython、EpubCheck、Temurin JDK/JRE 与 Ace 依赖的来源、许可证和再分发材料仍需正式审计。`sale` 资源门禁仍将既有 17 项 Windows 阻断提升为错误，真实 packaged fuse 还有独立兼容性门禁。Windows Authenticode、macOS 签名/公证和对应实机验证完成前，不得宣称为可售卖正式版。
+当前全量锁能发现本地资源漂移；alpha.10 已固定 ASAR integrity/fuse 配置、关闭 `RunAsNode` 并实现 Ace 受控源码链路，但没有真实制品证据，未知 fuse 和 packaged Ace 联合验证尚未关闭。Electron 43.1.0 `win32-x64` 全树锁关闭了对应的 runtime trust-root 资源阻断，但 Electron 官方来源、上游校验和与再分发证据仍未完成。builder 真实归档、工具树与 tracked lock 尚缺；CPython、EpubCheck、Temurin JDK/JRE 与 Ace 依赖的来源、许可证和再分发材料仍需正式审计。`sale` 资源门禁仍将既有 17 项 Windows 阻断提升为错误，真实 packaged fuse 还有独立兼容性门禁。Windows Authenticode、macOS 签名/公证和对应实机验证完成前，不得宣称为可售卖正式版。

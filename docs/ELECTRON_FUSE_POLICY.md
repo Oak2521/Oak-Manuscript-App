@@ -1,6 +1,6 @@
 # ELECTRON_FUSE_POLICY — Electron 打包硬化合同
 
-> 当前实现：`0.1.0-alpha.9`。本文件描述源码配置与打包后二进制验证合同；仓库尚无 alpha.9 安装包，因此尚未取得真实打包二进制的 fuse 证据。
+> 当前实现：`0.1.0-alpha.10`。本文件描述源码配置与打包后二进制验证合同；仓库尚无 alpha.10 安装包，因此尚未取得真实打包二进制的 fuse 证据。
 
 ## 固定策略
 
@@ -8,7 +8,7 @@
 
 | Fuse | 期望值 | 当前说明 |
 |---|---:|---|
-| `RunAsNode` | `true` | Ace 仍依赖现有 helper；这是临时兼容值，也是正式售卖阻断，受控 helper 完成后必须改为 `false` |
+| `RunAsNode` | `false` | alpha.10 已把 Ace 迁移到固定 Electron `utilityProcess`，不再用 `ELECTRON_RUN_AS_NODE` 启动应用二进制 |
 | `EnableCookieEncryption` | `true` | 加密 Chromium cookie 存储 |
 | `EnableNodeOptionsEnvironmentVariable` | `false` | 禁止 `NODE_OPTIONS` 注入 |
 | `EnableNodeCliInspectArguments` | `false` | 禁止 CLI inspect 参数 |
@@ -19,6 +19,8 @@
 | `ResetAdHocDarwinSignature` | `false` | 不要求 fuses 工具重置 macOS ad-hoc 签名 |
 
 配置缺项、多项、值漂移、继承态或 removed 状态一律拒绝。构建顺序必须是：配置验证 → electron-builder → 真实打包二进制 fuse 验证 → 打包资源门禁 → 隐藏 packaged smoke → 发布证据生成。
+
+`RunAsNode=false` 的源码证据包括：固定 utility module/参数/环境、主进程绑定的外部验证 plan/prepare/finalize、受控 loopback Chrome 以及真实隐藏源码 smoke。它仍不能替代真实打包二进制读回和 packaged Ace 功能/安全回归；`ACE_CONTROLLED_HELPER_PENDING` 只能在这些制品证据完成后关闭。
 
 ## 二进制验证边界
 

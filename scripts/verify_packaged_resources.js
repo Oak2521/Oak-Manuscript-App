@@ -1306,7 +1306,7 @@ function verifyAceStage(root, errors, checks, { releaseTier, blockers }) {
     target_version: "1.4.6",
     target_file: "node_modules/@daisy/ace-axe-runner-puppeteer/lib/index.js",
     before_sha256: "681b52d047d5f6eebbfc62a925b7dc22b82589ab63b36a9ea602297f8cd86ea6",
-    after_sha256: "025a0766beaa48e8eb48f640d2bacf72029a61486aec276a393450d406ac67cc",
+    after_sha256: "6c7da7364d05548355fb1ab90c3d6d77366e2fd01b6f67551b648c5fb8285614",
     controlled_replacement: "scripts/patches/ace-axe-runner-puppeteer-1.4.6.js",
   };
   if (!Array.isArray(manifest.patches) || manifest.patches.length !== 1) {
@@ -1421,7 +1421,7 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
     },
     {
       code: "ACE_CONTROLLED_HELPER_PENDING",
-      message: "Ace 仍通过通用 ELECTRON_RUN_AS_NODE 宿主执行，正式版需改为最小权限受控 helper",
+      message: "Ace utilityProcess 受控 helper 已实现但尚无真实打包制品功能与安全验证证据",
     },
     {
       code: "ACE_BROWSER_RUNTIME_PENDING",

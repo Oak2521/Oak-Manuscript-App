@@ -59,7 +59,7 @@ const { BUNDLED_STANDARD_RELEASE } = require("../electron/standards-provider");
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 const PATCH_BEFORE = "681b52d047d5f6eebbfc62a925b7dc22b82589ab63b36a9ea602297f8cd86ea6";
-const PATCH_AFTER = "025a0766beaa48e8eb48f640d2bacf72029a61486aec276a393450d406ac67cc";
+const PATCH_AFTER = "6c7da7364d05548355fb1ab90c3d6d77366e2fd01b6f67551b648c5fb8285614";
 
 function verifyPackagedResources(options) {
   if (options?.source === false && options.electronSourceRoot === undefined) {
@@ -546,12 +546,12 @@ function createToolchainFixture(t) {
   return { root, toolchain };
 }
 
-test("electron-builder config is valid and pins alpha.9 Windows installer policy", async () => {
+test("electron-builder config is valid and pins alpha.10 Windows installer policy", async () => {
   const packageJson = require("../package.json");
   const packageLock = require("../package-lock.json");
   await validateConfiguration(packageJson.build, { isEnabled: false, add() {} });
 
-  assert.equal(packageJson.version, "0.1.0-alpha.9");
+  assert.equal(packageJson.version, "0.1.0-alpha.10");
   assert.equal(packageLock.version, packageJson.version);
   assert.equal(packageLock.packages[""].version, packageJson.version);
   const pythonInit = fs.readFileSync(
@@ -838,7 +838,7 @@ test("beforePack forwards the builder project root and target platform", () => {
   const calls = [];
   beforePack(
     {
-      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.9" } },
+      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.10" } },
       electronPlatformName: "darwin",
       arch: 1,
     },
@@ -851,7 +851,7 @@ test("beforePack forwards the builder project root and target platform", () => {
     source: true,
     releaseTier: "alpha",
   }]);
-  assert.equal(releaseTierForVersion("0.1.0-alpha.9"), "alpha");
+  assert.equal(releaseTierForVersion("0.1.0-alpha.10"), "alpha");
   assert.equal(releaseTierForVersion("1.0.0"), "sale");
   assert.equal(parseResourceGateArgs(["--release-tier", "auto"]).releaseTier, "alpha");
   assert.equal(parseResourceGateArgs(["--no-runtime-probe"]).executeRuntimes, false);
@@ -924,7 +924,6 @@ test("Python bridge removes inherited Python and Oak injection before setting fi
     OAK_STANDARDS_STORE: "C:/evil-standards",
     SAFE_VALUE: "kept",
   }, {
-    electronExec: "C:/Oak/Oak.exe",
     packaged: true,
     standardsStoreRoot: path.join(REPO_ROOT, "out", "trusted-standards"),
   });
@@ -936,7 +935,7 @@ test("Python bridge removes inherited Python and Oak injection before setting fi
   assert.equal(env.PYTHONDONTWRITEBYTECODE, "1");
   assert.equal(env.PYTHONNOUSERSITE, "1");
   assert.equal(env.OAK_APP_PACKAGED, "1");
-  assert.equal(env.OAK_ELECTRON_EXEC_PATH, "C:/Oak/Oak.exe");
+  assert.equal(env.OAK_ELECTRON_EXEC_PATH, undefined);
   assert.equal(env.OAK_STANDARDS_STORE, path.join(REPO_ROOT, "out", "trusted-standards"));
   const invocation = pythonCoreInvocation({
     executable: "python3",

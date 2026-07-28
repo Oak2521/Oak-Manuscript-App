@@ -7,6 +7,8 @@ const path = require("node:path");
 
 const {
   assertSafeExistingProjectFile,
+  assertSafeProjectDirectory,
+  assertSafeProjectDirectoryUnchanged,
   writeProjectFileAtomicSync,
 } = require("../electron/path-policy");
 
@@ -134,6 +136,41 @@ test("report.html symlink is rejected before the PDF window loads it", (t) => {
   assert.throws(
     () => assertSafeExistingProjectFile(project, report, {
       expectedParentRelative: "exports",
+    }),
+    /符号链接|junction|重解析点/,
+  );
+});
+
+test("Ace output directory snapshot rejects a directory swap during utility execution", (t) => {
+  const root = makeRoot(t);
+  const project = makeProject(root);
+  const reports = path.join(project, "reports");
+  const ace = path.join(reports, "ace");
+  fs.mkdirSync(ace, { recursive: true });
+  const snapshot = assertSafeProjectDirectory(project, ace, {
+    expectedParentRelative: "reports",
+  });
+
+  fs.renameSync(ace, path.join(reports, "ace-before-swap"));
+  fs.mkdirSync(ace);
+  assert.throws(
+    () => assertSafeProjectDirectoryUnchanged(snapshot),
+    /发生变化/,
+  );
+});
+
+test("Ace output directory cannot be a junction or symlink outside the project", (t) => {
+  const root = makeRoot(t);
+  const project = makeProject(root);
+  const reports = path.join(project, "reports");
+  const outside = path.join(root, "outside-ace");
+  fs.mkdirSync(reports);
+  fs.mkdirSync(outside);
+  if (!makeDirectoryLink(t, outside, path.join(reports, "ace"))) return;
+
+  assert.throws(
+    () => assertSafeProjectDirectory(project, path.join(reports, "ace"), {
+      expectedParentRelative: "reports",
     }),
     /符号链接|junction|重解析点/,
   );

@@ -113,7 +113,7 @@ test("smoke identity rejects a stale app version and a non-packaged binary", () 
       expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
       requirePackaged: true,
     }),
-    /应用版本应为 0\.1\.0-alpha\.9，实际为 0\.1\.0-alpha\.1/,
+    /应用版本应为 0\.1\.0-alpha\.10，实际为 0\.1\.0-alpha\.1/,
   );
   assert.throws(
     () => assertSmokeIdentity(testAppInfo(), {
@@ -188,7 +188,7 @@ test("smoke reads the actual create/check artifacts and proves Python core plus 
       expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
       expectedStandardIdentity: TEST_STANDARD_IDENTITY,
     }),
-    /Python core 创建项目的版本应为 0\.1\.0-alpha\.9，实际为 0\.1\.0-alpha\.1/,
+    /Python core 创建项目的版本应为 0\.1\.0-alpha\.10，实际为 0\.1\.0-alpha\.1/,
   );
 
   manifest.app_version = DEFAULT_EXPECTED_APP_VERSION;
@@ -211,7 +211,7 @@ test("smoke reads the actual create/check artifacts and proves Python core plus 
       expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
       expectedStandardIdentity: TEST_STANDARD_IDENTITY,
     }),
-    /Python core 检查报告的版本应为 0\.1\.0-alpha\.9，实际为 0\.1\.0-alpha\.1/,
+    /Python core 检查报告的版本应为 0\.1\.0-alpha\.10，实际为 0\.1\.0-alpha\.1/,
   );
 
   report.app_version = DEFAULT_EXPECTED_APP_VERSION;
@@ -364,6 +364,7 @@ test("smoke environment removes inherited injection and keeps every writable loc
     OAK_APP_PACKAGED: "attacker",
     OAK_EXPECTED_APP_VERSION: "0.1.0-alpha.1",
     OAK_EXPECT_PACKAGED: "0",
+    OAK_SMOKE_EXTERNAL_VALIDATION: "1",
     ELECTRON_RUN_AS_NODE: "1",
     electron_log_file: "C:\\outside.log",
     NODE_OPTIONS: "--require=evil.js",
@@ -378,6 +379,7 @@ test("smoke environment removes inherited injection and keeps every writable loc
   assert.equal(env.OAK_SMOKE_OUTPUT_ROOT, paths.projectOutput);
   assert.equal(env[EXPECTED_VERSION_ENV], DEFAULT_EXPECTED_APP_VERSION);
   assert.equal(env[EXPECT_PACKAGED_ENV], "1");
+  assert.equal(Object.hasOwn(env, "OAK_SMOKE_EXTERNAL_VALIDATION"), false);
   for (const forbidden of [
     "OAK_APP_PACKAGED",
     "ELECTRON_RUN_AS_NODE",
@@ -458,6 +460,7 @@ test("source smoke keeps every writable Electron path inside repo/out and launch
       ELECTRON_RUN_AS_NODE: "1",
       HTTPS_PROXY: "http://proxy.invalid",
       NODE_OPTIONS: "--require=evil.js",
+      OAK_SMOKE_EXTERNAL_VALIDATION: "1",
     },
     spawn(command, args, options) {
       invocation = { command, args, options };
@@ -472,6 +475,7 @@ test("source smoke keeps every writable Electron path inside repo/out and launch
   assert.equal(invocation.options.shell, false);
   assert.equal(invocation.options.env[EXPECT_PACKAGED_ENV], "0");
   assert.equal(invocation.options.env.OAK_SMOKE_OUTPUT_ROOT, paths.projectOutput);
+  assert.equal(invocation.options.env.OAK_SMOKE_EXTERNAL_VALIDATION, "1");
   assert.equal(Object.hasOwn(invocation.options.env, "ELECTRON_RUN_AS_NODE"), false);
   assert.equal(Object.hasOwn(invocation.options.env, "HTTPS_PROXY"), false);
   assert.equal(Object.hasOwn(invocation.options.env, "NODE_OPTIONS"), false);

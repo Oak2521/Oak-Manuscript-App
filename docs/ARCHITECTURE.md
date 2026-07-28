@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.9` 源码检查点架构；本轮尚未生成 alpha.9 Windows 安装器或 ZIP。本地标准/项目 pin/升级回滚、默认引用解析、Windows 构建/制品证据、账号/同步离线契约，以及 ASAR/fuse 构建硬化合同已实现。真实 builder 资产和 packaged fuse 证据、生产认证/同步、联网标准获取、生产信任根、macOS 和 Web 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.10` 源码检查点架构；本轮尚未生成 alpha.10 Windows 安装器或 ZIP。本地标准/项目 pin/升级回滚、默认引用解析、Windows 构建/制品证据、账号/同步离线契约、ASAR/fuse 合同，以及 Ace 受控 utilityProcess 源码链路已实现。真实 builder 资产和 packaged 证据、生产认证/同步、联网标准获取、生产信任根、macOS 和 Web 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -19,6 +19,9 @@ Electron Main
   ├─ core-ipc：引用计划 / 检查参数的固定白名单
   ├─ AuthProvider / LicenseProvider：离线状态机、PKCE 固定契约与 Free/Pro 权益矩阵
   ├─ account-sync-ipc / SyncProvider：可信来源负载、逐字段预览、四选一授权与进程内队列
+  ├─ external-validation-ipc：项目路径 → 受绑定 plan/prepare/finalize；Renderer 不提交工具状态
+  ├─ chrome-controller：固定隐藏 Chrome + 独立 profile + 随机 loopback DevTools
+  ├─ ace-utility-runner：固定 utilityProcess 入口/参数/环境/超时/输出上限
   ├─ 统一 Python bootstrap：-I -S -X utf8 + 受控 core 目录
   ├─ P0 修复：planFixes / applyFixPlan（必须带 plan_id）
   ├─ 标准 IPC：项目状态 / 完整差异计划 / 一次确认升级
@@ -129,7 +132,15 @@ Renderer 不能构造同步负载，也不能提供 token、任意 URL 或 trans
 
 `package.json` 必须显式开启 ASAR、不得关闭 embedded ASAR integrity，并列出全部当前工具已知 fuse 的精确值；不能依赖 electron-builder 默认值。配置在调用 builder 前校验，生成应用后立即从真实 Electron 二进制读取 fuse wire，再进入资源门禁、packaged smoke 和发布证据。
 
-二进制验证必须限定仓库内安全常规单链接文件并复核读取前后身份。已知 fuse 缺失、漂移、inherit 或 removed 一律拒绝。Electron 43.1.0 当前比 `@electron/fuses` 1.8.0 多一个未知索引 8；本地没有可信语义定义，因此 alpha 只可带 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING` 继续，sale 必须失败。`RunAsNode=true` 是现有 Ace helper 的临时兼容值，不是最终安全目标；详见 `ELECTRON_FUSE_POLICY.md`。
+二进制验证必须限定仓库内安全常规单链接文件并复核读取前后身份。已知 fuse 缺失、漂移、inherit 或 removed 一律拒绝。Electron 43.1.0 当前比 `@electron/fuses` 1.8.0 多一个未知索引 8；本地没有可信语义定义，因此 alpha 只可带 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING` 继续，sale 必须失败。alpha.10 的 Ace 已迁移到受控 `utilityProcess`，因此 `RunAsNode=false`；详见 `ELECTRON_FUSE_POLICY.md`。
+
+### AD-015 Ace 外部验证必须“主进程绑定—utility 执行—核心复核”（2026-07-28，冻结）
+
+Renderer 只能提交受项目路径门禁保护的项目目录，不能提交 Ace 入口、参数、环境、Chrome、退出码或报告结论。Python `external-plan` 根据已验证项目生成绑定 project ID、检查 ID、working/result 摘要、标准身份，以及 Java/JAR/Ace/Chrome 文件身份的 plan；`external-prepare` 在同一项目写锁下重验并清理固定 Ace 输出；utility 结束后，`external-finalize` 再重验 plan、执行 EpubCheck，并仅接受主进程给出的整数 Ace 退出码和当前安全报告。
+
+Ace 只在 Electron `utilityProcess` 中运行固定 module 和固定参数。环境剥离 Node/Electron/Puppeteer/Oak/Ace 注入，合并输出上限 64 KiB，最长 5 分钟；输出目录身份变化、工具替换、超时、异常退出或报告非法均 fail-closed。主进程另行启动精确系统 Chrome：固定隐藏/离线参数、独立 profile、随机端口、仅 loopback DevTools；utility 只连接该严格端点，完成后主进程停止精确 child 并清理 profile。
+
+该 loopback 控制通道是本机进程间通信，不上传稿件；但 Chromium 层网络抑制不等于 OS 级无网沙箱，系统 Chrome 也不等于可再分发的固定浏览器运行时。源码 UI smoke 只能证明当前源码链路，`ACE_CONTROLLED_HELPER_PENDING` 必须保留到真实 packaged 功能、安全和 fuse 联合证据完成。
 
 ## 3. Python 核心模块地图（随实现更新）
 
@@ -218,5 +229,5 @@ alpha.7 在构建输出端增加独立证据链。`build:win` 首先调用 `rele
 - 源码 smoke 与打包 smoke 都通过 `app:info` 核对 Electron 版本和 freshly verified `standardIdentity`；随后读取本次真实生成的 `project.json`、检查记录和导出 `report.json`，核对 Python core 版本、check ID 及四方七字段身份一致。打包 smoke 还强制证明 `app.isPackaged=true`，防止把旧版、陈旧 core 或错误规则包误记为新打包版。
 - 源码 smoke 每次生成独立 `out/source-smoke/runs/<run-id>/`，项目、标准 store、缓存、临时目录、用户数据、HOME/APPDATA/XDG 与 crash dumps 不复用；打包 smoke 同样按运行 ID 隔离并受仓库 `out/` 边界控制。Windows EXE 还须先通过 x64 PE32+ 校验。
 - macOS 构建拆为 `build:mac:x64` 与 `build:mac:arm64`；聚合入口 `build:mac` 只选择当前原生 host 架构，不在一个进程伪造双架构探针。`verify:resources:mac` 只是带 `--no-runtime-probe` 的跨架构静态聚合，不能替代两个原生 runner 的执行证据。
-- alpha.9 隐藏源码 smoke 已 PASS：`out/source-smoke/runs/ms49yas5-9ccb167e78f033a2/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 次批量修复、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,650 / 177,417 字节；smoke 另断言未登录、Free 和空同步队列。最终统一测试数字以 `docs/TEST_REPORT.md` 为准。
-- 当前 alpha.9 具备账号/同步离线合同及 ASAR/fuse 构建合同，但没有生产凭证、持久队列、上传 transport 或真实 packaged fuse 证据。本轮未联网，真实 builder 资产、Windows 签名和 alpha.9 制品尚缺，证据验证器按预期拒绝缺失 NSIS。既有 Windows sale 资源门禁仍有 17 项阻断，未知 packaged fuse 另行阻止 sale。macOS 运行资源、原生构建、签名、公证与实机 smoke 均未完成。
+- alpha.10 隐藏条件源码 smoke 已 PASS：`out/source-smoke/runs/ms4cz6o9-c2ad021ca7e2e83c/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 次批量修复、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,649 / 178,228 字节；EPUB 还通过受控 utilityProcess 实际运行 EpubCheck/Ace，缺陷结果分别为 5 error / 8 项失败断言。最终统一测试数字以 `docs/TEST_REPORT.md` 为准。
+- 当前 alpha.10 具备账号/同步离线合同、ASAR/fuse 构建合同和 Ace 受控源码链路，但没有生产凭证、持久队列、上传 transport 或真实 packaged fuse/Ace 证据。本轮未联网，真实 builder 资产、Windows 签名和 alpha.10 制品尚缺，证据验证器按预期拒绝缺失 NSIS。既有 Windows sale 资源门禁仍有 17 项阻断，未知 packaged fuse 另行阻止 sale。macOS 运行资源、原生构建、签名、公证与实机 smoke 均未完成。

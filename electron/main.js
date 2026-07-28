@@ -4,12 +4,14 @@
 
 const path = require("path");
 const fs = require("fs");
-const { app, BrowserWindow, dialog, ipcMain, shell, session } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, shell, session, utilityProcess } = require("electron");
 
 const pathPolicy = require("./path-policy");
 const bridge = require("./python-bridge");
 const providers = require("./providers");
 const { registerAccountSyncIpc } = require("./account-sync-ipc");
+const { createAceUtilityRunner } = require("./ace-utility-runner");
+const { registerExternalValidationIpc } = require("./external-validation-ipc");
 const { registerP0Ipc } = require("./p0-ipc");
 const { registerCoreIpc } = require("./core-ipc");
 const { registerStandardsIpc } = require("./standards-ipc");
@@ -158,6 +160,23 @@ registerAccountSyncIpc({
   },
 });
 
+registerExternalValidationIpc({
+  ipcMain,
+  pathPolicy,
+  runCore: core,
+  aceRunner: createAceUtilityRunner({
+    utilityProcess,
+    pathPolicy,
+    onOutput: SMOKE ? ({ stdout, stderr }) => {
+      const diagnostic = `${stdout}\n${stderr}`.trim();
+      if (diagnostic) console.error(`[ace-helper] ${diagnostic}`);
+    } : null,
+  }),
+  onHelperError: SMOKE ? (error) => {
+    console.error(`[ace-helper-error] ${String(error && error.message || error)}`);
+  } : null,
+});
+
 ipcMain.handle("core:export", async (_e, { project, outDir }) => {
   try {
     assertProjectDir(project);
@@ -174,16 +193,6 @@ ipcMain.handle("core:verify", async (_e, { project }) => {
   try {
     assertProjectDir(project);
     const { data } = await core(["verify", "--project", project]);
-    return ok({ result: data });
-  } catch (err) {
-    return fail(err);
-  }
-});
-
-ipcMain.handle("core:external", async (_e, { project }) => {
-  try {
-    assertProjectDir(project);
-    const { data } = await core(["external", "--project", project]);
     return ok({ result: data });
   } catch (err) {
     return fail(err);

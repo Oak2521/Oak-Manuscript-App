@@ -88,8 +88,8 @@ function getSmokePaths(root = PROJECT_ROOT, runId = "manual") {
     userData: path.join(smokeRoot, "electron-user-data"),
     diskCache: path.join(smokeRoot, "electron-cache"),
     home: path.join(smokeRoot, "home"),
-    appData: path.join(smokeRoot, "app-data"),
-    localAppData: path.join(smokeRoot, "local-app-data"),
+    appData: path.join(smokeRoot, "home", "AppData", "Roaming"),
+    localAppData: path.join(smokeRoot, "home", "AppData", "Local"),
     xdgCache: path.join(smokeRoot, "xdg-cache"),
     xdgConfig: path.join(smokeRoot, "xdg-config"),
     xdgData: path.join(smokeRoot, "xdg-data"),
@@ -188,7 +188,7 @@ function createSmokeEnvironment(
   paths,
   inherited = process.env,
   expectedVersion,
-  { expectedPackaged = "1" } = {},
+  { expectedPackaged = "1", externalValidation = false } = {},
 ) {
   if (typeof expectedVersion !== "string" || expectedVersion.trim() === "") {
     throw new Error("冒烟必须提供从 package.json 读取的期望版本");
@@ -210,7 +210,7 @@ function createSmokeEnvironment(
     env[name] = value;
   }
 
-  return {
+  const fixed = {
     ...env,
     OAK_SMOKE_OUTPUT_ROOT: paths.projectOutput,
     [EXPECTED_VERSION_ENV]: expectedVersion,
@@ -229,6 +229,8 @@ function createSmokeEnvironment(
     PYTHONNOUSERSITE: "1",
     PYTHONUTF8: "1",
   };
+  if (externalValidation === true) fixed.OAK_SMOKE_EXTERNAL_VALIDATION = "1";
+  return fixed;
 }
 
 function smokeArguments(paths) {

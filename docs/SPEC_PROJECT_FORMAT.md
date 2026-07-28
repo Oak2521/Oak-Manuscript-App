@@ -134,7 +134,7 @@ project-root/
 - `citation_style_resolved`、`citation_resolved_by`、`citation_mapping_version` 是便于旧消费方读取的投影；`citation_resolution` 是完整真相源，严格 schema 见 `SPEC_MODELS.md` 第 5 节。当它非空时，投影必须与 `requested_style/resolved_style/resolved_by/policy_version` 一致；
 - 默认解析可得到具体体例、`structure_only` 或默认禁用。`structure_only` 时 `citation_style_resolved=null`、`citation_resolved_by=default_resolver`；完整证据只含数量/百分比/枚举，禁止稿件片段和路径；
 - 旧项目可缺失 `citation_resolution`，读取为 `null`。新检查成功后必须写入完整解析，且检查结果、`settings_snapshot` 和项目当前设置必须一致；
-- `sync.history` 在当前 `0.1.0-alpha.9` 仍为空数组。SyncProvider 的 `pending_transport` 队列和项目偏好只存在于当前进程，不伪造持久同步历史；生产持久队列/服务端回执上线时必须先版本化本节格式、提供兼容读取，并只在服务端确认后写成功记录。
+- `sync.history` 在当前 `0.1.0-alpha.10` 仍为空数组。SyncProvider 的 `pending_transport` 队列和项目偏好只存在于当前进程，不伪造持久同步历史；生产持久队列/服务端回执上线时必须先版本化本节格式、提供兼容读取，并只在服务端确认后写成功记录。
 - `plan-fixes` 产生的未确认计划不落盘；只有成功执行后的 `plan_id` 写入 `fixes[]`，取消预览不会改变 project.json。
 - 旧 `1.0` 项目中的检查点可以缺少新增的大小、问题哈希与状态快照字段；新建检查点必须写全，读取与恢复逻辑保留旧检查点兼容路径。
 - `config/tool-manifests/`、Electron/CPython/JRE/Ace 运行资源锁、builder 独立 tracked lock 和打包 smoke 记录属于应用发布资源，不进入用户项目，也不得被复制进 `project.json`。这些锁按 locale-independent UTF-16 顺序生成；需要更新候选树时通过显式授权的受控事务提交。这属于发布资源身份，不改变用户项目 schema 或标准 release 身份。
@@ -146,7 +146,7 @@ project-root/
 
 - `.oak-project-write.lock` 是跨进程写事务的持久诊断载体，内容为带前导协议字节的 UTF-8 JSON，记录 schema/protocol/state、PID、命令、取得时间和随机进程 token；不得包含稿件内容、文件名或本地路径；
 - 真正互斥由内核锁提供：Windows 锁定元数据区之外的固定字节，macOS/POSIX 使用非阻塞 `flock`。进程崩溃后由内核释放，不依据锁文件中的 PID 猜测存活或删除“陈旧锁”；
-- `create/check/recheck/fix/export/verify/restore-checkpoint/external/issue/upgrade-rulepack` 必须取得写锁；`plan-citation`、`plan-fixes`、`list-checkpoints`、`project-standard-status`、`plan-rulepack-upgrade` 与 `sync-source` 保持只读；
+- `create/check/recheck/fix/export/verify/restore-checkpoint/external/external-prepare/external-finalize/issue/upgrade-rulepack` 必须取得写锁；`external-plan`、`plan-citation`、`plan-fixes`、`list-checkpoints`、`project-standard-status`、`plan-rulepack-upgrade` 与 `sync-source` 保持只读；
 - 同名文件只有完整符合锁协议且是单链接常规文件时才可接管；普通用户文件、链接、硬链接或损坏协议文件一律 fail-closed，原字节不变；
 - 锁争用以结构化 `PROJECT_WRITE_LOCKED` 返回，`retryable=true`，并可带不含路径/正文的 owner 元数据。锁文件存在本身不表示事务仍存活。
 

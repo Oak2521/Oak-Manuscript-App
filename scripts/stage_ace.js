@@ -27,7 +27,7 @@ const SANDBOX_PATCH = Object.freeze({
   package_version: "1.4.6",
   relative_file: "lib/index.js",
   before_sha256: "681b52d047d5f6eebbfc62a925b7dc22b82589ab63b36a9ea602297f8cd86ea6",
-  after_sha256: "025a0766beaa48e8eb48f640d2bacf72029a61486aec276a393450d406ac67cc",
+  after_sha256: "6c7da7364d05548355fb1ab90c3d6d77366e2fd01b6f67551b648c5fb8285614",
   replacement_source: "scripts/patches/ace-axe-runner-puppeteer-1.4.6.js",
   sanitizer_package: "@xmldom/xmldom",
   sanitizer_version: "0.9.10",
@@ -784,7 +784,7 @@ function stageAce({ projectRoot, outDir, rootPackage = ROOT_PACKAGE, updateLock 
       files,
       excluded: [
         "@daisy/ace（聚合包，不在 ace-cli production closure 中）",
-        "electron（使用宿主 Electron 的 Node 模式，不阶段化嵌套 Electron）",
+        "electron（由宿主 Electron utilityProcess 执行固定入口，不阶段化嵌套 Electron）",
         "Puppeteer 下载的浏览器缓存（运行时仅使用用户系统 Chrome）",
         "所有 devDependencies",
       ],

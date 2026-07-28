@@ -33,6 +33,8 @@ _MUTATING_COMMANDS = {
     "restore-checkpoint",
     "upgrade-rulepack",
     "external",
+    "external-prepare",
+    "external-finalize",
     "issue",
 }
 def _emit(payload: dict) -> None:
@@ -238,6 +240,32 @@ def _cmd_external(args) -> int:
     return 1 if any(r["status"] == "failed" for r in results.values()) else 0
 
 
+def _cmd_external_plan(args) -> int:
+    proj = Project.open(Path(args.project))
+    plan = ops.plan_external_validation(proj)
+    _emit({"ok": True, "plan": plan})
+    print("已生成外部验证计划；尚未清理输出或运行工具。", file=sys.stderr)
+    return 0
+
+
+def _cmd_external_prepare(args) -> int:
+    proj = Project.open(Path(args.project))
+    prepared = ops.prepare_external_ace(proj, args.plan_id)
+    _emit({"ok": True, **prepared})
+    return 0
+
+
+def _cmd_external_finalize(args) -> int:
+    proj = Project.open(Path(args.project))
+    results = ops.finalize_external_validation(
+        proj,
+        args.plan_id,
+        ace_exit_code=args.ace_exit_code,
+    )
+    _emit({"ok": True, "results": results})
+    return 1 if any(item["status"] == "failed" for item in results.values()) else 0
+
+
 def _cmd_issue(args) -> int:
     proj = Project.open(Path(args.project))
     issue = ops.set_issue_status(proj, args.id, args.status)
@@ -366,6 +394,18 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("external", help="运行外部验证工具（EpubCheck / Ace，仅 EPUB）")
     p.add_argument("--project", required=True)
 
+    p = sub.add_parser("external-plan", help="生成绑定当前状态的外部验证计划（只读）")
+    p.add_argument("--project", required=True)
+
+    p = sub.add_parser("external-prepare", help="按已绑定计划安全清空 Ace 输出目录")
+    p.add_argument("--project", required=True)
+    p.add_argument("--plan-id", required=True)
+
+    p = sub.add_parser("external-finalize", help="收尾外部验证并写回真实状态")
+    p.add_argument("--project", required=True)
+    p.add_argument("--plan-id", required=True)
+    p.add_argument("--ace-exit-code", type=int)
+
     p = sub.add_parser("issue", help="设置问题处理状态")
     p.add_argument("--project", required=True)
     p.add_argument("--id", required=True)
@@ -397,6 +437,9 @@ def main(argv: list[str] | None = None) -> int:
         "sync-source": _cmd_sync_source,
         "restore-checkpoint": _cmd_restore_checkpoint,
         "external": _cmd_external,
+        "external-plan": _cmd_external_plan,
+        "external-prepare": _cmd_external_prepare,
+        "external-finalize": _cmd_external_finalize,
         "issue": _cmd_issue,
     }
     try:

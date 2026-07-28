@@ -38,8 +38,8 @@ function getSourceSmokePaths(
     userData: path.join(smokeRoot, "electron-user-data"),
     diskCache: path.join(smokeRoot, "electron-cache"),
     home: path.join(smokeRoot, "home"),
-    appData: path.join(smokeRoot, "app-data"),
-    localAppData: path.join(smokeRoot, "local-app-data"),
+    appData: path.join(smokeRoot, "home", "AppData", "Roaming"),
+    localAppData: path.join(smokeRoot, "home", "AppData", "Local"),
     xdgCache: path.join(smokeRoot, "xdg-cache"),
     xdgConfig: path.join(smokeRoot, "xdg-config"),
     xdgData: path.join(smokeRoot, "xdg-data"),
@@ -101,6 +101,7 @@ function runSourceSmoke({
     cwd: paths.projectRoot,
     env: createSmokeEnvironment(paths, inheritedEnv, expectedVersion, {
       expectedPackaged: "0",
+      externalValidation: inheritedEnv.OAK_SMOKE_EXTERNAL_VALIDATION === "1",
     }),
     encoding: "utf8",
     shell: false,

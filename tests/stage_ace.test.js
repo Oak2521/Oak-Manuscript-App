@@ -454,10 +454,12 @@ test("Ace staging rejects an existing junction or symlink that canonicalizes out
 
 test("controlled Ace runner sanitizes author XHTML before enabling JavaScript", () => {
   const {
+    BROWSER_PROFILE_PREFIX,
     CHROMIUM_SECURITY_ARGS,
     allowedNonFileProtocol,
     sanitizeAuthorDocument,
   } = controlledRunner.__oakSecurity;
+  assert.equal(BROWSER_PROFILE_PREFIX, "oak-ace-chrome-");
   const malicious = [
     '<?xml version="1.0"?>',
     '<?xml-stylesheet type="text/xsl" href="data:text/xml,unsafe"?>',
@@ -526,6 +528,8 @@ test("controlled Ace runner sanitizes author XHTML before enabling JavaScript", 
   const injectedAt = source.indexOf('await utils.addScriptContents(scriptContents, page)');
   assert.ok(disabledAt >= 0 && disabledAt < navigatedAt);
   assert.ok(navigatedAt < enabledAt && enabledAt < injectedAt);
+  assert.match(source, /userDataDir/);
+  assert.match(source, /removeBrowserProfileDirectory/);
 });
 
 test("controlled Ace runner only serves sanitized files inside the canonical EPUB basedir", async () => {

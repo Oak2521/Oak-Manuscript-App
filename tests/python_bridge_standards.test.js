@@ -18,7 +18,7 @@ test("Python bridge injects only the main-process-fixed standards store root", (
   const env = createPythonEnvironment({
     PATH: process.env.PATH || "",
     OAK_STANDARDS_STORE: path.join(ROOT, "out", "attacker"),
-  }, { electronExec: process.execPath, packaged: false });
+  }, { packaged: false });
   assert.equal(env.OAK_STANDARDS_STORE, trusted);
   assert.throws(
     () => configureStandardsStoreRoot(path.join(ROOT, "out", "different")),
@@ -29,7 +29,6 @@ test("Python bridge injects only the main-process-fixed standards store root", (
 test("isolated Python environment rejects a relative standards store root", () => {
   assert.throws(
     () => createPythonEnvironment({}, {
-      electronExec: process.execPath,
       packaged: false,
       standardsStoreRoot: "relative/store",
     }),
@@ -51,7 +50,6 @@ test("Python bridge strips inherited standard bindings and injects only an exact
     PATH: process.env.PATH || "",
     OAK_EXPECTED_STANDARD_IDENTITY: JSON.stringify({ manifest_sha256: "c".repeat(64) }),
   }, {
-    electronExec: process.execPath,
     packaged: false,
     expectedStandardIdentity: identity,
   });
@@ -59,12 +57,11 @@ test("Python bridge strips inherited standard bindings and injects only an exact
 
   const unbound = createPythonEnvironment({
     OAK_EXPECTED_STANDARD_IDENTITY: "attacker-controlled",
-  }, { electronExec: process.execPath, packaged: false });
+  }, { packaged: false });
   assert.equal(Object.hasOwn(unbound, "OAK_EXPECTED_STANDARD_IDENTITY"), false);
 
   assert.throws(
     () => createPythonEnvironment({}, {
-      electronExec: process.execPath,
       packaged: false,
       expectedStandardIdentity: { ...identity, pinned: false },
     }),
@@ -72,7 +69,6 @@ test("Python bridge strips inherited standard bindings and injects only an exact
   );
   assert.throws(
     () => createPythonEnvironment({}, {
-      electronExec: process.execPath,
       packaged: false,
       expectedStandardIdentity: { ...identity, version: "9007199254740992.0.0" },
     }),
