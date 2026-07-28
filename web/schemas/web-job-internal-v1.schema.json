@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://www.oakbylake.com/schemas/oak-manuscript/web-job-internal-v1.schema.json",
+  "title": "Oak Manuscript Web Job Internal Record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "job_id",
+    "owner_key",
+    "state",
+    "created_at",
+    "updated_at",
+    "expires_at",
+    "input_retained",
+    "result_available",
+    "result_media_type",
+    "pending_deletion_reason",
+    "request_fingerprint",
+    "request_canonical",
+    "idempotency_key",
+    "document",
+    "upload_reservation_id",
+    "upload_reservation_expires_at",
+    "lease_id",
+    "lease_expires_at",
+    "revision"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "record_type": { "const": "oak_manuscript_web_job_internal" },
+    "job_id": {
+      "type": "string",
+      "pattern": "^webjob-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "owner_key": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 138,
+      "pattern": "^(account|anonymous):[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$"
+    },
+    "state": {
+      "enum": ["awaiting_upload", "queued", "processing", "result_ready", "deletion_pending"]
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "input_retained": { "type": "boolean" },
+    "result_available": { "type": "boolean" },
+    "result_media_type": {
+      "type": ["string", "null"],
+      "enum": [
+        null,
+        "application/json",
+        "application/pdf",
+        "application/epub+zip",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "text/markdown",
+        "text/plain"
+      ]
+    },
+    "pending_deletion_reason": {
+      "type": ["string", "null"],
+      "enum": [null, "canceled", "expired", "user_deleted", "processing_failed"]
+    },
+    "request_fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "request_canonical": { "type": "string", "minLength": 2, "maxLength": 8192 },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
+    },
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "manuscript_type", "check_config", "citation_style", "size_bytes"],
+      "properties": {
+        "format": { "enum": ["docx", "md", "txt", "epub"] },
+        "manuscript_type": { "enum": ["paper", "print_book", "ebook"] },
+        "check_config": { "enum": ["quick", "full"] },
+        "citation_style": {
+          "enum": ["default", "gbt7714-2025", "apa-7", "chicago-18-nb", "chicago-18-ad", "none"]
+        },
+        "size_bytes": { "type": "integer", "minimum": 1, "maximum": 52428800 }
+      }
+    },
+    "upload_reservation_id": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "upload_reservation_expires_at": { "type": ["string", "null"], "format": "date-time" },
+    "lease_id": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "lease_expires_at": { "type": ["string", "null"], "format": "date-time" },
+    "revision": { "type": "integer", "minimum": 0 }
+  }
+}

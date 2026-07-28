@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.26` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、Web 状态机、同源 HTTPS、Supabase/GoTrue、Fetch、未部署工作台与 Netlify Blobs 临时内容适配边界，以及 alpha.23 已验证的 Windows packaged 安全链。生产任务数据库/隔离执行、网络同步、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.27` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、Web 状态机、同源 HTTPS、Supabase/GoTrue、Fetch、未部署工作台、Netlify Blobs 临时内容和 Supabase/Postgres 持久任务源码边界，以及 alpha.23 已验证的 Windows packaged 安全链。真实数据库迁移/隔离执行、网络同步、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -142,7 +142,15 @@ handler 的 trusted session 现在显式区分 `bearer` 与 `cookie`。两者都
 
 alpha.26 新增 `web/netlify-ephemeral-storage.js`。SDK 只存在于独立 `web/` 私有子包，不进入 Electron 根依赖。工厂固定站点级 store 和 `consistency:"strong"`；对象键仅为固定 prefix / job UUID / input|output。`set(...,{onlyIfNew:true})` 禁止覆盖；模糊写失败只在强一致回读的字节与 exact metadata 同时一致时幂等恢复。读取验证对象类型、任务号、规范 `delete_at`、媒体类型和字节数；删除后再 `getMetadata(...,{consistency:"strong"})`，非 null 即失败。
 
-对象 metadata 只提供清扫依据，不是 Netlify 平台自动生命周期规则。`sweepExpiredObjects()` 必须由受控计划任务调用：分页限制在固定 prefix，到期对象删除；规范任务键的 metadata 经成功读取后确认损坏才立即删除；metadata 服务暂时不可用时保留对象并报告 pending，删除未确认同样 pending，未知键不越权处理。任务/所有权/幂等状态仍在 `WebJobService` 进程内，因此多实例生产部署前必须迁入带事务和租约的持久任务库，并由私有队列/worker 驱动处理。当前离线 FakeStore 测试不证明生产 Blobs 行为或零留存。
+对象 metadata 只提供清扫依据，不是 Netlify 平台自动生命周期规则。`sweepExpiredObjects()` 必须由受控计划任务调用：分页限制在固定 prefix，到期对象删除；规范任务键的 metadata 经成功读取后确认损坏才立即删除；metadata 服务暂时不可用时保留对象并报告 pending，删除未确认同样 pending，未知键不越权处理。当前离线 FakeStore 测试不证明生产 Blobs 行为或零留存。
+
+### AD-019 Web 持久状态必须“事务幂等—revision CAS—内容分道—service-role only”（2026-07-28，冻结）
+
+alpha.27 新增 `web/supabase/001_web_job_state.sql`、`web/supabase-job-repository.js` 与 `web/persistent-job-service.js`。Postgres 只保存任务状态、最小文档枚举、内容无关请求指纹、上传预留、处理租约和终态幂等墓碑；输入/结果 Buffer 仍只进入短期内容 store。两表 `enable/force row level security`，不给 `anon`/`authenticated` 表或 RPC 权限；六个固定 RPC 仅授予 `service_role`，密钥只能存在于服务端环境。
+
+创建/重放在全局及账户 advisory transaction lock 内原子检查幂等指纹、终态墓碑、UUID 碰撞和并发上限。后续状态以单调 `revision` CAS 更新；上传预留与处理租约带 UUID 和任务 TTL 内的到期时间。worker 完成任务必须回传取得的 exact lease ID、revision 与到期时间；活动租约拒绝第二 worker，过期后才允许新租约接管。删除先进入 `deletion_pending`，对象删除确认后同一数据库事务把幂等项改为 content-free terminal，再删除活动任务记录。同键不能隐式重建或重复计费。
+
+`PersistentWebJobService` 用上述 repository 驱动 HTTP 异步读写；CAS 丢失时清理已写入的孤立输入，内容删除失败保持可跨重启恢复的 `deletion_pending`。内存 `WebJobService` 继续作为快速参考和单元测试模型，不是生产多实例实现。alpha.27 只通过 FakeRepository/FakeStore 与 SQL 静态契约测试；没有真实 PostgreSQL 解析、RLS、service-role、多实例、连接池、备份恢复或故障注入证据，私有队列/隔离 worker 也尚未实现。因此这项架构决定不能被表述为生产数据库已部署。
 
 `AuthProvider` 当前固定未来生产形态为系统浏览器 PKCE，但未配置服务时只返回 `configuration_required` 且不打开页面；登录/过期/撤销仅能由测试专用实例模拟。`LicenseProvider` 已固定 Free/Pro 能力矩阵、有效期和离线宽限语义；签名订阅凭证、服务端设备管理与计费尚未实现。当前 `safeStorage` 只保护待发送队列，不等于生产 token 凭据层。生产 transport 上线时必须保持默认 Electron session 离线，使用独立最小权限网络通道，并在不改变 SyncRecord v1 最小字段边界的前提下另行威胁建模。
 

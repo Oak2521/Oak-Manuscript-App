@@ -1,6 +1,6 @@
 # Web 作业契约与同源 HTTP handler（alpha）
 
-`job-contract.js` 是商业方案 v2.0 的服务端任务契约与内存参考实现；`http-handler.js` 是不监听端口的 Node HTTP 边界；`supabase-session-adapter.js`、`gotrue-verifier.js` 和 `fetch-adapter.js` 构成账号与平台桥；`client/` 是首个未部署工作台；`netlify-ephemeral-storage.js` 把 input/output 内容接到站点级 Netlify Blobs。它们共同形成可测试的纵向边界，但仍不是已上线的生产上传服务。
+`job-contract.js` 是商业方案 v2.0 的服务端任务契约与内存参考实现；`persistent-job-service.js` 是跨实例持久服务；`http-handler.js` 是不监听端口的 Node HTTP 边界；`supabase-session-adapter.js`、`gotrue-verifier.js` 和 `fetch-adapter.js` 构成账号与平台桥；`client/` 是首个未部署工作台；`netlify-ephemeral-storage.js` 把 input/output 内容接到站点级 Netlify Blobs；`supabase-job-repository.js` 和 `supabase/001_web_job_state.sql` 只持久化内容无关任务/幂等状态。它们共同形成可测试的纵向边界，但仍不是已上线的生产上传服务。
 
 Web 服务端依赖与 Electron 桌面依赖隔离：
 
@@ -20,9 +20,10 @@ npm audit --prefix web --omit=dev
 - 完成处理时先写短期结果，再删除输入；取消、用户删除和 TTL 清扫删除输入与输出；
 - 删除失败进入 `deletion_pending` 并返回失败，不生成成功删除回执；
 - `deleteAt` 作为对象存储生命周期兜底契约传给存储适配器；
+- 持久数据库只保存主体归属、最小文档枚举、状态、预留/租约、非内容请求指纹和终态幂等墓碑，不保存稿件字节；
 - 任务结果不会自动生成或发送 SyncRecord，长期账号记录仍须走独立的显式同步流程。
 
-alpha.23—alpha.26 固定：
+alpha.23—alpha.27 固定：
 
 - API 前缀 `/manuscript/api/v1/jobs`，提供创建、状态、输入上传、结果下载、取消和删除路由；不暴露 worker 开始/完成路由；
 - 只接受 HTTPS。部署在受信反向代理后时，必须由适配器用不可伪造的代理信息实现 `isSecureRequest`，不能直接信任客户端 `X-Forwarded-Proto`；
@@ -33,16 +34,19 @@ alpha.23—alpha.26 固定：
 - `client/` 读取网站 `window.oblAuth` 会话，显式 `credentials:"omit"` 发送 Bearer；创建负载由 exact client contract 生成且不含文件名/路径。页面包含登录/注册、默认引用、本次处理同意、创建/上传/轮询/取消/下载；生产同步尚未接通并明确禁用；
 - Netlify 适配器固定 `consistency:"strong"` 的站点级 store、规范 key 与 `onlyIfNew` 条件创建；模糊失败只在现有字节和 exact metadata 相同的情况下幂等恢复，删除后再次强一致确认不存在；
 - `sweepExpiredObjects()` 分页扫描固定 prefix 并按 `delete_at` 删除；已知任务对象 metadata 确认损坏时优先删除，metadata 暂时不可读时保留并返回 pending，未确认删除也返回 pending。Netlify Blobs 不自动执行该 metadata，生产必须另行调度和监控清扫；
+- Supabase/Postgres 迁移强制两表 RLS，浏览器角色无表/RPC 权限，六个固定 RPC 仅授予 `service_role`；事务创建/重放使用 advisory lock，后续状态使用 revision CAS，删除完成保留 content-free terminal tombstone；
+- `PersistentWebJobService` 将上传预留、处理租约、结果完成、删除待办和 TTL 扫描接到 repository；CAS 丢失清理孤立输入，删除失败保持可跨重启恢复的 `deletion_pending`；
 - 上传必须有唯一 `Content-Length`，拒绝 `Transfer-Encoding`、文件名、`Content-Disposition` 和内容摘要头；大小/MIME/并发预留在读取稿件字节前完成；
 - HTTP 错误与安全审计分别受 `web-http-error-v1`、`web-http-audit-v1` exact schema 约束。审计不记录主体、任务 ID、URL、请求头或稿件元数据；
 - handler 不设置 CORS，响应固定 `no-store` / `nosniff` / CSP / `no-referrer`。错误文案固定且不反射异常、路径、账号或稿件内容。
 
-生产实现仍须补齐：部署 GoTrue/Supabase/Blobs 环境配置与真实 E2E、持久任务/幂等数据库、私有队列和隔离 worker、恶意 ZIP/病毒检查、限额与计费、短时下载凭证、计划清扫/告警/故障演练、结果同步和网站联调。
+生产实现仍须补齐：在隔离环境执行/复核 Supabase 迁移并完成 GoTrue/Postgres/Blobs 真实 E2E、私有队列和隔离 worker、恶意 ZIP/病毒检查、限额与计费、短时下载凭证、计划双清扫/告警/故障演练、结果同步和网站联调。
 
 ## 参考调用顺序
 
 ```js
-const { WebJobService } = require("./job-contract");
+const { PersistentWebJobService } = require("./persistent-job-service");
+const { SupabaseJobRepository } = require("./supabase-job-repository");
 const { createWebJobHttpHandler } = require("./http-handler");
 const { createSupabaseSessionResolver } = require("./supabase-session-adapter");
 const { createGoTrueAccessTokenVerifier } = require("./gotrue-verifier");
@@ -50,7 +54,14 @@ const { createFetchHandlerAdapter } = require("./fetch-adapter");
 const { createNetlifyEphemeralStorage } = require("./netlify-ephemeral-storage");
 
 const productionEphemeralStorage = createNetlifyEphemeralStorage();
-const jobs = new WebJobService({ storage: productionEphemeralStorage });
+const productionJobRepository = new SupabaseJobRepository({
+  supabaseOrigin: process.env.SUPABASE_URL,
+  serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+});
+const jobs = new PersistentWebJobService({
+  repository: productionJobRepository,
+  storage: productionEphemeralStorage,
+});
 const productionGoTrueVerifier = createGoTrueAccessTokenVerifier({
   supabaseOrigin: process.env.SUPABASE_URL,
   apiKey: process.env.SUPABASE_API_KEY,
@@ -67,10 +78,11 @@ const handler = createWebJobHttpHandler({
 const handleFetchRequest = createFetchHandlerAdapter({ nodeHandler: handler });
 
 // 由官网同源 HTTPS 平台把标准 Request 交给 handleFetchRequest。
-// Worker 只通过私有队列调用 beginProcessing / completeJob，不经过公开 HTTP。
+// Worker 只通过私有队列调用 beginProcessing 取得 exact lease，
+// 再携带同一未过期 lease 调用 completeJob；两者都不经过公开 HTTP。
 ```
 
-部署配置应使用服务端可用、权限最小的 Supabase API key，不得把 service-role key 送进浏览器。不得只解码未验签 JWT，也不得把请求正文、普通代理头或 user metadata 角色映射为 principal。若改用 HttpOnly Cookie，session resolver 必须返回 `auth_mode:"cookie"` 与服务器绑定 CSRF。计划任务必须同时运行服务状态的 `sweepExpired()` 和内容 store 的 `sweepExpiredObjects()`；前者关闭任务/幂等状态，后者兜底删除孤立内容。二者都成功并不自动证明平台后台副本已删除，正式零留存仍需生产证据。
+部署前须由数据库所有者在隔离预生产项目执行并复核 `supabase/001_web_job_state.sql`。GoTrue verifier 使用服务端可用的最小 API key；任务 repository 单独使用仅存在于服务器环境的 service-role key，后者不得进入浏览器、客户端 bundle、日志或错误。不得只解码未验签 JWT，也不得把请求正文、普通代理头或 user metadata 角色映射为 principal。若改用 HttpOnly Cookie，session resolver 必须返回 `auth_mode:"cookie"` 与服务器绑定 CSRF。计划任务必须同时运行服务状态的 `sweepExpired()` 和内容 store 的 `sweepExpiredObjects()`；前者关闭任务/幂等状态，后者兜底删除孤立内容。二者都成功并不自动证明平台后台副本已删除，正式零留存仍需生产证据。
 
 ## 稳定错误码
 

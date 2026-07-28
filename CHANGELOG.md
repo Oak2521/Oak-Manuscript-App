@@ -4,6 +4,16 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.27（ChatGPT 持久任务与幂等数据库检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.27`。本轮是 Supabase/Postgres 迁移、服务端 repository、持久状态机与离线仿真检查点；没有执行官网数据库迁移、配置 service-role key、连接真实 Supabase/Netlify、部署网站或重新生成安装包。最新真实 Windows 制品仍为 alpha.23。
+
+- 新增 `web/supabase/001_web_job_state.sql`：内容无关的任务表与幂等墓碑表强制 RLS，不向浏览器角色授权；固定 RPC 只授予 `service_role`。创建/重放在 advisory transaction lock 内原子完成幂等、UUID 碰撞及全局/账户并发门禁，状态转换使用 revision CAS，删除先提交 content-free 终态墓碑；
+- 新增两份 Web 私有 exact schema 与 `web/supabase-job-repository.js`。服务端只向固定 PostgREST RPC 发出 HTTPS POST，service-role 凭据有界且不反射；响应媒体、长度、JSON、内部状态、文档最小字段、预留/租约、结果和删除原因全部 fail-closed；
+- 新增 `PersistentWebJobService`，把创建、跨实例读取、上传预留、处理租约、结果完成、删除待办、幂等终态和 TTL 清扫接到持久 repository；稿件输入/输出仍只交给临时内容 store。HTTP handler 改为等待异步读、预留和释放，同时保持现有内存参考实现兼容；
+- 新增 16 项定向测试，覆盖服务重启恢复、同键重放/墓碑、持久预留与 exact lease 绑定/过期接管、CAS 冲突孤立内容清理、删除失败跨重启重试、到期清扫、固定 RPC、RLS/权限/事务静态契约、JSONB 字段乱序、canonical 指纹绑定、秘密非反射和超时。全部 Web 85/85；最终 `npm test` 110.1 秒：Node 455 total / 448 pass / 0 fail / 7 skip（3.604 秒），Python 351 total / 0 failures / 0 errors / 3 skipped（101.848 秒）；
+- 资源清单仍为 78 文件 / 2,124,858 字节，manifest SHA-256 `96325d13cb112cf32ec572baed250d0ead5b54b15b0a4dba9da2d0c11ccdfe13`，锚点 SHA-256 `5e5038781d4a508e468d297e2fc8218aca0dc0a97b77c8d7aab0417fa90a21dd`。Web 私有服务端源码不进入 Electron 打包资源。
+
 ### 2026-07-28 — 0.1.0-alpha.26（ChatGPT Netlify 临时对象存储检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.26`。本轮是源码、离线仿真与依赖审计检查点，没有连接 Netlify、部署网站或重新生成安装包；最新真实 Windows 制品仍为 alpha.23。

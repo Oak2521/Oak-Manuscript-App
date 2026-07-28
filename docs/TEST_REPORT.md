@@ -2,7 +2,23 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.26 Netlify 临时对象存储检查点
+## 最新验证结论：0.1.0-alpha.27 持久任务与幂等数据库检查点
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网；官网 Supabase schema 与服务端调用方式仅作只读参考。没有执行真实数据库迁移、配置或读取 service-role key、连接 Supabase/Netlify、修改官网、启动 Electron/安装器，也未生成 alpha.27 安装包。
+
+| 验证 | 结果 | 证据 |
+|---|---|---|
+| Supabase repository + 持久服务专项 | **PASS** | 16/16：固定 HTTPS service-role RPC、响应/超时/秘密非反射、RLS/权限/事务 SQL 静态契约、JSONB 乱序/canonical 指纹、跨服务实例恢复、持久上传预留、exact lease 完成/过期接管、revision CAS、终态墓碑、孤立输入清理、删除失败重启恢复及到期清扫 |
+| 全部 Web 定向 | **PASS** | 85/85，含内存参考状态机、HTTP、Supabase/GoTrue、Fetch、client、Netlify 内容存储及持久任务 repository/service |
+| `npm test` | **PASS** | 退出码 0，墙钟 110.1 秒；Node 455 total / 448 pass / 0 fail / 7 skip（3.604 秒）；Python 351 total / 0 failures / 0 errors / 3 skipped（101.848 秒） |
+| SQL 权限与内容边界 | **PASS（静态）** | 两表 `enable/force row level security`，无 anon/authenticated 表权限，六个固定 RPC 只授予 `service_role`；测试拒绝动态 SQL及 bytea、文件名、路径、稿件内容列 |
+| 持久状态/临时内容分道 | **PASS（注入仿真）** | 任务/幂等/预留/租约在 FakePersistentRepository 跨服务实例保留；输入/输出只在 MemoryEphemeralStorage，CAS 失败删除孤立输入，删除失败保持 `deletion_pending` 并可重启重试 |
+| 资源信任锁更新/复验 | **PASS** | 78 文件 / 2,124,858 字节；manifest SHA-256 `96325d13cb112cf32ec572baed250d0ead5b54b15b0a4dba9da2d0c11ccdfe13`；anchor SHA-256 `5e5038781d4a508e468d297e2fc8218aca0dc0a97b77c8d7aab0417fa90a21dd` |
+| alpha.27 Windows build / smoke / 安装生命周期 | **未运行** | Web 私有源码不进入 Electron `build.files`；不得沿用 alpha.23 证据声称 alpha.27 制品通过 |
+
+证据边界：JavaScript、exact schema、FakeRepository/FakeStore 和 SQL 静态契约已经验证，但本机没有 PostgreSQL，迁移没有在真实 Supabase 执行；未证明 Postgres 实际解析、RLS/授权、advisory lock、多实例竞态、连接池、备份恢复或平台故障行为。service-role key 仅以构造测试字符串出现，没有使用真实秘密。私有队列/隔离 worker、恶意文件门禁、短时下载、计划双清扫、告警与生产三路零留存仍未完成。最新可复验 Windows 制品仍为 alpha.23。
+
+## 历史验证结论：0.1.0-alpha.26 Netlify 临时对象存储检查点
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。经用户授权，仅执行 npm SDK 下载与审计；没有连接 Netlify store、真实 Supabase、官网或用户稿件，没有启动 Electron/安装器，也未生成 alpha.26 安装包。
 

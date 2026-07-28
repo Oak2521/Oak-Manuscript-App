@@ -2,7 +2,19 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.26 Netlify 临时对象存储验收（2026-07-28）
+## 0.1.0-alpha.27 持久任务与幂等数据库验收（2026-07-28）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.27`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] Supabase/Postgres 迁移只保存内容无关的任务、最小文档枚举、预留/租约和幂等墓碑；没有稿件字节、文件名、路径或正文列；
+- [x] 两表强制 RLS，浏览器角色无表/RPC 权限，六个固定 RPC 只授予 `service_role`；service-role key 只能由有界服务端适配器发送到规范 HTTPS Supabase origin；
+- [x] 创建/重放在事务 advisory lock 内原子处理同键冲突、终态墓碑、UUID 碰撞和全局/账户并发；状态更新使用 revision CAS，终态删除原子保留 content-free 幂等墓碑；
+- [x] 持久服务支持跨实例创建/读取、上传预留、处理租约、结果完成、删除待办和 TTL 扫描；完成必须绑定 exact 未过期 lease，活动租约拒绝抢占、过期租约可安全接管；CAS 冲突清理孤立输入，删除失败跨重启保持 `deletion_pending` 并可重试；
+- [x] HTTP handler 等待异步持久读/预留/释放，同时兼容原内存参考实现；repository/持久服务 16/16、全部 Web 85/85、Node 455、Python 351 全量零失败；
+- [x] 资源信任复验为 78 文件 / 2,124,858 字节；Web 私有数据库/服务源码不进入 Electron 打包资源；
+- [ ] 迁移已在隔离真实 Supabase 执行并验证 Postgres 语法、RLS、权限、多实例竞态、连接池、备份/恢复与故障行为；本轮仅有 SQL 静态契约和离线 FakeRepository，不得宣称生产数据库上线；
+- [ ] 私有队列/隔离 worker、恶意文件门禁、真实计划双清扫、短时下载、告警、区域故障演练和三路零留存证据已完成；因此本节不是生产上线或销售验收。
+
+## 0.1.0-alpha.26 Netlify 临时对象存储验收（历史，2026-07-28）
 
 - [x] APP、Python core、桌面 lockfile 与 Web 私有子包统一为 `0.1.0-alpha.26`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] 站点级 store 配置强一致读取；对象键由固定 prefix、规范任务 UUID 和 input/output 构造，写入使用 `onlyIfNew`，不一致既有对象不得覆盖；

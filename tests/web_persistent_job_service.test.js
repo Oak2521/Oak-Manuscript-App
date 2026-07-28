@@ -1,0 +1,364 @@
+"use strict";
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+
+const { MemoryEphemeralStorage, WebJobError } = require("../web/job-contract");
+const { PersistentWebJobService } = require("../web/persistent-job-service");
+const { validateInternalRecord } = require("../web/supabase-job-repository");
+const { createWebJobHttpHandler } = require("../web/http-handler");
+const { Readable } = require("node:stream");
+
+const NOW = "2026-07-28T12:00:00.000Z";
+const OWNER = Object.freeze({ kind: "account", subject_id: "8f3b65e1-0e6e-42b4-81c0-61e5cf9a1020" });
+const OTHER = Object.freeze({ kind: "account", subject_id: "8f3b65e1-0e6e-42b4-81c0-61e5cf9a1021" });
+const UUIDS = [
+  "10000000-0000-4000-8000-000000000001",
+  "10000000-0000-4000-8000-000000000002",
+  "10000000-0000-4000-8000-000000000003",
+  "10000000-0000-4000-8000-000000000004",
+  "10000000-0000-4000-8000-000000000005",
+];
+
+function clone(value) {
+  return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+}
+
+function createRequest(overrides = {}) {
+  const base = {
+    schema_version: "1.0",
+    request_type: "oak_manuscript_web_job",
+    idempotency_key: "persistent-service-request-0001",
+    consent: {
+      granted: true,
+      scope: "single_job_processing",
+      privacy_version: "web-privacy-v1",
+      granted_at: NOW,
+    },
+    document: {
+      format: "txt",
+      manuscript_type: "paper",
+      check_config: "full",
+      citation_style: "default",
+      size_bytes: 6,
+    },
+  };
+  return {
+    ...base,
+    ...overrides,
+    consent: { ...base.consent, ...(overrides.consent || {}) },
+    document: { ...base.document, ...(overrides.document || {}) },
+  };
+}
+
+class FakePersistentRepository {
+  constructor({ now = NOW } = {}) {
+    this.now = now;
+    this.jobs = new Map();
+    this.idempotency = new Map();
+    this.casCalls = 0;
+    this.failNextCas = false;
+  }
+
+  _copy(record) {
+    return validateInternalRecord(clone(record));
+  }
+
+  async createOrReplay(input) {
+    const idemKey = `${input.owner_key}\0${input.idempotency_key}`;
+    const previous = this.idempotency.get(idemKey);
+    if (previous) {
+      if (previous.request_fingerprint !== input.request_fingerprint) {
+        return { schema_version: "1.0", result_type: "oak_manuscript_web_job_create_result",
+          outcome: "conflict", record: null };
+      }
+      if (previous.terminal || !previous.job_id || !this.jobs.has(previous.job_id)) {
+        return { schema_version: "1.0", result_type: "oak_manuscript_web_job_create_result",
+          outcome: "terminal", record: null };
+      }
+      return { schema_version: "1.0", result_type: "oak_manuscript_web_job_create_result",
+        outcome: "replayed", record: this._copy(this.jobs.get(previous.job_id)) };
+    }
+    if (this.jobs.has(input.job_id)) {
+      return { schema_version: "1.0", result_type: "oak_manuscript_web_job_create_result",
+        outcome: "job_id_collision", record: null };
+    }
+    if (this.jobs.size >= input.max_active_global) {
+      return { schema_version: "1.0", result_type: "oak_manuscript_web_job_create_result",
+        outcome: "global_limit", record: null };
+    }
+    if ([...this.jobs.values()].filter((item) => item.owner_key === input.owner_key).length >=
+        input.max_active_per_owner) {
+      return { schema_version: "1.0", result_type: "oak_manuscript_web_job_create_result",
+        outcome: "owner_limit", record: null };
+    }
+    const created = new Date(this.now);
+    const record = {
+      schema_version: "1.0",
+      record_type: "oak_manuscript_web_job_internal",
+      job_id: input.job_id,
+      owner_key: input.owner_key,
+      state: "awaiting_upload",
+      created_at: created.toISOString(),
+      updated_at: created.toISOString(),
+      expires_at: new Date(created.getTime() + input.ttl_seconds * 1000).toISOString(),
+      input_retained: false,
+      result_available: false,
+      result_media_type: null,
+      pending_deletion_reason: null,
+      request_fingerprint: input.request_fingerprint,
+      request_canonical: input.request_canonical,
+      idempotency_key: input.idempotency_key,
+      document: clone(input.document),
+      upload_reservation_id: null,
+      upload_reservation_expires_at: null,
+      lease_id: null,
+      lease_expires_at: null,
+      revision: 0,
+    };
+    this.jobs.set(record.job_id, clone(record));
+    this.idempotency.set(idemKey, {
+      request_fingerprint: input.request_fingerprint,
+      job_id: record.job_id,
+      terminal: false,
+    });
+    return { schema_version: "1.0", result_type: "oak_manuscript_web_job_create_result",
+      outcome: "created", record: this._copy(record) };
+  }
+
+  async getOwned({ owner_key, job_id }) {
+    const record = this.jobs.get(job_id);
+    return record && record.owner_key === owner_key ? this._copy(record) : null;
+  }
+
+  async listOwned({ owner_key }) {
+    return [...this.jobs.values()].filter((record) => record.owner_key === owner_key)
+      .map((record) => this._copy(record));
+  }
+
+  async compareAndSwap(input) {
+    this.casCalls += 1;
+    if (this.failNextCas) {
+      this.failNextCas = false;
+      return null;
+    }
+    const current = this.jobs.get(input.job_id);
+    if (!current || current.owner_key !== input.owner_key ||
+        current.revision !== input.expected_revision ||
+        !input.expected_states.includes(current.state)) return null;
+    const updated = {
+      ...current,
+      ...clone(input.next),
+      updated_at: new Date(new Date(current.updated_at).getTime() + 1).toISOString(),
+      revision: current.revision + 1,
+    };
+    validateInternalRecord(updated);
+    this.jobs.set(updated.job_id, clone(updated));
+    return this._copy(updated);
+  }
+
+  async finalizeDeletion({ owner_key, job_id, expected_revision }) {
+    const record = this.jobs.get(job_id);
+    if (!record || record.owner_key !== owner_key || record.revision !== expected_revision ||
+        record.state !== "deletion_pending") return false;
+    const idemKey = `${record.owner_key}\0${record.idempotency_key}`;
+    const idem = this.idempotency.get(idemKey);
+    if (!idem || idem.job_id !== record.job_id) throw new Error("missing tombstone");
+    this.idempotency.set(idemKey, { ...idem, job_id: null, terminal: true });
+    this.jobs.delete(job_id);
+    return true;
+  }
+
+  async listExpired({ before, limit }) {
+    return [...this.jobs.values()]
+      .filter((record) => Date.parse(record.expires_at) <= Date.parse(before))
+      .sort((a, b) => a.expires_at.localeCompare(b.expires_at))
+      .slice(0, limit)
+      .map((record) => this._copy(record));
+  }
+}
+
+class FailingDeleteStorage extends MemoryEphemeralStorage {
+  constructor() {
+    super();
+    this.failDeletes = true;
+  }
+
+  async deleteInput(jobId) {
+    if (this.failDeletes) throw new Error("input delete failed");
+    return super.deleteInput(jobId);
+  }
+}
+
+function serviceHarness({ repository = new FakePersistentRepository(), storage = new MemoryEphemeralStorage(),
+  now = NOW } = {}) {
+  let uuidIndex = 0;
+  const service = new PersistentWebJobService({
+    repository,
+    storage,
+    clock: () => new Date(now),
+    uuidFactory: () => UUIDS[uuidIndex++],
+  });
+  return { service, repository, storage };
+}
+
+function expectCode(code) {
+  return (error) => error instanceof WebJobError && error.code === code;
+}
+
+test("task and idempotency state survive a service restart without retaining manuscript bytes", async () => {
+  const repository = new FakePersistentRepository();
+  const first = serviceHarness({ repository }).service;
+  const created = await first.createJob(OWNER, createRequest());
+  const second = serviceHarness({ repository }).service;
+  assert.deepEqual(await second.getJob(OWNER, created.job_id), created);
+  assert.deepEqual(await second.createJob(OWNER, createRequest()), created);
+  const persisted = JSON.stringify([...repository.jobs.values()]);
+  for (const forbidden of ["secret manuscript", "filename", "file_path", "manuscript_bytes"]) {
+    assert.equal(persisted.includes(forbidden), false, forbidden);
+  }
+  await assert.rejects(second.getJob(OTHER, created.job_id), expectCode("JOB_NOT_FOUND"));
+});
+
+test("persistent upload reservation, processing lease, and result survive service replacement", async () => {
+  const repository = new FakePersistentRepository();
+  const storage = new MemoryEphemeralStorage();
+  const first = serviceHarness({ repository, storage }).service;
+  const created = await first.createJob(OWNER, createRequest());
+  const reservation = await first.reserveUpload(OWNER, created.job_id, {
+    size_bytes: 6,
+    media_type: "text/plain",
+  });
+
+  const second = serviceHarness({ repository, storage }).service;
+  await assert.rejects(second.reserveUpload(OWNER, created.job_id, {
+    size_bytes: 6,
+    media_type: "text/plain",
+  }), expectCode("INVALID_TRANSITION"));
+  const queued = await first.acceptReservedUpload(OWNER, created.job_id, reservation, {
+    bytes: Buffer.from("secret"),
+    media_type: "text/plain",
+  });
+  assert.equal(queued.state, "queued");
+  const lease = await second.beginProcessing(OWNER, created.job_id);
+  assert.equal(lease.lease_type, "oak_manuscript_web_job_processing_lease");
+  const ready = await second.completeJob(OWNER, created.job_id, lease, {
+    bytes: Buffer.from("result"),
+    media_type: "application/json",
+  });
+  assert.equal(ready.state, "result_ready");
+  assert.deepEqual(await second.downloadResult(OWNER, created.job_id), Buffer.from("result"));
+  assert.equal(storage.inspect(created.job_id).input_present, false);
+});
+
+test("processing completion is bound to the exact lease and an expired lease can be reclaimed", async () => {
+  const repository = new FakePersistentRepository();
+  const storage = new MemoryEphemeralStorage();
+  const first = serviceHarness({ repository, storage, now: NOW }).service;
+  const created = await first.createJob(OWNER, createRequest());
+  await first.acceptUpload(OWNER, created.job_id, {
+    bytes: Buffer.from("secret"), media_type: "text/plain",
+  });
+  const firstLease = await first.beginProcessing(OWNER, created.job_id);
+  await assert.rejects(first.completeJob(OWNER, created.job_id, {
+    ...firstLease,
+    lease_id: UUIDS[4],
+  }, { bytes: Buffer.from("result"), media_type: "application/json" }),
+  expectCode("INVALID_TRANSITION"));
+
+  const later = serviceHarness({
+    repository,
+    storage,
+    now: "2026-07-28T12:06:00.000Z",
+  }).service;
+  const replacement = await later.beginProcessing(OWNER, created.job_id);
+  assert.notEqual(replacement.lease_id, firstLease.lease_id);
+  await assert.rejects(later.completeJob(OWNER, created.job_id, firstLease, {
+    bytes: Buffer.from("result"), media_type: "application/json",
+  }), expectCode("INVALID_TRANSITION"));
+  assert.equal((await later.completeJob(OWNER, created.job_id, replacement, {
+    bytes: Buffer.from("result"), media_type: "application/json",
+  })).state, "result_ready");
+});
+
+test("delete writes a durable terminal tombstone and prevents replay or duplicate billing", async () => {
+  const { service, repository } = serviceHarness();
+  const created = await service.createJob(OWNER, createRequest());
+  const receipt = await service.cancelJob(OWNER, created.job_id);
+  assert.equal(receipt.reason, "canceled");
+  assert.equal(repository.jobs.size, 0);
+  await assert.rejects(service.createJob(OWNER, createRequest()), expectCode("IDEMPOTENCY_TERMINAL"));
+  await assert.rejects(service.createJob(OWNER, createRequest({ document: { size_bytes: 7 } })),
+    expectCode("IDEMPOTENCY_CONFLICT"));
+});
+
+test("content deletion failure remains deletion_pending across restart and can be retried", async () => {
+  const repository = new FakePersistentRepository();
+  const storage = new FailingDeleteStorage();
+  const first = serviceHarness({ repository, storage }).service;
+  const created = await first.createJob(OWNER, createRequest());
+  await first.acceptUpload(OWNER, created.job_id, { bytes: Buffer.from("secret"), media_type: "text/plain" });
+  await assert.rejects(first.cancelJob(OWNER, created.job_id), expectCode("ZERO_RETENTION_DELETE_FAILED"));
+  assert.equal((await first.getJob(OWNER, created.job_id)).state, "deletion_pending");
+
+  storage.failDeletes = false;
+  const second = serviceHarness({ repository, storage }).service;
+  const receipt = await second.retryDeletion(OWNER, created.job_id);
+  assert.equal(receipt.input_deleted, true);
+  assert.equal(repository.jobs.size, 0);
+});
+
+test("CAS loss after input storage removes the orphan and never reports queued", async () => {
+  const { service, repository, storage } = serviceHarness();
+  const created = await service.createJob(OWNER, createRequest());
+  const reservation = await service.reserveUpload(OWNER, created.job_id, {
+    size_bytes: 6, media_type: "text/plain",
+  });
+  repository.failNextCas = true;
+  await assert.rejects(service.acceptReservedUpload(OWNER, created.job_id, reservation, {
+    bytes: Buffer.from("secret"), media_type: "text/plain",
+  }), expectCode("INVALID_TRANSITION"));
+  assert.equal(storage.inspect(created.job_id).input_present, false);
+  assert.equal((await service.getJob(OWNER, created.job_id)).state, "awaiting_upload");
+});
+
+test("expiry is persisted as deletion_pending and scheduled sweep finalizes content and tombstone", async () => {
+  const repository = new FakePersistentRepository({ now: "2026-07-28T10:00:00.000Z" });
+  const first = serviceHarness({ repository, now: "2026-07-28T10:00:00.000Z" }).service;
+  const created = await first.createJob(OWNER, createRequest({
+    consent: { granted_at: "2026-07-28T10:00:00.000Z" },
+  }));
+  const later = serviceHarness({ repository, now: "2026-07-28T10:16:00.000Z" }).service;
+  const status = await later.getJob(OWNER, created.job_id);
+  assert.equal(status.state, "deletion_pending");
+  const swept = await later.sweepExpired();
+  assert.equal(swept.deleted.length, 1);
+  assert.equal(repository.jobs.size, 0);
+});
+
+test("HTTP handler awaits the persistent service's asynchronous read and reservation gates", async () => {
+  const { service } = serviceHarness();
+  const created = await service.createJob(OWNER, createRequest());
+  const handler = createWebJobHttpHandler({
+    service,
+    expectedOrigin: "https://manuscript.test",
+    resolveSession: async () => ({ principal: OWNER, auth_mode: "bearer" }),
+    isSecureRequest: () => true,
+    requestIdFactory: () => UUIDS[4],
+    clock: () => new Date(NOW),
+  });
+  const request = Readable.from([]);
+  request.method = "GET";
+  request.url = `/manuscript/api/v1/jobs/${created.job_id}`;
+  request.headers = {};
+  request.rawHeaders = [];
+  const response = {
+    statusCode: null,
+    body: Buffer.alloc(0),
+    writeHead(statusCode) { this.statusCode = statusCode; },
+    end(value = Buffer.alloc(0)) { this.body = Buffer.from(value); },
+  };
+  await handler(request, response);
+  assert.equal(response.statusCode, 200);
+  assert.equal(JSON.parse(response.body.toString("utf8")).job_id, created.job_id);
+});

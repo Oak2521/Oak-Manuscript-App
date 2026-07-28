@@ -351,7 +351,7 @@ function createWebJobHttpHandler({
 
       if (route.kind === "job" && method === "GET") {
         if (declaredLength(request) !== null) fail("INVALID_HEADERS");
-        const result = service.getJob(session.principal, route.jobId);
+        const result = await service.getJob(session.principal, route.jobId);
         status = 200;
         sendJson(response, status, result);
         return;
@@ -363,7 +363,7 @@ function createWebJobHttpHandler({
         }
         const contentType = singleHeader(request, "content-type", { required: true });
         const length = declaredLength(request, { required: true });
-        const reservation = service.reserveUpload(session.principal, route.jobId, {
+        const reservation = await service.reserveUpload(session.principal, route.jobId, {
           size_bytes: length,
           media_type: contentType,
         });
@@ -380,7 +380,7 @@ function createWebJobHttpHandler({
           sendJson(response, status, result);
           return;
         } catch (error) {
-          try { service.releaseUploadReservation(session.principal, route.jobId, reservation); } catch {}
+          try { await service.releaseUploadReservation(session.principal, route.jobId, reservation); } catch {}
           throw error;
         }
       }

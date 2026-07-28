@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.26` 已实现的桌面隐私边界及 Web 作业/同源 HTTP/Bearer/GoTrue/Fetch/临时对象存储契约。现有 alpha.23 Windows 制品未签名，不是可售卖正式版。统一账号、Free/Pro、SyncRecord v1、OS 加密持久队列、Web 状态机/handler、GoTrue、工作台和 Netlify Blobs 内容适配已实现；生产任务库/worker、同步 transport、计费和官网发布仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.27` 已实现的桌面隐私边界及 Web 作业/同源 HTTP/Bearer/GoTrue/Fetch/临时对象存储/持久任务源码契约。现有 alpha.23 Windows 制品未签名，不是可售卖正式版。统一账号、Free/Pro、SyncRecord v1、OS 加密持久队列、Web 状态机/handler、GoTrue、工作台、Netlify Blobs 内容适配及 Supabase/Postgres 持久任务源码已实现；真实迁移/worker、同步 transport、计费和官网发布仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -30,7 +30,7 @@
 本地技术日志（`logs/`）与导出诊断信息不得包含正文、标题、文件名和路径。
 脱敏评估摘要仅含：稿件类型、语言、字数区间、问题统计、出版目标、规则版本、咨询意图；当前只在本地生成，未来真实发送仍须用户逐字段确认。
 
-上述“数据不出本机”只描述当前桌面 alpha。alpha.26 的 Web 代码具备 GoTrue、稿件 API 与 Blobs 内容存储的生产形状，但本轮网络/store 都是注入仿真且页面未部署。客户端只在用户选择文件并勾选本次处理同意后上传，创建元数据不含文件名/路径；Bearer 请求显式 `credentials:"omit"`。Blobs 的 `delete_at` metadata 不会自动删除对象，必须运行清扫器并监控未确认删除。在隔离 worker、真实计划任务、隐私文案和三路零留存验收完成前，不得宣称 Web 能力已上线。
+上述“数据不出本机”只描述当前桌面 alpha。alpha.27 的 Web 代码具备 GoTrue、稿件 API、Blobs 内容存储及 Postgres 状态持久化的生产形状，但网络/store/DB 均为注入仿真或 SQL 静态检查且页面未部署。客户端只在用户选择文件并勾选本次处理同意后上传，创建元数据不含文件名/路径；Bearer 请求显式 `credentials:"omit"`。数据库表只含内容无关状态和最小文档枚举，浏览器角色无访问权；真实 service-role 必须仅由服务器环境注入。Blobs 的 `delete_at` metadata 不会自动删除对象，必须运行双清扫器并监控未确认删除。在真实迁移、隔离 worker、计划任务、隐私文案和三路零留存验收完成前，不得宣称 Web 能力已上线。
 
 开发者构建输入是另一条隔离边界：`npm run download:builder:win` 只在用户明确批准后由命令行显式启动，只能请求合同固定的 electron-builder GitHub release URL/受限重定向主机，并把归档写入仓库 `out/`。它不接触项目、稿件、报告、账号或应用用户数据，也不会被普通 build/test 或桌面应用隐式触发。
 
