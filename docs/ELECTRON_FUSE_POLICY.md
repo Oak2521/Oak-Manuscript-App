@@ -1,6 +1,6 @@
 # ELECTRON_FUSE_POLICY — Electron 打包硬化合同
 
-> 当前实现：`0.1.0-alpha.14`。本文件描述源码配置、打包后强制写入与回读、ASAR 资源锚点及受限应用协议合同；真实未签名 Windows alpha 二进制证据已取得。
+> 当前实现：`0.1.0-alpha.15`。本文件描述源码配置、打包后强制写入与回读、ASAR 资源锚点及受限应用协议合同；真实未签名 Windows alpha 二进制证据已取得。
 
 ## 固定策略
 
@@ -22,7 +22,7 @@
 
 macOS arm64 写 fuse 后按官方工具要求设置 `resetAdHocDarwinSignature=true`；Windows 和 macOS x64 为 `false`。这只是打包阶段签名有效性处理，不等于正式 Developer ID 签名、公证或 Windows Authenticode。
 
-alpha.14 继续把 `electron/resource-trust-anchor.json` 打入 `app.asar`，packaged 门禁从真实 ASAR 读取锚点并复核 loose 全树。由于 `GrantFileProtocolExtraPrivileges=false` 会使 Electron 43 的 `file://...app.asar/...` 页面加载失败，主窗口使用只允许四个固定渲染文件的 `oak-manuscript://renderer/`；这不放宽 file 协议。
+alpha.15 继续把 `electron/resource-trust-anchor.json` 打入 `app.asar`，packaged 门禁从真实 ASAR 读取锚点并复核 loose 全树。由于 `GrantFileProtocolExtraPrivileges=false` 会使 Electron 43 的 `file://...app.asar/...` 页面加载失败，主窗口使用只允许四个固定渲染文件的 `oak-manuscript://renderer/`；这不放宽 file 协议。
 
 配置缺项、多项、值漂移、继承态或 removed 状态一律拒绝。构建顺序固定为：配置验证 → electron-builder（含 `afterPack` 全量写入与立即回读）→ 独立真实二进制 fuse 回读 → 打包资源门禁 → 隐藏 packaged smoke → 发布证据生成。
 
@@ -30,7 +30,7 @@ alpha.14 继续把 `electron/resource-trust-anchor.json` 打入 `app.asar`，pac
 
 验证器只接受仓库内、安全父链下、非链接、单链接、非空的常规文件。macOS 除应用入口外还解析并单独验证实际承载 wire 的 `Electron Framework` 文件；读取前后核对该实际文件身份。全部已知 fuse 必须逐项精确一致。
 
-当前 Electron 43.1.0 的 wire v1 暴露索引 0—8。alpha.14 Windows x64 EXE 实测 9 项全部匹配，`unknown_fuses=[]`、`blockers=[]`、`fully_known=true`；归档 alpha.12/alpha.13 的真实 EXE 也已用同一策略验证。未来若出现索引 9 或更高项：
+当前 Electron 43.1.0 的 wire v1 暴露索引 0—8。alpha.15 Windows x64 EXE 实测 9 项全部匹配，`unknown_fuses=[]`、`blockers=[]`、`fully_known=true`；归档 alpha.12/alpha.13/alpha.14 的真实 EXE 也已用同一策略验证。未来若出现索引 9 或更高项：
 
 - alpha 可返回机器可读 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING`，但不得称为正式安全验收；
 - sale 必须失败关闭；

@@ -8,6 +8,8 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { compareUtf16 } = require("./deterministic_compare");
+const { readSafeRegularFile } = require("./safe_tracked_file");
+const { parseJsonStrict } = require("./strict_json");
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 const SCHEMA_VERSION = "1.0";
@@ -21,6 +23,7 @@ const PINNED_VERSIONS = Object.freeze({
   "darwin-x64": DARWIN_X64_VERSION,
   "darwin-arm64": DARWIN_ARM64_VERSION,
 });
+const WINDOWS_X64_PROVENANCE_RELATIVE = "config/provenance/cpython-3.13.14-win32-x64.json";
 
 function manifestRelative(platform, arch) {
   if (!/^[a-z0-9]+$/.test(platform || "") || !/^[a-z0-9]+$/.test(arch || "")) {
@@ -60,6 +63,40 @@ function requiredFilesFor(platform) {
 
 function expectedVersionFor(platform, arch) {
   return PINNED_VERSIONS[`${platform}-${arch}`] || null;
+}
+
+function provenanceReference(root, platform, arch, { required = false } = {}) {
+  if (platform !== "win32" || arch !== "x64") {
+    if (required) throw new Error(`当前 Python 目标没有 provenance evidence 策略：${platform}-${arch}`);
+    return null;
+  }
+  const target = resolveProjectPath(root, WINDOWS_X64_PROVENANCE_RELATIVE, "Python provenance evidence");
+  const existing = fs.lstatSync(target, { throwIfNoEntry: false });
+  if (!existing && !required) return null;
+  const record = readSafeRegularFile(root, target, "Python provenance evidence", { allowMissing: !required });
+  if (!record) return null;
+  let evidence;
+  try {
+    evidence = parseJsonStrict(record.bytes.toString("utf8"), "Python provenance evidence");
+  } catch (error) {
+    throw new Error(`Python provenance evidence 无法解析：${error.message}`);
+  }
+  const canonical = Buffer.from(`${JSON.stringify(evidence, null, 2)}\n`, "utf8");
+  if (!record.bytes.equals(canonical)) {
+    throw new Error("Python provenance evidence 不是 canonical UTF-8/LF JSON");
+  }
+  if (evidence?.schema_version !== 1 || evidence?.evidence_type !== "oak-runtime-provenance" ||
+      evidence?.subject?.distribution !== DISTRIBUTION || evidence?.subject?.version !== WINDOWS_X64_VERSION ||
+      evidence?.subject?.target?.platform !== platform || evidence?.subject?.target?.arch !== arch ||
+      evidence?.verification?.machine_status !== "verified" || evidence?.verification?.human_review_status !== "pending") {
+    throw new Error("Python provenance evidence 身份或机器/人工审阅状态不匹配");
+  }
+  return {
+    path: WINDOWS_X64_PROVENANCE_RELATIVE,
+    sha256: crypto.createHash("sha256").update(record.bytes).digest("hex"),
+    machine_status: "verified",
+    human_review_status: "pending",
+  };
 }
 
 function verifyWindowsIsolationFile(runtimeRoot) {
@@ -173,6 +210,7 @@ function buildManifest(root = REPO_ROOT, {
       (expectedVersion && runtimeVersion !== expectedVersion)) {
     throw new Error(`Python 运行时版本未固定或不匹配：${String(runtimeVersion)}`);
   }
+  const provenance = provenanceReference(projectRoot, platform, arch);
   return {
     schema_version: SCHEMA_VERSION,
     lock_type: LOCK_TYPE,
@@ -182,6 +220,7 @@ function buildManifest(root = REPO_ROOT, {
     required_files: requiredFiles,
     formal_source_provenance_audit_required: true,
     provenance_note: "Locally supplied CPython distribution; origin and redistribution evidence require formal audit before sale.",
+    ...(provenance ? { provenance_evidence: provenance } : {}),
     file_count: files.length,
     total_bytes: files.reduce((sum, item) => sum + item.size_bytes, 0),
     files,
@@ -221,6 +260,17 @@ function verifyRuntime(root = REPO_ROOT, {
       manifest.formal_source_provenance_audit_required !== true ||
       JSON.stringify(manifest.required_files) !== JSON.stringify(expectedRequired)) {
     throw new Error("Python 运行时固定清单的 schema、版本、平台、入口或审计状态不匹配");
+  }
+  if (Object.hasOwn(manifest, "provenance_evidence")) {
+    const expectedProvenance = provenanceReference(projectRoot, platform, arch, { required: true });
+    const actual = manifest.provenance_evidence;
+    if (!actual || typeof actual !== "object" || Array.isArray(actual) ||
+        JSON.stringify(Object.keys(actual).sort(compareUtf16)) !==
+          JSON.stringify(["human_review_status", "machine_status", "path", "sha256"].sort(compareUtf16)) ||
+        actual.path !== expectedProvenance.path || actual.sha256 !== expectedProvenance.sha256 ||
+        actual.machine_status !== "verified" || actual.human_review_status !== "pending") {
+      throw new Error("Python 运行时固定清单未精确绑定 provenance evidence");
+    }
   }
 
   const runtimeRoot = resolveProjectPath(projectRoot, relative, "Python runtime");
@@ -332,11 +382,13 @@ module.exports = {
   PINNED_VERSIONS,
   SCHEMA_VERSION,
   WINDOWS_X64_VERSION,
+  WINDOWS_X64_PROVENANCE_RELATIVE,
   buildManifest,
   defaultRuntimeRelative,
   entryFor,
   inventory,
   manifestRelative,
+  provenanceReference,
   requiredFilesFor,
   sha256File,
   verifyRuntime,

@@ -9,13 +9,18 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 60,
-  "total_bytes": 1949296,
+  "file_count": 62,
+  "total_bytes": 1966858,
   "files": [
     {
       "path": "config/app-config.json",
       "size_bytes": 615,
       "sha256": "c7cb100af998081f8caf67bc17039caa48c460482fad4077f94ece6aed132e2c"
+    },
+    {
+      "path": "config/provenance/cpython-3.13.14-win32-x64.json",
+      "size_bytes": 9265,
+      "sha256": "b198a727a0c12640a8a020758bcfc5dc41e01e577a25576795b1d081e3513176"
     },
     {
       "path": "config/rule-capabilities.json",
@@ -31,6 +36,11 @@
       "path": "config/rule-packs/oak-rules-2.0.0.json",
       "size_bytes": 25005,
       "sha256": "098b382e33c06ccddf154940fbbd51db384d8025cf235ed7f7e10e83d34897a4"
+    },
+    {
+      "path": "config/schemas/runtime-provenance-v1.schema.json",
+      "size_bytes": 8048,
+      "sha256": "ec62294c37342aae9eeac4354a9d8f836775595f386d92cec8cbdd0aa37c1db9"
     },
     {
       "path": "config/schemas/sync-record-v1.schema.json",
@@ -79,13 +89,13 @@
     },
     {
       "path": "config/tool-manifests/python-runtime-win32-x64.json",
-      "size_bytes": 5846,
-      "sha256": "eb88aca18c427e16a78e41ac96476d94fb1d47002950dc3d65b9432656dc3b8a"
+      "size_bytes": 6095,
+      "sha256": "7bb23b6516ea2f0d87684845a1df27818d465d28a666284bb76f80737851b565"
     },
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "7b1dff88c1ccda45e7355d8f8725fc175f81ea3de4b1a1b18d1e4e0784d794f7"
+      "sha256": "92a1e125b5103f2d0e79852c1190819b3c5d6c227886e7b4591f443e2c0178ec"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

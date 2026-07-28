@@ -2,7 +2,20 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.14 Windows 安装生命周期工具验收（2026-07-28）
+## 0.1.0-alpha.15 CPython 来源机器证据与 Windows 制品验收（2026-07-28）
+
+- [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.15`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] PSF 官方 CPython 3.13.14 Windows x64 embeddable ZIP 的 URL、大小、SHA-256、Sigstore、SPDX 和 GPG 旁证元数据由 exact schema 与 canonical JSON 固定；
+- [x] 官方 34 个文件与本地 34 个文件全量对照：33 个逐字节一致，唯一差异为 `python313._pth` 精确追加 `..\python\r\n`；官方 `LICENSE.txt` 原样保留；
+- [x] 证据生成/验证拒绝自批准、未知字段、非 canonical 字节、顺序漂移、运行时增删改、链接/身份换入和原子提交失败；运行时 manifest 与 packaged 门禁绑定证据原始 SHA-256；
+- [x] Sigstore artifact digest、leaf signature、证书 identity 和 Rekor canonical body 绑定，以及 SPDX artifact digest、supplier 和 `PSF-2.0` 已机器复验；
+- [x] 上游 Sigstore bundle 的 tlog entry/proof index 不一致、完整信任链未重放和 GPG 未验证均被如实保留，未写成完整签名验证通过；
+- [x] 最终全量 Node 329 / Python 351，0 失败；alpha.15 NSIS/ZIP、真实 packaged 资源、9 fuse、EpubCheck/Ace smoke、发布摘要和安装生命周期只读预检均通过；
+- [ ] CPython 完整 Sigstore 或 GPG 独立验证、上游 index 异常处置、PSF 再分发义务和修改披露已由具名人员签署；
+- [ ] 真实 alpha.12 → alpha.15 安装、升级、旧版回装探测、卸载、HKCU/Desktop/Start Menu 清理和 userData 保留已在获准系统环境执行并产生 PASS 证据；
+- [ ] Windows Authenticode、干净机无开发运行时、其余 packaged sale blocker、macOS/Web/生产账号与同步门禁全部关闭。
+
+## 0.1.0-alpha.14 Windows 安装生命周期工具验收（历史，2026-07-28）
 
 - [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.14`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] 默认只读预检交叉验证当前 alpha.14 与归档 alpha.12 的 canonical manifest、SHA256SUMS、版本、大小、SHA-256 和 NSIS PE；预检不创建 `out/`、不启动子进程；

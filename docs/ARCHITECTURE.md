@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.14` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约、Windows builder 独立锁、ASAR/全 9 fuse/资源可信链、受限应用协议、Ace 受控 utilityProcess、未签名 NSIS/ZIP、packaged smoke，以及 Windows 安装生命周期的 fail-closed 编排与证据契约。生产认证/同步、联网标准获取、代码签名、真实安装生命周期、macOS 和 Web 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.15` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约、Windows builder 独立锁、ASAR/全 9 fuse/资源可信链、受限应用协议、Ace 受控 utilityProcess、CPython 来源机器证据、未签名 NSIS/ZIP、packaged smoke，以及 Windows 安装生命周期的 fail-closed 编排与证据契约。生产认证/同步、联网标准获取、代码签名、真实安装生命周期、macOS 和 Web 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -133,7 +133,7 @@ Renderer 不能构造同步负载，也不能提供 token、任意 URL 或 trans
 
 `package.json` 必须显式开启 ASAR、不得关闭 embedded ASAR integrity，并列出全部当前工具已知 fuse 的精确值；不能依赖 electron-builder 默认值。配置在调用 builder 前校验，生成应用后立即从真实 Electron 二进制读取 fuse wire，再进入资源门禁、packaged smoke 和发布证据。
 
-二进制验证必须限定仓库内安全常规单链接文件并复核读取前后身份。已知 fuse 缺失、漂移、inherit 或 removed 一律拒绝。Electron 43.1.0 当前比 `@electron/fuses` 1.8.0 多一个未知索引 8；本地没有可信语义定义，因此 alpha 只可带 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING` 继续，sale 必须失败。alpha.10 的 Ace 已迁移到受控 `utilityProcess`，因此 `RunAsNode=false`；详见 `ELECTRON_FUSE_POLICY.md`。
+二进制验证必须限定仓库内安全常规单链接文件并复核读取前后身份。已知 fuse 缺失、漂移、inherit 或 removed 一律拒绝。顶层精确锁定 `@electron/fuses 2.1.3`，Electron 43.1.0 的索引 8 已由该工具定义为 `WasmTrapHandlers`；afterPack 以 `strictlyRequireAllFuses=true` 写入并回读 9 项。当前真实 Windows EXE 为 `fully_known=true`、未知项 0；未来新增 wire 项仍 fail-closed。alpha.10 的 Ace 已迁移到受控 `utilityProcess`，因此 `RunAsNode=false`；详见 `ELECTRON_FUSE_POLICY.md`。
 
 ### AD-015 Ace 外部验证必须“主进程绑定—utility 执行—核心复核”（2026-07-28，冻结）
 
@@ -148,6 +148,12 @@ Ace 只在 Electron `utilityProcess` 中运行固定 module 和固定参数。�
 Python 核心、`config/` 和 `samples/` 以 canonical `app-resources-v1.json` 固定精确文件集合、大小与 SHA-256；Python runtime、EpubCheck、JRE 与 Ace 则沿用各自完整树锁。`resource-trust-anchor.json` 随 Electron 代码进入 `app.asar`，固定应用资源清单原始字节 SHA-256，以及目标平台四份 tracked lock 的原始 SHA-256。锚点不能放在可独立改写的 loose resources 中作为信任来源。
 
 源码验证只证明将要进入构建的清单与锁一致，不关闭正式发布 blocker。packaged 验证必须从真实 `app.asar` 读取锚点、与源码固定字节交叉核对，再拒绝所有 loose 树的增删改、链接/硬链接、平台替换与读取身份漂移。只有这条证据链完整成立时，门禁才可关闭 `APP_RESOURCES_TRUST_ROOT_NOT_HARDENED`、`PYTHON_RUNTIME_TRUST_ROOT_NOT_HARDENED`、`EPUBCHECK_TRUST_ROOT_NOT_HARDENED`、`JRE_TRUST_ROOT_NOT_HARDENED` 和 `ACE_TRUST_ROOT_NOT_HARDENED`；其它 provenance、许可、helper/browser/隔离和签名 blocker 不受影响。
+
+### AD-017 二进制来源证据必须“官方制品—受控推导—机器/人工分层”（2026-07-28，冻结）
+
+运行时来源不能靠版本字符串或本地清单自证。每类二进制必须把官方发布 URL、大小、摘要和可用签名/SBOM 旁证固定到 exact schema 的 canonical 证据，再逐文件证明本地分发是原字节复制或明确列出的最小受控修改。证据原始 SHA-256 由运行时清单和 packaged 资源门禁绑定；默认命令只读，显式更新必须采用稳定读取、安全父链、独占候选、`fsync`、原子换入及换入后复验。
+
+机器证据和人工许可/法律签署是两个状态，工具不得把 `machine_status=verified` 写成 `human_review_status=verified`。alpha.15 首次应用于 Windows CPython 3.13.14：官方/本地均 34 个文件，33 个逐字节一致，唯一受控修改为 `_pth` 精确追加；Sigstore leaf/SPDX 已机器复验，但完整信任链、GPG、上游 tlog index 不一致和再分发签署仍待人工处理。因此 blocker 只能收窄为 `PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`，不能删除。
 
 打包应用在标准存储初始化和窗口创建前运行同一验证，失败即退出。该锚点仍需与真实应用二进制的 ASAR integrity/fuses、操作系统代码签名和发布证据联合验证；构造测试中的真实 `app.asar` 只证明验证器行为，不能替代产品安装包或签名证据。macOS 目标在相应四份平台锁齐全并重新生成锚点前必须 fail-closed。
 
@@ -195,7 +201,7 @@ Windows alpha 资源不是靠“目录存在”通过门禁，而是由五组全
 
 | 资源 | 固定方式 | 当前 Windows 状态 |
 |---|---|---|
-| CPython 3.13.14 | `config/tool-manifests/python-runtime-<platform>-<arch>.json` 固定完整文件集合、大小和 SHA-256；探针精确核对 CPython implementation、三段版本、releaselevel 和 serial；拒绝多文件、少文件、篡改及链接 | `win32-x64` 清单存在；`python313._pth` 只允许 `python313.zip`、`.`、受控 `../python`，且禁止 `import site` |
+| CPython 3.13.14 | `config/tool-manifests/python-runtime-<platform>-<arch>.json` 固定完整文件集合、大小和 SHA-256；Windows x64 另绑定 `config/provenance/cpython-3.13.14-win32-x64.json` 的官方 ZIP/Sigstore/SPDX、受控推导和许可证据；探针精确核对 CPython implementation、三段版本、releaselevel 和 serial | `win32-x64` 34 文件清单与 provenance 已机器验证；33 个原字节文件、`python313._pth` 唯一受控追加且禁止 `import site`；人工来源/许可签署仍待办 |
 | EpubCheck 5.3.0 | `config/tool-manifests/epubcheck-5.3.0.json` 固定 JAR、完整依赖闭包及许可证材料 | 49 个文件均纳入清单 |
 | Temurin JRE 21.0.11+10 | JRE 自带 `manifest.json` 固定生成产物；仓库 `config/tool-manifests/jre-<platform>-<arch>.json` 另行固定源 JDK 与 JRE manifest | `win32-x64` 锁存在；固定保守模块集合 |
 | Ace 1.4.6 | `tools/ace/manifest.json` 描述阶段产物；受版本控制的 `config/tool-manifests/ace-1.4.6.json` 另行固定 stage manifest 原始字节哈希、236 包闭包、全部文件与补丁 | Node 门禁和 Python 实际运行路径均复核 full lock；语义相同但原始字节漂移也拒绝；正式可信根签名及 236 包逐包人工审计仍未完成 |
@@ -213,7 +219,7 @@ Windows electron-builder 工具链使用独立的下载与导入契约，不由�
 
 导入器只接受显式 `--archive-dir`，拒绝 UNC/设备形式（包括直接网络共享写法）、未知归档、路径穿越、链接/reparse、备用流、加密条目、Windows 名称冲突、过量条目和解压膨胀；固定 7z 解压器本身也先按代码内摘要复核。仅凭路径字符串无法识别映射成盘符的网络共享，因此实际导入还必须由操作者选择本地非映射目录；下载器不会自动调用导入器。
 
-首次建立或审计更新工具树与独立 tracked lock 必须显式传入 `--update-lock`。候选树先完整预检，再共同换入 `tools/electron-builder/win32-x64` 与 `config/tool-manifests/electron-builder-win32-x64.json`；旧树、旧锁、候选树、候选锁的全部 forward rename 与 rollback rename 故障均有注入测试。回滚本身失败时保留恢复证据并明确报错，不能假装事务成功。当前这些代码和测试已存在，但三份真实归档、实际工具树与 tracked lock 均不存在，因此普通构建仍应 fail-closed。
+首次建立或审计更新工具树与独立 tracked lock 必须显式传入 `--update-lock`。候选树先完整预检，再共同换入 `tools/electron-builder/win32-x64` 与 `config/tool-manifests/electron-builder-win32-x64.json`；旧树、旧锁、候选树、候选锁的全部 forward rename 与 rollback rename 故障均有注入测试。回滚本身失败时保留恢复证据并明确报错，不能假装事务成功。当前三份固定归档已验哈希保存在仓库忽略的下载区，受版本控制的独立工具链锁固定 385 个文件、19,150,116 字节，普通 Windows 构建只接受该已锁工具树且禁止下载回退；官方来源与再分发的正式人工审计仍由独立 sale blocker 保留。
 
 alpha.7 在构建输出端增加独立证据链。`build:win` 首先调用 `release:evidence:clear:win`，预检并清除精确的旧 `SHA256SUMS.txt` 与 `release-manifest-win32-x64.json`；若后续任一阶段失败，当前构建没有新证据。只有 electron-builder 生成精确当前版本 Windows x64 NSIS/ZIP、packaged 资源门禁通过且隐藏 packaged smoke 返回唯一 PASS 后，才运行 `release:evidence:win`。生成器拒绝同系列旧制品、坏 PE/ZIP、路径逃逸、symlink/reparse、hardlink 和读取竞态；对 EXE/ZIP 逐字节计算 SHA-256。SHA 文件固定有序的两条记录，canonical JSON manifest 再固定产品/appId/版本/目标、文件种类、大小/摘要及 SHA 文件原始字节摘要。两份证据使用独占候选、`fsync` 和联合提交，第二次换入或最终全量复验失败会恢复两份旧证据。证据链证明的是“这两个已通过前序流水线的字节对应哪些摘要”，不替代代码签名、来源审计、干净系统测试或 sale 门禁。
 
@@ -246,5 +252,5 @@ alpha.7 在构建输出端增加独立证据链。`build:win` 首先调用 `rele
 - 源码 smoke 与打包 smoke 都通过 `app:info` 核对 Electron 版本和 freshly verified `standardIdentity`；随后读取本次真实生成的 `project.json`、检查记录和导出 `report.json`，核对 Python core 版本、check ID 及四方七字段身份一致。打包 smoke 还强制证明 `app.isPackaged=true`，防止把旧版、陈旧 core 或错误规则包误记为新打包版。
 - 源码 smoke 每次生成独立 `out/source-smoke/runs/<run-id>/`，项目、标准 store、缓存、临时目录、用户数据、HOME/APPDATA/XDG 与 crash dumps 不复用；打包 smoke 同样按运行 ID 隔离并受仓库 `out/` 边界控制。Windows EXE 还须先通过 x64 PE32+ 校验。
 - macOS 构建拆为 `build:mac:x64` 与 `build:mac:arm64`；聚合入口 `build:mac` 只选择当前原生 host 架构，不在一个进程伪造双架构探针。`verify:resources:mac` 只是带 `--no-runtime-probe` 的跨架构静态聚合，不能替代两个原生 runner 的执行证据。
-- alpha.14 最终外层隐藏 packaged smoke 已 PASS：`out/packaged-smoke/runs/ms4oftya-1a2f6ac1ad56c4cd/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,659/178,401 字节；EPUB 通过受控 utilityProcess 实际运行 EpubCheck/Ace，缺陷结果分别为 5 error/8 项失败断言。Electron sandbox 保持开启；诊断性 `--no-sandbox` 结果未计入证据。
-- alpha.14 以 `oak-manuscript://renderer/` 的四文件白名单在 `GrantFileProtocolExtraPrivileges=false` 下保持 ASAR UI 可用；Python `-B` 防止运行时修改 loose 可信树；顶层 2.1.3 afterPack 严格写入并回读 Electron 43 全 9 fuse。真实 builder 锁、NSIS/ZIP、packaged 资源与发布证据已成立；安装生命周期仅完成只读预检，仍无生产凭证、持久队列、上传 transport、Windows 签名、macOS 或 Web。packaged 资源门禁仍为 11 项。
+- alpha.15 最终外层隐藏 packaged smoke 已 PASS：`out/packaged-smoke/runs/ms4qixuz-15ab5ab26e07949e/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,656/178,401 字节；EPUB 通过受控 utilityProcess 实际运行 EpubCheck/Ace，缺陷结果分别为 5 error/8 项失败断言。Electron sandbox 保持开启。
+- alpha.15 以 `oak-manuscript://renderer/` 的四文件白名单在 `GrantFileProtocolExtraPrivileges=false` 下保持 ASAR UI 可用；Python `-B` 防止运行时修改 loose 可信树；顶层 2.1.3 afterPack 严格写入并回读 Electron 43 全 9 fuse。真实 builder 锁、CPython provenance、NSIS/ZIP、packaged 资源与发布证据已成立；安装生命周期仅完成只读预检，仍无 CPython 人工签署、生产凭证、持久队列、上传 transport、Windows 签名、macOS 或 Web。packaged 资源门禁仍为 11 项。

@@ -8,6 +8,7 @@ const path = require("node:path");
 const {
   buildManifest,
   manifestRelative,
+  provenanceReference,
   verifyRuntime,
   writePinnedManifest,
 } = require("../scripts/python_runtime_manifest");
@@ -107,4 +108,54 @@ test("macOS x64 and arm64 Python runtime locks require the exact pinned version"
       /版本未固定或不匹配/,
     );
   }
+});
+
+test("optional Python provenance is absent-compatible but existing bytes must be canonical", (t) => {
+  const parent = path.join(REPO_ROOT, "out", "test-tmp");
+  fs.mkdirSync(parent, { recursive: true });
+  const root = fs.mkdtempSync(path.join(parent, "python-provenance-reference-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+
+  assert.equal(provenanceReference(root, "win32", "x64"), null);
+  assert.throws(
+    () => provenanceReference(root, "win32", "x64", { required: true }),
+    /缺失/,
+  );
+  const target = path.join(root, "config", "provenance", "cpython-3.13.14-win32-x64.json");
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, `${fs.readFileSync(
+    path.join(REPO_ROOT, "config", "provenance", "cpython-3.13.14-win32-x64.json"),
+    "utf8",
+  )}\n`);
+  assert.throws(
+    () => provenanceReference(root, "win32", "x64", { required: true }),
+    /不是 canonical UTF-8\/LF JSON/,
+  );
+});
+
+test("Python runtime manifest binds the provenance evidence hash", (t) => {
+  const parent = path.join(REPO_ROOT, "out", "test-tmp");
+  fs.mkdirSync(parent, { recursive: true });
+  const root = fs.mkdtempSync(path.join(parent, "python-provenance-binding-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.cpSync(path.join(REPO_ROOT, "python-runtime"), path.join(root, "python-runtime"), { recursive: true });
+  for (const relative of [
+    "config/provenance/cpython-3.13.14-win32-x64.json",
+    "config/tool-manifests/python-runtime-win32-x64.json",
+  ]) {
+    const source = path.join(REPO_ROOT, ...relative.split("/"));
+    const target = path.join(root, ...relative.split("/"));
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.copyFileSync(source, target);
+  }
+  assert.equal(verifyRuntime(root, { platform: "win32", arch: "x64" }).manifest.file_count, 34);
+
+  const evidenceTarget = path.join(root, "config", "provenance", "cpython-3.13.14-win32-x64.json");
+  const evidence = JSON.parse(fs.readFileSync(evidenceTarget, "utf8"));
+  evidence.verification.observed_at = "2026-07-29";
+  fs.writeFileSync(evidenceTarget, `${JSON.stringify(evidence, null, 2)}\n`);
+  assert.throws(
+    () => verifyRuntime(root, { platform: "win32", arch: "x64" }),
+    /未精确绑定 provenance evidence/,
+  );
 });

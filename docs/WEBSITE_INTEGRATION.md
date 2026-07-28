@@ -2,9 +2,9 @@
 
 > 当前依据为商业正式版方案 v2.0。网站现状只在 2026-07-11 做过只读快照，启动真实对接前必须重新核对，不能把旧分支状态写成当前线上事实。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.14）
+## Provider 一览（当前 alpha.15）
 
-alpha.14 继承 alpha.8 已固定的账号、权益和结果同步离线客户端契约，但没有生产认证、计费、持久队列或网络 transport。Windows builder 下载只发生在开发者明确授权的构建输入阶段，与账号/同步 Provider 隔离；真实 APP 默认 session 仍离线，Ace loopback 仅为本机进程控制。SyncRecord v1 可包含最终体例、解析模式、原因码、置信度和解析器版本，但不得包含引用/书目原文、姓名、路径或内容哈希；权威字段见 `SYNC_RECORD_V1.md` 和 schema。
+alpha.15 继承 alpha.8 已固定的账号、权益和结果同步离线客户端契约，但没有生产认证、计费、持久队列或网络 transport。CPython 来源审计与 Windows builder 下载只发生在开发者明确授权的构建/审计输入阶段，与账号/同步 Provider 隔离；真实 APP 默认 session 仍离线，Ace loopback 仅为本机进程控制。SyncRecord v1 可包含最终体例、解析模式、原因码、置信度和解析器版本，但不得包含引用/书目原文、姓名、路径或内容哈希；权威字段见 `SYNC_RECORD_V1.md` 和 schema。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|

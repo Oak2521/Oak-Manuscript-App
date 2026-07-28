@@ -3,9 +3,9 @@
   "anchor_type": "oak-packaged-resource-trust-root",
   "app_resources": {
     "manifest": "config/tool-manifests/app-resources-v1.json",
-    "sha256": "6428833b2b12eaf4265c5f4f2ecba7a2624c25a512a00a404d45504e4391a55f",
-    "file_count": 60,
-    "total_bytes": 1949296
+    "sha256": "70b6ee72601e38f62dfb351f7fd6e8c0bb858b124eb527c6964b4d14cc827581",
+    "file_count": 62,
+    "total_bytes": 1966858
   },
   "targets": [
     {
@@ -14,7 +14,7 @@
       "locks": {
         "python_runtime": {
           "manifest": "config/tool-manifests/python-runtime-win32-x64.json",
-          "sha256": "eb88aca18c427e16a78e41ac96476d94fb1d47002950dc3d65b9432656dc3b8a"
+          "sha256": "7bb23b6516ea2f0d87684845a1df27818d465d28a666284bb76f80737851b565"
         },
         "epubcheck": {
           "manifest": "config/tool-manifests/epubcheck-5.3.0.json",

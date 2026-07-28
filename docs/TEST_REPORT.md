@@ -2,7 +2,40 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.14 Windows 安装生命周期验收工具检查点
+## 最新验证结论：0.1.0-alpha.15 CPython 来源机器证据与 Windows 制品检查点
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已明确允许下载；本轮只从 Python 官方站点获取 CPython 3.13.14 审计输入。Windows 构建使用仓库内已锁定工具；所有 packaged GUI 进程隐藏执行，实际安装器未运行。
+
+| 命令 / 检查 | 结果 | 关键事实 |
+|---|---|---|
+| `npm run verify:provenance:python:win` | **PASS** | 官方 ZIP 10,964,839 字节 / `90b4e5b9…d907`；34 个官方文件与 34 个本地文件，33 个原字节一致，唯一受控差异为 `_pth` 精确追加；证据 SHA-256 `b198a727…3176` |
+| CPython Sigstore/SPDX | **机器范围 PASS，人工范围待办** | artifact digest、leaf signature、证书 identity、Rekor body 与 SPDX supplier/license 通过；完整 Fulcio/Rekor 信任链和 GPG 未验证；上游 tlog entry/proof index 不一致已原样保留 |
+| 最终 `npm test` | **PASS** | 墙钟 111.8 秒；Node 329 total / 322 pass / 0 fail / 7 skip（3.203 秒）；Python 351 total / 0 failures / 0 errors / 3 skipped（103.904 秒） |
+| 首次 `npm run build:win` | **最后一步退出 1** | builder、9 fuse、packaged 资源和 smoke 已全部 PASS；发布摘要生成器因根 `release/` 混有已归档 alpha.14 制品而正确拒绝，未生成不完整证据 |
+| 归档复核与 `npm run release:evidence:win` | **PASS** | 根/归档 alpha.14 三个制品逐文件哈希一致后，仅删除根旧制品；对前序门禁和 smoke 已通过的 alpha.15 字节生成 canonical 摘要 |
+| `npm run release:evidence:verify:win` | **PASS** | NSIS/ZIP、SHA256SUMS 与 canonical manifest 全量交叉复验 |
+| `npm run verify:install-lifecycle:win` | **PASS（只读预检）** | 当前 alpha.15 与归档 alpha.12 的哈希/大小/manifest/PE 匹配；`authorized=false`、`ready_for_authorized_run=true`；未启动安装器 |
+| packaged 资源门禁 | **PASS（alpha）** | 62 个应用 loose 文件、真实 `app.asar` 锚点、全 9 fuse 与五类运行资源通过；packaged sale blocker 仍为 11 项 |
+| 真实安装生命周期 | **未运行** | 会写 HKCU、Desktop 与 Start Menu；仍需另行系统写入授权，不能写成通过 |
+
+最终 packaged smoke 运行根：`out/packaged-smoke/runs/ms4qixuz-15ab5ab26e07949e/projects/`。
+
+| 项目 | APP/core | 检查 | 修复批次 | 应用 issue fixes | 检查点 | 当前问题 | PDF 字节 | 引用模式 | 外部验证 | 原稿 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---|---|
+| `ui-smoke-docx` | 0.1.0-alpha.15 | 4 | 1 | 5 | 3 | 13 | 251,656 | `structure_only` | 不适用 | unchanged |
+| `ui-smoke-epub` | 0.1.0-alpha.15 | 4 | 1 | 2 | 3 | 5 | 178,401 | `structure_only` | EpubCheck failed：0 fatal / 5 error / 0 warning；Ace failed：8 项断言 | unchanged |
+
+最终制品：
+
+| 文件 | 字节 | SHA-256 |
+|---|---:|---|
+| `Oak-Manuscript-0.1.0-alpha.15-Windows-x64.exe` | 189,951,730 | `d701bf0fee5766a17ba33c351ec46a3cafd00da147154cf4006d2711cabbb15e` |
+| `Oak-Manuscript-0.1.0-alpha.15-Windows-x64.zip` | 233,765,446 | `9ac0252699b77bf80bc14ce1f7119526c29b22e79fde4171760541fbbf0f5511` |
+| `SHA256SUMS.txt` | 224 | `aa281383f8cada7c641dccf8648f94a6bd6e306980bfb9206ca94df2fd08f697` |
+
+证据边界：CPython 来源的机器证据已成立，但 `human_review_status=pending`；packaged blocker 由 `PYTHON_RUNTIME_PROVENANCE_AUDIT_REQUIRED` 收窄为 `PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`，总数没有下降。制品仍未签名，安装生命周期、干净机、macOS/Web 与生产服务均未验收。
+
+## 历史验证结论：0.1.0-alpha.14 Windows 安装生命周期验收工具检查点
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮没有联网。实际安装器未运行；所有 packaged GUI 进程隐藏执行。
 

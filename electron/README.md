@@ -30,9 +30,9 @@
 
 安全基线：`contextIsolation=true`、`sandbox=true`、`nodeIntegration=false`、固定 CSP/IPC、导航和新窗口拦截。默认 session 在正常启动时永久离线；未来获授权联网能力必须用独立受限通道，不能解除该基线。完整说明见 `docs/PRIVACY_AND_SECURITY.md`。
 
-打包安全另由 `scripts/electron_fuse_policy.js` 固定：必须启用 ASAR 与 embedded integrity、显式设置全部已知 fuse，并在 electron-builder 后从真实应用二进制读回。Electron 43 当前多出一个本地工具无法识别的 wire 索引；alpha 必须带 blocker，sale 失败关闭。alpha.10 已把 Ace 迁移到 `utilityProcess` 并固定 `RunAsNode=false`。详见 `docs/ELECTRON_FUSE_POLICY.md`。
+打包安全另由 `scripts/electron_fuse_policy.js` 固定：必须启用 ASAR 与 embedded integrity、用顶层 `@electron/fuses 2.1.3` 显式设置 Electron 43 全部 9 项，并在 electron-builder 后从真实应用二进制读回。索引 8 已定义为 `WasmTrapHandlers`；未来未知 wire 项仍 fail-closed。alpha.10 已把 Ace 迁移到 `utilityProcess` 并固定 `RunAsNode=false`。详见 `docs/ELECTRON_FUSE_POLICY.md`。
 
-alpha.13 的 `resource-trust-anchor.json` 随代码进入 ASAR，绑定 59 个应用 loose 文件的 canonical 清单和目标平台四类运行锁。packaged 启动在标准存储/窗口前验证全部树，且门禁只接受从真实 `app.asar` 读取的锚点。
+alpha.15 的 `resource-trust-anchor.json` 随代码进入 ASAR，绑定 62 个应用 loose 文件的 canonical 清单和目标平台四类运行锁；Windows Python 锁再绑定 CPython 官方来源证据摘要。packaged 启动在标准存储/窗口前验证全部树，且门禁只接受从真实 `app.asar` 读取的锚点。
 
 PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专用 CSP 只允许自包含 HTML 所需的内联样式和 `data:` 图片。加载报告前后核对文件身份，拒绝项目根/`exports`/报告/目标的 symlink、junction/reparse、硬链接和目录身份换入，最后同目录原子写入。
 
@@ -42,4 +42,4 @@ PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专�
 
 账号与同步 IPC 不接受 Renderer 自带的负载、token、URL 或 transport；主进程通过固定 `sync-source` 命令取值并重建 SyncRecord v1。当前 Auth 登录为未配置的系统浏览器 PKCE 契约，License 为未签名本地能力矩阵，Sync 队列仅存在于当前进程且不联网。详见 `docs/SYNC_RECORD_V1.md`。
 
-当前 `0.1.0-alpha.13` 全量 Node/Python 回归、真实 packaged 全 9 fuse/ASAR/资源、强制外部验证 smoke 与发布证据均通过。最终运行根 `out/packaged-smoke/runs/ms4mqaar-f6f3d43d55a2726d/projects/`；DOCX/EPUB 各 4 次检查、1 个修复批次、3 个检查点且原稿哈希不变，EPUB 实得 EpubCheck 5 error 与 Ace 8 项失败断言。fuse 未知项已清零；未签名和其余 11 项 sale blocker 仍有效。
+当前 `0.1.0-alpha.15` 全量 Node/Python 回归、真实 packaged 全 9 fuse/ASAR/资源、CPython provenance、强制外部验证 smoke 与发布证据均通过。最终运行根 `out/packaged-smoke/runs/ms4qixuz-15ab5ab26e07949e/projects/`；DOCX/EPUB 各 4 次检查、1 个修复批次、3 个检查点且原稿哈希不变，EPUB 实得 EpubCheck 5 error 与 Ace 8 项失败断言。CPython 人工签署、未签名和其余 packaged sale blocker 仍有效。

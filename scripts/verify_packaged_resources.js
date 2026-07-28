@@ -19,6 +19,7 @@ const {
   manifestRelative: pythonRuntimeManifestRelative,
   verifyRuntime: verifyPythonRuntimeDistribution,
 } = require("./python_runtime_manifest");
+const { verifyEvidenceAgainstRuntime: verifyRuntimeProvenance } = require("./runtime_provenance");
 const {
   createIsolatedPythonEnvironment,
   isolatedPythonInvocation,
@@ -337,6 +338,20 @@ function verifyWindowsRuntime(root, errors, checks, { execute = true } = {}) {
       file_count: verified.manifest.file_count,
       total_bytes: verified.manifest.total_bytes,
     });
+    if (verified.manifest.provenance_evidence) {
+      const provenance = verifyRuntimeProvenance(root);
+      checks.push({
+        type: "python-runtime-provenance",
+        path: provenance.evidence_path,
+        evidence_sha256: provenance.evidence_sha256,
+        machine_status: provenance.machine_status,
+        human_review_status: provenance.human_review_status,
+        official_artifact_sha256: provenance.evidence.official_release.artifact.sha256,
+        official_file_count: provenance.evidence.derivation.official_file_count,
+        byte_identical_file_count: provenance.evidence.derivation.byte_identical_file_count,
+        controlled_modification_count: provenance.evidence.derivation.controlled_modifications.length,
+      });
+    }
   } catch (error) {
     errors.push(`Python 运行时固定清单门禁失败：${error.message}`);
   }
@@ -1504,8 +1519,14 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
     item.platform === platform && item.arch === (arch || "x64") &&
     typeof item.lock_sha256 === "string" && SHA256_RE.test(item.lock_sha256),
   );
+  const pythonProvenance = checks.find((item) => item.type === "python-runtime-provenance" &&
+    item.machine_status === "verified" && typeof item.evidence_sha256 === "string" &&
+    SHA256_RE.test(item.evidence_sha256));
   const pending = [
-    {
+    pythonProvenance ? {
+      code: "PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED",
+      message: "CPython 官方 ZIP/Sigstore/SPDX、33 个原字节文件、1 个受控 _pth 修改和许可证保留已机器复验；正式销售仍需具名人工法律/再分发签核",
+    } : {
       code: "PYTHON_RUNTIME_PROVENANCE_AUDIT_REQUIRED",
       message: "CPython 运行时已由受版本控制的全量哈希清单固定，但官方来源与再分发证据仍需正式人工审计",
     },

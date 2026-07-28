@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.14`
+> 当前版本：`0.1.0-alpha.15`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.14`（含未签名 Windows alpha 制品证据，不代表正式发行）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.15`（含未签名 Windows alpha 制品证据，不代表正式发行）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,17 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.15 CPython Windows 运行时来源机器证据检查点
+
+- 新增 `config/provenance/cpython-3.13.14-win32-x64.json`、exact schema 和 `scripts/runtime_provenance.js`。只读验证把 Windows x64 `python-runtime/` 精确绑定到 PSF 官方 CPython 3.13.14 embeddable ZIP（10,964,839 字节，SHA-256 `90b4e5b9898b72d744650524bff92377c367f44bd5fbd09e3148656c080ad907`）；证据 SHA-256 为 `b198a727a0c12640a8a020758bcfc5dc41e01e577a25576795b1d081e3513176`；
+- 官方 34 个文件与本地 34 个文件逐项比较：33 个逐字节一致，唯一差异为 `python313._pth` 在官方 80 字节后精确追加 `..\python\r\n`；官方 `LICENSE.txt` 原样保留。验证器拒绝其它增删、摘要/顺序/身份漂移和工具自批准；完整审计见 `docs/audits/CPYTHON_3.13.14_WIN32_X64_PROVENANCE.md`；
+- Sigstore artifact digest、leaf signature、证书 identity 和 Rekor canonical body 绑定已机器复验；SPDX 制品摘要、PSF supplier 与 `PSF-2.0` 已复验。完整 Fulcio/Rekor 信任链未重放，GPG 未密码学验证；上游 bundle 的 tlog entry index `1780928370` 与 inclusion-proof index `1659024108` 不一致，两值均保留且明确等待人工审阅；
+- `python-runtime-win32-x64.json` 和真实 packaged 资源门禁绑定 provenance 证据摘要。packaged blocker 数仍为 11，但原 `PYTHON_RUNTIME_PROVENANCE_AUDIT_REQUIRED` 已收窄为 `PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；机器工具不能替正式法律/再分发签署；
+- 最终 `npm test`：Node 329 total / 322 pass / 0 fail / 7 skip（3.203 秒），Python 351 total / 0 failures / 0 errors / 3 skipped（103.904 秒），墙钟 111.8 秒；
+- alpha.15 Windows x64 packaged 资源、全 9 fuse 和隐藏 smoke 均 PASS；运行根为 `out/packaged-smoke/runs/ms4qixuz-15ab5ab26e07949e/projects/`。NSIS 189,951,730 字节，SHA-256 `d701bf0fee5766a17ba33c351ec46a3cafd00da147154cf4006d2711cabbb15e`；ZIP 233,765,446 字节，SHA-256 `9ac0252699b77bf80bc14ce1f7119526c29b22e79fde4171760541fbbf0f5511`；canonical 发布证据与安装生命周期只读预检通过；
+- 首次整链 `build:win` 的最后一步因根 `release/` 同时存在已归档的 alpha.14 制品而按设计拒绝生成摘要；核对归档与根文件摘要一致后只移除根目录旧制品，随后对已通过前序门禁与 smoke 的 alpha.15 字节生成并复验发布证据。该中间退出 1 不得隐去，也不表示 alpha.15 打包或 smoke 失败；
+- 实际安装器仍未运行；Windows 制品未签名，CPython 人工签署、其余 10 项 packaged sale blocker、干净机、macOS/Web 和生产账号/订阅/同步均未完成。
 
 ### 已完成：0.1.0-alpha.14 Windows 安装生命周期验收工具检查点
 
@@ -291,8 +302,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.14 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
-- Windows：alpha.14 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、packaged smoke 和安装生命周期只读预检证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有 Authenticode 签名；
+- 打包版 Ace：alpha.15 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
+- Windows：alpha.15 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、packaged smoke、CPython 来源机器证据和安装生命周期只读预检；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：服务端任务 API、隔离执行、限额、零留存和官网嵌入尚未实现；
 - 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览和当前进程队列契约已实现；生产 Supabase、OS 凭据存储、签名授权、支付、持久队列、网络 transport 和网站后台未连接；
@@ -302,12 +313,12 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ### Windows sale 门禁的当前明确阻断
 
-源码资源门禁现列 16 项（builder 独立全树锁已成立）；真实 alpha.14 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 11 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
+源码资源门禁现列 16 项（builder 独立全树锁已成立）；真实 alpha.15 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 11 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
 
 以下机器码来自当前 `verify_packaged_resources.js` 与实测 sale 输出，不得合并或省略：
 
 1. `FORMAL_LICENSE_AUDIT_REQUIRED`：Ace 18 个生成元数据通知包的原始许可证审计；
-2. `PYTHON_RUNTIME_PROVENANCE_AUDIT_REQUIRED`；
+2. `PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`：官方制品、Sigstore/SPDX、33 个原字节文件、1 个受控 `_pth` 修改和许可保留已机器复验；完整信任链/上游 index 异常与具名法律/再分发签署仍待完成；
 3. `EPUBCHECK_PROVENANCE_AUDIT_REQUIRED`；
 4. `JRE_SOURCE_PROVENANCE_AUDIT_REQUIRED`；
 5. `ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED`；
@@ -322,9 +333,9 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划，按 v2.0 方案继续：
 
-1. 已完成 Windows 安装生命周期编排器与只读预检；下一步须单独取得系统写入授权后，真实执行 alpha.12 → alpha.14 安装/升级/降级探测/卸载，核对 HKCU 与快捷方式并保留 canonical 证据；若历史安装器确实回退，必须把它记为产品 blocker，不能修改证据口径；
-2. 完成 Windows 代码签名方案，并逐项关闭 11 个 packaged sale blocker；取得证书或生产密钥前不得伪造签名通过；
-3. 完成 Electron、builder、CPython、EpubCheck、Temurin 和 Ace 的 provenance/许可证正式审计证据；
+1. 已完成 Windows 安装生命周期编排器与 alpha.15 只读预检；下一步须单独取得系统写入授权后，真实执行 alpha.12 → alpha.15 安装/升级/降级探测/卸载，核对 HKCU 与快捷方式并保留 canonical 证据；若历史安装器确实回退，必须把它记为产品 blocker，不能修改证据口径；
+2. 完成 CPython 来源/许可证据的具名人工签署，再完成 Windows 代码签名方案并逐项关闭其余 packaged sale blocker；取得签署、证书或生产密钥前不得伪造通过；
+3. 完成 Electron、builder、EpubCheck、Temurin 和 Ace 的 provenance/许可证正式审计证据；
 4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
 5. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
 6. 在现有 Auth / License / Sync 离线契约上实现持久安全凭据/队列与独立网络 transport，再经授权连接 Supabase、支付和网站后台；
@@ -340,6 +351,7 @@ npm run test:node
 npm run test:python
 $env:OAK_TEST_ACE='1'; python scripts\run_tests.py
 npm run verify:resource-trust
+npm run verify:provenance:python:win
 npm run verify:electron-runtime
 npm run verify:fuses:config
 npm run download:builder:win  # 仅在用户明确批准联网后

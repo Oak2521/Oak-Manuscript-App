@@ -1,34 +1,93 @@
 {
-  "schema_version": "1.0",
-  "lock_type": "oak-python-runtime",
-  "runtime": {
+  "schema_version": 1,
+  "evidence_type": "oak-runtime-provenance",
+  "subject": {
     "distribution": "CPython",
-    "version": "3.13.14"
+    "version": "3.13.14",
+    "target": {
+      "platform": "win32",
+      "arch": "x64"
+    },
+    "runtime_root": "python-runtime",
+    "runtime_manifest": "config/tool-manifests/python-runtime-win32-x64.json"
   },
-  "target": {
-    "platform": "win32",
-    "arch": "x64"
+  "official_release": {
+    "publisher": "Python Software Foundation",
+    "release_page_url": "https://www.python.org/downloads/release/python-31314/",
+    "artifact": {
+      "url": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-embed-amd64.zip",
+      "filename": "python-3.13.14-embed-amd64.zip",
+      "size_bytes": 10964839,
+      "sha256": "90b4e5b9898b72d744650524bff92377c367f44bd5fbd09e3148656c080ad907"
+    },
+    "sigstore": {
+      "url": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-embed-amd64.zip.sigstore",
+      "bundle_sha256": "ec9e3f2bb3d21f80d17c43b3fbc93aed0abc98e10912e8dbd744c41c3d797597",
+      "media_type": "application/vnd.dev.sigstore.bundle.v0.3+json",
+      "artifact_digest_matches": true,
+      "leaf_signature_verified": true,
+      "certificate_issuer": "O=sigstore.dev, CN=sigstore-intermediate",
+      "certificate_identity": "email:thomas@python.org",
+      "certificate_valid_from": "2026-06-10T16:04:20.000Z",
+      "certificate_valid_to": "2026-06-10T16:14:20.000Z",
+      "transparency_log_kind": "hashedrekord",
+      "transparency_log_entry_index": "1780928370",
+      "transparency_log_proof_index": "1659024108",
+      "transparency_log_index_consistent": false,
+      "full_sigstore_trust_chain_verified": false
+    },
+    "spdx": {
+      "url": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-embed-amd64.zip.spdx.json",
+      "document_sha256": "ff85d80144dffbd3a3498a4bce568f6ab3fec614842eafda2b562f4c4e9bd247",
+      "format": "SPDX-2.3",
+      "document_name": "CPython SBOM",
+      "artifact_digest_matches": true,
+      "supplier": "Organization: Python Software Foundation",
+      "license_concluded": "PSF-2.0"
+    },
+    "gpg": {
+      "url": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-embed-amd64.zip.asc",
+      "signature_sha256": "d353820d165a4e8612f788cdc151114440d7960ebd82b10a41784fe82b9c4687",
+      "verification_status": "downloaded_not_cryptographically_verified"
+    }
   },
-  "entry": "python.exe",
-  "required_files": [
-    "LICENSE.txt",
-    "python.exe",
-    "python3.dll",
-    "python313.dll",
-    "python313.zip",
-    "python313._pth"
-  ],
-  "formal_source_provenance_audit_required": true,
-  "provenance_note": "Locally supplied CPython distribution; origin and redistribution evidence require formal audit before sale.",
-  "provenance_evidence": {
-    "path": "config/provenance/cpython-3.13.14-win32-x64.json",
-    "sha256": "b198a727a0c12640a8a020758bcfc5dc41e01e577a25576795b1d081e3513176",
+  "derivation": {
+    "official_file_count": 34,
+    "local_file_count": 34,
+    "byte_identical_file_count": 33,
+    "controlled_modifications": [
+      {
+        "path": "python313._pth",
+        "operation": "append_exact_bytes",
+        "official_size_bytes": 80,
+        "official_sha256": "35ddf94682ff9aa713a8d63557242ad00f3f28fdd39337f02c3bda4c0f791577",
+        "local_size_bytes": 91,
+        "local_sha256": "2efdbbdf241cbac96a77d6fcebeac4a23e56578004da5f7e97883d9480f18712",
+        "appended_utf8": "..\\python\r\n",
+        "purpose": "Expose the packaged Oak Manuscript Python core while preserving isolated mode and keeping site disabled."
+      }
+    ]
+  },
+  "redistribution": {
+    "license_id": "PSF-2.0",
+    "license_path": "LICENSE.txt",
+    "official_license_sha256": "62bec384df47b0328307db41455ff6ea2559e5546b394ac69148561b21703120",
+    "local_license_sha256": "62bec384df47b0328307db41455ff6ea2559e5546b394ac69148561b21703120",
+    "license_preserved": true,
+    "modification_disclosed": true
+  },
+  "verification": {
     "machine_status": "verified",
-    "human_review_status": "pending"
+    "human_review_status": "pending",
+    "observed_at": "2026-07-28",
+    "limitations": [
+      "The Sigstore leaf signature and embedded artifact digest were verified, but the complete Fulcio/Rekor trust chain was not independently replayed.",
+      "The official Sigstore bundle's tlog entry logIndex differs from its inclusion-proof logIndex; both values are preserved and the inconsistency requires human review.",
+      "The detached GPG signature was downloaded but not cryptographically verified.",
+      "Legal redistribution obligations still require named human sign-off before sale."
+    ]
   },
-  "file_count": 34,
-  "total_bytes": 21260753,
-  "files": [
+  "official_files": [
     {
       "path": "LICENSE.txt",
       "size_bytes": 33861,
@@ -151,8 +210,8 @@
     },
     {
       "path": "python313._pth",
-      "size_bytes": 91,
-      "sha256": "2efdbbdf241cbac96a77d6fcebeac4a23e56578004da5f7e97883d9480f18712"
+      "size_bytes": 80,
+      "sha256": "35ddf94682ff9aa713a8d63557242ad00f3f28fdd39337f02c3bda4c0f791577"
     },
     {
       "path": "python313.dll",

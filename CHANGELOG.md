@@ -4,6 +4,18 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.15（ChatGPT CPython 来源机器证据检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.15`。已生成未签名 Windows x64 NSIS 与 ZIP；CPython 人工签署、实际系统安装与其余正式发布门禁未完成，不是可售卖正式版。
+
+- 新增 Windows CPython 3.13.14 provenance v1：精确固定 PSF 官方 embeddable ZIP URL、10,964,839 字节和 SHA-256 `90b4e5b9898b72d744650524bff92377c367f44bd5fbd09e3148656c080ad907`，并绑定 Sigstore、SPDX、GPG 旁证元数据；
+- 官方/本地均为 34 个文件，33 个逐字节一致；唯一差异是 `python313._pth` 在官方字节后精确追加 `..\python\r\n`。官方 `LICENSE.txt` 原样保留；运行时 manifest、ASAR 资源锚点和 packaged 门禁绑定证据原始 SHA-256；
+- 新验证器使用严格 JSON、exact schema、canonical UTF-8/LF、稳定单链接读取和原子更新；测试覆盖官方制品/运行时漂移、自批准、字段/顺序漂移与事务故障；
+- Sigstore artifact digest、leaf signature、证书 identity 与 Rekor body 绑定，以及 SPDX supplier/license 已机器复验；完整 Fulcio/Rekor 信任链与 GPG 未验证，上游 bundle 两个 log index 不一致均如实保留。sale blocker 从无证据收窄为 `PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`，总数仍为 11；
+- 完整回归：Node 329 total / 322 pass / 0 fail / 7 skip；Python 351 total / 0 failures / 0 errors / 3 skipped；真实 packaged 资源、9 fuse 与隐藏 DOCX/EPUB smoke PASS；
+- 首次整链构建在最后生成摘要时因根 `release/` 混放已归档 alpha.14 而正确失败关闭；核对根/归档摘要一致并移除根旧制品后，对已通过前序门禁与 smoke 的 alpha.15 字节生成、复验 canonical 发布证据；
+- 最终 NSIS：189,951,730 字节，SHA-256 `d701bf0fee5766a17ba33c351ec46a3cafd00da147154cf4006d2711cabbb15e`；ZIP：233,765,446 字节，SHA-256 `9ac0252699b77bf80bc14ce1f7119526c29b22e79fde4171760541fbbf0f5511`；安装生命周期只读预检通过，实际安装器未运行。
+
 ### 2026-07-28 — 0.1.0-alpha.14（ChatGPT Windows 安装生命周期验收工具检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.14`。已生成未签名 Windows x64 NSIS 与 ZIP；实际系统安装生命周期仍未获授权执行，不是可售卖正式版。
