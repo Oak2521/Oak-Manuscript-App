@@ -2,7 +2,17 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.28 私有租约队列与隔离核心验收（2026-07-28）
+## 0.1.0-alpha.29 Web 上传结构与主动内容前置门禁验收（2026-07-28）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.29`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] `web-inspect` 在临时对象存储和共享检查核心之前只读检查 TXT/Markdown UTF-8/NUL 及 DOCX/EPUB ZIP 文件头、路径、链接/特殊文件、加密、重复成员、压缩算法、成员/展开量/压缩比、CRC 和必需成员；
+- [x] DOCX 宏/ActiveX/嵌入对象/宏内容类型/altChunk/DDE 与 EPUB 脚本成员/script/事件处理器/`javascript:` URL fail-closed；
+- [x] 持久服务强制 isolated-process inspector，检查请求不含 owner/job/lease；拒绝时零字节进入 store、上传预留清除，对外只暴露稳定 `UNSAFE_DOCUMENT`；
+- [x] Python 门禁 5/5、Node 定向 35/35、Web 94/94、Node 464、Python 357 全量零失败；真实 TXT 子进程检查输入不变且 scratch 零残留；资源锁 79 文件 / 2,136,309 字节；
+- [ ] 带病毒库或平台信誉的恶意软件扫描、生产容器/OS 禁网、只读根、CPU/内存限制和真实平台 E2E 已完成；结构/主动内容门禁不得冒充这些证据；
+- [ ] 短时一次性下载、任务/对象双清扫、平台生命周期和三路零留存完成。
+
+## 0.1.0-alpha.28 私有租约队列与隔离核心验收（历史，2026-07-28）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.28`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] 第七个 service-role-only RPC 以 `FOR UPDATE SKIP LOCKED` 原子领取 queued/过期 processing 任务；到期前不足完整租约窗的任务不开始处理，processing 状态必须持有 exact lease；

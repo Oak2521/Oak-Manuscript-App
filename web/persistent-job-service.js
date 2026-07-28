@@ -126,6 +126,7 @@ class PersistentWebJobService {
   constructor({
     repository,
     storage,
+    contentInspector,
     clock = () => new Date(),
     uuidFactory = randomUUID,
     ttlMs = DEFAULT_TTL_MS,
@@ -146,6 +147,12 @@ class PersistentWebJobService {
       .some((name) => typeof storage[name] !== "function")) {
       throw new TypeError("storage 未实现完整临时内容接口");
     }
+    if (!contentInspector || contentInspector.execution_boundary !== "isolated_process" ||
+        typeof contentInspector.inspect !== "function" ||
+        !Number.isSafeInteger(contentInspector.max_inspection_ms) ||
+        contentInspector.max_inspection_ms < 100) {
+      throw new TypeError("contentInspector 必须声明并实现 isolated_process 边界");
+    }
     for (const [label, value, minimum, maximum] of [
       ["ttlMs", ttlMs, 60_000, 60 * 60 * 1000],
       ["reservationTtlMs", reservationTtlMs, 30_000, 15 * 60 * 1000],
@@ -163,8 +170,12 @@ class PersistentWebJobService {
         typeof auditSink !== "function") {
       throw new TypeError("clock、uuidFactory 与 auditSink 必须是函数");
     }
+    if (contentInspector.max_inspection_ms > reservationTtlMs - 5_000) {
+      throw new TypeError("contentInspector 超时必须至少比上传预留短 5 秒");
+    }
     this.repository = repository;
     this.storage = storage;
+    this.contentInspector = contentInspector;
     this.clock = clock;
     this.uuidFactory = uuidFactory;
     this.ttlMs = ttlMs;
@@ -398,6 +409,25 @@ class PersistentWebJobService {
     }
     if (uploadInput.media_type !== INPUT_MEDIA_TYPES[record.document.format]) {
       fail("UPLOAD_MEDIA_TYPE_MISMATCH", "上传媒体类型与文档格式不一致");
+    }
+    const inspectionDigest = createHash("sha256").update(uploadInput.bytes).digest("hex");
+    try {
+      await this.contentInspector.inspect(Object.freeze({
+        schema_version: "1.0",
+        request_type: "oak_manuscript_upload_inspection_request",
+        document: Object.freeze({ ...record.document }),
+        bytes: uploadInput.bytes,
+      }));
+      if (createHash("sha256").update(uploadInput.bytes).digest("hex") !== inspectionDigest) {
+        throw new Error("contentInspector 改变了上传 Buffer");
+      }
+    } catch {
+      this._audit("upload_rejected", record, "unsafe_document");
+      await this._cas(record, this._next(record, {
+        upload_reservation_id: null,
+        upload_reservation_expires_at: null,
+      }));
+      fail("UNSAFE_DOCUMENT", "上传文档未通过结构与主动内容安全门禁");
     }
     await this.storage.putInput(record.job_id, uploadInput.bytes, { deleteAt: record.expires_at });
     const queued = await this._cas(record, this._next(record, {

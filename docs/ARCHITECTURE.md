@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.28` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、Web 状态机、同源 HTTPS、Supabase/GoTrue、Fetch、未部署工作台、Netlify Blobs 临时内容、Supabase/Postgres 持久任务、私有原子领取和固定 Python 子进程共享核心边界，以及 alpha.23 已验证的 Windows packaged 安全链。真实数据库迁移/容器与 OS 无网隔离、网络同步、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.29` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、Web 状态机、同源 HTTPS、Supabase/GoTrue、Fetch、未部署工作台、Netlify Blobs 临时内容、Supabase/Postgres 持久任务、上传结构/主动内容门禁、私有原子领取和固定 Python 子进程共享核心边界，以及 alpha.23 已验证的 Windows packaged 安全链。真实数据库迁移、病毒/信誉扫描、容器与 OS 无网隔离、网络同步、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -44,7 +44,7 @@ Python Core（oak_manuscript_core）
   └─ 完整性与安全验证（路径 / ZIP / 大文件）
 ```
 
-Python 核心作为桌面 sidecar；CLI 子命令与 JSON 输出由 Electron 直接复用。Web 已有独立浏览器工作台、服务端协议适配、私有领取和调用同一 Python 核心的本机固定子进程闭环；生产容器/OS 隔离、部署和三端发布验收尚未实现，不能从当前源码测试推断为三端已完成。
+Python 核心作为桌面 sidecar；CLI 子命令与 JSON 输出由 Electron 直接复用。Web 已有独立浏览器工作台、服务端协议适配、上传结构/主动内容前置门禁、私有领取和调用同一 Python 核心的本机固定子进程闭环；生产病毒/信誉扫描、容器/OS 隔离、部署和三端发布验收尚未实现，不能从当前源码测试推断为三端已完成。
 
 ## 2. 关键决策记录
 
@@ -138,7 +138,7 @@ alpha.23 在 `web/job-contract.js` 的内存参考状态机上增加 `web/http-h
 
 handler 的 trusted session 现在显式区分 `bearer` 与 `cookie`。两者都要求 HTTPS，状态变更都要求精确同源 Origin，响应不开放 CORS；Cookie 因浏览器自动携带凭据而继续要求 timing-safe CSRF，Authorization Bearer 不建立额外 CSRF 状态。该选择与官网当前 Supabase access token 模式一致，同时保留未来 HttpOnly Cookie 部署的安全分支。上传前门禁、固定错误和无内容审计边界不变。
 
-`web/client/` 使用网站既有 `window.oblAuth` 读取 Supabase session，并以 `credentials:"omit"` 显式发送 Bearer；创建元数据由 exact client contract 构造，不含文件名/路径。页面包含登录/注册、默认引用、单任务处理同意、上传/轮询/取消/下载；同步区明确保持禁用。生产仍缺受信代理部署、真实 Blobs/Postgres/计划清扫联调、容器/OS 禁网与资源隔离、恶意 ZIP/病毒扫描、计费、短时下载与结果同步。反向代理必须用受信基础设施信号实现 `isSecureRequest`，不得直接相信客户端 `X-Forwarded-Proto`。因此仍不能称为网页版已上线或生产零留存已验证。Web 临时上传与 SyncRecord 长期结果同步继续是两条独立数据流。
+`web/client/` 使用网站既有 `window.oblAuth` 读取 Supabase session，并以 `credentials:"omit"` 显式发送 Bearer；创建元数据由 exact client contract 构造，不含文件名/路径。页面包含登录/注册、默认引用、单任务处理同意、上传/轮询/取消/下载；同步区明确保持禁用。生产仍缺受信代理部署、真实 Blobs/Postgres/计划清扫联调、病毒库/平台扫描、容器/OS 禁网与资源隔离、计费、短时下载与结果同步。反向代理必须用受信基础设施信号实现 `isSecureRequest`，不得直接相信客户端 `X-Forwarded-Proto`。因此仍不能称为网页版已上线或生产零留存已验证。Web 临时上传与 SyncRecord 长期结果同步继续是两条独立数据流。
 
 alpha.26 新增 `web/netlify-ephemeral-storage.js`。SDK 只存在于独立 `web/` 私有子包，不进入 Electron 根依赖。工厂固定站点级 store 和 `consistency:"strong"`；对象键仅为固定 prefix / job UUID / input|output。`set(...,{onlyIfNew:true})` 禁止覆盖；模糊写失败只在强一致回读的字节与 exact metadata 同时一致时幂等恢复。读取验证对象类型、任务号、规范 `delete_at`、媒体类型和字节数；删除后再 `getMetadata(...,{consistency:"strong"})`，非 null 即失败。
 
@@ -158,7 +158,13 @@ alpha.28 增加 `oak_manuscript_web_job_claim_next`：service-role-only、`FOR U
 
 `PersistentWebJobService` 把 owner 只绑定在当前服务实例的不可复制 WeakMap 句柄中。`PrivateLeaseWorker` 交给 processor 的请求只含格式、稿件类型、检查深度、引用选择、字节数与 Buffer，不含 owner、job ID、lease、幂等键或对象键；processor 超时上限必须至少比 lease 短 5 秒。失败不伪造完成或删除存储输入，任务保持 processing 到租约过期再接管；成功仍由 exact lease/revision/expiry 完成，并在结果可见前删除输入。
 
-`PythonCoreProcessProcessor` 使用固定绝对 Python/core/scratch、`-I -B -S -X utf8`、参数数组、`shell:false`，清除 Python/Oak/Node/Electron/云服务/AI 密钥、代理和动态加载注入环境，且把 HOME/TEMP/PATH 限制到受控位置。单次 `web-check` 在同一 Python 进程/项目写锁中调用桌面共享核心；stdout+stderr、时间、结果字节均有上限，输入文件前后 SHA-256 必须一致，scratch 只在身份仍位于固定根下时递归清理。本机真实 TXT 执行已经通过，但环境清理与独立进程不是容器或 OS 网络沙箱；恶意 ZIP 门禁、资源/内存 cgroup、只读根、seccomp/网络策略和生产容器证据仍是上线阻断项。
+`PythonCoreProcessProcessor` 使用固定绝对 Python/core/scratch、`-I -B -S -X utf8`、参数数组、`shell:false`，清除 Python/Oak/Node/Electron/云服务/AI 密钥、代理和动态加载注入环境，且把 HOME/TEMP/PATH 限制到受控位置。单次 `web-check` 在同一 Python 进程/项目写锁中调用桌面共享核心；stdout+stderr、时间、结果字节均有上限，输入文件前后 SHA-256 必须一致，scratch 只在身份仍位于固定根下时递归清理。本机真实 TXT 执行已经通过，但环境清理与独立进程不是容器或 OS 网络沙箱；病毒/信誉扫描、资源/内存 cgroup、只读根、seccomp/网络策略和生产容器证据仍是上线阻断项。
+
+### AD-021 Web 上传必须“先隔离检查—后临时存储—稳定拒绝—不冒充杀毒”（2026-07-28，冻结）
+
+alpha.29 在 `putInput()` 前强制调用同一固定 Python 进程边界的只读 `web-inspect`。检查器只接收最小 document 枚举与 Buffer，不接收 owner、job ID、lease、幂等键或对象键；子进程以私有 scratch、固定参数/环境、时间/输出上限运行，输入前后 SHA-256 必须一致。拒绝只映射为稳定 `UNSAFE_DOCUMENT`，不向浏览器反射成员名、路径、内容或检测细节；上传预留清除且零字节进入 store。
+
+确定性门禁覆盖 TXT/Markdown UTF-8/NUL，DOCX/EPUB ZIP 文件头、规范路径、名称冲突、加密/链接/特殊文件、压缩算法、成员/展开量/压缩比、CRC 和必需成员；DOCX 另拒绝宏、ActiveX、嵌入对象、宏内容类型、altChunk 与 DDE，EPUB 另拒绝脚本成员、script、事件处理器和 `javascript:` URL。该模型不含病毒特征库、文件信誉或平台扫描，不能宣称“无病毒”；生产仍须叠加平台恶意软件扫描、容器/OS 禁网、只读根及 CPU/内存限制。
 
 `AuthProvider` 当前固定未来生产形态为系统浏览器 PKCE，但未配置服务时只返回 `configuration_required` 且不打开页面；登录/过期/撤销仅能由测试专用实例模拟。`LicenseProvider` 已固定 Free/Pro 能力矩阵、有效期和离线宽限语义；签名订阅凭证、服务端设备管理与计费尚未实现。当前 `safeStorage` 只保护待发送队列，不等于生产 token 凭据层。生产 transport 上线时必须保持默认 Electron session 离线，使用独立最小权限网络通道，并在不改变 SyncRecord v1 最小字段边界的前提下另行威胁建模。
 
@@ -197,6 +203,7 @@ Python 核心、`config/` 和 `samples/` 以 canonical `app-resources-v1.json` �
 | `oak_manuscript_core/project.py` | 项目创建 / 打开、完整 schema 与受控路径验证、原稿哈希、完整状态检查点列表与安全恢复 |
 | `oak_manuscript_core/project_lock.py` | Windows/macOS/POSIX 非阻塞跨进程项目写锁、协议元数据与结构化争用错误 |
 | `oak_manuscript_core/safety.py` | 路径规范化、链接/reparse 与逃逸拒绝、ZIP 安全（成员数 / 单文件 / 总解压上限）、大文件预警 |
+| `oak_manuscript_core/web_inspection.py` | Web 上传的 UTF-8、危险 ZIP 结构、DOCX 主动内容与脚本 EPUB 前置门禁；只返回内容无关计数 |
 | `oak_manuscript_core/readers/docx_reader.py` | OOXML 解析 → 统一文档模型 |
 | `oak_manuscript_core/readers/md_reader.py` | （M2）Markdown ATX 标题 + 分段解析 |
 | `oak_manuscript_core/readers/txt_reader.py` | （M2）纯文本空行分段 |
@@ -214,7 +221,7 @@ Python 核心、`config/` 和 `samples/` 以 canonical `app-resources-v1.json` �
 | `oak_manuscript_core/ops.py` | 检查编排、计划验证、批量修复事务与回滚、安全自选目录与逐文件原子导出、只读 `sync-source` 白名单来源 |
 | `oak_manuscript_core/reports.py` | JSON / Markdown / HTML 报告渲染 |
 | `oak_manuscript_core/exporter.py` | 修订稿 DOCX 导出、导出目录校验 |
-| `oak_manuscript_core/__main__.py` | CLI（含 plan-citation / check 确认、修复/检查点、project-standard-status / plan-rulepack-upgrade / upgrade-rulepack / sync-source） |
+| `oak_manuscript_core/__main__.py` | CLI（含 web-inspect / web-check、plan-citation / check 确认、修复/检查点、project-standard-status / plan-rulepack-upgrade / upgrade-rulepack / sync-source） |
 
 ## 4. 安全基线
 

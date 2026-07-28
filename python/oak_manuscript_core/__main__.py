@@ -135,6 +135,14 @@ def _cmd_web_check(args) -> int:
     return 1 if _pending_error_exists(outcome.issues) else 0
 
 
+def _cmd_web_inspect(args) -> int:
+    """只读检查 Web 上传的格式、压缩结构与主动内容风险。"""
+    from .web_inspection import inspect_web_document
+
+    _emit(inspect_web_document(Path(args.input), args.format))
+    return 0
+
+
 def _cmd_fix(args) -> int:
     proj = Project.open(Path(args.project))
     pack = _project_rulepack(proj, args.rulepack)
@@ -366,6 +374,10 @@ def build_parser() -> argparse.ArgumentParser:
                             "chicago-18-nb", "chicago-18-ad", "none"])
     p.add_argument("--depth", required=True, choices=["quick", "full"])
 
+    p = sub.add_parser("web-inspect", help="只读检查 Web 上传的结构与主动内容风险")
+    p.add_argument("--input", required=True)
+    p.add_argument("--format", required=True, choices=["docx", "md", "txt", "epub"])
+
     for name, help_text in (("check", "运行检查"), ("recheck", "复检")):
         p = sub.add_parser(name, help=help_text)
         p.add_argument("--project", required=True)
@@ -471,6 +483,7 @@ def main(argv: list[str] | None = None) -> int:
     handlers = {
         "create": _cmd_create,
         "web-check": _cmd_web_check,
+        "web-inspect": _cmd_web_inspect,
         "check": lambda a: _cmd_check(a, "check"),
         "recheck": lambda a: _cmd_check(a, "recheck"),
         "plan-citation": _cmd_plan_citation,

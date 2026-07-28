@@ -4,6 +4,15 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.29（ChatGPT Web 上传结构与主动内容前置门禁）
+
+> 本轮未联网、未部署、未修改官网、未执行真实 Supabase/Netlify E2E，也未重新打包。最新真实 Windows 制品仍为 alpha.23。
+
+- 新增只读 Python `web-inspect` 与隔离子进程调用：在稿件写入临时对象存储、进入 worker 和共享检查核心前，验证格式、UTF-8、ZIP 路径/链接/加密/重复成员、成员/展开量/压缩比/CRC 及必需 DOCX/EPUB 成员；
+- DOCX 拒绝宏、ActiveX、嵌入对象、外部替代内容和 DDE 字段；EPUB 拒绝脚本文件、script 元素、事件处理器和 `javascript:` URL。失败只返回稳定 `UNSAFE_DOCUMENT`，不反射内容或检测细节；
+- 上传检查器不接收账号、任务 ID、租约或对象键；拒绝时零字节进入 store 并释放预留。该门禁是结构/主动内容检查，不是带病毒库的杀毒扫描，也不是容器/OS 沙箱；
+- 全量 `npm test`：Node 464/457/0/7，Python 357/0/0/3；Web 94/94，Python 门禁专项 5/5。
+
 ### 2026-07-28 — 0.1.0-alpha.28（ChatGPT 私有租约队列与隔离核心检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.28`。本轮实现数据库原子领取、身份最小化 worker 编排和本机固定 Python 子进程检查；没有执行真实 Supabase 迁移、连接 Netlify/Supabase、部署容器、修改官网或重新生成安装包。最新真实 Windows 制品仍为 alpha.23。

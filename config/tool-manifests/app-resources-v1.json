@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 78,
-  "total_bytes": 2126802,
+  "file_count": 79,
+  "total_bytes": 2136309,
   "files": [
     {
       "path": "config/app-config.json",
@@ -104,13 +104,13 @@
     },
     {
       "path": "config/schemas/web-http-audit-v1.schema.json",
-      "size_bytes": 2013,
-      "sha256": "02193e3b7a13143043b0dabc4f6d26fe2e7dc2e5dfb7b6763f770b844ad1f51c"
+      "size_bytes": 2032,
+      "sha256": "1df684a39abb675b54e9b83fc6f574e77275fb0fdc3dac1ad49f6a7cdf76f51b"
     },
     {
       "path": "config/schemas/web-http-error-v1.schema.json",
-      "size_bytes": 1600,
-      "sha256": "cf355bdb9ddbc2ccac1722d0ea219b3362b17cde3fee227b710ccd4e26574101"
+      "size_bytes": 1619,
+      "sha256": "98ca02c21a998956069f8dd75efafef528500ef26d39a7777d41b0f0bb4fdb36"
     },
     {
       "path": "config/schemas/web-job-create-v1.schema.json",
@@ -175,12 +175,12 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "a98fc4de43ce0af323597e73be1359c7c73a59c227a4d1e799e7435e3e992649"
+      "sha256": "756318846b82c7caf1c21787d61357cbdd2f074a91ebe3b4a208a4fb7b3d3fa2"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",
-      "size_bytes": 19263,
-      "sha256": "b3dab21f0f3f92fd5ea1166ffd75ce3c07a2be2c6238d4e6994499e43c5f8b75"
+      "size_bytes": 19782,
+      "sha256": "7a65804561de4acedc617a7b83c6b2f2b7db7d97d29118b844f9558bd8a939ca"
     },
     {
       "path": "python/oak_manuscript_core/citation.py",
@@ -341,6 +341,11 @@
       "path": "python/oak_manuscript_core/util.py",
       "size_bytes": 914,
       "sha256": "5d11ea5e12f6e9f17a8cfc124315d9981e8d25505759b2a6821a15ed4ba9b1f2"
+    },
+    {
+      "path": "python/oak_manuscript_core/web_inspection.py",
+      "size_bytes": 8950,
+      "sha256": "c3b91716ced206b7b7b952f99185b5339f48a6e78242397aacf66254c3d45f8b"
     },
     {
       "path": "samples/README.md",

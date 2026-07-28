@@ -223,12 +223,21 @@ class FailingDeleteStorage extends MemoryEphemeralStorage {
   }
 }
 
+function acceptingInspector(inspect = async () => Object.freeze({ ok: true })) {
+  return Object.freeze({
+    execution_boundary: "isolated_process",
+    max_inspection_ms: 1_000,
+    inspect,
+  });
+}
+
 function serviceHarness({ repository = new FakePersistentRepository(), storage = new MemoryEphemeralStorage(),
-  now = NOW } = {}) {
+  contentInspector = acceptingInspector(), now = NOW } = {}) {
   let uuidIndex = 0;
   const service = new PersistentWebJobService({
     repository,
     storage,
+    contentInspector,
     clock: () => new Date(now),
     uuidFactory: () => UUIDS[uuidIndex++],
   });
@@ -448,6 +457,52 @@ test("CAS loss after input storage removes the orphan and never reports queued",
   }), expectCode("INVALID_TRANSITION"));
   assert.equal(storage.inspect(created.job_id).input_present, false);
   assert.equal((await service.getJob(OWNER, created.job_id)).state, "awaiting_upload");
+});
+
+test("isolated upload inspection sees no owner or job identity and rejection stores no bytes", async () => {
+  let request = null;
+  const accepted = serviceHarness({
+    contentInspector: acceptingInspector(async (value) => { request = value; return { ok: true }; }),
+  });
+  const created = await accepted.service.createJob(OWNER, createRequest());
+  const reservation = await accepted.service.reserveUpload(OWNER, created.job_id, {
+    size_bytes: 6, media_type: "text/plain",
+  });
+  await accepted.service.acceptReservedUpload(OWNER, created.job_id, reservation, {
+    bytes: Buffer.from("secret"), media_type: "text/plain",
+  });
+  assert.deepEqual(Object.keys(request).sort(), ["bytes", "document", "request_type", "schema_version"]);
+  assert.equal(JSON.stringify(Object.keys(request)).includes("owner"), false);
+  assert.equal(JSON.stringify(Object.keys(request)).includes("job"), false);
+
+  const rejected = serviceHarness({
+    contentInspector: acceptingInspector(async () => { throw new Error("unsafe details"); }),
+  });
+  const bad = await rejected.service.createJob(OWNER, createRequest());
+  const badReservation = await rejected.service.reserveUpload(OWNER, bad.job_id, {
+    size_bytes: 6, media_type: "text/plain",
+  });
+  await assert.rejects(rejected.service.acceptReservedUpload(OWNER, bad.job_id, badReservation, {
+    bytes: Buffer.from("secret"), media_type: "text/plain",
+  }), expectCode("UNSAFE_DOCUMENT"));
+  assert.equal(rejected.storage.inspect(bad.job_id).input_present, false);
+  assert.equal((await rejected.service.getJob(OWNER, bad.job_id)).state, "awaiting_upload");
+  const retry = await rejected.service.reserveUpload(OWNER, bad.job_id, {
+    size_bytes: 6, media_type: "text/plain",
+  });
+  assert.notEqual(retry.reservation_id, badReservation.reservation_id);
+
+  const mutating = serviceHarness({
+    contentInspector: acceptingInspector(async (value) => { value.bytes.fill(0x78); return { ok: true }; }),
+  });
+  const changed = await mutating.service.createJob(OWNER, createRequest());
+  const changedReservation = await mutating.service.reserveUpload(OWNER, changed.job_id, {
+    size_bytes: 6, media_type: "text/plain",
+  });
+  await assert.rejects(mutating.service.acceptReservedUpload(OWNER, changed.job_id, changedReservation, {
+    bytes: Buffer.from("secret"), media_type: "text/plain",
+  }), expectCode("UNSAFE_DOCUMENT"));
+  assert.equal(mutating.storage.inspect(changed.job_id).input_present, false);
 });
 
 test("expiry is persisted as deletion_pending and scheduled sweep finalizes content and tombstone", async () => {

@@ -103,6 +103,36 @@ test("fixed isolated Python process receives only bounded document settings and 
   assert.deepEqual(fs.readdirSync(paths.scratchRoot), []);
 });
 
+test("upload inspection uses the fixed Python boundary before storage and returns content-free counts", async (t) => {
+  const paths = fixture(t);
+  const calls = [];
+  const processor = new PythonCoreProcessProcessor({
+    ...paths,
+    spawnImpl(command, args, options) {
+      calls.push({ command, args, options });
+      return childResult({
+        ok: true,
+        schema_version: "1.0",
+        inspection_type: "oak_manuscript_web_upload_inspection",
+        format: "txt",
+        size_bytes: 6,
+        package_members: 0,
+        expanded_bytes: 6,
+      });
+    },
+  });
+  const result = await processor.inspect({
+    ...request(),
+    request_type: "oak_manuscript_upload_inspection_request",
+  });
+  assert.equal(processor.max_inspection_ms, processor.max_execution_ms);
+  assert.equal(result.inspection_type, "oak_manuscript_web_upload_inspection");
+  assert.equal(calls[0].args.includes("web-inspect"), true);
+  assert.equal(calls[0].args.includes("web-check"), false);
+  assert.equal(calls[0].args.includes("secret"), false);
+  assert.deepEqual(fs.readdirSync(paths.scratchRoot), []);
+});
+
 test("source mutation and subprocess output overflow fail closed and clean the private scratch", async (t) => {
   const first = fixture(t);
   let inputPath = null;

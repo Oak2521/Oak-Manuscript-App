@@ -179,11 +179,13 @@ test("tracked HTTP error and audit schemas match the runtime exact contracts", (
   assert.deepEqual(errorSchema.required, ["schema_version", "error", "request_id"]);
   assert.equal(errorSchema.properties.error.additionalProperties, false);
   assert.deepEqual(errorSchema.properties.error.required, ["code", "message"]);
+  assert.equal(errorSchema.properties.error.properties.code.enum.includes("UNSAFE_DOCUMENT"), true);
   assert.equal(auditSchema.additionalProperties, false);
   assert.deepEqual(auditSchema.required, [
     "schema_version", "event_type", "request_id", "occurred_at", "method", "route",
     "http_status", "error_code",
   ]);
+  assert.equal(auditSchema.properties.error_code.enum.includes("UNSAFE_DOCUMENT"), true);
   assert.equal(validateHttpErrorResponse({
     schema_version: "1.0",
     error: { code: "AUTH_REQUIRED", message: "需要有效的湖岸会话" },

@@ -11,6 +11,10 @@ const CORE_BOOTSTRAP = [
   "runpy.run_module('oak_manuscript_core',run_name='__main__')",
 ].join(";");
 const REQUEST_KEYS = Object.freeze(["schema_version", "request_type", "document", "bytes"]);
+const INSPECTION_RESULT_KEYS = Object.freeze([
+  "ok", "schema_version", "inspection_type", "format", "size_bytes",
+  "package_members", "expanded_bytes",
+]);
 const DOCUMENT_KEYS = Object.freeze([
   "format", "manuscript_type", "check_config", "citation_style", "size_bytes",
 ]);
@@ -122,6 +126,7 @@ class PythonCoreProcessProcessor {
     this.maxOutputBytes = maxOutputBytes;
     this.execution_boundary = "isolated_process";
     this.max_execution_ms = timeoutMs;
+    this.max_inspection_ms = timeoutMs;
   }
 
   _invocation(args, scratch) {
@@ -201,11 +206,11 @@ class PythonCoreProcessProcessor {
     });
   }
 
-  _validateRequest(request) {
+  _validateRequest(request, expectedRequestType) {
     exactObject(request, REQUEST_KEYS, "processor 请求");
     exactObject(request.document, DOCUMENT_KEYS, "processor document");
     if (request.schema_version !== "1.0" ||
-        request.request_type !== "oak_manuscript_isolated_processing_request" ||
+        request.request_type !== expectedRequestType ||
         !FORMATS.has(request.document.format) ||
         !MANUSCRIPT_TYPES.has(request.document.manuscript_type) ||
         !CHECK_CONFIGS.has(request.document.check_config) ||
@@ -217,8 +222,58 @@ class PythonCoreProcessProcessor {
     }
   }
 
+  async inspect(request) {
+    this._validateRequest(request, "oak_manuscript_upload_inspection_request");
+    await requireUnlinkedPath(this.pythonExecutable, "file", "Python 可执行文件");
+    await requireUnlinkedPath(this.coreDir, "directory", "Python 核心目录");
+    const scratchRoot = await requireUnlinkedPath(this.scratchRoot, "directory", "worker scratch 根目录");
+    const scratch = await fs.promises.mkdtemp(path.join(scratchRoot, "oak-web-inspect-"));
+    let scratchReal = null;
+    try {
+      scratchReal = await fs.promises.realpath(scratch);
+      if (!samePath(path.dirname(scratchReal), scratchRoot)) throw new Error("inspection scratch 越界");
+      const inputPath = path.join(scratchReal, `input.${request.document.format}`);
+      const sourceDigest = digest(request.bytes);
+      await fs.promises.writeFile(inputPath, request.bytes, { flag: "wx", mode: 0o600 });
+      const inspected = await this._run([
+        "web-inspect", "--input", inputPath, "--format", request.document.format,
+      ], new Set([0]), scratchReal);
+      exactObject(inspected, INSPECTION_RESULT_KEYS, "inspection 结果");
+      if (inspected.schema_version !== "1.0" ||
+          inspected.inspection_type !== "oak_manuscript_web_upload_inspection" ||
+          inspected.format !== request.document.format ||
+          inspected.size_bytes !== request.bytes.length ||
+          !Number.isSafeInteger(inspected.package_members) || inspected.package_members < 0 ||
+          !Number.isSafeInteger(inspected.expanded_bytes) || inspected.expanded_bytes < 1) {
+        throw new Error("inspection 结果非法");
+      }
+      const after = await fs.promises.readFile(inputPath);
+      if (after.length !== request.bytes.length || digest(after) !== sourceDigest) {
+        throw new Error("上传安全门禁改变了输入文件");
+      }
+      return Object.freeze({ ...inspected });
+    } finally {
+      let info = null;
+      try { info = await fs.promises.lstat(scratch); } catch (error) {
+        if (error?.code !== "ENOENT") throw error;
+      }
+      if (info !== null) {
+        if (info.isSymbolicLink() || !info.isDirectory()) {
+          await fs.promises.unlink(scratch);
+          throw new Error("inspection scratch 身份在处理期间改变");
+        }
+        const cleanupReal = await fs.promises.realpath(scratch);
+        if (scratchReal === null || !samePath(cleanupReal, scratchReal) ||
+            !samePath(path.dirname(cleanupReal), scratchRoot)) {
+          throw new Error("inspection scratch 清理边界失效");
+        }
+        await fs.promises.rm(scratch, { recursive: true, force: true, maxRetries: 2 });
+      }
+    }
+  }
+
   async execute(request) {
-    this._validateRequest(request);
+    this._validateRequest(request, "oak_manuscript_isolated_processing_request");
     await requireUnlinkedPath(this.pythonExecutable, "file", "Python 可执行文件");
     await requireUnlinkedPath(this.coreDir, "directory", "Python 核心目录");
     const scratchRoot = await requireUnlinkedPath(this.scratchRoot, "directory", "worker scratch 根目录");

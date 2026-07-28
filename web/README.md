@@ -1,6 +1,6 @@
 # Web 作业契约与同源 HTTP handler（alpha）
 
-`job-contract.js` 是商业方案 v2.0 的服务端任务契约与内存参考实现；`persistent-job-service.js` 是跨实例持久服务；`private-lease-worker.js` 与 `python-core-process-processor.js` 提供私有原子领取和固定共享核心子进程；`http-handler.js` 是不监听端口的 Node HTTP 边界；`supabase-session-adapter.js`、`gotrue-verifier.js` 和 `fetch-adapter.js` 构成账号与平台桥；`client/` 是首个未部署工作台；`netlify-ephemeral-storage.js` 把 input/output 内容接到站点级 Netlify Blobs；`supabase-job-repository.js` 和 `supabase/001_web_job_state.sql` 只持久化内容无关任务/幂等状态。它们共同形成可测试的源码/本机纵向边界，但仍不是已上线的生产上传服务。
+`job-contract.js` 是商业方案 v2.0 的服务端任务契约与内存参考实现；`persistent-job-service.js` 是跨实例持久服务；`python-core-process-processor.js` 在同一固定子进程边界提供上传 `web-inspect` 和共享核心 `web-check`，`private-lease-worker.js` 负责私有原子领取；`http-handler.js` 是不监听端口的 Node HTTP 边界；`supabase-session-adapter.js`、`gotrue-verifier.js` 和 `fetch-adapter.js` 构成账号与平台桥；`client/` 是首个未部署工作台；`netlify-ephemeral-storage.js` 把 input/output 内容接到站点级 Netlify Blobs；`supabase-job-repository.js` 和 `supabase/001_web_job_state.sql` 只持久化内容无关任务/幂等状态。它们共同形成可测试的源码/本机纵向边界，但仍不是已上线的生产上传服务。
 
 Web 服务端依赖与 Electron 桌面依赖隔离：
 
@@ -16,14 +16,14 @@ npm audit --prefix web --omit=dev
 - 可信会话主体作为独立参数传入，创建请求不能自报账号；
 - 每个任务必须携带 `single_job_processing` 明示同意；
 - 请求元数据不接受文件名、路径、正文、片段、内容哈希或任意扩展字段；
-- 上传字节只交给临时存储适配器，不进入公开状态或隐私事件；
+- 上传字节先交给身份最小化的隔离结构/主动内容检查器；只有通过后才交给临时存储适配器，不进入公开状态或隐私事件；
 - 完成处理时先写短期结果，再删除输入；取消、用户删除和 TTL 清扫删除输入与输出；
 - 删除失败进入 `deletion_pending` 并返回失败，不生成成功删除回执；
 - `deleteAt` 作为对象存储生命周期兜底契约传给存储适配器；
 - 持久数据库只保存主体归属、最小文档枚举、状态、预留/租约、非内容请求指纹和终态幂等墓碑，不保存稿件字节；
 - 任务结果不会自动生成或发送 SyncRecord，长期账号记录仍须走独立的显式同步流程。
 
-alpha.23—alpha.28 固定：
+alpha.23—alpha.29 固定：
 
 - API 前缀 `/manuscript/api/v1/jobs`，提供创建、状态、输入上传、结果下载、取消和删除路由；不暴露 worker 开始/完成路由；
 - 只接受 HTTPS。部署在受信反向代理后时，必须由适配器用不可伪造的代理信息实现 `isSecureRequest`，不能直接信任客户端 `X-Forwarded-Proto`；
@@ -37,11 +37,12 @@ alpha.23—alpha.28 固定：
 - Supabase/Postgres 迁移强制两表 RLS，浏览器角色无表/RPC 权限，七个固定 RPC 仅授予 `service_role`；事务创建/重放使用 advisory lock，后续状态使用 revision CAS，私有领取使用 `FOR UPDATE SKIP LOCKED` 并要求完整租约窗，删除完成保留 content-free terminal tombstone；
 - `PersistentWebJobService` 将上传预留、私有原子领取、结果完成、删除待办和 TTL 扫描接到 repository；CAS 丢失清理孤立输入，删除失败保持可跨重启恢复的 `deletion_pending`；`PrivateLeaseWorker` 不把账号、任务 ID 或租约交给 processor，完成仍精确绑定服务内 lease/revision/expiry；
 - `PythonCoreProcessProcessor` 以固定绝对路径、参数数组、隔离环境、时间/输出/结果上限和受控 scratch 调用共享 Python `web-check`；本机真实 TXT 烟测已通过，但这不是容器或 OS 网络沙箱证据；
+- 同一固定进程边界在 `putInput()` 前调用只读 `web-inspect`，拒绝非 UTF-8/NUL 文本、危险 ZIP 结构、宏/ActiveX/嵌入/DDE 与脚本 EPUB；失败固定为 `UNSAFE_DOCUMENT`、清除预留且零字节入库。它不是病毒库或文件信誉扫描；
 - 上传必须有唯一 `Content-Length`，拒绝 `Transfer-Encoding`、文件名、`Content-Disposition` 和内容摘要头；大小/MIME/并发预留在读取稿件字节前完成；
 - HTTP 错误与安全审计分别受 `web-http-error-v1`、`web-http-audit-v1` exact schema 约束。审计不记录主体、任务 ID、URL、请求头或稿件元数据；
 - handler 不设置 CORS，响应固定 `no-store` / `nosniff` / CSP / `no-referrer`。错误文案固定且不反射异常、路径、账号或稿件内容。
 
-生产实现仍须补齐：在隔离环境执行/复核 Supabase 迁移并完成 GoTrue/Postgres/Blobs 真实 E2E、容器/OS 禁网与资源隔离、恶意 ZIP/病毒检查、限额与计费、短时下载凭证、计划双清扫/告警/故障演练、结果同步和网站联调。
+生产实现仍须补齐：在隔离环境执行/复核 Supabase 迁移并完成 GoTrue/Postgres/Blobs 真实 E2E、平台恶意软件扫描、容器/OS 禁网与资源隔离、限额与计费、短时下载凭证、计划双清扫/告警/故障演练、结果同步和网站联调。
 
 ## 参考调用顺序
 
@@ -61,9 +62,15 @@ const productionJobRepository = new SupabaseJobRepository({
   supabaseOrigin: process.env.SUPABASE_URL,
   serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
 });
+const processor = new PythonCoreProcessProcessor({
+  pythonExecutable: process.env.OAK_WEB_PYTHON,
+  coreDir: process.env.OAK_WEB_CORE,
+  scratchRoot: process.env.OAK_WEB_SCRATCH,
+});
 const jobs = new PersistentWebJobService({
   repository: productionJobRepository,
   storage: productionEphemeralStorage,
+  contentInspector: processor,
 });
 const productionGoTrueVerifier = createGoTrueAccessTokenVerifier({
   supabaseOrigin: process.env.SUPABASE_URL,
@@ -79,11 +86,6 @@ const handler = createWebJobHttpHandler({
   securityEventSink: contentFreeAuditSink,
 });
 const handleFetchRequest = createFetchHandlerAdapter({ nodeHandler: handler });
-const processor = new PythonCoreProcessProcessor({
-  pythonExecutable: process.env.OAK_WEB_PYTHON,
-  coreDirectory: process.env.OAK_WEB_CORE,
-  scratchRoot: process.env.OAK_WEB_SCRATCH,
-});
 const worker = new PrivateLeaseWorker({ service: jobs, processor });
 
 // 由官网同源 HTTPS 平台把标准 Request 交给 handleFetchRequest。
@@ -108,6 +110,7 @@ const worker = new PrivateLeaseWorker({ service: jobs, processor });
 | `JOB_ID_COLLISION` | 连续 UUID 碰撞，拒绝覆盖现有任务 |
 | `INVALID_TRANSITION` | 当前状态不允许该动作 |
 | `INVALID_UPLOAD` / `UPLOAD_SIZE_MISMATCH` / `UPLOAD_MEDIA_TYPE_MISMATCH` | 上传对象、字节数或 MIME 与任务不一致 |
+| `UNSAFE_DOCUMENT` | 上传未通过结构/主动内容门禁；不反射具体成员或内容，HTTP 422 |
 | `INVALID_RESULT` / `RESULT_NOT_AVAILABLE` | 结果非法、超限、尚未完成或已不存在 |
 | `ZERO_RETENTION_DELETE_FAILED` | 删除未完整成功；任务保留 `deletion_pending`，必须重试和告警 |
 

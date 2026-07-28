@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.28` 已实现的桌面隐私边界及 Web 作业/同源 HTTP/Bearer/GoTrue/Fetch/临时对象存储/持久任务/私有领取与固定 Python 子进程源码契约。现有 alpha.23 Windows 制品未签名，不是可售卖正式版。统一账号、Free/Pro、SyncRecord v1、OS 加密持久队列、Web 状态机/handler、GoTrue、工作台、Netlify Blobs 内容适配、Supabase/Postgres 持久状态和本机共享核心 worker 已实现；真实迁移、生产容器/OS 隔离、同步 transport、计费和官网发布仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.29` 已实现的桌面隐私边界及 Web 作业/同源 HTTP/Bearer/GoTrue/Fetch/临时对象存储/持久任务/上传门禁/私有领取与固定 Python 子进程源码契约。现有 alpha.23 Windows 制品未签名，不是可售卖正式版。统一账号、Free/Pro、SyncRecord v1、OS 加密持久队列、Web 状态机/handler、GoTrue、工作台、Netlify Blobs 内容适配、Supabase/Postgres 持久状态、结构/主动内容检查和本机共享核心 worker 已实现；真实迁移、生产病毒扫描、容器/OS 隔离、同步 transport、计费和官网发布仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -30,7 +30,7 @@
 本地技术日志（`logs/`）与导出诊断信息不得包含正文、标题、文件名和路径。
 脱敏评估摘要仅含：稿件类型、语言、字数区间、问题统计、出版目标、规则版本、咨询意图；当前只在本地生成，未来真实发送仍须用户逐字段确认。
 
-上述“数据不出本机”只描述当前桌面 alpha。alpha.28 的 Web 代码具备 GoTrue、稿件 API、Blobs 内容存储、Postgres 状态持久化、私有原子领取和固定 Python 共享核心子进程的生产形状，但网络/store/DB 仍为注入仿真或 SQL 静态检查且页面未部署。本机子进程烟测不等于容器或 OS 禁网隔离。客户端只在用户选择文件并勾选本次处理同意后上传，创建元数据不含文件名/路径；Bearer 请求显式 `credentials:"omit"`。数据库表只含内容无关状态和最小文档枚举，浏览器角色无访问权；真实 service-role 必须仅由服务器环境注入。Blobs 的 `delete_at` metadata 不会自动删除对象，必须运行双清扫器并监控未确认删除。在真实迁移、生产隔离、恶意文件门禁、计划任务、隐私文案和三路零留存验收完成前，不得宣称 Web 能力已上线。
+上述“数据不出本机”只描述当前桌面 alpha。alpha.29 的 Web 代码具备 GoTrue、稿件 API、Blobs 内容存储、Postgres 状态持久化、上传结构/主动内容检查、私有原子领取和固定 Python 共享核心子进程的生产形状，但网络/store/DB 仍为注入仿真或 SQL 静态检查且页面未部署。本机子进程烟测不等于病毒库、容器或 OS 禁网隔离。客户端只在用户选择文件并勾选本次处理同意后上传，创建元数据不含文件名/路径；Bearer 请求显式 `credentials:"omit"`。数据库表只含内容无关状态和最小文档枚举，浏览器角色无访问权；真实 service-role 必须仅由服务器环境注入。Blobs 的 `delete_at` metadata 不会自动删除对象，必须运行双清扫器并监控未确认删除。在真实迁移、生产隔离/恶意软件扫描、计划任务、隐私文案和三路零留存验收完成前，不得宣称 Web 能力已上线。
 
 开发者构建输入是另一条隔离边界：`npm run download:builder:win` 只在用户明确批准后由命令行显式启动，只能请求合同固定的 electron-builder GitHub release URL/受限重定向主机，并把归档写入仓库 `out/`。它不接触项目、稿件、报告、账号或应用用户数据，也不会被普通 build/test 或桌面应用隐式触发。
 
@@ -59,7 +59,7 @@
 - 上传内容只交给临时存储适配器，并携带固定删除时间。完成处理先删除输入再开放短期结果；取消、用户删除和 TTL 清扫删除输入/输出；
 - 删除失败必须保持 `deletion_pending`，准确暴露 `input_retained/result_available`，不得生成成功回执。幂等终态禁止用同一键重建，UUID 碰撞不得覆盖其它主体；
 - HTTP 错误为固定非反射文案；安全审计只含请求 ID、时间、方法、路由模板、HTTP 状态和错误码，不含主体、任务 ID、实际 URL、请求头或稿件元数据；审计接收器失败不能改变已确定响应；
-- 状态机、handler、Netlify 内容适配器、Postgres 持久层、私有领取和固定 Python 子进程已形成源码/本机纵向闭环；这些 FakeStore/FakeRepository、SQL 静态检查与本机烟测仍不证明生产会话、真实迁移、Blobs 删除后台、计划任务、隔离容器、OS 禁网、恶意文件检查、HTTPS 部署或官网联调。真实“零留存”必须由完成删除、超时清扫和平台存储生命周期三路生产证据共同证明。
+- 状态机、handler、Netlify 内容适配器、Postgres 持久层、上传结构/主动内容门禁、私有领取和固定 Python 子进程已形成源码/本机纵向闭环；这些 FakeStore/FakeRepository、SQL 静态检查与本机烟测仍不证明生产会话、真实迁移、Blobs 删除后台、计划任务、病毒库/平台扫描、隔离容器、OS 禁网、HTTPS 部署或官网联调。真实“零留存”必须由完成删除、超时清扫和平台存储生命周期三路生产证据共同证明。
 
 ## 5. 文件与压缩包安全
 
@@ -67,6 +67,7 @@
 - `create/check/recheck/fix/export/verify/restore-checkpoint/external/issue/upgrade-rulepack` 共用单项目非阻塞跨进程内核写锁；`plan-citation`、`plan-fixes`、`list-checkpoints`、`project-standard-status` 与 `plan-rulepack-upgrade` 保持只读。写锁争用立即返回可重试的 `PROJECT_WRITE_LOCKED`，失败方不覆盖锁或项目。锁文件只作持久诊断，崩溃后由内核释放互斥，不依据陈旧 PID 猜测并删除锁；
 - 自选导出目录逐级拒绝链接、联接和非常规目录；若位于项目内，只允许 `exports/`。修订稿、报告、摘要与可选 EPUB 的全部目标先统一预检，已有链接/硬链接目标拒绝；每个文件在目标同目录完整暂存、`fsync` 后原子换入；
 - DOCX/EPUB 解包上限：成员数 ≤ 10,000，单成员解压 ≤ 200 MB，总解压 ≤ 1 GB，拒绝路径穿越成员；
+- Web 上传在写入临时 store 前使用更严格门禁：成员数 ≤ 4,096，单成员 ≤ 64 MiB，总展开 ≤ 256 MiB，单成员压缩比 ≤ 200；拒绝加密、链接/特殊文件、名称冲突、非 STORE/DEFLATE、CRC 损坏及宏/ActiveX/嵌入/DDE/脚本主动内容。该规则不含病毒特征库或信誉服务；
 - 超大输入提前提示，不静默挂起。
 
 ## 6. 测试数据纪律

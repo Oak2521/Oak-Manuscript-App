@@ -2,7 +2,23 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.28 私有租约队列与隔离核心检查点
+## 最新验证结论：0.1.0-alpha.29 Web 上传结构与主动内容前置门禁
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网，没有使用真实密钥、执行 Supabase 迁移、连接 Netlify Blobs、修改官网、部署容器、启动 Electron/安装器或生成 alpha.29 安装包。
+
+| 验证 | 结果 | 证据 |
+|---|---|---|
+| Python 上传门禁专项 | **PASS** | 5/5：安全 TXT/DOCX/EPUB、UTF-8/NUL、格式伪装、路径逃逸、链接、大小写重复、加密成员、压缩炸弹、宏/ActiveX/嵌入、DDE、宏内容类型与脚本 EPUB |
+| Node 门禁/持久/HTTP 定向 | **PASS** | 35/35：固定 Python `web-inspect` 参数/环境/scratch、内容无关结果、身份最小化、拒绝零入库、预留释放和稳定 `UNSAFE_DOCUMENT` 边界 |
+| 全部 Web 定向 | **PASS** | 94/94，含 client、Fetch、GoTrue、HTTP、内存参考状态机、Netlify 内容适配、Postgres repository、持久服务、上传检查器与私有 worker |
+| 真实 Python 检查器烟测 | **PASS（源码环境）** | TXT `Hello\n` 经真实固定子进程返回 `oak_manuscript_web_upload_inspection`、format=txt、size=7；输入不变，处理结束 scratch 条目数为 0 |
+| `npm test` | **PASS** | 退出码 0，墙钟 110.8 秒；Node 464 total / 457 pass / 0 fail / 7 skip（3.610 秒）；Python 357 total / 0 failures / 0 errors / 3 skipped（102.511 秒） |
+| 资源信任锁更新/复验 | **PASS** | 79 文件 / 2,136,309 字节；manifest SHA-256 `f269c2547a40bd703a7ab0905ae7ed1fa309eb1c9ad48711618390535cab2d3d`；anchor SHA-256 `44e4510cbe8ad54ba9a9ce36af3939307e033344eaea8653572589a64e532c38` |
+| alpha.29 Windows build / smoke / 安装生命周期 | **未运行** | Web 私有源码不进入 Electron `build.files`；不得沿用 alpha.23 证据声称 alpha.29 制品通过 |
+
+证据边界：该门禁证明当前固定规则能拒绝已列出的危险结构和主动内容，并且失败发生在临时对象写入前；它没有病毒特征库、信誉服务或平台恶意软件扫描，不能宣称“无病毒”。Postgres/Blobs/GoTrue 仍是静态契约或注入仿真；生产容器、OS 禁网、只读根、CPU/内存限制、真实平台 E2E 和三路零留存仍未证明。最新可复验 Windows 制品仍为 alpha.23。
+
+## 历史验证结论：0.1.0-alpha.28 私有租约队列与隔离核心检查点
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网，没有使用真实 service-role key、执行 Supabase 迁移、连接 Netlify Blobs、修改官网、部署容器、启动 Electron/安装器或生成 alpha.28 安装包。
 
