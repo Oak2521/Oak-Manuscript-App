@@ -1,12 +1,12 @@
 # 湖岸稿件（Oak Manuscript）
 
-本地优先的稿件检查与修订产品。当前开发版本为 `0.1.0-alpha.23`，已有 Electron 桌面端、Python 检查核心、经真实 packaged 门禁和隐藏烟测验证的 Windows x64 NSIS/ZIP alpha 制品、离线标准包验证/项目固定/显式升级/回滚链路，以及无网络的 Web 临时作业 exact 状态机与同源 HTTPS handler 边界；商业正式版目标为 Windows、macOS 与 Web。按论文、纸质出版物、电子书三类目标检查稿件，提供可追溯标准依据的问题解释、集中确认的白名单机械订正、检查点恢复、修订稿与检查报告导出。
+本地优先的稿件检查与修订产品。当前开发版本为 `0.1.0-alpha.24`，已有 Electron 桌面端、Python 检查核心、经真实 packaged 门禁和隐藏烟测验证的 alpha.23 Windows x64 NSIS/ZIP 制品、离线标准包验证/项目固定/显式升级/回滚链路，以及无网络的 Web 临时作业状态机、同源 HTTPS handler 和 Supabase Bearer 会话适配契约；商业正式版目标为 Windows、macOS 与 Web。按论文、纸质出版物、电子书三类目标检查稿件，提供可追溯标准依据的问题解释、集中确认的白名单机械订正、检查点恢复、修订稿与检查报告导出。
 
 **当前桌面核心承诺**：稿件默认只在本机处理；永不原地修改原稿（SHA-256 全程校验）；不强制注册；报告与导出不设营销门槛。
 
-`0.1.0-alpha.23` 的本地检查点标签为 `chatgpt-v0.1.0-alpha.23`。Windows CPython 3.13.14、EpubCheck 5.3.0、Temurin 21.0.11/JRE、Electron 43.1.0 与 Windows builder 工具链均已有官方制品、完整文件树和下游锁的机器来源证据；五类资源的具名法律/再分发签署仍待办。发行商身份契约已固定已知产品/品牌/appId/官网，但法定销售主体、正式链接、版权、平台签名主体和具名复核仍待定。SyncRecord 使用按账号隔离的 OS 加密持久队列，`pending_transport` 不代表已上传。Web handler 已固定 HTTPS、同源会话/CSRF、上传前门禁、稳定错误与无内容审计，但没有生产会话、监听器、对象存储、隔离执行、计费或官网 UI，不能称为网页版已上线。真实安装器只有在另行授权并同时提供 `--run --allow-system-mutation` 后才可启动；当前尚未执行。
+`0.1.0-alpha.24` 的本地检查点标签为 `chatgpt-v0.1.0-alpha.24`。Web handler 的会话证明显式区分 `bearer` 与 `cookie`：官网现有 Supabase Bearer 模式必须由服务端验证 access token，写操作继续要求 HTTPS 与精确同源且不开放 CORS；只有浏览器自动携带 Cookie 的模式才附加 CSRF。适配器拒绝重复/合并/畸形 Authorization、无效 token 和带额外字段的身份，并且不会把 token、角色或用户对象送入作业状态机。当前仍没有生产 verifier、监听器、对象存储、隔离执行、计费或官网 UI，不能称为网页版已上线。
 
-最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.23 全量回归为 Node 406 total / 399 pass / 0 fail / 7 skip、Python 351 total / 0 failures / 0 errors / 3 skipped。source 与 packaged 双阶段隐藏 smoke 均 PASS，原稿哈希不变；NSIS 为 189,995,462 字节（SHA-256 `3ae05010…ad3d`），ZIP 为 233,814,202 字节（`625b0fea…8d05`）。安装生命周期代码/只读预检通过不等于真实安装通过；制品仍未签名，发行身份契约 `complete=false`，packaged 资源门禁保留 12 项 sale blocker。
+最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.24 全量回归为 Node 413 total / 406 pass / 0 fail / 7 skip、Python 351 total / 0 failures / 0 errors / 3 skipped；本检查点按收缩后的节奏未重复打包。最新真实 Windows 制品仍是 alpha.23：NSIS 189,995,462 字节（SHA-256 `3ae05010…ad3d`），ZIP 233,814,202 字节（`625b0fea…8d05`）。真实安装生命周期尚未执行；制品仍未签名，发行身份契约 `complete=false`，packaged 资源门禁保留 12 项 sale blocker。
 
 当前桌面安全边界包括：默认 Electron session 离线与固定 CSP；PDF 使用禁 JavaScript/导航/网络的非持久隔离 session；项目 schema/路径完整校验与跨进程内核写锁；创建项目在锁内以单一输入文件描述符复制到 `source`，再生成 `working`；自选导出目录逐级验证、全部目标预检和逐文件原子换入；标准包以 canonical manifest、内容寻址存储、高水位和精确回滚目标 fail-closed。已有项目不会因全局标准更新而静默换规则，必须先查看差异并显式确认，升级后强制重检。
 

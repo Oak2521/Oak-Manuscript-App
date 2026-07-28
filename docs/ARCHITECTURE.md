@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.23` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、Web 临时作业 exact 状态机及同源 HTTPS handler 边界、真实 ASAR production package 发行身份门禁、Windows builder 独立锁、ASAR/全 9 fuse/资源可信链、受限应用协议、Ace 受控 utilityProcess、CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据，以及 Windows 安装生命周期的 fail-closed 编排与证据契约。生产认证/网络同步、真实 Web 监听器/反向代理、对象存储与隔离执行、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.24` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、Web 临时作业状态机、同源 HTTPS handler 与 Supabase Bearer 会话适配边界，以及 alpha.23 已验证的 Windows packaged 安全链。生产认证/网络同步、真实 Web 监听器/反向代理、对象存储与隔离执行、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -134,9 +134,11 @@ Web 创建请求不接收账号 ID；账号或匿名会话主体必须由上游�
 
 任务状态为 `awaiting_upload → queued → processing → result_ready`；完成处理必须先写短期结果并删除输入，取消、用户删除和 TTL 清扫必须删除输入与输出。对象存储适配器同时接收固定 `deleteAt`，作为服务端删除与清扫之外的生命周期兜底。任一删除失败转为 `deletion_pending`，准确保留 `input_retained/result_available`，不生成成功回执；可重试成功后才返回 exact 删除回执。幂等终态只保留非内容请求指纹，禁止以同一键重建或重复计费；UUID 连续碰撞失败关闭，不能覆盖其它主体任务。
 
-alpha.23 在 `web/job-contract.js` 的内存参考状态机上增加 `web/http-handler.js`，固定 `/manuscript/api/v1/jobs` 的创建、状态、输入、结果、取消与删除路由，不暴露 worker 开始/完成动作。handler 要求 HTTPS、精确同源 Origin/CSRF、可信 exact 会话适配器、唯一 Content-Length 和上传前的大小/MIME/并发预留；拒绝 Transfer-Encoding、文件名/处置/摘要头。错误响应与无内容安全审计由两份新增 exact schema 固定，不设置 CORS，不反射底层异常，也不记录主体、任务 ID、URL、请求头或稿件信息。
+alpha.23 在 `web/job-contract.js` 的内存参考状态机上增加 `web/http-handler.js`，固定 `/manuscript/api/v1/jobs` 的创建、状态、输入、结果、取消与删除路由，不暴露 worker 开始/完成动作。alpha.24 再新增 `web/supabase-session-adapter.js`，将唯一且有界的 Bearer token 交给注入的服务端 verifier，并只接受 exact `{subject_id}`；token、角色和完整 user 均不进入任务层。
 
-该 handler 不监听端口，不实现 Supabase 会话、受信代理解析、对象存储、容器执行、恶意 ZIP/病毒扫描、计费、短时下载签名或网站 UI。反向代理部署必须以受信基础设施信号实现 `isSecureRequest`，不得直接相信客户端 `X-Forwarded-Proto`。因此仍不能称为网页版已上线或生产零留存已验证。Web 作业上传与 SyncRecord 长期结果同步继续是两条独立数据流。
+handler 的 trusted session 现在显式区分 `bearer` 与 `cookie`。两者都要求 HTTPS，状态变更都要求精确同源 Origin，响应不开放 CORS；Cookie 因浏览器自动携带凭据而继续要求 timing-safe CSRF，Authorization Bearer 不建立额外 CSRF 状态。该选择与官网当前 Supabase access token 模式一致，同时保留未来 HttpOnly Cookie 部署的安全分支。上传前门禁、固定错误和无内容审计边界不变。
+
+该 handler 不监听端口；Supabase 适配器也只定义 verifier 接口，不进行 GoTrue 网络调用。生产仍缺受信代理解析、对象存储、容器执行、恶意 ZIP/病毒扫描、计费、短时下载签名或网站 UI。反向代理部署必须以受信基础设施信号实现 `isSecureRequest`，不得直接相信客户端 `X-Forwarded-Proto`。因此仍不能称为网页版已上线或生产零留存已验证。Web 作业上传与 SyncRecord 长期结果同步继续是两条独立数据流。
 
 `AuthProvider` 当前固定未来生产形态为系统浏览器 PKCE，但未配置服务时只返回 `configuration_required` 且不打开页面；登录/过期/撤销仅能由测试专用实例模拟。`LicenseProvider` 已固定 Free/Pro 能力矩阵、有效期和离线宽限语义；签名订阅凭证、服务端设备管理与计费尚未实现。当前 `safeStorage` 只保护待发送队列，不等于生产 token 凭据层。生产 transport 上线时必须保持默认 Electron session 离线，使用独立最小权限网络通道，并在不改变 SyncRecord v1 最小字段边界的前提下另行威胁建模。
 

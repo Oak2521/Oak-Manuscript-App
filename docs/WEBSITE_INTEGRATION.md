@@ -1,10 +1,10 @@
 # WEBSITE_INTEGRATION — 网站对接与 Provider 接口
 
-> 当前依据为商业正式版方案 v2.0。网站现状只在 2026-07-11 做过只读快照，启动真实对接前必须重新核对，不能把旧分支状态写成当前线上事实。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
+> 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.23）
+## Provider 一览（当前 alpha.24）
 
-alpha.23 继承按账号隔离、由操作系统安全存储加密、可跨重启恢复的本地 `pending_transport` 队列，并在 Web 临时作业 exact 状态机上增加不监听端口的同源 HTTPS Node handler；生产认证、签名权益/计费、网络同步 transport、真实 Web 服务器/对象存储与网站后台仍不存在。CPython 来源审计与 Windows builder 下载只发生在开发者明确授权的构建/审计输入阶段，与账号/同步 Provider 隔离；真实 APP 默认 session 仍离线，Ace loopback 仅为本机进程控制。SyncRecord v1 可包含最终体例、解析模式、原因码、置信度和解析器版本，但不得包含引用/书目原文、姓名、路径或内容哈希；权威字段见 `SYNC_RECORD_V1.md` 和 schema。
+alpha.24 在既有加密本地队列和 Web handler 上新增 Supabase Bearer 会话适配契约。只读核对确认网站浏览器通过 Supabase JS 持有 access token，并显式用 Authorization 调用 Netlify Functions；服务端现有共享函数调用 GoTrue `/auth/v1/user` 验证 token。商业仓库只实现净化适配层，没有复制 service role key、没有修改网站，也没有生产网络 verifier、签名权益/计费、同步 transport、真实 Web 服务器/对象存储或网站后台。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
@@ -27,7 +27,7 @@ alpha.23 继承按账号隔离、由操作系统安全存储加密、可跨重�
 - “同步结果”与 Web 版“用户主动提交临时处理任务”是两条不同数据流。Web 作业可以在明确操作后上传待处理文件，但必须使用隔离临时存储、TTL 删除和零留存审计，不能进入用户同步历史；
 - Windows、macOS 和 Web 共用同一湖岸官网账号与权益判定，不另建 APP 独立账号库。
 
-## Web 作业契约 v1 与 HTTP handler（alpha.23）
+## Web 作业契约 v1、HTTP handler 与账号适配（alpha.24）
 
 源码入口为 `web/job-contract.js` 与 `web/http-handler.js`，机器可读契约为：
 
@@ -47,7 +47,7 @@ alpha.23 继承按账号隔离、由操作系统安全存储加密、可跨重�
 - 删除部分失败时状态为 `deletion_pending`，准确报告输入/结果是否仍保留；只有两类内容均删除后才生成回执；
 - 作业完成不会自动生成、排队或发送 SyncRecord。只有用户另行明确选择时，结果元数据才进入独立同步流程。
 
-`web/http-handler.js` 固定 `/manuscript/api/v1/jobs` 下的六个公开动作：创建、状态、输入上传、结果下载、取消和删除。它不提供 worker 开始/完成接口；后台处理必须走私有队列。状态变更要求规范 HTTPS origin、精确同源 `Origin`、可选但若存在必须为 `same-origin` 的 `Sec-Fetch-Site`、以及会话绑定 CSRF token。上传要求唯一 `Content-Length`，拒绝 `Transfer-Encoding`、文件名/处置/摘要头，并在读取字节前执行大小、MIME 与并发预留。错误响应和无内容安全审计均为 exact schema；不设置 CORS，不记录主体、任务 ID、URL、请求头或稿件信息。
+`web/http-handler.js` 固定 `/manuscript/api/v1/jobs` 下的六个公开动作：创建、状态、输入上传、结果下载、取消和删除。它不提供 worker 开始/完成接口；后台处理必须走私有队列。状态变更要求规范 HTTPS origin、精确同源 `Origin` 以及合法的 Fetch Metadata。`web/supabase-session-adapter.js` 只接受唯一、格式有界的 Authorization Bearer，并把注入 verifier 的 exact subject 输出净化为 account principal；Bearer 不需要另建 CSRF 状态，Cookie 会话仍强制 CSRF。响应不设置 CORS，错误与审计不记录 token、主体、任务 ID、URL、请求头或稿件信息。
 
 | 方法 | 路径 | 用途 | 成功状态 |
 |---|---|---|---:|
@@ -58,7 +58,7 @@ alpha.23 继承按账号隔离、由操作系统安全存储加密、可跨重�
 | `POST` | `/manuscript/api/v1/jobs/:job_id/cancel` | 明确取消并触发删除 | 200 |
 | `DELETE` | `/manuscript/api/v1/jobs/:job_id` | 删除任务内容并取得回执 | 200 |
 
-部署适配器必须从真实湖岸会话独立生成 `{principal, csrf_token}`。反向代理场景只能从受信基础设施信息判断 HTTPS，不能直接信任客户端 `X-Forwarded-Proto`。当前 `MemoryEphemeralStorage`、handler 与测试仍是本地参考：没有监听端口，没有 Supabase 会话、隔离对象存储/容器、任务队列、恶意 ZIP/病毒检测、订阅计费、短时签名下载、真实生命周期策略或官网 UI；因此不得称为“网页版可用”或“零留存已通过生产验收”。
+生产 Bearer verifier 必须在服务端向可信 Supabase/GoTrue 验证 token 后只返回 exact `{subject_id}`；不能本地无验签解码 JWT，也不能把请求正文、普通代理头或浏览器自报角色映射为 principal。Cookie 部署则返回带 `csrf_token` 的 cookie session。反向代理只能从受信基础设施信息判断 HTTPS，不能直接信任客户端 `X-Forwarded-Proto`。当前代码仍没有监听器、生产 verifier、隔离对象存储/容器、任务队列、恶意文件门禁、订阅计费、短时签名下载、真实生命周期策略或官网 UI。
 
 ## 网站侧待建页面
 

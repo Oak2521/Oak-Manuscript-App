@@ -2,7 +2,22 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.23 同源 HTTPS Web 作业 handler 检查点
+## 最新验证结论：0.1.0-alpha.24 Supabase Bearer 会话适配检查点
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。官网仅作本地只读核对；未联网、未修改网站、未启动 Electron/安装器，也未生成 alpha.24 安装包。
+
+| 命令 / 检查 | 结果 | 关键事实 |
+|---|---|---|
+| `node --check web/http-handler.js` + `node --check web/supabase-session-adapter.js` | **PASS** | 两个生产边界脚本语法有效 |
+| `node --test tests/web_http_handler.test.js tests/web_supabase_session_adapter.test.js` | **PASS 25/25** | Bearer/Cookie 分流、Cookie CSRF、唯一 Authorization、畸形/重复/合并头、无效 token、身份夹带、verifier 故障和 handler 生命周期 |
+| 首次版本更新后的 `npm test` | **FAIL（门禁有效）** | Node 在资源信任测试拒绝旧 alpha.23 Python 版本字节；没有进入 Python 套件，未掩盖为通过 |
+| `node scripts/resource_trust_manifest.js --update-lock` + 只读复验 | **PASS** | 78 文件 / 2,124,858 字节；manifest `c84e051d…b2cbf`，锚点 `bbc5c905…6a25` |
+| 最终 `npm test` | **PASS** | 墙钟 167.2 秒；Node 413 total / 406 pass / 0 fail / 7 skip（4.483 秒）；Python 351 total / 0 failures / 0 errors / 3 skipped（104.577 秒） |
+| alpha.24 Windows build / smoke / 安装生命周期 | **未运行** | 按收缩后的节奏不为本次会话适配小检查点重复打包；不得沿用 alpha.23 证据声称 alpha.24 制品通过 |
+
+证据边界：`web/supabase-session-adapter.js` 证明输入净化与 trusted verifier 接口，不包含真实 GoTrue/Supabase 网络调用。官网只读现场确认其现有模式为浏览器 Bearer access token → Netlify Function → GoTrue `/auth/v1/user`；生产 verifier、监听器、反向代理、临时对象存储、隔离 worker、恶意文件门禁、计费、官网 UI 与生产零留存均未完成。最新可复验 Windows 制品仍为下节 alpha.23。
+
+## 历史验证结论：0.1.0-alpha.23 同源 HTTPS Web 作业 handler 检查点
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网；所有 Electron/packaged 进程隐藏执行，实际安装器未运行。Web handler 未监听端口，也没有真实上传、Supabase、对象存储或官网请求。
 

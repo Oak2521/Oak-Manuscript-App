@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.23` 已实现的桌面隐私边界及 Web 作业/同源 HTTP handler 契约。现有 Windows 制品未签名，不是可售卖正式版。Windows builder 下载器和系统安装生命周期都需要开发者显式授权；默认安装预检只读，不运行安装器。统一账号、Free/Pro、SyncRecord v1、OS 加密持久队列，以及 Web 作业 exact 状态机/handler 已实现；生产登录凭据、同步网络 transport、真实监听器/反向代理、计费和官网 Web 上传仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.24` 已实现的桌面隐私边界及 Web 作业/同源 HTTP/Bearer 会话适配契约。现有 alpha.23 Windows 制品未签名，不是可售卖正式版。统一账号、Free/Pro、SyncRecord v1、OS 加密持久队列、Web 状态机/handler 和 Supabase token 净化边界已实现；生产 verifier、同步网络 transport、真实监听器/反向代理、计费和官网 Web 上传仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -30,7 +30,7 @@
 本地技术日志（`logs/`）与导出诊断信息不得包含正文、标题、文件名和路径。
 脱敏评估摘要仅含：稿件类型、语言、字数区间、问题统计、出版目标、规则版本、咨询意图；当前只在本地生成，未来真实发送仍须用户逐字段确认。
 
-上述“数据不出本机”描述当前桌面 alpha。alpha.23 的 Web 作业代码仍是无网络参考：handler 规定同源 HTTPS、会话/CSRF、上传前门禁、TTL 与删除失败可见，但不监听端口，也没有接收真实 HTTP 上传。在隔离存储/执行、隐私文案、生命周期策略和生产零留存验收完成前，不得宣称 Web 能力已上线。
+上述“数据不出本机”描述当前桌面 alpha。alpha.24 的 Web 代码仍是无网络参考：handler 规定 HTTPS、同源、Bearer/Cookie 证明、上传前门禁、TTL 与删除失败可见，Supabase 适配器只调用注入 verifier，但不监听端口，也没有接收真实 HTTP 上传。在隔离存储/执行、隐私文案、生命周期策略和生产零留存验收完成前，不得宣称 Web 能力已上线。
 
 开发者构建输入是另一条隔离边界：`npm run download:builder:win` 只在用户明确批准后由命令行显式启动，只能请求合同固定的 electron-builder GitHub release URL/受限重定向主机，并把归档写入仓库 `out/`。它不接触项目、稿件、报告、账号或应用用户数据，也不会被普通 build/test 或桌面应用隐式触发。
 
@@ -54,7 +54,7 @@
 
 - 机器可读权威为三份 `web-job-*-v1.schema.json` 及 `web-http-error-v1.schema.json`、`web-http-audit-v1.schema.json`，参考状态机为 `web/job-contract.js`，同源请求处理边界为 `web/http-handler.js`；创建请求只能含幂等键、单任务处理同意、隐私版本和最小文档枚举/字节数；
 - 可信账号/匿名主体由上游会话层独立传入，请求不能自报主体或携带 token。公开状态与观察事件不含主体 ID、文件名、路径、正文、片段、上传字节或内容哈希；
-- 状态变更只接受规范 HTTPS origin、精确同源 `Origin`、合法 `Sec-Fetch-Site` 和会话绑定 CSRF token；生产反向代理不得把客户端可伪造的 `X-Forwarded-Proto` 直接当作 TLS 证明；
+- 状态变更只接受规范 HTTPS origin、精确同源 `Origin` 和合法 `Sec-Fetch-Site`。Authorization Bearer 必须由服务端 verifier 验证，响应不开放 CORS；只有 Cookie 模式要求会话绑定 CSRF。生产反向代理不得把客户端可伪造的 `X-Forwarded-Proto` 直接当作 TLS 证明；
 - 上传必须有唯一 `Content-Length`，拒绝 `Transfer-Encoding`、文件名/处置/摘要头，并在读取稿件字节前完成大小、MIME 和并发预留；读取失败必须释放预留；
 - 上传内容只交给临时存储适配器，并携带固定删除时间。完成处理先删除输入再开放短期结果；取消、用户删除和 TTL 清扫删除输入/输出；
 - 删除失败必须保持 `deletion_pending`，准确暴露 `input_retained/result_available`，不得生成成功回执。幂等终态禁止用同一键重建，UUID 碰撞不得覆盖其它主体；

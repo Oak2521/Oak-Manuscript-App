@@ -221,15 +221,19 @@ function parseRoute(requestUrl) {
 }
 
 function validateSession(session) {
-  if (!exactObjectKeys(session, ["principal", "csrf_token"])) fail("AUTH_REQUIRED");
+  const bearer = exactObjectKeys(session, ["principal", "auth_mode"]) &&
+    session.auth_mode === "bearer";
+  const cookie = exactObjectKeys(session, ["principal", "auth_mode", "csrf_token"]) &&
+    session.auth_mode === "cookie";
+  if (!bearer && !cookie) fail("AUTH_REQUIRED");
   if (!exactObjectKeys(session.principal, ["kind", "subject_id"])) fail("AUTH_REQUIRED");
   if (!PRINCIPAL_KINDS.has(session.principal.kind) ||
       typeof session.principal.subject_id !== "string" ||
       !/^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$/.test(session.principal.subject_id)) {
     fail("AUTH_REQUIRED");
   }
-  if (typeof session.csrf_token !== "string" ||
-      !/^[A-Za-z0-9_-]{32,128}$/.test(session.csrf_token)) fail("AUTH_REQUIRED");
+  if (cookie && (typeof session.csrf_token !== "string" ||
+      !/^[A-Za-z0-9_-]{32,128}$/.test(session.csrf_token))) fail("AUTH_REQUIRED");
   return session;
 }
 
@@ -323,7 +327,9 @@ function createWebJobHttpHandler({
       if (STATE_CHANGING_METHODS.has(method) && requestOrigin !== origin) fail("CROSS_SITE_REQUEST");
 
       const session = validateSession(await resolveSession(request));
-      if (STATE_CHANGING_METHODS.has(method)) validateCsrf(request, session.csrf_token);
+      if (STATE_CHANGING_METHODS.has(method) && session.auth_mode === "cookie") {
+        validateCsrf(request, session.csrf_token);
+      }
 
       if (route.kind === "collection" && method === "POST") {
         const contentType = singleHeader(request, "content-type", { required: true });

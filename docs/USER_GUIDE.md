@@ -2,11 +2,11 @@
 
 ## 桌面应用（推荐）
 
-当前开发版本为 `0.1.0-alpha.23`，已有未签名 Windows x64 NSIS 安装器和 ZIP，但不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.23 保持标准包 2.0.0、默认引用解析、Ace 受控 utilityProcess、Electron 43 全部 9 项 fuse和按账户隔离的 OS 加密同步队列，并在 Web 临时作业 exact 状态机上新增不监听端口的同源 HTTPS handler；普通测试、启动和构建不会触发联网下载。
+当前开发版本为 `0.1.0-alpha.24`；最新已打包版本仍是未签名的 alpha.23 Windows x64 NSIS/ZIP，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.24 保持标准包 2.0.0、默认引用解析、Ace 受控 utilityProcess、Electron 43 全部 9 项 fuse和按账户隔离的 OS 加密同步队列，并为 Web handler 增加 Supabase Bearer 会话适配契约；普通测试、启动和构建不会触发联网下载。
 
-**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。统一测试用 `npm test`；分项排障用 `npm run test:node`、`npm run test:python`。alpha.23 最终统一结果为 Node 406/399/0/7、Python 351/0 failures/0 errors/3 skipped，墙钟 110.2 秒；跳过项不计作通过。真实 source/packaged 双阶段 smoke 已 PASS，并在应用内运行 EpubCheck/Ace、写入加密队列及第二进程恢复；这仍不等于签名或干净机安装验收。
+**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。统一测试用 `npm test`；分项排障用 `npm run test:node`、`npm run test:python`。alpha.24 最终统一结果为 Node 413/406/0/7、Python 351/0 failures/0 errors/3 skipped，墙钟 167.2 秒；跳过项不计作通过。最新真实 source/packaged 双阶段 smoke 仍来自 alpha.23；本轮没有借用它证明 alpha.24 制品。
 
-**Web 状态**：仓库中的 `web/job-contract.js` 与 `web/http-handler.js` 供服务端开发与契约测试使用；handler 固定同源 HTTPS、会话/CSRF、上传前门禁和无内容审计，但没有监听器、可打开网页、真实上传入口或生产存储。它规定未来 Web 作业必须逐任务同意、限时处理、删除失败可见且不自动进入同步历史。用户目前不要把稿件交给任何声称基于该 alpha 契约的线上地址；正式地址只能在官网仓库联调、隐私文本和生产零留存验收完成后公布。
+**Web 状态**：`web/job-contract.js`、`web/http-handler.js` 与 `web/supabase-session-adapter.js` 供服务端开发与契约测试使用。handler 固定同源 HTTPS、Bearer/Cookie 分流、Cookie CSRF、上传前门禁和无内容审计；适配器只定义服务端 token verifier 接口。当前没有监听器、真实 GoTrue 调用、可打开网页、上传入口或生产存储。用户不要把稿件交给任何声称基于该 alpha 契约的线上地址；正式地址只能在官网联调、隐私文本和生产零留存验收后公布。
 
 **账号与结果同步（当前边界）**：欢迎页、导出页和设置页保留湖岸账号入口。由于生产认证尚未配置，点击登录只会明确显示 `configuration_required`，不会打开浏览器或联网；真实登录状态只在自动化测试实例中模拟。登录用户导出后才会看到 SyncRecord v1 的逐字段预览，并可选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。确认项进入由系统安全存储加密的本机 `pending_transport` 队列，重启后可恢复；设置页只显示当前账号项，并可取消、重试或删除。当前没有网络 transport，绝未上传到网站；系统加密不可用时同步安全停止，本地稿件功能不受影响。
 
@@ -160,9 +160,9 @@ npm run verify:release-identity
 npm run release:evidence:verify:win
 ```
 
-验证器会重新稳定读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。alpha.23 的真实 `release/` 证据已通过；alpha.12—alpha.22 已归档到项目内 `release/archive/`。若根目录混入同系列旧版本，生成器会拒绝而不是合并摘要。
+验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。当前源码是 alpha.24 且没有对应制品，因此该命令会按设计拒绝；最新通过的 alpha.23 六项证据已归档在 `release/archive/0.1.0-alpha.23-final/`，不能替代 alpha.24。
 
-安装生命周期验收器默认只读，不启动安装器；它精确核对当前 alpha.23 与归档 alpha.12 的 manifest、SHA256SUMS、文件大小、摘要、版本顺序和 PE 架构：
+安装生命周期验收器默认只读、不启动安装器，并要求当前源码版本存在精确制品。alpha.24 尚未打包，所以当前运行会因缺制品而失败；最近一次成功只读预检是 alpha.23 对归档 alpha.12：
 
 ```powershell
 npm run verify:install-lifecycle:win

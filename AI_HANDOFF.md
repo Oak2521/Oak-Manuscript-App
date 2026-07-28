@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.23`
+> 当前版本：`0.1.0-alpha.24`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.23`（含未签名 Windows alpha 制品证据，不代表正式发行）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.24`（源码与测试检查点；最新未签名 Windows 制品仍是 alpha.23）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,15 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.24 Supabase Bearer 会话适配检查点
+
+- 2026-07-28 只读复核官网 `netlify-site`：浏览器由 Supabase JS 保存/刷新会话，调用 Netlify Functions 时显式发送 `Authorization: Bearer <access_token>`；服务端 `_shared/supabase.mjs` 用 GoTrue `/auth/v1/user` 验证 token。网站目录未修改；
+- 新增 `web/supabase-session-adapter.js`。唯一且有界的 Bearer token 只传给注入 verifier；verifier 必须返回 exact `{subject_id}`，适配器只生成冻结的 `{principal:{kind:"account",subject_id},auth_mode:"bearer"}`。token、角色、邮箱和完整 user 不进入 handler、状态机或审计；
+- handler 会话契约区分 `bearer` 与 `cookie`。两者均要求 HTTPS，写操作均要求精确同源 Origin，且响应无 CORS；Cookie 模式保留 timing-safe CSRF，纯 Authorization Bearer 不额外建立 CSRF 状态。重复/合并/畸形 Authorization、无效 token、身份字段夹带和 verifier 故障均有反向测试；
+- 定向 `web_http_handler` + `web_supabase_session_adapter` 为 25/25 PASS。最终 `npm test` 167.2 秒：Node 413 total / 406 pass / 0 fail / 7 skip（4.483 秒），Python 351 total / 0 failures / 0 errors / 3 skipped（104.577 秒）；
+- 版本更新首次全量在资源信任门禁按设计拒绝旧锁；显式更新并复验后仍为 78 文件 / 2,124,858 字节，manifest SHA-256 `c84e051d22986a5c495b932991e71d87cf807eb2fb1adcc55823a6c2ecab2cbf`，锚点 SHA-256 `bbc5c905bcebbbb5feb08ebaa73d86e728e8f832b2dc55181f88abd33efd6a25`；
+- 本轮没有联网、没有修改官网、没有生产 Supabase verifier、监听器、存储、隔离 worker、计费或官网 UI，也没有重新打包。最新真实 Windows NSIS/ZIP、packaged smoke 和安装生命周期只读预检仍属于 alpha.23。
 
 ### 已完成：0.1.0-alpha.23 同源 HTTPS Web 作业 handler 边界检查点
 
@@ -433,7 +442,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
 5. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
 6. 在现有 Auth / License / Sync 离线契约和 OS 加密持久队列上实现生产登录凭据与独立网络 transport，再经授权连接 Supabase、支付和网站后台；
-7. 在 alpha.23 同源 handler 边界上实现受信反向代理/真实湖岸会话适配、隔离对象存储/执行、恶意文件门禁、短时下载与三路零留存证据，再经授权完成官网嵌入；完成 Free/Pro、支付、隐私、内测和正式发布门禁。
+7. 在 alpha.24 Bearer 净化边界上实现生产 GoTrue verifier 与受信反向代理适配，再接隔离对象存储/执行、恶意文件门禁、短时下载与三路零留存证据；经授权后完成官网嵌入、Free/Pro、支付、隐私、内测和正式发布门禁。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。
 

@@ -2,7 +2,18 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.23 同源 HTTPS Web 作业 handler 验收（2026-07-28）
+## 0.1.0-alpha.24 Supabase Bearer 会话适配验收（2026-07-28）
+
+- [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.24`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 官网现有 Supabase Bearer/GoTrue 验证模式经只读源码核对；网站目录没有修改；
+- [x] 唯一且格式有界的 Authorization Bearer 只交给注入 verifier；exact 已验证 subject 被净化为 account principal，token、角色、邮箱和完整 user 不进入任务或审计；
+- [x] handler 明确区分 Bearer 与 Cookie：两者均要求 HTTPS 和写操作精确同源，Bearer 不开放 CORS，Cookie 模式继续强制 timing-safe CSRF；
+- [x] 定向 25/25；最终 Node 413 / Python 351 全量零失败；版本字节导致的旧资源锁漂移先被门禁拒绝，显式更新后 78 文件资源清单与锚点复验通过；
+- [x] 本检查点没有重复打包；文档明确保留 alpha.23 为最新真实 Windows 制品，不借用其 smoke/安装证据证明 alpha.24；
+- [ ] 生产 GoTrue/Supabase verifier、受信代理、对象存储/隔离 worker、恶意文件门禁、短时下载、计费与官网 UI 已实现并联调；
+- [ ] 真实 Windows 安装生命周期、签名、macOS、生产同步和全部 sale 门禁完成。
+
+## 0.1.0-alpha.23 同源 HTTPS Web 作业 handler 验收（历史，2026-07-28）
 
 - [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.23`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] 六个公开动作固定为创建、状态、输入上传、结果下载、取消和删除；不提供 worker 开始/完成 HTTP 路由；

@@ -70,7 +70,7 @@ function mockRequest({
   headers = {},
   body = Buffer.alloc(0),
   encrypted = true,
-  session = { principal: ACCOUNT, csrf_token: CSRF },
+  session = { principal: ACCOUNT, auth_mode: "cookie", csrf_token: CSRF },
   chunks,
   explicitRawHeaders,
 } = {}) {
@@ -213,7 +213,10 @@ test("insecure and cross-site requests are rejected before session resolution or
   context.handler = createWebJobHttpHandler({
     service: context.service,
     expectedOrigin: ORIGIN,
-    resolveSession: async () => { resolved += 1; return { principal: ACCOUNT, csrf_token: CSRF }; },
+    resolveSession: async () => {
+      resolved += 1;
+      return { principal: ACCOUNT, auth_mode: "cookie", csrf_token: CSRF };
+    },
   });
   async function* privateBody() {
     consumed += 1;
@@ -242,7 +245,7 @@ test("insecure and cross-site requests are rejected before session resolution or
   assert.equal(consumed, 0);
 });
 
-test("state-changing routes require a trusted exact session and timing-safe CSRF match", async () => {
+test("cookie state changes require exact session and CSRF while bearer state changes do not", async () => {
   const context = harness();
   const body = Buffer.from(JSON.stringify(createRequest()), "utf8");
   let result = await invoke(context.handler, {
@@ -267,10 +270,28 @@ test("state-changing routes require a trusted exact session and timing-safe CSRF
     method: "POST",
     headers: stateHeaders({ "Content-Type": "application/json", "Content-Length": body.length }),
     body,
-    session: { principal: ACCOUNT, csrf_token: CSRF, token: "must-not-enter-handler" },
+    session: {
+      principal: ACCOUNT,
+      auth_mode: "cookie",
+      csrf_token: CSRF,
+      token: "must-not-enter-handler",
+    },
   });
   assert.equal(result.response.statusCode, 401);
   assert.equal(result.response.json().error.code, "AUTH_REQUIRED");
+
+  result = await invoke(context.handler, {
+    method: "POST",
+    headers: {
+      Origin: ORIGIN,
+      "Sec-Fetch-Site": "same-origin",
+      "Content-Type": "application/json",
+      "Content-Length": body.length,
+    },
+    body,
+    session: { principal: ACCOUNT, auth_mode: "bearer" },
+  });
+  assert.equal(result.response.statusCode, 201);
 });
 
 test("a malformed trusted principal is rejected before the manuscript request body is read", async () => {
@@ -281,7 +302,11 @@ test("a malformed trusted principal is rejected before the manuscript request bo
     method: "POST",
     headers: stateHeaders({ "Content-Type": "application/json" }),
     chunks: privateBody(),
-    session: { principal: { kind: "account", subject_id: "short" }, csrf_token: CSRF },
+    session: {
+      principal: { kind: "account", subject_id: "short" },
+      auth_mode: "cookie",
+      csrf_token: CSRF,
+    },
   });
   assert.equal(response.statusCode, 401);
   assert.equal(response.json().error.code, "AUTH_REQUIRED");
@@ -499,7 +524,7 @@ test("another trusted principal receives the same 404 for missing and foreign jo
       method: "GET",
       url: `${API_BASE_PATH}/${jobId}`,
       headers: { "Sec-Fetch-Site": "same-origin" },
-      session: { principal: OTHER_ACCOUNT, csrf_token: CSRF },
+      session: { principal: OTHER_ACCOUNT, auth_mode: "cookie", csrf_token: CSRF },
     });
     assert.equal(response.statusCode, 404);
     assert.equal(response.json().error.code, "JOB_NOT_FOUND");
