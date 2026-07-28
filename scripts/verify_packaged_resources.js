@@ -16,6 +16,7 @@ const {
   verifyDistribution: verifyEpubCheckDistribution,
 } = require("./epubcheck_distribution");
 const { verifyEvidenceAgainstDistribution: verifyEpubCheckProvenance } = require("./epubcheck_provenance");
+const { verifyEvidenceAgainstRuntime: verifyJreProvenance } = require("./jre_provenance");
 const {
   manifestRelative: pythonRuntimeManifestRelative,
   verifyRuntime: verifyPythonRuntimeDistribution,
@@ -958,6 +959,34 @@ function verifyJreRuntime(
     : null;
 }
 
+function verifyJreProvenanceEvidence(root, runtimeRoot, errors, checks) {
+  const lockTarget = path.join(root, "config", "tool-manifests", "jre-win32-x64.json");
+  let lock;
+  try {
+    lock = JSON.parse(fs.readFileSync(lockTarget, "utf8"));
+  } catch {
+    return;
+  }
+  if (!lock.provenance_evidence) return;
+  try {
+    const result = verifyJreProvenance(root, { runtimeRoot });
+    checks.push({
+      type: "jre-provenance",
+      path: result.evidence_path,
+      evidence_sha256: result.evidence_sha256,
+      machine_status: result.machine_status,
+      human_review_status: result.human_review_status,
+      official_artifact_sha256: result.evidence.official_release.artifact.sha256,
+      official_jdk_file_count: result.evidence.derivation.official_jdk_file_count,
+      byte_identical_jdk_file_count: result.evidence.derivation.byte_identical_jdk_file_count,
+      runtime_file_count: result.evidence.derivation.runtime_file_count,
+      gpg_verification_status: result.evidence.official_release.gpg.verification_status,
+    });
+  } catch (error) {
+    errors.push(`Temurin/JRE provenance 校验失败：${error.message}`);
+  }
+}
+
 function manifestPath(value, label, errors) {
   if (typeof value !== "string" || value === "" || value.includes("\\") ||
       path.posix.isAbsolute(value)) {
@@ -1540,6 +1569,9 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
   const epubcheckProvenance = checks.find((item) => item.type === "epubcheck-provenance" &&
     item.machine_status === "verified" && typeof item.evidence_sha256 === "string" &&
     SHA256_RE.test(item.evidence_sha256));
+  const jreProvenance = checks.find((item) => item.type === "jre-provenance" &&
+    item.machine_status === "verified" && typeof item.evidence_sha256 === "string" &&
+    SHA256_RE.test(item.evidence_sha256));
   const pending = [
     pythonProvenance ? {
       code: "PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED",
@@ -1555,7 +1587,10 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
       code: "EPUBCHECK_PROVENANCE_AUDIT_REQUIRED",
       message: "EpubCheck 5.3.0 本地分发已固定全量哈希，但来源与再分发证据仍需正式人工审计",
     },
-    {
+    jreProvenance ? {
+      code: "JRE_SOURCE_PROVENANCE_HUMAN_SIGNOFF_REQUIRED",
+      message: "Adoptium 官方 ZIP/GitHub SHA-256、490 个源 JDK 文件、本机 JDK 与 207 个 jlink 运行时文件已机器复验；OpenPGP、许可、商标与再分发义务仍需具名人工签核",
+    } : {
       code: "JRE_SOURCE_PROVENANCE_AUDIT_REQUIRED",
       message: "Temurin JDK 输入和生成 JRE 已由受版本控制锁固定，但官方来源与再分发证据仍需正式人工审计",
     },
@@ -1684,6 +1719,12 @@ function verifyPackagedResources({
       { execute: false },
     );
     if (jreState) jreRuntimeStates.push(jreState);
+    verifyJreProvenanceEvidence(
+      projectRoot,
+      source ? "tools/jre-win32-x64" : "tools/jre",
+      errors,
+      checks,
+    );
     verifyAceStage(projectRoot, errors, checks, { releaseTier, blockers });
   } else if (platform === "darwin") {
     pythonRuntimeStates.push(...verifyMacRuntimes(projectRoot, arch, errors, checks, {

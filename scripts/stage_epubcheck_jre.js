@@ -27,6 +27,7 @@ const JLINK_REQUESTED_MODULES = Object.freeze([
   "jdk.xml.dom",
 ]);
 const RUNTIME_LOCK_RELATIVE = "config/tool-manifests/jre-win32-x64.json";
+const PROVENANCE_RELATIVE = "config/provenance/temurin-21.0.11+10-win32-x64.json";
 const JAVA_INJECTION_ENV = new Set([
   "CLASSPATH",
   "JAVA_TOOL_OPTIONS",
@@ -371,6 +372,34 @@ function treeInventoryDigest(root) {
   };
 }
 
+function provenanceReference(root, { required = false } = {}) {
+  const target = requireContained(root, path.join(root, ...PROVENANCE_RELATIVE.split("/")), "Temurin provenance evidence");
+  const stat = fs.lstatSync(target, { throwIfNoEntry: false });
+  if (!stat) {
+    if (required) throw new Error(`Temurin provenance evidence 缺失：${PROVENANCE_RELATIVE}`);
+    return null;
+  }
+  if (!stat.isFile() || stat.isSymbolicLink() || stat.size <= 0) throw new Error("Temurin provenance evidence 必须是非空普通文件");
+  const bytes = fs.readFileSync(target);
+  let evidence;
+  try {
+    evidence = JSON.parse(bytes.toString("utf8"));
+  } catch (error) {
+    throw new Error(`Temurin provenance evidence 无法解析：${error.message}`);
+  }
+  if (!bytes.equals(Buffer.from(`${JSON.stringify(evidence, null, 2)}\n`, "utf8"))) {
+    throw new Error("Temurin provenance evidence 不是 canonical UTF-8/LF JSON");
+  }
+  if (evidence?.schema_version !== 1 || evidence?.evidence_type !== "oak-jre-provenance" ||
+      evidence?.subject?.distribution !== "Temurin" ||
+      evidence?.subject?.implementor_version !== REQUIRED_IMPLEMENTOR_VERSION ||
+      evidence?.subject?.target?.platform !== TARGET_PLATFORM || evidence?.subject?.target?.arch !== TARGET_ARCH ||
+      evidence?.verification?.machine_status !== "verified" || evidence?.verification?.human_review_status !== "pending") {
+    throw new Error("Temurin provenance evidence 身份或机器/人工审阅状态不匹配");
+  }
+  return { path: PROVENANCE_RELATIVE, sha256: sha256File(target), machine_status: "verified", human_review_status: "pending" };
+}
+
 function runtimeLockBase({
   release,
   releasePath,
@@ -379,8 +408,10 @@ function runtimeLockBase({
   jlink,
   jdkHome,
   distributionManifest,
+  projectRoot,
 }) {
   const sourceTree = treeInventoryDigest(jdkHome);
+  const provenance = provenanceReference(projectRoot || REPO_ROOT);
   return {
     schema_version: "1.0",
     lock_type: "oak-jre-runtime",
@@ -404,6 +435,7 @@ function runtimeLockBase({
     },
     epubcheck_distribution_manifest_sha256: sha256File(distributionManifest),
     formal_source_provenance_audit_required: true,
+    ...(provenance ? { provenance_evidence: provenance } : {}),
   };
 }
 
@@ -619,6 +651,7 @@ function stageEpubCheckJre({
     jlink,
     jdkHome: resolvedJdk,
     distributionManifest: distributionGate.manifestTarget,
+    projectRoot: root,
   });
   if (!updateLock) {
     const currentLock = readRuntimeLock(root).lock;
@@ -851,6 +884,7 @@ module.exports = {
   listFiles,
   parseModuleList,
   parseReleaseFile,
+  provenanceReference,
   requireContained,
   resolveJdkHome,
   runtimeLockBase,

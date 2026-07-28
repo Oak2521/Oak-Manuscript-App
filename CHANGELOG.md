@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.17（ChatGPT Temurin/JRE 来源机器证据检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.17`。已生成未签名 Windows x64 NSIS 与 ZIP；OpenPGP/许可人工签署、实际系统安装与其余正式发布门禁未完成，不是可售卖正式版。
+
+- 新增 Temurin/JRE provenance v1：固定 Adoptium 官方 ZIP、GitHub server digest、checksum、build metadata、detached signature 与公钥字节；ZIP 为 205,073,954 字节，SHA-256 `d3625e7cadf23787ea540229544b6e2ab494b3b54da1801879e583e1dfee0a64`；
+- 官方 ZIP 与本机源 JDK 均为 490 文件、343,822,457 字节，490/490 原字节一致；固定 jlink 生成 207 文件、52,384,264 字节，94 份 NOTICE/legal 材料原字节保留；
+- evidence、JRE lock、应用 loose 资源清单与 ASAR 锚点逐层绑定；新增 exact schema、canonical/反向测试与 source/packaged 路径重映射验证；
+- detached signature 未因文件存在而冒充密码学验证：本机无 OpenPGP 工具，状态固定为 `not_verified_no_openpgp_tool`；sale blocker 收窄为 `JRE_SOURCE_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`，总数仍为 11；
+- 全量回归：Node 338 total / 331 pass / 0 fail / 7 skip；Python 351 total / 0 failures / 0 errors / 3 skipped；最终外层隐藏完整 Windows build 206.5 秒退出 0，真实 source/packaged 资源、9 fuse、EpubCheck/Ace smoke 与发布证据通过；
+- 最终 NSIS：189,974,477 字节，SHA-256 `88f9a97e619cb9bd82f024a788a2c7b1780cab467098fe07b87975c0bae1b06f`；ZIP：233,789,900 字节，SHA-256 `d995766daaf96b72a46680c72b924228b964d38eab6e5bf7a8ed63b152be95a3`；安装生命周期只读预检通过，实际安装器未运行。
+
 ### 2026-07-28 — 0.1.0-alpha.16（ChatGPT EpubCheck 来源机器证据检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.16`。已生成未签名 Windows x64 NSIS 与 ZIP；EpubCheck/CPython 人工签署、实际系统安装与其余正式发布门禁未完成，不是可售卖正式版。

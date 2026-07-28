@@ -85,7 +85,7 @@ function findEndOfCentralDirectory(bytes, label) {
   throw new Error(`${label} 缺少唯一可定位的 ZIP EOCD`);
 }
 
-function inventoryZipArchive(bytes, rootDirectory, label = "ZIP") {
+function inventoryZipArchive(bytes, rootDirectory, label = "ZIP", { maxOutputLength = 64 * 1024 * 1024 } = {}) {
   if (!Buffer.isBuffer(bytes) || bytes.length < 22) throw new Error(`${label} 不是有效 ZIP 字节`);
   safeRelative(rootDirectory, `${label} 根目录`);
   const eocd = findEndOfCentralDirectory(bytes, label);
@@ -156,7 +156,7 @@ function inventoryZipArchive(bytes, rootDirectory, label = "ZIP") {
       throw new Error(`${label} 本地/中央目录条目不一致：${relative}`);
     }
     const compressed = bytes.subarray(dataStart, dataEnd);
-    const content = method === 0 ? Buffer.from(compressed) : zlib.inflateRawSync(compressed, { maxOutputLength: 64 * 1024 * 1024 });
+    const content = method === 0 ? Buffer.from(compressed) : zlib.inflateRawSync(compressed, { maxOutputLength });
     if (content.length !== uncompressedSize || content.length <= 0) throw new Error(`${label} 解压大小非法：${relative}`);
     files.push({ path: relative, size_bytes: content.length, sha256: sha256(content) });
     cursor = next;

@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/jre-provenance-v1.schema.json",
+  "title": "Oak Manuscript Temurin jlink runtime provenance evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_type", "subject", "official_release", "derivation", "redistribution", "verification", "official_jdk_files"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "evidence_type": { "const": "oak-jre-provenance" },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["distribution", "implementor_version", "java_version", "target", "runtime_root", "runtime_manifest", "runtime_lock"],
+      "properties": {
+        "distribution": { "const": "Temurin" },
+        "implementor_version": { "const": "Temurin-21.0.11+10" },
+        "java_version": { "const": "21.0.11" },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["platform", "arch"],
+          "properties": { "platform": { "const": "win32" }, "arch": { "const": "x64" } }
+        },
+        "runtime_root": { "const": "tools/jre-win32-x64" },
+        "runtime_manifest": { "const": "tools/jre-win32-x64/manifest.json" },
+        "runtime_lock": { "const": "config/tool-manifests/jre-win32-x64.json" }
+      }
+    },
+    "official_release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publisher", "release_page_url", "release_api_url", "release_api_sha256", "tag", "published_at", "artifact", "checksum", "build_metadata", "gpg"],
+      "properties": {
+        "publisher": { "const": "Eclipse Adoptium" },
+        "release_page_url": { "type": "string", "format": "uri" },
+        "release_api_url": { "type": "string", "format": "uri" },
+        "release_api_sha256": { "$ref": "#/$defs/sha256" },
+        "tag": { "const": "jdk-21.0.11+10" },
+        "published_at": { "type": "string", "format": "date-time" },
+        "artifact": { "$ref": "#/$defs/asset" },
+        "checksum": { "$ref": "#/$defs/checksum" },
+        "build_metadata": { "$ref": "#/$defs/buildMetadata" },
+        "gpg": { "$ref": "#/$defs/gpg" }
+      }
+    },
+    "derivation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["official_jdk_file_count", "installed_jdk_file_count", "byte_identical_jdk_file_count", "official_jdk_total_bytes", "installed_jdk_total_bytes", "official_jdk_tree_sha256", "installed_jdk_tree_sha256", "module_policy", "requested_modules", "jlink_options", "runtime_file_count", "runtime_total_bytes", "runtime_tree_sha256", "runtime_manifest_sha256", "preserved_official_material_count", "generated_files"],
+      "properties": {
+        "official_jdk_file_count": { "const": 490 },
+        "installed_jdk_file_count": { "const": 490 },
+        "byte_identical_jdk_file_count": { "const": 490 },
+        "official_jdk_total_bytes": { "const": 343822457 },
+        "installed_jdk_total_bytes": { "const": 343822457 },
+        "official_jdk_tree_sha256": { "$ref": "#/$defs/sha256" },
+        "installed_jdk_tree_sha256": { "$ref": "#/$defs/sha256" },
+        "module_policy": { "const": "fixed-conservative-java-se" },
+        "requested_modules": { "const": ["java.se", "jdk.unsupported", "jdk.xml.dom"] },
+        "jlink_options": { "type": "array", "minItems": 10, "maxItems": 10, "items": { "type": "string" } },
+        "runtime_file_count": { "type": "integer", "minimum": 1 },
+        "runtime_total_bytes": { "type": "integer", "minimum": 1 },
+        "runtime_tree_sha256": { "$ref": "#/$defs/sha256" },
+        "runtime_manifest_sha256": { "$ref": "#/$defs/sha256" },
+        "preserved_official_material_count": { "type": "integer", "minimum": 1 },
+        "generated_files": { "const": ["SOURCE_JDK_RELEASE.txt", "THIRD_PARTY_NOTICES.md"] }
+      }
+    },
+    "redistribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["license_summary", "notice_path", "legal_root", "source_release_path", "generated_notice_path", "official_materials_preserved", "human_signoff_required"],
+      "properties": {
+        "license_summary": { "type": "string", "minLength": 1 },
+        "notice_path": { "const": "NOTICE" },
+        "legal_root": { "const": "legal/" },
+        "source_release_path": { "const": "SOURCE_JDK_RELEASE.txt" },
+        "generated_notice_path": { "const": "THIRD_PARTY_NOTICES.md" },
+        "official_materials_preserved": { "const": true },
+        "human_signoff_required": { "const": true }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["machine_status", "human_review_status", "observed_at", "limitations"],
+      "properties": {
+        "machine_status": { "const": "verified" },
+        "human_review_status": { "const": "pending" },
+        "observed_at": { "type": "string", "format": "date" },
+        "limitations": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "official_jdk_files": { "type": "array", "minItems": 490, "maxItems": 490, "items": { "$ref": "#/$defs/file" } }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "file": {
+      "type": "object", "additionalProperties": false, "required": ["path", "size_bytes", "sha256"],
+      "properties": { "path": { "type": "string", "minLength": 1 }, "size_bytes": { "type": "integer", "minimum": 1 }, "sha256": { "$ref": "#/$defs/sha256" } }
+    },
+    "asset": {
+      "type": "object", "additionalProperties": false, "required": ["url", "filename", "size_bytes", "sha256", "github_server_digest"],
+      "properties": { "url": { "type": "string", "format": "uri" }, "filename": { "type": "string", "minLength": 1 }, "size_bytes": { "type": "integer", "minimum": 1 }, "sha256": { "$ref": "#/$defs/sha256" }, "github_server_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" } }
+    },
+    "checksum": {
+      "type": "object", "additionalProperties": false, "required": ["url", "size_bytes", "sha256", "declared_artifact_sha256", "filename_matches"],
+      "properties": { "url": { "type": "string", "format": "uri" }, "size_bytes": { "type": "integer", "minimum": 1 }, "sha256": { "$ref": "#/$defs/sha256" }, "declared_artifact_sha256": { "$ref": "#/$defs/sha256" }, "filename_matches": { "const": true } }
+    },
+    "buildMetadata": {
+      "type": "object", "additionalProperties": false, "required": ["url", "size_bytes", "sha256", "artifact_digest_matches", "vendor", "os", "arch", "binary_type", "version", "scm_ref", "build_ref", "openjdk_source"],
+      "properties": { "url": { "type": "string", "format": "uri" }, "size_bytes": { "type": "integer", "minimum": 1 }, "sha256": { "$ref": "#/$defs/sha256" }, "artifact_digest_matches": { "const": true }, "vendor": { "const": "Eclipse Adoptium" }, "os": { "const": "windows" }, "arch": { "const": "x64" }, "binary_type": { "const": "jdk" }, "version": { "const": "21.0.11+10-LTS" }, "scm_ref": { "const": "jdk-21.0.11+10_adopt" }, "build_ref": { "type": "string", "format": "uri" }, "openjdk_source": { "type": "string", "format": "uri" } }
+    },
+    "gpg": {
+      "type": "object", "additionalProperties": false, "required": ["signature_url", "signature_size_bytes", "signature_sha256", "public_key_url", "public_key_sha256", "verification_status"],
+      "properties": { "signature_url": { "type": "string", "format": "uri" }, "signature_size_bytes": { "type": "integer", "minimum": 1 }, "signature_sha256": { "$ref": "#/$defs/sha256" }, "public_key_url": { "type": "string", "format": "uri" }, "public_key_sha256": { "$ref": "#/$defs/sha256" }, "verification_status": { "const": "not_verified_no_openpgp_tool" } }
+    }
+  }
+}

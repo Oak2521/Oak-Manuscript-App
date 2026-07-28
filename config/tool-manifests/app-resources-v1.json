@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 64,
-  "total_bytes": 1982221,
+  "file_count": 66,
+  "total_bytes": 2078798,
   "files": [
     {
       "path": "config/app-config.json",
@@ -26,6 +26,11 @@
       "path": "config/provenance/epubcheck-5.3.0.json",
       "size_bytes": 10498,
       "sha256": "2f5191140fd119bb288a71becf8ca3ddf077d17bc71aea12b179c502075735b0"
+    },
+    {
+      "path": "config/provenance/temurin-21.0.11+10-win32-x64.json",
+      "size_bytes": 88469,
+      "sha256": "dbbf5e4799d88820b7c4475e178e45a7624fbf104b7b5fdc4f78d6650c39d676"
     },
     {
       "path": "config/rule-capabilities.json",
@@ -46,6 +51,11 @@
       "path": "config/schemas/epubcheck-provenance-v1.schema.json",
       "size_bytes": 4626,
       "sha256": "4435c2e90d3e49c170b859ca95328f7c574ea5d8a11c7cf14d1f4ad206ab7f71"
+    },
+    {
+      "path": "config/schemas/jre-provenance-v1.schema.json",
+      "size_bytes": 7856,
+      "sha256": "f4221688bf7126f95b4c452ad9e763b9492f3c445e5aa82f0f6b2a81ff6af8bb"
     },
     {
       "path": "config/schemas/runtime-provenance-v1.schema.json",
@@ -94,8 +104,8 @@
     },
     {
       "path": "config/tool-manifests/jre-win32-x64.json",
-      "size_bytes": 1148,
-      "sha256": "cb5e9047044cae70f1848349cdfb9f5e3d0c1824664869dede189f5442f9c872"
+      "size_bytes": 1400,
+      "sha256": "ac9faa5ae9ea02dd16f3d06eb0670f8ccb5e94ff55c44ef6b09131e58a612228"
     },
     {
       "path": "config/tool-manifests/python-runtime-win32-x64.json",
@@ -105,7 +115,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "6b6a92026aff5852f51dc1de77b3fb832f716ddf87b1b2f393106b334b4fe979"
+      "sha256": "79a12976932461ceff8050f9d3d02b07f91e9542171eaebb3d02c4e8a56d730e"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

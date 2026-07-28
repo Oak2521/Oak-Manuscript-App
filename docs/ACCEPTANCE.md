@@ -2,6 +2,20 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.17 Temurin/JRE 来源机器证据与 Windows 制品验收（2026-07-28）
+
+- [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.17`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] Eclipse Adoptium 官方 Temurin 21.0.11+10 Windows x64 ZIP 的 URL、大小、本地/GitHub SHA-256、checksum、build metadata 和 release API 原始摘要由 exact schema 与 canonical JSON 固定；
+- [x] 官方 ZIP 与本机源 JDK 均为 490 文件、343,822,457 字节，490/490 路径、大小与 SHA-256 一致；直接 ZIP 解析拒绝路径逃逸、多卷、ZIP64、加密和链接；
+- [x] 固定 `jlink` 模块/参数生成 207 文件、52,384,264 字节的 JRE；94 个 `NOTICE`/`legal/` 文件与官方 JDK 原字节一致；manifest、运行时锁、provenance、应用资源清单和 ASAR 锚点逐层绑定；
+- [x] 验证器拒绝自批准、未知字段、非 canonical 字节、官方资产/文件树/JDK/JRE/锁/许可材料漂移；源码和打包后的 JRE 路径重映射均实测通过；
+- [x] 最终全量 Node 338 / Python 351，0 失败；最终外层隐藏完整 `npm run build:win` 206.5 秒退出 0；alpha.17 NSIS/ZIP、真实 packaged 资源、9 fuse、EpubCheck/Ace smoke、发布摘要和安装生命周期只读预检均通过；
+- [ ] detached signature 已由批准的 OpenPGP 工具和受信 Adoptium key/fingerprint 独立验证；
+- [ ] GPLv2/Classpath/Assembly Exception、第三方 notice、商标、源码提供和再分发义务已由具名人员签署；
+- [ ] CPython 与 EpubCheck 的剩余人工来源/许可门禁已签署；
+- [ ] 真实 alpha.12 → alpha.17 安装、升级、旧版回装探测、卸载、HKCU/Desktop/Start Menu 清理和 userData 保留已在获准系统环境执行并产生 PASS 证据；
+- [ ] Windows Authenticode、干净机、macOS/Web、生产账号/订阅/同步和全部 sale 门禁完成；因此本节仍不是正式发行验收。
+
 ## 0.1.0-alpha.16 EpubCheck 来源机器证据与 Windows 制品验收（2026-07-28）
 
 - [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.16`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
@@ -264,26 +278,26 @@
 - [ ] macOS x64/arm64 Python/JRE 资源及锁、DMG 构建、签名、公证、Gatekeeper 和实机 smoke 已完成；
 - [ ] 正式售卖 `sale` 门禁已通过。
 
-当前 Windows sale 门禁的 18 类机器码为：
+当前源码 Windows sale 门禁为 16 类机器码；真实 alpha.17 packaged ASAR 会关闭其中 5 个 loose 可信根项，保留 11 类：
 
 1. `FORMAL_LICENSE_AUDIT_REQUIRED`；
-2. `PYTHON_RUNTIME_PROVENANCE_AUDIT_REQUIRED`；
-3. `EPUBCHECK_PROVENANCE_AUDIT_REQUIRED`；
-4. `JRE_SOURCE_PROVENANCE_AUDIT_REQUIRED`；
+2. `PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
+3. `EPUBCHECK_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
+4. `JRE_SOURCE_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
 5. `EPUBCHECK_TRUST_ROOT_NOT_HARDENED`；
 6. `JRE_TRUST_ROOT_NOT_HARDENED`；
 7. `PYTHON_RUNTIME_TRUST_ROOT_NOT_HARDENED`；
 8. `APP_RESOURCES_TRUST_ROOT_NOT_HARDENED`；
 9. `ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED`；
-10. `ELECTRON_RUNTIME_TRUST_ROOT_NOT_HARDENED`；
-11. `BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED`；
-12. `BUILDER_TOOLCHAIN_TRUST_ROOT_NOT_HARDENED`；
-13. `ACE_FULL_LICENSE_AUDIT_REQUIRED`；
-14. `ACE_TRUST_ROOT_NOT_HARDENED`；
-15. `ACE_CONTROLLED_HELPER_PENDING`；
-16. `ACE_BROWSER_RUNTIME_PENDING`；
-17. `ACE_OS_NETWORK_ISOLATION_PENDING`；
-18. `WINDOWS_CODE_SIGNING_PENDING`。
+10. `BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED`；
+11. `ACE_FULL_LICENSE_AUDIT_REQUIRED`；
+12. `ACE_TRUST_ROOT_NOT_HARDENED`；
+13. `ACE_CONTROLLED_HELPER_PENDING`；
+14. `ACE_BROWSER_RUNTIME_PENDING`；
+15. `ACE_OS_NETWORK_ISOLATION_PENDING`；
+16. `WINDOWS_CODE_SIGNING_PENDING`。
+
+packaged 门禁会关闭上列第 5、6、7、8、12 项，保留 11 项；这些关闭来自真实 `app.asar`、JRE、Python、EpubCheck 与 Ace 锚点复验，不是人工豁免。
 
 正式发布前必须以当次 sale 门禁实际输出复核，不能把本清单当作永久豁免列表。`FORMAL_LICENSE_AUDIT_REQUIRED` 记录缺少上游原始许可证文件而使用元数据通知的包；`ACE_FULL_LICENSE_AUDIT_REQUIRED` 独立要求对全部 236 包逐一核对来源、许可证文本、版权声明和再分发义务。
 

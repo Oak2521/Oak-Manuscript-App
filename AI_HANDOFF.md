@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.16`
+> 当前版本：`0.1.0-alpha.17`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.16`（含未签名 Windows alpha 制品证据，不代表正式发行）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.17`（含未签名 Windows alpha 制品证据，不代表正式发行）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,17 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.17 Temurin/JRE 来源机器证据检查点
+
+- 新增 `config/provenance/temurin-21.0.11+10-win32-x64.json`、exact schema、`scripts/jre_provenance.js`、JRE 锁摘要绑定和反向测试。Eclipse Adoptium 官方 ZIP 为 205,073,954 字节，SHA-256 `d3625e7cadf23787ea540229544b6e2ab494b3b54da1801879e583e1dfee0a64`；GitHub 服务端 digest、官方 checksum 和 build metadata 均匹配；证据 SHA-256 `dbbf5e4799d88820b7c4475e178e45a7624fbf104b7b5fdc4f78d6650c39d676`；
+- 验证器直接解析固定 ZIP；官方 ZIP 与本机 `C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot` 均为 490 文件、343,822,457 字节，490/490 路径、大小与 SHA-256 一致，树摘要 `613c12718b72625393d84c35b4f09886e7e67addcb401a0b1949902eb05d8932`；
+- 固定 `jlink` 模块/参数生成 207 文件、52,384,264 字节的 JRE，树摘要 `16efd16ec81ed492a6c3c285f313456ec216099fb87000c1e607973c9e99210e`；94 个 `NOTICE`/`legal/` 文件原字节保留，JRE manifest、tracked lock、应用资源清单和 ASAR 锚点逐层绑定；审计见 `docs/audits/TEMURIN_21.0.11_JRE_PROVENANCE.md`；
+- 已固定 detached signature、Adoptium 公钥和摘要，但本机没有 OpenPGP 验证器，状态明确为 `not_verified_no_openpgp_tool`；没有把“签名文件存在”写成“签名已验证”。GPLv2/Classpath/Assembly Exception、第三方 notice、商标和源代码提供义务仍待具名人工签署；blocker 从 `JRE_SOURCE_PROVENANCE_AUDIT_REQUIRED` 收窄为 `JRE_SOURCE_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`，源码/packaged 数量仍为 16/11；
+- 最终 `npm test`：Node 338 total / 331 pass / 0 fail / 7 skip（3.315 秒），Python 351 total / 0 failures / 0 errors / 3 skipped（113.909 秒），整条命令 168 秒；
+- 最终获准的外层隐藏 `npm run build:win`：PASS（206.5 秒）；源/packaged 资源、全 9 fuse、EpubCheck/Ace、smoke 和发布证据同链退出码 0。smoke 根 `out/packaged-smoke/runs/ms4tv80b-a5166595d558e0e3/projects/`；DOCX/EPUB 各 4 次检查、1 个修复批次、3 个检查点，当前问题 13/5、应用 fixes 5/2、PDF 251,667/178,243 字节，原稿哈希不变；
+- 最终 NSIS 189,974,477 字节，SHA-256 `88f9a97e619cb9bd82f024a788a2c7b1780cab467098fe07b87975c0bae1b06f`；ZIP 233,789,900 字节，SHA-256 `d995766daaf96b72a46680c72b924228b964d38eab6e5bf7a8ed63b152be95a3`；`SHA256SUMS.txt` SHA-256 `2d02b825aadd645ee38aeeebd4db0c93a8aef46cc1373a98558c81c289102b34`；发布证据复验和 alpha.12 → alpha.17 安装生命周期只读预检 PASS；
+- 首轮受限构建在 packaged provenance 读取源码 JRE manifest 路径时 fail-closed；修复打包路径重映射后门禁通过。受限 GUI 运行另复现 `0xC0000135`，保持 Electron sandbox 且不采用 `--no-sandbox`，在获准外层隐藏进程中完整重构建通过。实际安装器仍未运行；Windows 制品未签名，其余 sale blocker、干净机、macOS/Web 和生产账号/订阅/同步均未完成。
 
 ### 已完成：0.1.0-alpha.16 EpubCheck 5.3.0 来源机器证据检查点
 
@@ -314,8 +325,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.16 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
-- Windows：alpha.16 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、packaged smoke、CPython/EpubCheck 来源机器证据和安装生命周期只读预检；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有 Authenticode 签名；
+- 打包版 Ace：alpha.17 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
+- Windows：alpha.17 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、packaged smoke、CPython/EpubCheck/Temurin-JRE 来源机器证据和安装生命周期只读预检；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：服务端任务 API、隔离执行、限额、零留存和官网嵌入尚未实现；
 - 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览和当前进程队列契约已实现；生产 Supabase、OS 凭据存储、签名授权、支付、持久队列、网络 transport 和网站后台未连接；
@@ -325,14 +336,14 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ### Windows sale 门禁的当前明确阻断
 
-源码资源门禁现列 16 项（builder 独立全树锁已成立）；真实 alpha.16 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 11 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
+源码资源门禁现列 16 项（builder 独立全树锁已成立）；真实 alpha.17 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 11 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
 
 以下机器码来自当前 `verify_packaged_resources.js` 与实测 sale 输出，不得合并或省略：
 
 1. `FORMAL_LICENSE_AUDIT_REQUIRED`：Ace 18 个生成元数据通知包的原始许可证审计；
 2. `PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`：官方制品、Sigstore/SPDX、33 个原字节文件、1 个受控 `_pth` 修改和许可保留已机器复验；完整信任链/上游 index 异常与具名法律/再分发签署仍待完成；
 3. `EPUBCHECK_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`：官方 ZIP、GitHub 服务端摘要和 49 个原字节文件已机器复验；官网 MIT 与随包/仓库 BSD-3-Clause 的矛盾、tag/ZIP 绑定和第三方再分发义务仍待具名人工签核；
-4. `JRE_SOURCE_PROVENANCE_AUDIT_REQUIRED`；
+4. `JRE_SOURCE_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`：官方 ZIP/GitHub digest/checksum/build metadata、490/490 源 JDK 文件、本机 JDK、207 文件 jlink runtime 和 94 份许可材料已机器复验；OpenPGP、许可、商标、源码提供与具名再分发签署仍待完成；
 5. `ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED`；
 6. `BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED`；
 7. `ACE_FULL_LICENSE_AUDIT_REQUIRED`：Ace 全部生产依赖闭包的正式人工审计；
@@ -345,9 +356,9 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划，按 v2.0 方案继续：
 
-1. 已完成 Windows 安装生命周期编排器与 alpha.16 只读预检；下一步须单独取得系统写入授权后，真实执行 alpha.12 → alpha.16 安装/升级/降级探测/卸载，核对 HKCU 与快捷方式并保留 canonical 证据；若历史安装器确实回退，必须把它记为产品 blocker，不能修改证据口径；
+1. 已完成 Windows 安装生命周期编排器与 alpha.17 只读预检；下一步须单独取得系统写入授权后，真实执行 alpha.12 → alpha.17 安装/升级/降级探测/卸载，核对 HKCU 与快捷方式并保留 canonical 证据；若历史安装器确实回退，必须把它记为产品 blocker，不能修改证据口径；
 2. 完成 CPython 与 EpubCheck 来源/许可证据的具名人工签署，再完成 Windows 代码签名方案并逐项关闭其余 packaged sale blocker；取得签署、证书或生产密钥前不得伪造通过；
-3. 继续完成 Temurin/JRE 来源机器证据，再完成 Electron、builder 和 Ace 的 provenance/许可证正式审计证据；
+3. Temurin/JRE 来源机器证据已完成；下一步完成 CPython、EpubCheck 与 Temurin/JRE 的具名人工签署，再继续 Electron、builder 和 Ace 的 provenance/许可证正式审计证据；
 4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
 5. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
 6. 在现有 Auth / License / Sync 离线契约上实现持久安全凭据/队列与独立网络 transport，再经授权连接 Supabase、支付和网站后台；

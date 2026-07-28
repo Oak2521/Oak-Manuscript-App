@@ -2,7 +2,41 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.16 EpubCheck 来源机器证据与 Windows 制品检查点
+## 最新验证结论：0.1.0-alpha.17 Temurin/JRE 来源机器证据与 Windows 制品检查点
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已明确允许下载；本轮从 Eclipse Adoptium 官方 GitHub release 获取 Temurin 21.0.11+10 ZIP、checksum、build metadata、detached signature、release API JSON，并从官方 Adoptium 端点获取公钥。所有 packaged GUI 进程隐藏执行，实际安装器未运行。
+
+| 命令 / 检查 | 结果 | 关键事实 |
+|---|---|---|
+| `npm run verify:provenance:jre:win` | **PASS** | 官方 ZIP 205,073,954 字节 / `d3625e7c…0a64`；GitHub server digest、checksum 和 build metadata 匹配；官方 ZIP与本机 JDK 均 490 文件 / 343,822,457 字节，490/490 原字节一致；证据 SHA-256 `dbbf5e47…d676` |
+| jlink 派生与许可材料 | **机器范围有界 PASS，人工范围待办** | 固定模块/参数生成 207 文件 / 52,384,264 字节；94 个 NOTICE/legal 文件原字节保留；detached signature 与公钥已固定但本机无 OpenPGP verifier，状态 `not_verified_no_openpgp_tool` |
+| 最终 `npm test` | **PASS** | 墙钟 168 秒；Node 338 total / 331 pass / 0 fail / 7 skip（3.315 秒）；Python 351 total / 0 failures / 0 errors / 3 skipped（113.909 秒） |
+| 首轮受限 `npm run build:win` | **packaged provenance 阶段退出 1** | 前序 staging/source/fuse/build 已通过；新校验器误按源码 `tools/jre-win32-x64/manifest.json` 读取打包后重映射为 `tools/jre/manifest.json` 的文件，正确 fail-closed；修复后独立 packaged 门禁通过 |
+| 受限 GUI smoke 对照 | **按环境退出，不计产品失败或通过** | 文件沙箱内 Electron GPU 子进程以 `0xC0000135` 退出；Electron 75 文件锁与二进制完整。没有采用 `--no-sandbox` 或图形开关弱化验收；获准外层隐藏原始 smoke 33.1 秒 PASS |
+| 最终外层隐藏 `npm run build:win` | **PASS** | 206.5 秒；JRE/Ace staging、源资源、9 fuse、NSIS/ZIP、packaged 资源、原始隐藏 smoke 与发布证据同链退出码 0 |
+| `npm run release:evidence:verify:win` | **PASS** | NSIS/ZIP、SHA256SUMS 与 canonical manifest 全量交叉复验 |
+| `npm run verify:install-lifecycle:win` | **PASS（只读预检）** | 当前 alpha.17 与归档 alpha.12 的哈希/大小/manifest/PE 匹配；`authorized=false`、`ready_for_authorized_run=true`；未启动安装器 |
+| packaged 资源门禁 | **PASS（alpha）** | 66 个应用 loose 文件、真实 `app.asar` 锚点、全 9 fuse 与 CPython/EpubCheck/Temurin-JRE provenance 通过；packaged sale blocker 仍为 11 项 |
+| 真实安装生命周期 | **未运行** | 会写 HKCU、Desktop 与 Start Menu；未取得本轮系统写入授权，不能写成通过 |
+
+最终 packaged smoke 运行根：`out/packaged-smoke/runs/ms4tv80b-a5166595d558e0e3/projects/`。
+
+| 项目 | APP/core | 检查 | 修复批次 | 应用 issue fixes | 检查点 | 当前问题 | PDF 字节 | 引用模式 | 外部验证 | 原稿 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---|---|
+| `ui-smoke-docx` | 0.1.0-alpha.17 | 4 | 1 | 5 | 3 | 13 | 251,667 | `structure_only` | 不适用 | unchanged |
+| `ui-smoke-epub` | 0.1.0-alpha.17 | 4 | 1 | 2 | 3 | 5 | 178,243 | `structure_only` | EpubCheck failed：0 fatal / 5 error / 0 warning；Ace failed：8 项断言 | unchanged |
+
+最终制品：
+
+| 文件 | 字节 | SHA-256 |
+|---|---:|---|
+| `Oak-Manuscript-0.1.0-alpha.17-Windows-x64.exe` | 189,974,477 | `88f9a97e619cb9bd82f024a788a2c7b1780cab467098fe07b87975c0bae1b06f` |
+| `Oak-Manuscript-0.1.0-alpha.17-Windows-x64.zip` | 233,789,900 | `d995766daaf96b72a46680c72b924228b964d38eab6e5bf7a8ed63b152be95a3` |
+| `SHA256SUMS.txt` | 224 | `2d02b825aadd645ee38aeeebd4db0c93a8aef46cc1373a98558c81c289102b34` |
+
+证据边界：Temurin/JRE 来源的机器证据已成立，但 `human_review_status=pending`，OpenPGP 未验签。packaged blocker 从 `JRE_SOURCE_PROVENANCE_AUDIT_REQUIRED` 收窄为 `JRE_SOURCE_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`，总数没有下降；源码/packaged blocker 仍为 16/11。制品仍未签名，真实安装生命周期、干净机、macOS/Web 与生产服务均未验收。
+
+## 历史验证结论：0.1.0-alpha.16 EpubCheck 来源机器证据与 Windows 制品检查点
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已明确允许下载；本轮只从 W3C/DAISY 官方 GitHub release 获取 EpubCheck 5.3.0 审计输入。Windows 构建使用仓库内已锁定工具；所有 packaged GUI 进程隐藏执行，实际安装器未运行。
 
@@ -465,25 +499,26 @@ alpha.11 隐藏 smoke 运行根：`out/source-smoke/runs/ms4eowx9-64e0aab5311e2a
 
 ### Windows sale 门禁
 
-alpha 门禁实际执行运行时探针并通过；sale 门禁以以下 17 项机器可读 blocker 按设计失败：
+alpha 门禁实际执行运行时探针并通过；当前源码 sale 门禁以以下 16 项机器可读 blocker 按设计失败，真实 alpha.17 packaged ASAR 关闭其中 5 个 loose 可信根项后保留 11 项：
 
 1. `FORMAL_LICENSE_AUDIT_REQUIRED`：Ace 18 个依赖包仍需正式人工许可证审计；
-2. `PYTHON_RUNTIME_PROVENANCE_AUDIT_REQUIRED`；
-3. `EPUBCHECK_PROVENANCE_AUDIT_REQUIRED`；
-4. `JRE_SOURCE_PROVENANCE_AUDIT_REQUIRED`；
+2. `PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
+3. `EPUBCHECK_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
+4. `JRE_SOURCE_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
 5. `EPUBCHECK_TRUST_ROOT_NOT_HARDENED`；
 6. `JRE_TRUST_ROOT_NOT_HARDENED`；
 7. `PYTHON_RUNTIME_TRUST_ROOT_NOT_HARDENED`；
 8. `APP_RESOURCES_TRUST_ROOT_NOT_HARDENED`；
 9. `ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED`；
 10. `BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED`；
-11. `BUILDER_TOOLCHAIN_TRUST_ROOT_NOT_HARDENED`；
-12. `ACE_FULL_LICENSE_AUDIT_REQUIRED`：Ace 完整生产依赖闭包的正式人工审计；
-13. `ACE_TRUST_ROOT_NOT_HARDENED`；
-14. `ACE_CONTROLLED_HELPER_PENDING`；
-15. `ACE_BROWSER_RUNTIME_PENDING`；
-16. `ACE_OS_NETWORK_ISOLATION_PENDING`；
-17. `WINDOWS_CODE_SIGNING_PENDING`。
+11. `ACE_FULL_LICENSE_AUDIT_REQUIRED`：Ace 完整生产依赖闭包的正式人工审计；
+12. `ACE_TRUST_ROOT_NOT_HARDENED`；
+13. `ACE_CONTROLLED_HELPER_PENDING`；
+14. `ACE_BROWSER_RUNTIME_PENDING`；
+15. `ACE_OS_NETWORK_ISOLATION_PENDING`；
+16. `WINDOWS_CODE_SIGNING_PENDING`。
+
+packaged 门禁关闭上列第 5、6、7、8、12 项；关闭依据是真实资源/ASAR 锚点复验，不是人工豁免。
 
 因此当前只可表述为“Windows alpha 源码资源门禁通过”，不能表述为“安装包已完成”“正式版已通过”或“可售卖”。
 

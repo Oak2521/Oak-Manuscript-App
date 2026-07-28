@@ -3,9 +3,9 @@
   "anchor_type": "oak-packaged-resource-trust-root",
   "app_resources": {
     "manifest": "config/tool-manifests/app-resources-v1.json",
-    "sha256": "2ab364b188311ed9fdf110731ab5187331ffcdfa05579680c55a6b978b0437c1",
-    "file_count": 64,
-    "total_bytes": 1982221
+    "sha256": "d389d5bb996bc7b3e685ac8583ae435e5dad7791ec31e675a80f46952d5f5b62",
+    "file_count": 66,
+    "total_bytes": 2078798
   },
   "targets": [
     {
@@ -22,7 +22,7 @@
         },
         "jre": {
           "manifest": "config/tool-manifests/jre-win32-x64.json",
-          "sha256": "cb5e9047044cae70f1848349cdfb9f5e3d0c1824664869dede189f5442f9c872"
+          "sha256": "ac9faa5ae9ea02dd16f3d06eb0670f8ccb5e94ff55c44ef6b09131e58a612228"
         },
         "ace": {
           "manifest": "config/tool-manifests/ace-1.4.6.json",
