@@ -10,6 +10,6 @@ P0 批量修复界面遵循“计划—集中预览—一次确认”：Renderer
 
 `app.js` 中的 `window.__oakActions` 是按钮与自动化 smoke 共用的业务动作层，不是额外特权接口。当次 source/packaged 隐藏 smoke 必须通过真实 Renderer → preload → IPC → 固定 Python bootstrap 完成 DOCX/EPUB 的引用计划确认、检查、集中修复、恢复、重新修复、导出与验证，并用第二进程恢复同一 OS 加密队列。动态版本、计数和运行根不写入 ASAR，准确证据以仓库 `docs/TEST_REPORT.md` 为准。
 
-标准资源页会分别显示项目固定版本与当前全局版本。已有项目只有在用户打开完整差异并一次确认后才会升级；目标由主进程选择，Renderer 不能提交任意 digest。升级成功后清空旧问题状态并自动重检。界面提供本地签名包安装与全局回滚入口，但当前构建没有生产信任根，因此本地导入默认禁用；没有联网自动下载。这些源码闭环不等于打包版或可售卖发行证据；生产账号/订阅/同步、Web 与 macOS 仍未实现。
+标准资源页会分别显示项目固定版本与当前全局版本。已有项目只有在用户打开完整差异并一次确认后才会升级；目标由主进程选择，Renderer 不能提交任意 digest。升级成功后清空旧问题状态并自动重检。界面提供本地签名包安装与全局回滚入口，但当前构建没有生产信任根，因此本地导入默认禁用；没有联网自动下载。这些源码闭环不等于打包版或可售卖发行证据；生产账号/订阅/同步、已部署 Web UI/服务与 macOS 仍未实现。仓库已有的 Web HTTP handler 不进入桌面 Renderer 或 default session。
 
 界面不加载远程页面或远程脚本；固定 CSP 阻止主动内容，主进程 default session 还会取消网络 scheme 请求。外部链接由主进程 HTTPS/域名白名单裁决并交给系统浏览器；未来联网 Provider 不得放宽 Renderer/default session。相关安全边界见 `docs/PRIVACY_AND_SECURITY.md`。

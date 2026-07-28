@@ -2,7 +2,46 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.22 Web 临时作业契约与零留存状态机检查点
+## 最新验证结论：0.1.0-alpha.23 同源 HTTPS Web 作业 handler 检查点
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网；所有 Electron/packaged 进程隐藏执行，实际安装器未运行。Web handler 未监听端口，也没有真实上传、Supabase、对象存储或官网请求。
+
+| 命令 / 检查 | 结果 | 关键事实 |
+|---|---|---|
+| `node --test tests/web_job_contract.test.js tests/web_http_handler.test.js` | **PASS 36/36** | 覆盖五份 exact schema、HTTPS/同源/会话/CSRF、上传前门禁与预留、完整六动作生命周期、主体隔离、TTL、非反射错误和无内容审计 |
+| 最终 `npm test` | **PASS** | 墙钟 110.2 秒；Node 406 total / 399 pass / 0 fail / 7 skip（3.532 秒）；Python 351 total / 0 failures / 0 errors / 3 skipped（102.040 秒） |
+| 最终 `npm run smoke` | **PASS** | 沙箱外隐藏双启动；输出 `out/source-smoke/runs/ms53795z-b2585a5fb6c1720a/projects/`；DOCX/EPUB 原稿哈希不变 |
+| 首次受限环境 `npm run build:win` | **FAIL（未采信）** | 230.2 秒；打包、fuse、资源均通过，packaged smoke 因 GPU 子进程 `0xC0000135` 连续退出，Renderer `ERR_FAILED`；发行证据未生成 |
+| 同一制品沙箱外 `npm run smoke:packaged:win` | **PASS** | 33.3 秒；证明上述失败受运行环境限制影响，没有关闭门禁或使用 `--no-sandbox` |
+| 最终沙箱外完整 `npm run build:win` | **PASS** | 199.8 秒；JRE/Ace staging、真实 ASAR、9 fuse、源码/packaged 资源、NSIS/ZIP、EpubCheck/Ace、双阶段 packaged smoke 与发布证据同链退出码 0 |
+| `npm run release:evidence:verify:win` | **PASS** | alpha.23 NSIS/ZIP、SHA256SUMS 与 canonical manifest 全量交叉复验；六项发行文件与 final 归档逐项 SHA-256 一致 |
+| `npm run verify:install-lifecycle:win` | **PASS（只读预检）** | 当前 alpha.23 与归档 alpha.12 的 manifest/SHA256SUMS/文件/PE/版本顺序匹配；`authorized=false`、`ready_for_authorized_run=true`；未启动安装器 |
+| 真实安装生命周期 | **未运行** | 会写 HKCU、Desktop 与 Start Menu；仍需单独系统写入授权，不能写成通过 |
+
+真实 smoke 证据：
+
+| 模式 / 项目 | APP/core | 检查 | 修复批次 | applied fixes | 检查点 | 当前问题 | PDF 字节 | 外部验证 | 原稿 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| source DOCX | 0.1.0-alpha.23 | 4 | 1 | 5 | 3 | 13 | 251,656 | 不适用 | unchanged |
+| source EPUB | 0.1.0-alpha.23 | 4 | 1 | 2 | 3 | 5 | 177,262 | EpubCheck/Ace 条件路径 | unchanged |
+| packaged DOCX | 0.1.0-alpha.23 | 4 | 1 | 5 | 3 | 13 | 251,651 | 不适用 | unchanged |
+| packaged EPUB | 0.1.0-alpha.23 | 4 | 1 | 2 | 3 | 5 | 178,236 | EpubCheck 5 error；Ace 8 项失败断言 | unchanged |
+
+packaged 运行根：`out/packaged-smoke/runs/ms536bic-c319680eda532edb/projects/`。加密队列 `queue-v1.enc` 为 1,960 字节、头 `OAKSYNC1`、SHA-256 `7e6a8318d99e0de97a4994e20336edf9b2a2780a2e99597f38180972a6101198`；第二进程恢复通过。
+
+资源信任清单为 78 文件 / 2,124,858 字节；manifest SHA-256 `0105de22837471dcf3ccd35749119b8bcefe6b3764e6068f6e9032342b449241`，锚点 SHA-256 `6826bcf221d1a0677ca1c11147326819d941cfac0b2c1fc07d4dbdabc3548d3c`。
+
+最终制品：
+
+| 文件 | 字节 | SHA-256 |
+|---|---:|---|
+| `Oak-Manuscript-0.1.0-alpha.23-Windows-x64.exe` | 189,995,462 | `3ae05010f979d0358476a341b476a13381de79faa012f9d8cdcb92784da0ad3d` |
+| `Oak-Manuscript-0.1.0-alpha.23-Windows-x64.zip` | 233,814,202 | `625b0fea28b185985eed784d8b572565ff7ef85ffefb54be3938bd0a47248d05` |
+| `SHA256SUMS.txt` | 224 | `2d6d21c3c9329bfbd827f602397db625f26e0183001072c6395d41ab28b03e2b` |
+
+六项最终发行文件（含 blockmap、manifest 与 builder debug）位于 `release/archive/0.1.0-alpha.23-final/`。证据边界：本检查点证明不监听端口的同源 HTTP handler 与状态机合同，不证明生产会话、HTTPS 监听器/反向代理、对象存储生命周期、隔离执行、恶意文件门禁、计费、官网嵌入或生产零留存。Windows 制品仍未签名，12 项 packaged sale blocker 未关闭。
+
+## 历史验证结论：0.1.0-alpha.22 Web 临时作业契约与零留存状态机检查点
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未发出应用网络请求；所有 Electron/packaged 进程隐藏执行，实际安装器未运行。Web 代码仅为内存参考实现，没有启动 HTTP 服务或上传稿件。
 

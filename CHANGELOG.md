@@ -4,6 +4,18 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.23（ChatGPT 同源 HTTPS Web 作业 handler 边界检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.23`。已生成未签名 Windows x64 NSIS 与 ZIP；本轮交付的是不监听端口的 HTTP handler 和安全适配边界，不是已部署 Web 服务或生产零留存证明。
+
+- 新增 `web/http-handler.js`，固定 `/manuscript/api/v1/jobs` 的创建、状态、上传、下载、取消和删除动作；worker 开始/完成保持私有；
+- HTTPS、精确同源 Origin/Fetch Metadata、trusted exact 会话、CSRF、重复头、固定错误文案和无内容安全审计均 fail-closed；不设置 CORS，不信任请求正文账号或普通转发头；
+- 上传新增读取前的大小/MIME/并发预留，要求唯一 Content-Length，拒绝 Transfer-Encoding、文件名/处置/摘要头；读取失败释放预留，并发第二接收者被拒绝；
+- 新增 `web-http-error-v1`、`web-http-audit-v1` 两份 exact schema并进入应用资源信任清单；当前为 78 文件 / 2,124,858 字节；
+- Web HTTP/状态机定向 36/36；完整回归 Node 406 total / 399 pass / 0 fail / 7 skip，Python 351 total / 0 failures / 0 errors / 3 skipped；source 与 packaged 双阶段隐藏 smoke PASS；
+- 首次受限环境 build 在 packaged smoke 因 GPU 子进程 `0xC0000135` 失败且未生成证据；相同制品沙箱外 smoke 通过，随后沙箱外完整 build 199.8 秒退出 0；
+- 最终 NSIS 189,995,462 字节，SHA-256 `3ae05010f979d0358476a341b476a13381de79faa012f9d8cdcb92784da0ad3d`；ZIP 233,814,202 字节，SHA-256 `625b0fea28b185985eed784d8b572565ff7ef85ffefb54be3938bd0a47248d05`。
+
 ### 2026-07-28 — 0.1.0-alpha.22（ChatGPT Web 临时作业契约与零留存状态机检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.22`。已生成未签名 Windows x64 NSIS 与 ZIP；本轮交付的是无网络 Web 作业契约和内存参考实现，不是已部署网页版或生产零留存证明。

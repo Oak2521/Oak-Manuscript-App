@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.22` 已实现的桌面隐私边界及 Web 作业参考契约。现有 Windows 制品未签名，不是可售卖正式版。Windows builder 下载器和系统安装生命周期都需要开发者显式授权；默认安装预检只读，不运行安装器。统一账号、Free/Pro、SyncRecord v1、OS 加密持久队列，以及 Web 作业 exact schema/内存状态机已实现；生产登录凭据、同步网络 transport、HTTPS 作业服务、计费和真实 Web 上传仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.23` 已实现的桌面隐私边界及 Web 作业/同源 HTTP handler 契约。现有 Windows 制品未签名，不是可售卖正式版。Windows builder 下载器和系统安装生命周期都需要开发者显式授权；默认安装预检只读，不运行安装器。统一账号、Free/Pro、SyncRecord v1、OS 加密持久队列，以及 Web 作业 exact 状态机/handler 已实现；生产登录凭据、同步网络 transport、真实监听器/反向代理、计费和官网 Web 上传仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -30,7 +30,7 @@
 本地技术日志（`logs/`）与导出诊断信息不得包含正文、标题、文件名和路径。
 脱敏评估摘要仅含：稿件类型、语言、字数区间、问题统计、出版目标、规则版本、咨询意图；当前只在本地生成，未来真实发送仍须用户逐字段确认。
 
-上述“数据不出本机”描述当前桌面 alpha。alpha.22 的 Web 作业代码只是无网络的参考状态机：它规定用户主动发起、内容/元数据分道、TTL 与删除失败可见，但没有接收真实 HTTP 上传。在隔离存储/执行、隐私文案、生命周期策略和生产零留存验收完成前，不得宣称 Web 能力已上线。
+上述“数据不出本机”描述当前桌面 alpha。alpha.23 的 Web 作业代码仍是无网络参考：handler 规定同源 HTTPS、会话/CSRF、上传前门禁、TTL 与删除失败可见，但不监听端口，也没有接收真实 HTTP 上传。在隔离存储/执行、隐私文案、生命周期策略和生产零留存验收完成前，不得宣称 Web 能力已上线。
 
 开发者构建输入是另一条隔离边界：`npm run download:builder:win` 只在用户明确批准后由命令行显式启动，只能请求合同固定的 electron-builder GitHub release URL/受限重定向主机，并把归档写入仓库 `out/`。它不接触项目、稿件、报告、账号或应用用户数据，也不会被普通 build/test 或桌面应用隐式触发。
 
@@ -50,13 +50,16 @@
 - `pending_transport` 仍只表示“已在本机加密等待”，当前没有网络传输、后台自动发送或网站写入。“已入队”不得显示或记录为“已上传/已同步”；
 - 生产认证仍必须实现系统浏览器 PKCE 与独立 token 凭据存储；生产同步必须使用独立最小权限 transport、幂等服务端和云端删除/撤销机制，且不能解除 default session 离线门禁。现有队列加密不等于这些生产能力已完成。
 
-### 4.3 Web 临时作业的零留存契约
+### 4.3 Web 临时作业的零留存与同源 HTTP 契约
 
-- 机器可读权威为三份 `web-job-*-v1.schema.json`，参考状态机为 `web/job-contract.js`；创建请求只能含幂等键、单任务处理同意、隐私版本和最小文档枚举/字节数；
+- 机器可读权威为三份 `web-job-*-v1.schema.json` 及 `web-http-error-v1.schema.json`、`web-http-audit-v1.schema.json`，参考状态机为 `web/job-contract.js`，同源请求处理边界为 `web/http-handler.js`；创建请求只能含幂等键、单任务处理同意、隐私版本和最小文档枚举/字节数；
 - 可信账号/匿名主体由上游会话层独立传入，请求不能自报主体或携带 token。公开状态与观察事件不含主体 ID、文件名、路径、正文、片段、上传字节或内容哈希；
+- 状态变更只接受规范 HTTPS origin、精确同源 `Origin`、合法 `Sec-Fetch-Site` 和会话绑定 CSRF token；生产反向代理不得把客户端可伪造的 `X-Forwarded-Proto` 直接当作 TLS 证明；
+- 上传必须有唯一 `Content-Length`，拒绝 `Transfer-Encoding`、文件名/处置/摘要头，并在读取稿件字节前完成大小、MIME 和并发预留；读取失败必须释放预留；
 - 上传内容只交给临时存储适配器，并携带固定删除时间。完成处理先删除输入再开放短期结果；取消、用户删除和 TTL 清扫删除输入/输出；
 - 删除失败必须保持 `deletion_pending`，准确暴露 `input_retained/result_available`，不得生成成功回执。幂等终态禁止用同一键重建，UUID 碰撞不得覆盖其它主体；
-- 内存适配器、单元测试和 schema 只能证明客户端/服务端契约，不证明生产对象存储生命周期、隔离容器、恶意文件检查、HTTPS 授权、日志审计或官网部署。真实“零留存”必须由完成删除、超时清扫和存储生命周期三路生产证据共同证明。
+- HTTP 错误为固定非反射文案；安全审计只含请求 ID、时间、方法、路由模板、HTTP 状态和错误码，不含主体、任务 ID、实际 URL、请求头或稿件元数据；审计接收器失败不能改变已确定响应；
+- 内存适配器、handler、单元测试和 schema 只能证明客户端/服务端边界，不证明生产会话、对象存储生命周期、隔离容器、恶意文件检查、真实 HTTPS 部署或官网联调。真实“零留存”必须由完成删除、超时清扫和存储生命周期三路生产证据共同证明。
 
 ## 5. 文件与压缩包安全
 
@@ -99,7 +102,7 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - Windows CPython 3.13.14 另由 provenance v1 绑定 PSF 官方 ZIP/Sigstore/SPDX、34 文件清单、33 个原字节文件、唯一 `_pth` 精确追加和原样许可证；证据原始 SHA-256 同时进入运行时 manifest 与 ASAR 资源锚点。完整 Sigstore/GPG 与具名许可签署仍待办，机器验证不能替代法律/再分发审阅。
 - Electron 桥和门禁共用固定 Python bootstrap：`-I -S -X utf8`，显式把经路径策略验证的 core 绝对目录插入 `sys.path[0]` 后用 `runpy` 执行；同时清理可注入模块或启动参数的继承环境，并始终以参数数组和 `shell=false` 启动。CPython 探针核对 `sys.implementation`、精确三段版本、`releaselevel=final` 与 `serial=0`，不只匹配宽松版本字符串。
 - 打包配置必须显式开启 ASAR、保持 embedded ASAR integrity，并注册全量 fuse `afterPack`。顶层锁定 `@electron/fuses 2.1.3`，以 `strictlyRequireAllFuses=true` 写入 Electron 43 的全部 9 项；索引 8 `WasmTrapHandlers=true`。写后立即回读，随后再独立读取真实二进制；路径逃逸、不安全父链、链接/硬链接、实际 Framework 文件身份变化、API/索引和状态漂移均拒绝。完整合同见 `ELECTRON_FUSE_POLICY.md`。
-- alpha.22 在 `app.asar` 内固定资源锚点，锚点绑定 76 个 loose 应用文件、发行身份/同步队列/Web 作业 schema、目标平台 Python/EpubCheck/JRE/Ace 锁，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 五类来源证据；packaged 门禁另从实际 ASAR production package 读取 exact `oakReleaseIdentity`。读取器解析当前 raw header 并精确读满字节，不依赖路径缓存；打包启动在标准存储和窗口前复核完整资源树。Python 显式 `-B` 禁止探针写入字节码；锚点、身份和清单不读取或记录用户稿件内容。
+- alpha.23 在 `app.asar` 内固定资源锚点，锚点绑定 78 个 loose 应用文件、发行身份/同步队列/五份 Web schema、目标平台 Python/EpubCheck/JRE/Ace 锁，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 五类来源证据；packaged 门禁另从实际 ASAR production package 读取 exact `oakReleaseIdentity`。读取器解析当前 raw header 并精确读满字节，不依赖路径缓存；打包启动在标准存储和窗口前复核完整资源树。Python 显式 `-B` 禁止探针写入字节码；锚点、身份和清单不读取或记录用户稿件内容。
 - Java 与 Ace/Node/Electron 外部工具进程也清理类路径、模块和启动参数注入变量，并以固定参数数组、`shell=false` 启动。
 - 所有锁和清单使用 locale-independent UTF-16 code unit 排序；Ace tracked lock 同时固定 stage manifest 原始字节哈希，JSON 语义等价但字节漂移也拒绝。JRE/Ace 的候选 stage 与受版本控制锁在显式更新时事务提交，失败恢复旧目录和旧锁，避免身份撕裂。
 - Ace 的空/未知 license 声明和空许可证文件直接拒绝。现有许可证文件或生成元数据通知只满足 alpha 可追溯性；全部 236 包仍需正式逐包人工审计。

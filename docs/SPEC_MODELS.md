@@ -198,9 +198,9 @@
 
 未登录状态不询问、不发送；登录不等于授权。Renderer 不可构造负载；主进程从 Python `sync-source` 取得只读来源并构造 exact-schema 记录。发送前必须逐字段展示同一份缓存负载并由用户选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。alpha.21 起使用按账户隔离的 OS 加密 `pending_transport` 队列并支持重启恢复，但没有网络上传；入队不等于同步成功。Web 端用户主动发起的临时稿件处理属于独立作业协议，不得混入结果同步 schema 或长期账号历史。
 
-## 9. Web 临时作业模型（alpha.22 契约）
+## 9. Web 临时作业模型（alpha.23 契约与 HTTP 边界）
 
-三份机器可读 schema 分别定义创建请求、公开状态和删除回执：`web-job-create-v1`、`web-job-status-v1`、`web-job-deletion-v1`。参考实现位于 `web/job-contract.js`。
+五份机器可读 schema 分别定义创建请求、公开状态、删除回执、HTTP 错误和无内容安全审计：`web-job-create-v1`、`web-job-status-v1`、`web-job-deletion-v1`、`web-http-error-v1`、`web-http-audit-v1`。参考状态机位于 `web/job-contract.js`，不监听端口的 HTTP handler 位于 `web/http-handler.js`。
 
 创建请求 exact 字段：
 
@@ -210,4 +210,6 @@
 
 主体不属于请求模型，由可信会话层另行传入 `{kind, subject_id}`。公开状态只含任务 ID、状态、创建/到期/删除期限、输入是否仍保留和结果是否可用。删除回执只在输入、输出均已删除后成立；删除失败状态为 `deletion_pending`，没有成功回执。
 
-上传 Buffer 与结果 Buffer 不进入上述 JSON 模型、观察事件或长期同步记录，只交给带 `deleteAt` 的临时存储适配器。内存参考实现不是生产存储或 HTTP API；实际对象存储、容器执行、恶意文件门禁、短时下载和零留存审计仍待实现。
+上传 Buffer 与结果 Buffer 不进入上述 JSON 模型、观察事件或长期同步记录，只交给带 `deleteAt` 的临时存储适配器。handler 的公开路由仅为创建、状态、上传、下载、取消和删除；worker 状态转换没有公开 HTTP 路由。状态变更要求 HTTPS、同源 Origin/Fetch Metadata 与会话绑定 CSRF；上传要求唯一 Content-Length，并在读入前完成大小/MIME/并发预留。HTTP 审计只允许请求 ID、时间、方法、路由模板、状态与错误码。
+
+内存参考实现和 handler 都不是生产服务：实际会话、监听器/反向代理、对象存储、容器执行、恶意文件门禁、短时下载和零留存审计仍待实现。

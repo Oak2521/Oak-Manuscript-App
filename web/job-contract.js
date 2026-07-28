@@ -46,6 +46,7 @@ const DOCUMENT_KEYS = Object.freeze([
 ]);
 const PRINCIPAL_KEYS = Object.freeze(["kind", "subject_id"]);
 const UPLOAD_KEYS = Object.freeze(["bytes", "media_type"]);
+const UPLOAD_INTENT_KEYS = Object.freeze(["size_bytes", "media_type"]);
 const PUBLIC_JOB_KEYS = Object.freeze([
   "schema_version", "record_type", "job_id", "state", "created_at", "expires_at",
   "input_retained", "result_available", "deletion_due_at",
@@ -455,8 +456,51 @@ class WebJobService {
   }
 
   async acceptUpload(principalInput, jobId, uploadInput) {
+    exactKeys(uploadInput, UPLOAD_KEYS, "上传载荷");
+    if (!Buffer.isBuffer(uploadInput.bytes)) fail("INVALID_UPLOAD", "上传内容必须是 Buffer");
+    const reservation = this.reserveUpload(principalInput, jobId, {
+      size_bytes: uploadInput.bytes.length,
+      media_type: uploadInput.media_type,
+    });
+    try {
+      return await this.acceptReservedUpload(principalInput, jobId, reservation, uploadInput);
+    } catch (error) {
+      try { this.releaseUploadReservation(principalInput, jobId, reservation); } catch {}
+      throw error;
+    }
+  }
+
+  reserveUpload(principalInput, jobId, intentInput) {
     const record = this._ownedRecord(principalInput, jobId);
     if (record.state !== "awaiting_upload") fail("INVALID_TRANSITION", "任务当前不能接收上传");
+    if (record.upload_reservation) fail("INVALID_TRANSITION", "任务已有上传正在接收");
+    exactKeys(intentInput, UPLOAD_INTENT_KEYS, "上传意图");
+    positiveInteger(intentInput.size_bytes, "上传意图.size_bytes", this.maxUploadBytes);
+    if (intentInput.size_bytes !== record.document.size_bytes) {
+      fail("UPLOAD_SIZE_MISMATCH", "上传字节数与已确认任务不一致");
+    }
+    if (intentInput.media_type !== INPUT_MEDIA_TYPES[record.document.format]) {
+      fail("UPLOAD_MEDIA_TYPE_MISMATCH", "上传媒体类型与文档格式不一致");
+    }
+    const reservation = Object.freeze({ job_id: record.job_id });
+    record.upload_reservation = reservation;
+    return reservation;
+  }
+
+  releaseUploadReservation(principalInput, jobId, reservation) {
+    const record = this._ownedRecord(principalInput, jobId, { allowExpired: true });
+    if (record.upload_reservation === reservation) {
+      record.upload_reservation = null;
+      return true;
+    }
+    return false;
+  }
+
+  async acceptReservedUpload(principalInput, jobId, reservation, uploadInput) {
+    const record = this._ownedRecord(principalInput, jobId);
+    if (record.state !== "awaiting_upload" || record.upload_reservation !== reservation) {
+      fail("INVALID_TRANSITION", "上传预留不存在或已经失效");
+    }
     exactKeys(uploadInput, UPLOAD_KEYS, "上传载荷");
     if (!Buffer.isBuffer(uploadInput.bytes)) fail("INVALID_UPLOAD", "上传内容必须是 Buffer");
     if (uploadInput.bytes.length !== record.document.size_bytes ||
@@ -466,11 +510,15 @@ class WebJobService {
     if (uploadInput.media_type !== INPUT_MEDIA_TYPES[record.document.format]) {
       fail("UPLOAD_MEDIA_TYPE_MISMATCH", "上传媒体类型与文档格式不一致");
     }
-    await this.storage.putInput(record.job_id, uploadInput.bytes, { deleteAt: record.expires_at });
-    record.state = "queued";
-    record.input_retained = true;
-    this._audit("upload_stored", record);
-    return this._public(record);
+    try {
+      await this.storage.putInput(record.job_id, uploadInput.bytes, { deleteAt: record.expires_at });
+      record.state = "queued";
+      record.input_retained = true;
+      this._audit("upload_stored", record);
+      return this._public(record);
+    } finally {
+      if (record.upload_reservation === reservation) record.upload_reservation = null;
+    }
   }
 
   beginProcessing(principalInput, jobId) {
@@ -501,6 +549,7 @@ class WebJobService {
       try { await this.storage.deleteOutput(record.job_id); } catch {}
       record.state = "deletion_pending";
       record.result_available = false;
+      record.result_media_type = null;
       record.pending_deletion_reason = "processing_failed";
       this._audit("deletion_pending", record, "completion_input_delete_failed");
       fail("ZERO_RETENTION_DELETE_FAILED", "输入删除失败，任务未被标记为完成");
@@ -508,19 +557,25 @@ class WebJobService {
     record.state = "result_ready";
     record.input_retained = false;
     record.result_available = true;
+    record.result_media_type = outputInput.media_type;
     this._audit("input_deleted", record, "processing_completed");
     this._audit("result_ready", record);
     return this._public(record);
   }
 
   async downloadResult(principalInput, jobId) {
+    return (await this.downloadResultWithMetadata(principalInput, jobId)).bytes;
+  }
+
+  async downloadResultWithMetadata(principalInput, jobId) {
     const record = this._ownedRecord(principalInput, jobId);
-    if (record.state !== "result_ready" || !record.result_available) {
+    if (record.state !== "result_ready" || !record.result_available ||
+        !RESULT_MEDIA_TYPES.has(record.result_media_type)) {
       fail("RESULT_NOT_AVAILABLE", "任务结果不可下载");
     }
     const bytes = await this.storage.readOutput(record.job_id);
     if (!Buffer.isBuffer(bytes)) fail("RESULT_NOT_AVAILABLE", "任务结果已不存在");
-    return bytes;
+    return { bytes, media_type: record.result_media_type };
   }
 
   async _purge(record, reason) {
@@ -529,6 +584,7 @@ class WebJobService {
       record.input_retained = false;
       await this.storage.deleteOutput(record.job_id);
       record.result_available = false;
+      record.result_media_type = null;
     } catch (error) {
       record.state = "deletion_pending";
       record.pending_deletion_reason = reason;

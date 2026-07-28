@@ -2,7 +2,19 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.22 Web 临时作业契约与零留存状态机验收（2026-07-28）
+## 0.1.0-alpha.23 同源 HTTPS Web 作业 handler 验收（2026-07-28）
+
+- [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.23`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 六个公开动作固定为创建、状态、输入上传、结果下载、取消和删除；不提供 worker 开始/完成 HTTP 路由；
+- [x] HTTPS、精确同源 Origin/Fetch Metadata、trusted exact 会话和状态变更 CSRF 均在读取正文前 fail-closed；错误不反射内部异常；
+- [x] 上传要求唯一 Content-Length，拒绝 Transfer-Encoding、文件名/处置/摘要头；大小、MIME、并发预留在读取稿件字节前完成，失败释放预留；
+- [x] HTTP 错误/审计两份 exact schema 已进入资源信任清单；审计不含主体、任务 ID、URL、头或稿件元数据，sink 故障不影响响应；
+- [x] Web HTTP/状态机定向 36/36；最终 Node 406 / Python 351 全量零失败；source 与 packaged 隐藏 smoke、Windows build、真实 ASAR/9 fuse/78 文件资源、NSIS/ZIP 与发行证据通过；
+- [x] alpha.12 → alpha.23 安装生命周期只读预检通过，`authorized=false`，未启动安装器；六项发行文件逐字节归档至 `release/archive/0.1.0-alpha.23-final/`；
+- [ ] 真实湖岸会话、监听器/受信反向代理、对象存储/容器、恶意 ZIP/病毒检查、短时下载、计费、生产生命周期和官网 UI 已实现并在生产环境证明零留存；因此本节不是网页版或正式销售验收；
+- [ ] 真实 Windows 安装/升级/降级探测/卸载、签名、macOS、生产账号/同步和全部 sale 门禁完成。
+
+## 0.1.0-alpha.22 Web 临时作业契约与零留存状态机验收（历史，2026-07-28）
 
 - [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.22`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] 创建/状态/删除 exact schema 固定；可信主体独立注入，请求不能自报账号、token、文件名、路径、正文、片段、内容哈希或未知字段；

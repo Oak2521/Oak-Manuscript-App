@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.22`
+> 当前版本：`0.1.0-alpha.23`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.22`（含未签名 Windows alpha 制品证据，不代表正式发行）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.23`（含未签名 Windows alpha 制品证据，不代表正式发行）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,18 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.23 同源 HTTPS Web 作业 handler 边界检查点
+
+- 新增 `web/http-handler.js`：固定 `/manuscript/api/v1/jobs` 下的创建、状态、输入上传、结果下载、取消和删除动作，不启动监听器、不暴露 worker 开始/完成路由；
+- handler 要求规范 HTTPS origin、可信 exact `{principal, csrf_token}` 会话、状态变更的精确同源 Origin/CSRF 和可选 Fetch Metadata；反向代理适配器不得直接信任客户端 `X-Forwarded-Proto`；
+- 上传要求唯一 `Content-Length`，拒绝 `Transfer-Encoding`、文件名、`Content-Disposition` 与内容摘要头；`reserveUpload` 在读取稿件字节前校验大小/MIME/并发并防止第二接收者，读取失败释放预留；
+- 新增 `web-http-error-v1` 与 `web-http-audit-v1` exact schema。错误文案固定、不反射内部异常；安全审计只含请求 ID、时间、方法、路由模板、状态和错误码，不含主体、任务 ID、URL、请求头或稿件信息，接收器故障不改变响应；
+- Web HTTP/状态机定向 36/36 PASS；最终 `npm test` 110.2 秒：Node 406 total / 399 pass / 0 fail / 7 skip（3.532 秒），Python 351 total / 0 failures / 0 errors / 3 skipped（102.040 秒）；
+- 资源清单 78 文件 / 2,124,858 字节，manifest SHA-256 `0105de22837471dcf3ccd35749119b8bcefe6b3764e6068f6e9032342b449241`，锚点 SHA-256 `6826bcf221d1a0677ca1c11147326819d941cfac0b2c1fc07d4dbdabc3548d3c`；
+- 首次受限环境完整 build 在 packaged smoke 因 Electron GPU 子进程 `0xC0000135` 失败，未生成发行证据；相同制品在沙箱外隐藏 smoke 通过。随后沙箱外完整 `npm run build:win` 199.8 秒退出 0，packaged smoke 根 `out/packaged-smoke/runs/ms536bic-c319680eda532edb/projects/`；source smoke 根 `out/source-smoke/runs/ms53795z-b2585a5fb6c1720a/projects/`；DOCX/EPUB 均 4 次检查、1 批修复、3 个检查点且原稿哈希不变；
+- 最终 NSIS 189,995,462 字节、SHA-256 `3ae05010f979d0358476a341b476a13381de79faa012f9d8cdcb92784da0ad3d`；ZIP 233,814,202 字节、SHA-256 `625b0fea28b185985eed784d8b572565ff7ef85ffefb54be3938bd0a47248d05`；`SHA256SUMS.txt` SHA-256 `2d6d21c3c9329bfbd827f602397db625f26e0183001072c6395d41ab28b03e2b`。六项文件已逐项复验并归档至 `release/archive/0.1.0-alpha.23-final/`；
+- alpha.12 → alpha.23 安装生命周期只读预检 PASS，`authorized=false`，没有启动安装器。本轮没有联网、生产 Supabase 会话、监听器/反向代理、对象存储、隔离容器、恶意文件门禁、计费或官网 UI；不能称为可用网页版或生产零留存完成。
 
 ### 已完成：0.1.0-alpha.22 Web 临时作业契约与零留存状态机检查点
 
@@ -383,10 +395,10 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.22 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
-- Windows：alpha.22 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
+- 打包版 Ace：alpha.23 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
+- Windows：alpha.23 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
-- Web：exact 作业 schema、内存参考存储/状态机、主体隔离、限额、TTL 和删除失败模型已实现；同源 HTTPS、生产会话、对象存储/生命周期、隔离执行、恶意文件门禁、计费、短时下载和官网嵌入尚未实现；
+- Web：exact 作业 schema、内存参考存储/状态机、主体隔离、限额、TTL、删除失败模型和同源 HTTPS handler 边界已实现；真实监听器/反向代理、生产会话、对象存储/生命周期、隔离执行、恶意文件门禁、计费、短时下载和官网嵌入尚未实现；
 - 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览、按账户隔离的 OS 加密队列和重启恢复已实现；生产 Supabase、登录凭据存储、签名授权、支付、网络 transport 和网站后台未连接；
 - 标准库：治理结构和引用解析政策已完成，13 项标准、35 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
 - 标准升级：本地验证、签名包导入/回滚骨架、项目固定与显式升级已编码；生产 trust pin、在线获取/下载、签名撤回分发与联网自动更新未实现；
@@ -394,7 +406,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ### Windows sale 门禁的当前明确阻断
 
-源码资源门禁现列 17 项（builder 独立全树锁已成立）；真实 alpha.22 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 12 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
+源码资源门禁现列 17 项（builder 独立全树锁已成立）；真实 alpha.23 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 12 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
 
 以下机器码来自当前 `verify_packaged_resources.js` 与实测 sale 输出，不得合并或省略：
 
@@ -415,13 +427,13 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划，按 v2.0 方案继续：
 
-1. 已完成 Windows 安装生命周期编排器与 alpha.22 只读预检；下一步须单独取得系统写入授权后，真实执行 alpha.12 → alpha.22 安装/升级/降级探测/卸载，核对 HKCU 与快捷方式并保留 canonical 证据；若历史安装器确实回退，必须把它记为产品 blocker，不能修改证据口径；
+1. 已完成 Windows 安装生命周期编排器与 alpha.23 只读预检；下一步须单独取得系统写入授权后，真实执行 alpha.12 → alpha.23 安装/升级/降级探测/卸载，核对 HKCU 与快捷方式并保留 canonical 证据；若历史安装器确实回退，必须把它记为产品 blocker，不能修改证据口径；
 2. CPython、EpubCheck、Temurin/JRE、Electron 与 builder 的机器来源证据已完成；下一步必须由具名人员完成许可、商标、第三方通知、签名边界与再分发签核，再完成 Windows 代码签名方案并逐项关闭相应 packaged sale blocker；代码不能替代该签署；
 3. Ace 的 provenance/全闭包许可证、自带浏览器、OS 级网络隔离及与制品哈希绑定的不可伪造 smoke 证明仍未完成；任何需扩大 Ace 证明范围的实现先确认验收口径；
 4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
 5. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
 6. 在现有 Auth / License / Sync 离线契约和 OS 加密持久队列上实现生产登录凭据与独立网络 transport，再经授权连接 Supabase、支付和网站后台；
-7. 在 alpha.22 exact 作业契约上实现同源 HTTPS、生产会话、隔离对象存储/执行、恶意文件门禁、短时下载与三路零留存证据，再经授权完成官网嵌入；完成 Free/Pro、支付、隐私、内测和正式发布门禁。
+7. 在 alpha.23 同源 handler 边界上实现受信反向代理/真实湖岸会话适配、隔离对象存储/执行、恶意文件门禁、短时下载与三路零留存证据，再经授权完成官网嵌入；完成 Free/Pro、支付、隐私、内测和正式发布门禁。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。
 

@@ -2,9 +2,9 @@
 
 > 当前依据为商业正式版方案 v2.0。网站现状只在 2026-07-11 做过只读快照，启动真实对接前必须重新核对，不能把旧分支状态写成当前线上事实。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.22）
+## Provider 一览（当前 alpha.23）
 
-alpha.22 继承按账号隔离、由操作系统安全存储加密、可跨重启恢复的本地 `pending_transport` 队列，并新增 Web 临时作业的 exact schema 与内存参考状态机；生产认证、签名权益/计费、网络 transport、HTTPS 作业 API 与网站后台仍不存在。CPython 来源审计与 Windows builder 下载只发生在开发者明确授权的构建/审计输入阶段，与账号/同步 Provider 隔离；真实 APP 默认 session 仍离线，Ace loopback 仅为本机进程控制。SyncRecord v1 可包含最终体例、解析模式、原因码、置信度和解析器版本，但不得包含引用/书目原文、姓名、路径或内容哈希；权威字段见 `SYNC_RECORD_V1.md` 和 schema。
+alpha.23 继承按账号隔离、由操作系统安全存储加密、可跨重启恢复的本地 `pending_transport` 队列，并在 Web 临时作业 exact 状态机上增加不监听端口的同源 HTTPS Node handler；生产认证、签名权益/计费、网络同步 transport、真实 Web 服务器/对象存储与网站后台仍不存在。CPython 来源审计与 Windows builder 下载只发生在开发者明确授权的构建/审计输入阶段，与账号/同步 Provider 隔离；真实 APP 默认 session 仍离线，Ace loopback 仅为本机进程控制。SyncRecord v1 可包含最终体例、解析模式、原因码、置信度和解析器版本，但不得包含引用/书目原文、姓名、路径或内容哈希；权威字段见 `SYNC_RECORD_V1.md` 和 schema。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
@@ -27,13 +27,15 @@ alpha.22 继承按账号隔离、由操作系统安全存储加密、可跨重�
 - “同步结果”与 Web 版“用户主动提交临时处理任务”是两条不同数据流。Web 作业可以在明确操作后上传待处理文件，但必须使用隔离临时存储、TTL 删除和零留存审计，不能进入用户同步历史；
 - Windows、macOS 和 Web 共用同一湖岸官网账号与权益判定，不另建 APP 独立账号库。
 
-## Web 作业契约 v1（alpha.22 参考实现）
+## Web 作业契约 v1 与 HTTP handler（alpha.23）
 
-源码入口为 `web/job-contract.js`，机器可读契约为：
+源码入口为 `web/job-contract.js` 与 `web/http-handler.js`，机器可读契约为：
 
 - `config/schemas/web-job-create-v1.schema.json`；
 - `config/schemas/web-job-status-v1.schema.json`；
-- `config/schemas/web-job-deletion-v1.schema.json`。
+- `config/schemas/web-job-deletion-v1.schema.json`；
+- `config/schemas/web-http-error-v1.schema.json`；
+- `config/schemas/web-http-audit-v1.schema.json`。
 
 固定边界：
 
@@ -45,7 +47,18 @@ alpha.22 继承按账号隔离、由操作系统安全存储加密、可跨重�
 - 删除部分失败时状态为 `deletion_pending`，准确报告输入/结果是否仍保留；只有两类内容均删除后才生成回执；
 - 作业完成不会自动生成、排队或发送 SyncRecord。只有用户另行明确选择时，结果元数据才进入独立同步流程。
 
-当前 `MemoryEphemeralStorage` 仅用于契约测试和本地参考，不是生产存储。尚未实现同源 HTTPS 路由、Supabase 会话校验、隔离对象存储/容器、任务队列、恶意 ZIP/病毒检测、订阅计费、短时签名下载、真实生命周期策略或官网 UI；因此不得称为“网页版可用”或“零留存已通过生产验收”。
+`web/http-handler.js` 固定 `/manuscript/api/v1/jobs` 下的六个公开动作：创建、状态、输入上传、结果下载、取消和删除。它不提供 worker 开始/完成接口；后台处理必须走私有队列。状态变更要求规范 HTTPS origin、精确同源 `Origin`、可选但若存在必须为 `same-origin` 的 `Sec-Fetch-Site`、以及会话绑定 CSRF token。上传要求唯一 `Content-Length`，拒绝 `Transfer-Encoding`、文件名/处置/摘要头，并在读取字节前执行大小、MIME 与并发预留。错误响应和无内容安全审计均为 exact schema；不设置 CORS，不记录主体、任务 ID、URL、请求头或稿件信息。
+
+| 方法 | 路径 | 用途 | 成功状态 |
+|---|---|---|---:|
+| `POST` | `/manuscript/api/v1/jobs` | 创建已同意的临时任务 | 201 |
+| `GET` | `/manuscript/api/v1/jobs/:job_id` | 读取公开任务状态 | 200 |
+| `PUT` | `/manuscript/api/v1/jobs/:job_id/input` | 上传与创建声明一致的字节 | 202 |
+| `GET` | `/manuscript/api/v1/jobs/:job_id/result` | 下载短期结果 | 200 |
+| `POST` | `/manuscript/api/v1/jobs/:job_id/cancel` | 明确取消并触发删除 | 200 |
+| `DELETE` | `/manuscript/api/v1/jobs/:job_id` | 删除任务内容并取得回执 | 200 |
+
+部署适配器必须从真实湖岸会话独立生成 `{principal, csrf_token}`。反向代理场景只能从受信基础设施信息判断 HTTPS，不能直接信任客户端 `X-Forwarded-Proto`。当前 `MemoryEphemeralStorage`、handler 与测试仍是本地参考：没有监听端口，没有 Supabase 会话、隔离对象存储/容器、任务队列、恶意 ZIP/病毒检测、订阅计费、短时签名下载、真实生命周期策略或官网 UI；因此不得称为“网页版可用”或“零留存已通过生产验收”。
 
 ## 网站侧待建页面
 

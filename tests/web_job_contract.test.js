@@ -229,6 +229,16 @@ test("upload bytes stay in ephemeral storage, carry lifecycle TTL, and cannot sm
   assert.equal(JSON.stringify({ queued, audit }).includes("secret"), false);
 });
 
+test("direct upload compatibility keeps non-Buffer input on INVALID_UPLOAD", async () => {
+  const { service } = harness();
+  const created = await service.createJob(ACCOUNT, request());
+  await assert.rejects(
+    service.acceptUpload(ACCOUNT, created.job_id, { bytes: "secret", media_type: "text/plain" }),
+    expectCode("INVALID_UPLOAD"),
+  );
+  assert.equal(service.getJob(ACCOUNT, created.job_id).state, "awaiting_upload");
+});
+
 test("completion deletes input before exposing a short-lived result", async () => {
   const { service, storage, audit } = harness();
   const created = await service.createJob(ACCOUNT, request());
