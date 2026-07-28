@@ -4,6 +4,27 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.9（ChatGPT Electron ASAR 与 fuse 发布硬化检查点）
+
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.9`。该标签只表示经本地验证的源码状态；当前没有 alpha.9 安装包、ZIP 或真实打包二进制 fuse 证据。
+
+**打包硬化合同**
+
+- APP、Python 核心和 lockfile 统一到 `0.1.0-alpha.9`；标准 release、规则、fixer、账号和同步契约未变化；
+- 新增 `electron_fuse_policy.js`，明确要求 `asar=true`、禁止关闭 ASAR integrity，并固定 8 个已知 Electron fuse 与 `ResetAdHocDarwinSignature`；配置缺项、多项、漂移、inherit 或 removed 均 fail-closed；
+- Windows/macOS 构建在 electron-builder 前验证配置，在 builder 后立即读取真实应用二进制的 fuse wire，再进入打包资源门禁、packaged smoke 和发布证据阶段；
+- 二进制验证拒绝仓库外路径、不安全父链、链接、硬链接、空文件和读取竞态；已知 fuse 必须逐项精确匹配；
+- 本机 Electron 43.1.0 暴露 9 个 wire 项，而当前 `@electron/fuses` 1.8.0 只定义前 8 项。未知索引 8 不猜测：alpha 返回 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING`，sale 直接失败；
+- `RunAsNode=true` 仅为现有 Ace helper 的临时兼容状态，受控 helper 完成并实测后必须改为 `false`，不能作为可售卖配置。
+
+**验证与边界**
+
+- fuse 专项 **6/6 PASS**；配置门禁、已知 wire、未知项 alpha/sale 分流、文件身份与构建顺序均有正反向覆盖；
+- 最终 `npm test` PASS：Node 284/277/0/7（2.350 秒），Python 348/0/0/3（114.170 秒），墙钟 121.2 秒；
+- 标准、Electron runtime、Windows alpha 资源门禁通过；既有 Windows sale 资源门禁仍有 17 项 blocker，未知打包 fuse 是独立的条件阻断；
+- alpha.9 隐藏源码 smoke PASS：`out/source-smoke/runs/ms49yas5-9ccb167e78f033a2/projects/`；DOCX/EPUB 各 4 次检查、1 次修复、3 个检查点且原稿哈希不变，PDF 251,650 / 177,417 字节；
+- 本轮没有联网、没有下载 builder 归档、没有运行真实 packaged fuse 验证，也没有生成 NSIS、ZIP、SHA 文件或 release manifest。
+
 ### 2026-07-28 — 0.1.0-alpha.8（ChatGPT 统一账号与 SyncRecord v1 离线契约检查点）
 
 > 源码检查点标签：`chatgpt-v0.1.0-alpha.8`。该标签只表示经本地验证的源码状态；生产账号、同步服务、安装包和可售卖发行版均不存在。

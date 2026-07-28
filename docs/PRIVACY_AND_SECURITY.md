@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.8` 源码检查点已实现的桌面隐私与安全边界。当前没有 alpha.8 安装包或 ZIP。Windows builder 下载器是开发者显式运行的构建输入工具，不在 APP/default session 中运行、不读取稿件，本轮未实际联网；发布证据生成器只读取 package/lock 和 `release/` 内精确 NSIS/ZIP，不接触项目或稿件。统一账号、Free/Pro 与 SyncRecord v1 的严格离线契约已经实现，生产凭证、持久队列、同步 transport、计费和 Web 上传仍未实现，必须在各自阶段另行完成威胁建模和验收。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.9` 源码检查点已实现的桌面隐私与安全边界。当前没有 alpha.9 安装包或 ZIP。Windows builder 下载器是开发者显式运行的构建输入工具，不在 APP/default session 中运行、不读取稿件，本轮未实际联网；发布证据生成器和 fuse 验证器只读取构建配置或 `release/`/打包目录内的二进制，不接触项目或稿件。统一账号、Free/Pro 与 SyncRecord v1 的严格离线契约已经实现，生产凭证、持久队列、同步 transport、计费和 Web 上传仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -45,7 +45,7 @@
 - 机器可读权威为 `config/schemas/sync-record-v1.schema.json`，语义说明为 `SYNC_RECORD_V1.md`。对象逐层 `additionalProperties=false`，运行时 validator 还拒绝任何未知键和疑似内容/身份键；
 - Renderer 不能提交负载、token、URL 或 transport。主进程根据已验证项目调用只读 `sync-source`，再构造负载；允许字段限于随机项目/检查 ID、事件和格式枚举、检查配置、语言/长度桶、引用解析枚举与版本、标准/APP 版本、问题计数及五字段结构问题、外部验证、导出状态和授权时间；
 - 只有已登录状态可生成预览；未登录不询问。预览不入队、不发送；确认只接受缓存负载的 opaque 幂等 ID，以及 `sync_once`、`ask_each_time`、`not_now`、`never_for_project` 四个固定选择；
-- alpha.8 队列只在当前进程内保存，并标为 `pending_transport`；没有网络传输、磁盘持久化、自动重试或重启恢复。“已入队”不得显示或记录为“已上传/已同步”；
+- 当前队列只在 Electron 进程内保存，并标为 `pending_transport`；没有网络传输、磁盘持久化、自动重试或重启恢复。“已入队”不得显示或记录为“已上传/已同步”；
 - 生产认证必须使用系统浏览器 PKCE 和系统安全存储；生产同步必须使用独立最小权限 transport、加密持久队列、幂等服务端和删除/撤销机制，且不能解除 default session 离线门禁。
 
 ## 5. 文件与压缩包安全
@@ -86,6 +86,7 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - 运行探针只能在与目标相同的原生 platform/arch 上执行；非原生 host 必须失败。跨主机纯静态检查须显式使用 `--no-runtime-probe`，其通过不构成运行证据。
 - Windows 嵌入式 Python 的 `python313._pth` 只允许标准库 ZIP、当前目录和受控 `../python` 核心路径，并禁止 `import site`，避免继承用户安装包与启动钩子。
 - Electron 桥和门禁共用固定 Python bootstrap：`-I -S -X utf8`，显式把经路径策略验证的 core 绝对目录插入 `sys.path[0]` 后用 `runpy` 执行；同时清理可注入模块或启动参数的继承环境，并始终以参数数组和 `shell=false` 启动。CPython 探针核对 `sys.implementation`、精确三段版本、`releaselevel=final` 与 `serial=0`，不只匹配宽松版本字符串。
+- 打包配置必须显式开启 ASAR、保持 embedded ASAR integrity，并固定全部已知 Electron fuse。builder 前验证配置，builder 后从真实应用二进制读回 wire；路径逃逸、不安全父链、链接/硬链接、文件身份变化和状态漂移均拒绝。Electron 43 当前有一个本地工具无法识别的索引 8：alpha 产生明确 blocker，sale 失败关闭；`RunAsNode=true` 仍是 Ace helper 的临时欠账。完整合同见 `ELECTRON_FUSE_POLICY.md`。
 - Java 与 Ace/Node/Electron 外部工具进程也清理类路径、模块和启动参数注入变量，并以固定参数数组、`shell=false` 启动。
 - 所有锁和清单使用 locale-independent UTF-16 code unit 排序；Ace tracked lock 同时固定 stage manifest 原始字节哈希，JSON 语义等价但字节漂移也拒绝。JRE/Ace 的候选 stage 与受版本控制锁在显式更新时事务提交，失败恢复旧目录和旧锁，避免身份撕裂。
 - Ace 的空/未知 license 声明和空许可证文件直接拒绝。现有许可证文件或生成元数据通知只满足 alpha 可追溯性；全部 236 包仍需正式逐包人工审计。
@@ -106,4 +107,4 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 
 ## 11. Alpha 与正式售卖可信根
 
-当前全量锁能发现本地资源漂移，但 Ace full lock、Python/JRE/EpubCheck 锁及 loose 应用资源尚未锚定到代码签名、asar integrity 与 Electron fuses 共同保护的不可篡改可信根。Electron 43.1.0 `win32-x64` 分发已新增受版本控制的全树锁，因此对应的 `ELECTRON_RUNTIME_TRUST_ROOT_NOT_HARDENED` 阻断已用本次实际锁验证证据关闭；Electron 官方来源、上游校验和与再分发证据仍未完成，provenance 阻断继续保留。builder 导入器和独立锁契约已经实现，但真实归档、工具树与 tracked lock 尚缺，不能关闭 builder 的来源或可信根阻断。CPython、EpubCheck、Temurin JDK/JRE 与 Ace 依赖的来源、许可证和再分发材料仍需正式审计。`alpha` 门禁会显式报告这些阻断，`sale` 门禁会将当前 17 项 Windows 阻断提升为错误。Windows Authenticode、macOS 签名/公证和对应实机验证完成前，不得宣称为可售卖正式版。
+当前全量锁能发现本地资源漂移；alpha.9 已固定 ASAR integrity/fuse 配置并实现打包二进制读回，但没有真实制品证据，未知 fuse 与临时 `RunAsNode=true` 尚未关闭。Electron 43.1.0 `win32-x64` 全树锁关闭了对应的 runtime trust-root 资源阻断，但 Electron 官方来源、上游校验和与再分发证据仍未完成。builder 真实归档、工具树与 tracked lock 尚缺；CPython、EpubCheck、Temurin JDK/JRE 与 Ace 依赖的来源、许可证和再分发材料仍需正式审计。`sale` 资源门禁仍将既有 17 项 Windows 阻断提升为错误，真实 packaged fuse 还有独立兼容性门禁。Windows Authenticode、macOS 签名/公证和对应实机验证完成前，不得宣称为可售卖正式版。

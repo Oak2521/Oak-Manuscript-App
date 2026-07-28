@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.8`
+> 当前版本：`0.1.0-alpha.9`
 > 当前分支：`chatgpt/commercial-v1`
-> 源码检查点标签：`chatgpt-v0.1.0-alpha.8`（只标记源码与本地验证状态，不代表安装包或正式发行）
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.9`（只标记源码与本地验证状态，不代表安装包或正式发行）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,24 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.9 Electron ASAR 与 fuse 发布硬化合同
+
+- APP、Python 核心和 lockfile 统一到 `0.1.0-alpha.9`；标准内容、35 条规则、6 个 fixer、账号和同步合同未变化；
+- 新增 `scripts/electron_fuse_policy.js`：要求 `build.asar=true`、`disableAsarIntegrity=false`，并精确固定全部本地已知 fuse；配置缺项、多项、漂移、inherit 或 removed 状态均拒绝；
+- Windows/macOS 构建链在 electron-builder 前验证配置，在 builder 后立即读取真实打包二进制 fuse wire，然后才允许进入打包资源门禁、packaged smoke 与发布证据；
+- 二进制验证限定仓库内安全父链、常规非空单链接文件，并在 fuse 读取前后验证稳定身份；已知 fuse 必须逐项匹配；
+- `RunAsNode=true` 只是当前 Ace helper 的临时兼容状态，仍是正式发布欠账；受控 helper 完成后必须切到 `false` 并重新验证；
+- 本机 Electron 43.1.0 暴露 wire 索引 0—8，而 `@electron/fuses` 1.8.0 只定义 0—7。索引 8 的状态字节为 `49`，但名称/语义本地不可验证，禁止猜测；alpha 返回 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING`，sale 失败关闭；完整合同见 `docs/ELECTRON_FUSE_POLICY.md`。
+
+### 现场验证（2026-07-28，alpha.9）
+
+- fuse 专项 `node --test tests/electron_fuse_policy.test.js`：**6/6 PASS**；`npm run verify:fuses:config`：**PASS**；
+- 最终统一 `npm test`：**PASS，退出码 0，墙钟 121.2 秒**；Node 284/277/0/7（2.350 秒），Python 348/0 failures/0 errors/3 skipped（114.170 秒）；
+- `verify:standards`、`verify:electron-runtime`、Windows alpha 资源门禁均 **PASS**；core 为 `0.1.0-alpha.9`，既有 sale 资源门禁仍为 17 项 blocker；未知 packaged fuse 是独立的条件阻断；
+- macOS 静态门禁按设计拒绝缺失双架构资源；`release:evidence:verify:win` 按设计拒绝缺失 `Oak-Manuscript-0.1.0-alpha.9-Windows-x64.exe`；
+- 沙箱外独立隐藏 `npm run smoke`：**SMOKE-RESULT PASS**，运行根 `out/source-smoke/runs/ms49yas5-9ccb167e78f033a2/projects/`；DOCX/EPUB 均 4 次检查、1 次修复、3 个检查点、原稿哈希不变，当前问题 13/5、报告 applied fixes 5/2、PDF 251,650/177,417 字节；
+- 本轮没有联网、没有下载 builder 归档、没有运行真实 packaged fuse 验证，也没有生成安装器、ZIP 或发布证据。
 
 ### 已完成：0.1.0-alpha.8 统一账号、权益与同步离线契约
 
@@ -194,8 +212,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.8 继承了可复制、可执行、由 tracked full lock 固定的生产闭包，并通过 Windows alpha 资源门禁；正式版仍缺最小权限受控 helper、自带且校验过的浏览器运行时、OS 级默认拒绝网络、可信根加固和正式人工许可审计；
-- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.8 尚无安装器或 ZIP，未做打包版 smoke、干净系统安装/升级/卸载或签名。受控下载/导入及构建尾部发布证据链已实现，但本轮未联网，三份固定归档、真实工具树和独立 tracked lock 尚缺；
+- 打包版 Ace：alpha.9 继承了可复制、可执行、由 tracked full lock 固定的生产闭包，并通过 Windows alpha 资源门禁；正式版仍缺最小权限受控 helper、自带且校验过的浏览器运行时、OS 级默认拒绝网络、可信根加固和正式人工许可审计；
+- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.9 尚无安装器或 ZIP，未做真实打包 fuse、packaged smoke、干净系统安装/升级/卸载或签名。受控下载/导入及构建尾部发布证据链已实现，但本轮未联网，三份固定归档、真实工具树和独立 tracked lock 尚缺；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：服务端任务 API、隔离执行、限额、零留存和官网嵌入尚未实现；
 - 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览和当前进程队列契约已实现；生产 Supabase、OS 凭据存储、签名授权、支付、持久队列、网络 transport 和网站后台未连接；
@@ -204,6 +222,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - 正式发布仍缺隐私/条款最终文本、证书、生产密钥、人工内测、macOS 硬件和网站联调。
 
 ### Windows sale 门禁的 17 项明确阻断
+
+以下 17 项来自资源门禁。除此之外，真实打包二进制若仍暴露当前工具无法识别的 fuse，还会由独立验证器产生 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING` 并阻止 sale；两者不得混算。
 
 以下机器码来自当前 `verify_packaged_resources.js` 与实测 sale 输出，不得合并或省略：
 
@@ -231,7 +251,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 1. 经用户联网授权后显式运行 `npm run download:builder:win`，仅从合同固定的 electron-builder 官方 GitHub release URL 下载三份归档到仓库 `out/downloads/windows-builder/`；
 2. 下载器全部验哈希后运行 `node scripts/import_windows_builder_toolchain.js --archive-dir out/downloads/windows-builder --update-lock`，提交并复核真实独立 lock；
-3. 生成 alpha.8 NSIS 安装器与 ZIP；构建链必须依次通过打包资源门禁、应用身份断言、隐藏 packaged smoke，最后生成并复验 `SHA256SUMS.txt` 与 canonical release manifest；
+3. 生成 alpha.9 NSIS 安装器与 ZIP；构建链必须依次通过 fuse 配置、真实打包二进制 fuse、打包资源门禁、应用身份断言、隐藏 packaged smoke，最后生成并复验 `SHA256SUMS.txt` 与 canonical release manifest；
 4. 完成 Windows 代码签名，并逐项关闭 provenance、许可证、可信根、Ace helper/browser 等 sale blocker；
 5. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
 6. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
@@ -248,6 +268,7 @@ npm run test:node
 npm run test:python
 $env:OAK_TEST_ACE='1'; python scripts\run_tests.py
 npm run verify:electron-runtime
+npm run verify:fuses:config
 npm run download:builder:win  # 仅在用户明确批准联网后
 npm run smoke
 npm run verify:resources:win

@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.8` 源码检查点架构；本轮尚未生成 alpha.8 Windows 安装器或 ZIP。本地标准验证、项目固定版本、显式升级与回滚、确定性默认引用解析、Windows 构建/制品证据契约，以及统一账号、Free/Pro 和结果同步的严格离线契约已实现。真实 builder 资产、生产认证/订阅/同步服务、联网标准获取、生产信任根、macOS 和 Web 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.9` 源码检查点架构；本轮尚未生成 alpha.9 Windows 安装器或 ZIP。本地标准/项目 pin/升级回滚、默认引用解析、Windows 构建/制品证据、账号/同步离线契约，以及 ASAR/fuse 构建硬化合同已实现。真实 builder 资产和 packaged fuse 证据、生产认证/同步、联网标准获取、生产信任根、macOS 和 Web 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -12,6 +12,7 @@ Electron Main
   ├─ 默认 session 离线门禁 + Renderer CSP
   ├─ PDF：非持久隔离 session / 禁 JS、导航、网络 / 身份校验后原子写
   ├─ appInfo 身份（版本 + 规则包 + app.isPackaged），供源码与打包 smoke 防止错验旧包
+  ├─ 打包合同：ASAR integrity + Electron fuses 配置门禁与真实二进制 wire 复核
   ├─ StandardsProvider：内置 release 验证 / 本地签名包预览与安装 / 全局回滚
   ├─ StandardsStore：严格 payload / 签名 / CAS / 高水位 / 撤回 / 事务恢复
   ├─ standard-bound-core：项目 release 预检 + 七字段 Python 绑定
@@ -120,9 +121,15 @@ Renderer 必须先调用严格只读的 `plan-citation`，展示体例/模式、
 
 Renderer 不能构造同步负载，也不能提供 token、任意 URL 或 transport。主进程只接受受路径门禁保护的项目和固定 `check|export` 事件，调用 Python `sync-source` 取得只读结构来源，再由 `buildSyncRecordV1` 生成并以 exact validator 校验负载。字段权威定义为 `config/schemas/sync-record-v1.schema.json`；标题、正文、解释、位置、预览、文件名、路径、用户名、引用原文和任何内容哈希都没有可用字段，未知字段一律拒绝。
 
-只有已登录状态才可生成预览；预览本身不入队、不发送。界面必须逐字段展示同一份缓存负载，用户随后明确选择 `sync_once`、`ask_each_time`、`not_now` 或 `never_for_project`。确认只提交 opaque `idempotency_id` 和固定选择，过期或替换后的预览拒绝。alpha.8 的队列仅存在于当前进程并固定为 `pending_transport`，没有持久化、重启恢复、后台重试或网络上传；因此“已入队”绝不等于“已同步到网站”。
+只有已登录状态才可生成预览；预览本身不入队、不发送。界面必须逐字段展示同一份缓存负载，用户随后明确选择 `sync_once`、`ask_each_time`、`not_now` 或 `never_for_project`。确认只提交 opaque `idempotency_id` 和固定选择，过期或替换后的预览拒绝。当前队列仅存在于当前进程并固定为 `pending_transport`，没有持久化、重启恢复、后台重试或网络上传；因此“已入队”绝不等于“已同步到网站”。
 
 `AuthProvider` 当前固定未来生产形态为系统浏览器 PKCE，但未配置服务时只返回 `configuration_required` 且不打开页面；登录/过期/撤销仅能由测试专用实例模拟。`LicenseProvider` 已固定 Free/Pro 能力矩阵、有效期和离线宽限语义；签名订阅凭证、服务端设备管理与计费尚未实现。生产 transport 上线时必须保持默认 Electron session 离线，并把凭证存入系统安全存储、队列存入加密持久层，在不改变 SyncRecord v1 最小字段边界的前提下另行威胁建模。
+
+### AD-014 Electron fuses 必须“显式固定—构建后读回—未知项失败关闭”（2026-07-28，冻结）
+
+`package.json` 必须显式开启 ASAR、不得关闭 embedded ASAR integrity，并列出全部当前工具已知 fuse 的精确值；不能依赖 electron-builder 默认值。配置在调用 builder 前校验，生成应用后立即从真实 Electron 二进制读取 fuse wire，再进入资源门禁、packaged smoke 和发布证据。
+
+二进制验证必须限定仓库内安全常规单链接文件并复核读取前后身份。已知 fuse 缺失、漂移、inherit 或 removed 一律拒绝。Electron 43.1.0 当前比 `@electron/fuses` 1.8.0 多一个未知索引 8；本地没有可信语义定义，因此 alpha 只可带 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING` 继续，sale 必须失败。`RunAsNode=true` 是现有 Ace helper 的临时兼容值，不是最终安全目标；详见 `ELECTRON_FUSE_POLICY.md`。
 
 ## 3. Python 核心模块地图（随实现更新）
 
@@ -162,7 +169,7 @@ Renderer 不能构造同步负载，也不能提供 token、任意 URL 或 trans
 - Python 退出码 1 是有效业务结果，退出码 2 是运行错误；结构化 `code/message/retryable/details` 贯通到 IPC；
 - 统一测试入口为 `npm test`（Node 契约与 UI 结构测试 + Python 核心测试）；分项为 `npm run test:node`、`npm run test:python`。
 
-## 5. 发布资源可信链（0.1.0-alpha.4 起，alpha.8 继承）
+## 5. 发布资源可信链（0.1.0-alpha.4 起，alpha.9 继承）
 
 Windows alpha 资源不是靠“目录存在”通过门禁，而是由五组全量清单固定：
 
@@ -211,5 +218,5 @@ alpha.7 在构建输出端增加独立证据链。`build:win` 首先调用 `rele
 - 源码 smoke 与打包 smoke 都通过 `app:info` 核对 Electron 版本和 freshly verified `standardIdentity`；随后读取本次真实生成的 `project.json`、检查记录和导出 `report.json`，核对 Python core 版本、check ID 及四方七字段身份一致。打包 smoke 还强制证明 `app.isPackaged=true`，防止把旧版、陈旧 core 或错误规则包误记为新打包版。
 - 源码 smoke 每次生成独立 `out/source-smoke/runs/<run-id>/`，项目、标准 store、缓存、临时目录、用户数据、HOME/APPDATA/XDG 与 crash dumps 不复用；打包 smoke 同样按运行 ID 隔离并受仓库 `out/` 边界控制。Windows EXE 还须先通过 x64 PE32+ 校验。
 - macOS 构建拆为 `build:mac:x64` 与 `build:mac:arm64`；聚合入口 `build:mac` 只选择当前原生 host 架构，不在一个进程伪造双架构探针。`verify:resources:mac` 只是带 `--no-runtime-probe` 的跨架构静态聚合，不能替代两个原生 runner 的执行证据。
-- alpha.8 隐藏源码 smoke 已 PASS：`out/source-smoke/runs/ms48q9hr-05f6b99b193cf33d/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 次批量修复、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,660 / 177,267 字节；smoke 另断言未登录、Free 和空同步队列。最终统一测试数字以 `docs/TEST_REPORT.md` 为准。
-- 当前 alpha.8 另具备账号/权益/同步的离线状态机、SyncRecord v1 exact schema、可信来源 IPC、完整负载预览和四选一确认，但没有生产凭证、持久队列或上传 transport。本轮未联网，真实归档/工具树/tracked lock、Windows 签名和实际 alpha.8 制品尚缺，证据验证器在真实空 release 上按预期拒绝缺失 NSIS。Windows sale 门禁仍有 17 项阻断。macOS 分架构配置已存在，但运行资源、原生构建、签名、公证、Gatekeeper 与实机 smoke 均未完成。
+- alpha.9 隐藏源码 smoke 已 PASS：`out/source-smoke/runs/ms49yas5-9ccb167e78f033a2/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 次批量修复、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,650 / 177,417 字节；smoke 另断言未登录、Free 和空同步队列。最终统一测试数字以 `docs/TEST_REPORT.md` 为准。
+- 当前 alpha.9 具备账号/同步离线合同及 ASAR/fuse 构建合同，但没有生产凭证、持久队列、上传 transport 或真实 packaged fuse 证据。本轮未联网，真实 builder 资产、Windows 签名和 alpha.9 制品尚缺，证据验证器按预期拒绝缺失 NSIS。既有 Windows sale 资源门禁仍有 17 项阻断，未知 packaged fuse 另行阻止 sale。macOS 运行资源、原生构建、签名、公证与实机 smoke 均未完成。

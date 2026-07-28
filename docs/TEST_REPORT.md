@@ -2,6 +2,41 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
+## 最新验证结论：0.1.0-alpha.9 Electron ASAR 与 fuse 发布硬化合同
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未下载 builder 归档、未运行 electron-builder，也未生成安装器、ZIP 或发布证据。
+
+| 命令 / 检查 | 结果 | 关键事实 |
+|---|---|---|
+| `node --test tests/electron_fuse_policy.test.js` | **6/6 PASS** | exact 构建配置、已知 wire、未知 fuse 的 alpha/sale 分流、不安全/缺失/硬链接二进制拒绝及构建顺序 |
+| `npm run verify:fuses:config` | **PASS** | ASAR 开启、ASAR integrity 未禁用；8 个已知 fuse 与 Darwin 签名选项逐项固定；`RunAsNode=true` 明确为临时值 |
+| fuse/packaging/release 定向 Node 测试 | **49 total / 48 pass / 1 skip / 0 fail** | 新合同与已有打包、资源、发布证据链兼容；跳过项不计作通过 |
+| `npm test` | **PASS，退出码 0；墙钟 121.2 秒** | Node 284/277/0/7（2.350 秒）；Python 348/0 failures/0 errors/3 skipped（114.170 秒） |
+| `npm run verify:standards` | **PASS** | `oak-standards 2.0.0` sequence 2；manifest `0aff75eb…8427` |
+| `npm run verify:electron-runtime` | **PASS** | Electron 43.1.0 win32-x64：2 目录、75 文件、364,083,658 字节 |
+| `npm run verify:resources:win` | **PASS（alpha）** | Python core `0.1.0-alpha.9`；JRE/EpubCheck 探针通过；既有 17 项 sale blocker 仍报告 |
+| Windows `sale` 资源门禁 | **按设计退出 1** | 17 项既有资源 blocker 未关闭；这是独立于 packaged fuse 兼容性门禁的结果 |
+| `npm run verify:resources:mac:static` | **按设计退出 1** | 缺 darwin x64/arm64 Electron dist、两架构 Python runtime manifest 与 JRE |
+| `npm run release:evidence:verify:win` | **按设计退出 1** | 缺 `Oak-Manuscript-0.1.0-alpha.9-Windows-x64.exe`；没有生成伪证据 |
+| 沙箱外隐藏 `npm run smoke` | **SMOKE-RESULT PASS** | `out/source-smoke/runs/ms49yas5-9ccb167e78f033a2/projects/`；DOCX/EPUB 全闭环 |
+
+### Fuse 证据与限制
+
+- `package.json` 明确要求 `asar=true`、`disableAsarIntegrity=false`，并固定所有本地工具已知 fuse；构建脚本在 builder 前执行配置校验，在 builder 后首先验证真实应用二进制；
+- 验证器拒绝仓库外路径、不安全父链、symlink/reparse、hardlink、空文件和读取期间身份变化；wire 版本和每个已知状态都必须精确匹配；
+- 本机 `node_modules/electron/dist/electron.exe` 为 Electron 43.1.0，实际 fuse wire 版本 1、索引 0—8 共 9 项；`@electron/fuses` 1.8.0 只定义索引 0—7；
+- 未知索引 8 的原始状态为 `49`（enabled）。本地没有可信定义可判断名称/语义，因此测试和文档都不猜测；alpha 返回 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING`，sale 抛错；
+- `RunAsNode=true` 仍用于当前 Ace helper；它通过“当前固定配置”测试不代表达到正式硬化目标。受控 helper 完成后必须改为 `false`；
+- 仓库没有 alpha.9 打包产物，所以 `verify:packaged:fuses:*` **未在真实应用二进制上运行**。源码 Electron runtime 的调查结果只证明工具兼容性缺口，不是 packaged fuse 验收证据；
+- 既有 Windows sale 资源门禁仍明确列出 17 项 blocker；未知 packaged fuse 是构建后验证器的额外条件阻断，不把它加入或伪改既有 17 项统计。
+
+### 真实 smoke 证据
+
+| 项目 | 格式 | APP | 检查 | 修复记录 | 检查点 | 当前问题 | applied fixes | PDF 字节 | 源稿哈希 |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---|
+| `ui-smoke-docx` | DOCX | 0.1.0-alpha.9 | 4 | 1 | 3 | 13 | 5 | 251,650 | unchanged |
+| `ui-smoke-epub` | EPUB | 0.1.0-alpha.9 | 4 | 1 | 3 | 5 | 2 | 177,417 | unchanged |
+
 ## 最新验证结论：0.1.0-alpha.8 统一账号、权益与 SyncRecord v1 离线契约
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网，未调用生产账号/支付/同步服务，未下载 builder 归档，未生成安装器、ZIP 或发布证据。

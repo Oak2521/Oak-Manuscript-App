@@ -25,6 +25,8 @@
 
 安全基线：`contextIsolation=true`、`sandbox=true`、`nodeIntegration=false`、固定 CSP/IPC、导航和新窗口拦截。默认 session 在正常启动时永久离线；未来获授权联网能力必须用独立受限通道，不能解除该基线。完整说明见 `docs/PRIVACY_AND_SECURITY.md`。
 
+打包安全另由 `scripts/electron_fuse_policy.js` 固定：必须启用 ASAR 与 embedded integrity、显式设置全部已知 fuse，并在 electron-builder 后从真实应用二进制读回。Electron 43 当前多出一个本地工具无法识别的 wire 索引；alpha 必须带 blocker，sale 失败关闭。`RunAsNode=true` 仍是 Ace helper 的临时兼容值。详见 `docs/ELECTRON_FUSE_POLICY.md`。
+
 PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专用 CSP 只允许自包含 HTML 所需的内联样式和 `data:` 图片。加载报告前后核对文件身份，拒绝项目根/`exports`/报告/目标的 symlink、junction/reparse、硬链接和目录身份换入，最后同目录原子写入。
 
 `python-invocation.js` 不依赖 `PYTHONPATH`、site-packages 或工作目录：固定 bootstrap 把路径策略给出的 core 目录放到 `sys.path[0]`，再以 `runpy` 启动模块；桥与 Python runtime 探针使用同一参数字节序列和隔离环境。
@@ -33,4 +35,4 @@ PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专�
 
 账号与同步 IPC 不接受 Renderer 自带的负载、token、URL 或 transport；主进程通过固定 `sync-source` 命令取值并重建 SyncRecord v1。当前 Auth 登录为未配置的系统浏览器 PKCE 契约，License 为未签名本地能力矩阵，Sync 队列仅存在于当前进程且不联网。详见 `docs/SYNC_RECORD_V1.md`。
 
-当前 `0.1.0-alpha.8` 最新源码 smoke 已在独立隐藏 Electron 中 PASS；运行根为 `out/source-smoke/runs/ms48q9hr-05f6b99b193cf33d/projects/`，DOCX/EPUB 两个项目均先确认默认引用解析，各记录 4 次检查、1 次批量修复、3 个检查点且 `integrity.source_hash_ok=true`，PDF 分别为 251,660 / 177,267 字节；另断言默认未登录、Free 与空队列。`release/` 尚无对应 alpha.8 EXE，因此不能声称打包 smoke 或发布证据已通过。
+当前 `0.1.0-alpha.9` 最新源码 smoke 已在独立隐藏 Electron 中 PASS；运行根为 `out/source-smoke/runs/ms49yas5-9ccb167e78f033a2/projects/`，DOCX/EPUB 两个项目均先确认默认引用解析，各记录 4 次检查、1 次批量修复、3 个检查点且 `integrity.source_hash_ok=true`，PDF 分别为 251,650 / 177,417 字节；另断言默认未登录、Free 与空队列。`release/` 尚无对应 alpha.9 EXE，因此不能声称 packaged fuse、打包 smoke 或发布证据已通过。

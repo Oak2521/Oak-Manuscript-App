@@ -57,7 +57,7 @@ Renderer 只能向主进程提交项目句柄、`check | export` 事件、是否
 | `not_now` | 不入队 | 保持现有偏好 |
 | `never_for_project` | 不入队 | 当前进程内不再询问该项目 |
 
-同一 `idempotency_id` 重复确认只能得到同一队列项。队列项支持 `cancel`、`retry`、`delete`；alpha.8 没有持久 transport，状态为 `pending_transport` 不能解释为已上传。关闭 APP 后当前进程内模拟队列和项目阻止集会消失；持久化、发送、云端查看/导出/删除必须在生产联调阶段另行实现。
+同一 `idempotency_id` 重复确认只能得到同一队列项。队列项支持 `cancel`、`retry`、`delete`；当前实现没有持久 transport，状态为 `pending_transport` 不能解释为已上传。关闭 APP 后当前进程内模拟队列和项目阻止集会消失；持久化、发送、云端查看/导出/删除必须在生产联调阶段另行实现。
 
 ## 5. 账号与权益模拟边界
 

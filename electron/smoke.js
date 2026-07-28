@@ -12,7 +12,7 @@ const { serializeStandardIdentity } = require("./python-invocation");
 const PACKAGED_OUTPUT_ENV = "OAK_SMOKE_OUTPUT_ROOT";
 const EXPECTED_VERSION_ENV = "OAK_EXPECTED_APP_VERSION";
 const EXPECT_PACKAGED_ENV = "OAK_EXPECT_PACKAGED";
-const DEFAULT_EXPECTED_APP_VERSION = "0.1.0-alpha.8";
+const DEFAULT_EXPECTED_APP_VERSION = "0.1.0-alpha.9";
 
 const SCENARIOS = [
   {

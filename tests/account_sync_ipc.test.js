@@ -78,7 +78,7 @@ test("account/sync IPC obtains the record from trusted core source, not renderer
       mode: "style_specific", confidence: "high", reason_code: "test",
       resolver_version: "1.0.0",
     },
-    versions: { rulepack: "2.0.0", app: "0.1.0-alpha.8", platform: "win32" },
+    versions: { rulepack: "2.0.0", app: "0.1.0-alpha.9", platform: "win32" },
     counts: {
       total: 0, fixable: 0,
       by_severity: { error: 0, warning: 0, suggestion: 0 },

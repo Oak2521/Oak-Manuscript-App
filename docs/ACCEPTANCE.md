@@ -2,6 +2,22 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.9 Electron ASAR 与 fuse 发布硬化验收（2026-07-28）
+
+> 本节只验收源码配置、验证器和构建顺序；没有真实 alpha.9 打包产物，不把源码 Electron runtime 或构造 wire 冒充 packaged fuse 证据。
+
+- [x] APP、Python 核心和 lockfile 统一为 `0.1.0-alpha.9`；标准 release、规则/fixer、账号与同步合同未变化；
+- [x] `build.asar=true`、`disableAsarIntegrity=false`，全部本地已知 fuse 和 `ResetAdHocDarwinSignature` 均显式固定；缺项、多项、漂移、inherit 或 removed fail-closed；
+- [x] 打包二进制验证器限定仓库内安全父链、常规非空单链接文件，拒绝路径逃逸、symlink/reparse、hardlink 和读取竞态；
+- [x] wire 版本与所有已知 fuse 状态逐项精确验证；未知 fuse 在 alpha 返回机器可读 blocker，在 sale 直接失败；
+- [x] Windows/macOS 构建顺序固定为配置验证 → builder → 真实二进制 fuse → 打包资源 → packaged smoke → 发布证据；
+- [x] fuse 专项 6/6、最终 Node 284/277/0/7 与 Python 348/0/0/3、标准/Electron runtime/Windows alpha 门禁及隐藏双样本 smoke 均通过；
+- [x] Electron 43.1.0 wire 的未知索引 8 如实记录为工具兼容性阻断，未猜测名称或用 enabled 状态冒充安全结论；
+- [ ] 已对真实 alpha.9 Windows EXE 和两个 macOS `.app` 二进制运行 packaged fuse 验证并留存证据；
+- [ ] 使用经验证的兼容工具识别索引 8，明确期望值并关闭 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING`；
+- [ ] Ace 受控 helper 完成，`RunAsNode` 改为 `false` 并完成功能与安全回归；
+- [ ] ASAR integrity/fuse 与代码签名、资源可信根、干净系统/实机验证一起通过正式 sale 门禁。
+
 ## 0.1.0-alpha.8 统一账号、权益与 SyncRecord v1 离线契约验收（2026-07-28）
 
 > 本节只验收离线接口、隐私白名单和模拟状态；不把模拟登录、`pending_transport` 队列或 UI 预览写成生产账号/网站同步已完成。
@@ -249,11 +265,11 @@
 
 > 完成标准（方案 §18）：匿名 DOCX 与 EPUB 均能在 UI 中完成完整闭环。
 > 证据：`npm run smoke` 冒烟驱动真实 UI 代码路径（与按钮同一 actions + 真实 IPC + 真实核心），
-> DOCX 与 EPUB 双闭环 PASS；旧 `0.0.1` 打包版历史结果同样 PASS，不能替代当前 alpha.8 打包验收。
+> DOCX 与 EPUB 双闭环 PASS；旧 `0.0.1` 打包版历史结果同样 PASS，不能替代当前 alpha.9 打包验收。
 
 - [x] Electron 壳安全基线：contextIsolation / sandbox / nodeIntegration=false / IPC 固定通道 + 输入验证 / 子进程 shell=false / CSP / 导航与新窗口拦截 / 外链仅 HTTPS 白名单域名；
 - [x] 七个主页面（中文 UI）：欢迎隐私 / 创建项目 / 检查目标 / 进度（阶段式，无虚假百分比）/ 问题双栏（接受·拒绝·暂不处理）/ 导出中心 / 标准资源与设置；
-- [x] 历史 0.0.1 登录入口为「即将开放」占位；当前 alpha.8 已升级为不联网的账号/同步离线契约，未登录仍不出现同步询问（冒烟自动断言）；
+- [x] 历史 0.0.1 登录入口为「即将开放」占位；当前 alpha.9 继承不联网的账号/同步离线契约，未登录仍不出现同步询问（冒烟自动断言）；
 - [x] 出版评估软转化位按 §8.1–8.2 位置与文案，仅打开白名单网站页面；
 - [x] PDF 审阅样张（printToPDF，≤16 页，标注非印前文件）；
 - [x] 匿名样本体验入口；错误以可理解文案呈现（toast + 文件安全说明）。
