@@ -37,6 +37,16 @@ test("normal Electron startup applies the fixed offline switches before app read
   assert.ok(requestBlockerAt > readyAt && requestBlockerAt < windowAt);
 });
 
+test("smoke disables hardware acceleration before ready without changing normal startup", () => {
+  const source = fs.readFileSync(path.join(REPO_ROOT, "electron", "main.js"), "utf8");
+  const smokeDefinition = source.indexOf('const SMOKE = process.argv.includes("--smoke")');
+  const disable = source.indexOf("if (SMOKE) app.disableHardwareAcceleration()");
+  const ready = source.indexOf("app.whenReady()");
+  assert.ok(smokeDefinition >= 0);
+  assert.ok(disable > smokeDefinition && disable < ready);
+  assert.equal(source.includes("app.disableHardwareAcceleration();\nif (!SMOKE)"), false);
+});
+
 test("default Electron session cancels every network-scheme request", () => {
   let filter = null;
   let listener = null;

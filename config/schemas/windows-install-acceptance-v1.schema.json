@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/windows-install-acceptance-v1.schema.json",
+  "title": "Oak Manuscript Windows installation lifecycle evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "product",
+    "app_id",
+    "started_at",
+    "completed_at",
+    "status",
+    "plan",
+    "paths",
+    "phases",
+    "failure"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "run_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{7,63}$" },
+    "product": { "const": "湖岸稿件 Oak Manuscript" },
+    "app_id": { "const": "com.oakbylake.manuscript" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "completed_at": { "type": "string", "format": "date-time" },
+    "status": { "enum": ["pass", "fail"] },
+    "plan": { "$ref": "#/$defs/plan" },
+    "paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["install_dir", "evidence_file", "persistence_root"],
+      "properties": {
+        "install_dir": { "type": "string", "minLength": 1 },
+        "evidence_file": { "type": "string", "minLength": 1 },
+        "persistence_root": { "type": "string", "minLength": 1 }
+      }
+    },
+    "phases": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/phase" }
+    },
+    "failure": { "type": ["string", "null"] }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "pass" } } },
+      "then": {
+        "properties": {
+          "failure": { "type": "null" },
+          "phases": {
+            "minItems": 9,
+            "maxItems": 9,
+            "prefixItems": [
+              { "$ref": "#/$defs/pass_install_previous" },
+              { "$ref": "#/$defs/pass_smoke_previous" },
+              { "$ref": "#/$defs/pass_upgrade_current" },
+              { "$ref": "#/$defs/pass_smoke_current" },
+              { "$ref": "#/$defs/pass_persistence_after_upgrade" },
+              { "$ref": "#/$defs/pass_downgrade_probe" },
+              { "$ref": "#/$defs/pass_smoke_after_downgrade_probe" },
+              { "$ref": "#/$defs/pass_uninstall_current" },
+              { "$ref": "#/$defs/pass_post_uninstall" }
+            ],
+            "items": false
+          }
+        }
+      },
+      "else": { "properties": { "failure": { "type": "string", "minLength": 1 } } }
+    }
+  ],
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["filename", "kind", "size_bytes", "sha256", "version", "path"],
+      "properties": {
+        "filename": { "type": "string", "minLength": 1 },
+        "kind": { "const": "nsis" },
+        "size_bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "version": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "mode",
+        "product",
+        "app_id",
+        "host",
+        "current",
+        "previous",
+        "lifecycle",
+        "mutation_gate",
+        "ready_for_authorized_run"
+      ],
+      "properties": {
+        "schema_version": { "const": 1 },
+        "mode": { "const": "authorized-run" },
+        "product": { "const": "湖岸稿件 Oak Manuscript" },
+        "app_id": { "const": "com.oakbylake.manuscript" },
+        "host": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["platform", "arch"],
+          "properties": { "platform": { "const": "win32" }, "arch": { "const": "x64" } }
+        },
+        "current": { "$ref": "#/$defs/artifact" },
+        "previous": { "$ref": "#/$defs/artifact" },
+        "lifecycle": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "install_previous" },
+            { "const": "smoke_previous" },
+            { "const": "upgrade_current" },
+            { "const": "smoke_current" },
+            { "const": "persistence_after_upgrade" },
+            { "const": "downgrade_probe" },
+            { "const": "smoke_after_downgrade_probe" },
+            { "const": "uninstall_current" },
+            { "const": "post_uninstall" }
+          ],
+          "items": false,
+          "minItems": 9,
+          "maxItems": 9
+        },
+        "mutation_gate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["authorized", "required_flag", "effects"],
+          "properties": {
+            "authorized": { "const": true },
+            "required_flag": { "const": "--allow-system-mutation" },
+            "effects": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+          }
+        },
+        "ready_for_authorized_run": { "const": true }
+      }
+    },
+    "phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "started_at", "completed_at", "status", "details", "error"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "started_at": { "type": "string", "format": "date-time" },
+        "completed_at": { "type": "string", "format": "date-time" },
+        "status": { "enum": ["pass", "fail"] },
+        "details": {},
+        "error": { "type": ["string", "null"] }
+      }
+    },
+    "pass_phase": {
+      "allOf": [
+        { "$ref": "#/$defs/phase" },
+        { "properties": { "status": { "const": "pass" }, "error": { "type": "null" } } }
+      ]
+    },
+    "pass_install_previous": { "allOf": [{ "$ref": "#/$defs/pass_phase" }, { "properties": { "name": { "const": "install_previous" } } }] },
+    "pass_smoke_previous": { "allOf": [{ "$ref": "#/$defs/pass_phase" }, { "properties": { "name": { "const": "smoke_previous" } } }] },
+    "pass_upgrade_current": { "allOf": [{ "$ref": "#/$defs/pass_phase" }, { "properties": { "name": { "const": "upgrade_current" } } }] },
+    "pass_smoke_current": { "allOf": [{ "$ref": "#/$defs/pass_phase" }, { "properties": { "name": { "const": "smoke_current" } } }] },
+    "pass_persistence_after_upgrade": { "allOf": [{ "$ref": "#/$defs/pass_phase" }, { "properties": { "name": { "const": "persistence_after_upgrade" } } }] },
+    "pass_downgrade_probe": { "allOf": [{ "$ref": "#/$defs/pass_phase" }, { "properties": { "name": { "const": "downgrade_probe" } } }] },
+    "pass_smoke_after_downgrade_probe": { "allOf": [{ "$ref": "#/$defs/pass_phase" }, { "properties": { "name": { "const": "smoke_after_downgrade_probe" } } }] },
+    "pass_uninstall_current": { "allOf": [{ "$ref": "#/$defs/pass_phase" }, { "properties": { "name": { "const": "uninstall_current" } } }] },
+    "pass_post_uninstall": { "allOf": [{ "$ref": "#/$defs/pass_phase" }, { "properties": { "name": { "const": "post_uninstall" } } }] }
+  }
+}

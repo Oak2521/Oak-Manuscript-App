@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.13` 已实现的桌面隐私与安全边界。当前有未签名 Windows NSIS/ZIP，但不是可售卖正式版。Windows builder 下载器仅由开发者显式授权运行，不在 APP/default session 中运行、不读取稿件；发布、fuse 和资源验证器只读取构建配置、受控清单或打包目录。统一账号、Free/Pro 与 SyncRecord v1 的严格离线契约已实现，生产凭证、持久队列、同步 transport、计费和 Web 上传仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.14` 已实现的桌面隐私与安全边界。当前有未签名 Windows NSIS/ZIP，但不是可售卖正式版。Windows builder 下载器和系统安装生命周期都需要开发者显式授权；默认安装预检只读，不运行安装器。统一账号、Free/Pro 与 SyncRecord v1 的严格离线契约已实现，生产凭证、持久队列、同步 transport、计费和 Web 上传仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -88,7 +88,7 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - Windows 嵌入式 Python 的 `python313._pth` 只允许标准库 ZIP、当前目录和受控 `../python` 核心路径，并禁止 `import site`，避免继承用户安装包与启动钩子。
 - Electron 桥和门禁共用固定 Python bootstrap：`-I -S -X utf8`，显式把经路径策略验证的 core 绝对目录插入 `sys.path[0]` 后用 `runpy` 执行；同时清理可注入模块或启动参数的继承环境，并始终以参数数组和 `shell=false` 启动。CPython 探针核对 `sys.implementation`、精确三段版本、`releaselevel=final` 与 `serial=0`，不只匹配宽松版本字符串。
 - 打包配置必须显式开启 ASAR、保持 embedded ASAR integrity，并注册全量 fuse `afterPack`。顶层锁定 `@electron/fuses 2.1.3`，以 `strictlyRequireAllFuses=true` 写入 Electron 43 的全部 9 项；索引 8 `WasmTrapHandlers=true`。写后立即回读，随后再独立读取真实二进制；路径逃逸、不安全父链、链接/硬链接、实际 Framework 文件身份变化、API/索引和状态漂移均拒绝。完整合同见 `ELECTRON_FUSE_POLICY.md`。
-- alpha.13 在 `app.asar` 内固定资源锚点，锚点绑定 59 个 loose 应用文件与目标平台 Python/EpubCheck/JRE/Ace 锁；打包启动在标准存储和窗口前复核完整资源树。Python 显式 `-B` 禁止探针写入字节码；锚点和清单不读取或记录用户稿件内容。
+- alpha.14 在 `app.asar` 内固定资源锚点，锚点绑定 60 个 loose 应用文件与目标平台 Python/EpubCheck/JRE/Ace 锁；打包启动在标准存储和窗口前复核完整资源树。Python 显式 `-B` 禁止探针写入字节码；锚点和清单不读取或记录用户稿件内容。
 - Java 与 Ace/Node/Electron 外部工具进程也清理类路径、模块和启动参数注入变量，并以固定参数数组、`shell=false` 启动。
 - 所有锁和清单使用 locale-independent UTF-16 code unit 排序；Ace tracked lock 同时固定 stage manifest 原始字节哈希，JSON 语义等价但字节漂移也拒绝。JRE/Ace 的候选 stage 与受版本控制锁在显式更新时事务提交，失败恢复旧目录和旧锁，避免身份撕裂。
 - Ace 的空/未知 license 声明和空许可证文件直接拒绝。现有许可证文件或生成元数据通知只满足 alpha 可追溯性；全部 236 包仍需正式逐包人工审计。
@@ -107,6 +107,14 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - 迁移源可在显式迁移路径中放宽“已撤回/已过期/APP 不兼容”三项，以便把项目救出旧 release；签名、代码锚、payload、能力映射、路径、未来发布时间和七字段身份始终不能放宽；
 - 标准包联网检查、下载、断网重试和生产撤回分发尚未实现。未来 transport 必须与上述本地验证分层，并继续遵循用户主动触发、最小网络权限和不传稿件原则。
 
+### Windows 安装生命周期的授权与数据边界
+
+- `npm run verify:install-lifecycle:win` 只读取固定发布制品及证据，不创建输出目录、不运行安装器、不写注册表或快捷方式；
+- 真实运行必须同时提供 `--run --allow-system-mutation`，这是开发门禁，不是普通 APP 功能开关。运行会写当前用户 HKCU、Desktop/Start Menu 快捷方式，因此还需要操作者在仓库规则之外单独授权系统写入；
+- 测试安装目录、Electron userData、稿件样本项目、缓存、temp 和 JSON 证据全部限制在仓库 `out/install-acceptance/`；只使用匿名构造样本，不读取真实稿件；
+- 系统集成探针只查询本产品固定 GUID 的 InstallLocation/DisplayVersion 和固定名称快捷方式，证据只保留布尔状态/版本，不保存用户其他注册表内容；
+- PASS 必须证明卸载后主程序、卸载器、产品注册表和快捷方式清除，同时测试 userData 哨兵保留。失败清理不能把总体 FAIL 改写为 PASS；历史旧安装器能否回退当前版本必须由真实运行证明。
+
 ## 11. Alpha 与正式售卖可信根
 
-当前全量锁和真实 packaged 锚点能发现本地资源漂移；alpha.13 已取得 ASAR integrity、全 9 fuse、资源与应用烟测联合证据，packaged 资源门禁由 16 项源码 blocker 降至 11 项。原 fuse 兼容性门禁已关闭；Electron、builder、CPython、EpubCheck、Temurin 与 Ace 仍需正式来源/许可审计。Windows Authenticode、干净机安装验收、macOS 签名/公证和对应实机验证完成前，不得宣称为可售卖正式版。
+当前全量锁和真实 packaged 锚点能发现本地资源漂移；alpha.14 已取得 ASAR integrity、全 9 fuse、资源与应用烟测联合证据，packaged 资源门禁由 16 项源码 blocker 降至 11 项。安装生命周期工具/预检不等于真实系统验收；Electron、builder、CPython、EpubCheck、Temurin 与 Ace 仍需正式来源/许可审计。Windows Authenticode、干净机安装验收、macOS 签名/公证和对应实机验证完成前，不得宣称为可售卖正式版。

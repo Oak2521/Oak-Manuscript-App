@@ -37,6 +37,9 @@ const ALLOWED_EXTERNAL_HOSTS = new Set(["oakbylake.com", "www.oakbylake.com"]);
 // 必须发生在 app ready 之前；正常启动和 smoke 使用同一默认离线基线。
 registerAppSchemeAsPrivileged(protocol);
 applyOfflineChromiumPolicy(app.commandLine);
+// 自动化 smoke 验证稿件功能，不应被无 GPU/驱动的隔离构建会话阻断。
+// 正常用户启动不进入此分支，仍保留 Electron 默认硬件加速行为。
+if (SMOKE) app.disableHardwareAcceleration();
 
 
 let mainWindow = null;

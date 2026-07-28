@@ -2,7 +2,39 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.13 Electron 43 全 fuse 固定检查点
+## 最新验证结论：0.1.0-alpha.14 Windows 安装生命周期验收工具检查点
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮没有联网。实际安装器未运行；所有 packaged GUI 进程隐藏执行。
+
+| 命令 / 检查 | 结果 | 关键事实 |
+|---|---|---|
+| 安装生命周期专项 | **12/12 PASS** | 旧制品/证据篡改、完整 SemVer、x86 NSIS/x64 APP、零授权零启动、路径边界、完整九阶段、回装未启动、降级成功时 fail-closed 与清理重试 |
+| 最终 `npm test` | **PASS** | 墙钟 110.8 秒；Node 323 total / 316 pass / 0 fail / 7 skip（3.032 秒）；Python 351 total / 0 failures / 0 errors / 3 skipped（103.078 秒） |
+| 两次受限 `npm run build:win` | **在 packaged smoke 阶段退出 1** | electron-builder、afterPack 9 fuse、packaged 资源均已通过；Codex 外层受限令牌阻止 Electron sandbox 子进程，GPU/Renderer 返回 `0xC0000135`；失败时没有生成新发布证据 |
+| alpha.13 归档制品同环境对照 | **同样 `0xC0000135`** | 排除 alpha.14 代码/打包漂移；诊断性 `--no-sandbox` 能进入项目流程，但不作为验收证据 |
+| 外层隐藏 `npm run smoke:packaged:win` | **SMOKE-RESULT PASS** | 34.7 秒；Electron `sandbox: true` 保持开启；强制应用内 EpubCheck/Ace；运行根见下 |
+| `npm run release:evidence:win` + verify | **PASS** | 只在真实 smoke PASS 后生成；NSIS/ZIP、SHA256SUMS、canonical manifest 交叉绑定 |
+| `npm run verify:install-lifecycle:win` | **PASS（只读预检）** | 当前 alpha.14 与归档 alpha.12 哈希/大小/manifest/PE 全部匹配；`authorized=false`；未创建生命周期运行目录或启动安装器 |
+| 真实安装生命周期 | **未运行** | 会写 HKCU、Desktop、Start Menu，尚未取得本轮单独系统写入授权；不能写成通过 |
+
+最终 packaged smoke 运行根：`out/packaged-smoke/runs/ms4oftya-1a2f6ac1ad56c4cd/projects/`。
+
+| 项目 | APP/core | 检查 | 修复批次 | 应用 fixes | 检查点 | 当前问题 | PDF 字节 | 引用模式 | 外部验证 | 原稿 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---|---|
+| `ui-smoke-docx` | 0.1.0-alpha.14 | 4 | 1 | 5 | 3 | 13 | 251,659 | `structure_only` | 不适用 | unchanged |
+| `ui-smoke-epub` | 0.1.0-alpha.14 | 4 | 1 | 2 | 3 | 5 | 178,401 | `structure_only` | EpubCheck failed：0 fatal / 5 error / 0 warning；Ace failed：8 项断言 | unchanged |
+
+最终制品：
+
+| 文件 | 字节 | SHA-256 |
+|---|---:|---|
+| `Oak-Manuscript-0.1.0-alpha.14-Windows-x64.exe` | 189,946,367 | `e8ff13a093aa48d25de74afbbd9311676ec8afb9037bcafee946d4bcdac21647` |
+| `Oak-Manuscript-0.1.0-alpha.14-Windows-x64.zip` | 233,759,796 | `15e8a34e5ee35806d12e452b991ff1c7db867827278262af7ba931c5f631da9b` |
+| `SHA256SUMS.txt` | 224 | `131e76c4e2797db8692c21ed857313f28de970c0225a10402cfa76d0b7716d11` |
+
+证据边界：安装编排器已经实现且预检通过，不等于安装器已执行。历史 alpha.12 NSIS 是否会覆盖 alpha.14 当前未知；真实探测必须在另行授权后进行。Windows 制品仍未签名，packaged 资源门禁仍保留 11 项 sale blocker。
+
+## 历史验证结论：0.1.0-alpha.13 Electron 43 全 fuse 固定检查点
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已批准本轮依赖下载；实际 Windows 构建使用仓库内已锁定离线工具，Electron 与 Chrome 均以隐藏进程运行。
 

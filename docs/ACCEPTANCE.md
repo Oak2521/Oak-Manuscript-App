@@ -2,6 +2,18 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.14 Windows 安装生命周期工具验收（2026-07-28）
+
+- [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.14`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 默认只读预检交叉验证当前 alpha.14 与归档 alpha.12 的 canonical manifest、SHA256SUMS、版本、大小、SHA-256 和 NSIS PE；预检不创建 `out/`、不启动子进程；
+- [x] 实际运行必须同时携带 `--run --allow-system-mutation`；所有安装目录、测试 userData、临时文件、日志和证据固定在项目 `out/install-acceptance/`，安装/卸载进程均 `shell=false`、隐藏运行；
+- [x] PASS 证据严格要求九阶段等序全绿：旧版安装/冒烟、当前版升级/冒烟、数据保留、降级探测后仍为当前版、卸载和系统集成清理；JSON Schema、exact validator 与 canonical 文件复验已实现；
+- [x] 12 项专项测试覆盖旧制品篡改、完整 SemVer、x86 NSIS/x64 APP 区分、零授权零启动、路径逃逸、隐藏阶段、回装未启动、降级成功时失败及清理重试；最终全量 Node 323 / Python 351，0 失败；
+- [x] alpha.14 NSIS/ZIP、9 fuse、packaged 资源、外层隐藏且 Electron sandbox 保持开启的 packaged smoke、SHA256SUMS 与 release manifest 均已验证；
+- [ ] 真实 alpha.12 → alpha.14 安装、升级、旧版回装探测、卸载、HKCU/Desktop/Start Menu 清理和 userData 保留已在获准系统环境执行并产生 PASS 证据；
+- [ ] 历史 alpha.12 若能回退 alpha.14，已实现并验证产品侧阻止机制；当前结果未知，不得预先勾选；
+- [ ] Windows Authenticode、干净机无开发运行时、其余 11 项 packaged sale blocker、macOS/Web/生产账号与同步门禁全部关闭。
+
 ## 0.1.0-alpha.13 Electron 43 全 fuse 固定验收（2026-07-28）
 
 - [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.13`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；

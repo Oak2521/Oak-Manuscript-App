@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 59,
-  "total_bytes": 1942368,
+  "file_count": 60,
+  "total_bytes": 1949296,
   "files": [
     {
       "path": "config/app-config.json",
@@ -36,6 +36,11 @@
       "path": "config/schemas/sync-record-v1.schema.json",
       "size_bytes": 5375,
       "sha256": "5f25c22be8d42b8d9201104945b816608f2818818d2985647290d4b51d9487e7"
+    },
+    {
+      "path": "config/schemas/windows-install-acceptance-v1.schema.json",
+      "size_bytes": 6928,
+      "sha256": "1359f626efc787d12b6c1178eb2c819b382971d90f7c2c56f21f23b19e4090ca"
     },
     {
       "path": "config/standard-packs/oak-standards-2.0.0.manifest.json",
@@ -80,7 +85,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "5d0e345e8b5182233b7e0d17938a31690f8efc216b2b83145e9b2dcfa51f7036"
+      "sha256": "7b1dff88c1ccda45e7355d8f8725fc175f81ea3de4b1a1b18d1e4e0784d794f7"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

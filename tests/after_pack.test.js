@@ -42,7 +42,7 @@ test("afterPack writes all nine fuses strictly and verifies the resulting binary
     arch: "x64",
     packager: {
       projectDir: root,
-      appInfo: { productFilename: "Oak", version: "0.1.0-alpha.13" },
+      appInfo: { productFilename: "Oak", version: "0.1.0-alpha.14" },
     },
   }, {
     loadFuses: async () => ({
@@ -107,7 +107,7 @@ test("afterPack rejects multiple wires for architecture-specific builds", async 
     arch: "x64",
     packager: {
       projectDir: root,
-      appInfo: { productFilename: "Oak", version: "0.1.0-alpha.13" },
+      appInfo: { productFilename: "Oak", version: "0.1.0-alpha.14" },
     },
   }, {
     loadFuses: async () => ({
@@ -127,7 +127,7 @@ test("afterPack rejects an output path outside the project before mutation", asy
       arch: "x64",
       packager: {
         projectDir: REPO_ROOT,
-        appInfo: { productFilename: "Oak", version: "0.1.0-alpha.13" },
+        appInfo: { productFilename: "Oak", version: "0.1.0-alpha.14" },
       },
     }, {
       loadFuses: async () => { loaded = true; return FUSE_API; },

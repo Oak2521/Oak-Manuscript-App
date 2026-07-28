@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.13` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约、Windows builder 独立锁、ASAR/全 9 fuse/资源可信链、受限应用协议、Ace 受控 utilityProcess，以及真实未签名 NSIS/ZIP 和 packaged smoke 已实现。生产认证/同步、联网标准获取、代码签名、macOS 和 Web 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.14` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约、Windows builder 独立锁、ASAR/全 9 fuse/资源可信链、受限应用协议、Ace 受控 utilityProcess、未签名 NSIS/ZIP、packaged smoke，以及 Windows 安装生命周期的 fail-closed 编排与证据契约。生产认证/同步、联网标准获取、代码签名、真实安装生命周期、macOS 和 Web 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -226,6 +226,14 @@ alpha.7 在构建输出端增加独立证据链。`build:win` 首先调用 `rele
 
 探针只能在目标平台和目标架构的原生 runner 上执行；host 与 target 不一致时 fail-closed。跨主机只做静态聚合检查必须显式传入 `--no-runtime-probe`，报告也会记录探针未执行，不能把静态通过写成运行证据。
 
+### Windows 安装生命周期编排与证据
+
+`windows_install_acceptance.js` 把“安装器字节可信”和“系统安装生命周期通过”分成两个门禁。默认命令只读取当前 release 与固定归档旧版，严格核对 manifest、SHA256SUMS、版本顺序、大小、摘要及 PE；它不创建运行目录，也不启动任何子进程。NSIS 引导程序允许 x86 PE32 或 x64 PE32+，但安装后的应用主程序仍必须是 x64 PE32+，避免把引导程序架构误当目标应用架构。
+
+系统变更需要两个显式开关 `--run --allow-system-mutation`。运行目录、安装目录、测试 userData、temp、项目输出和证据全部位于 `out/install-acceptance/`；安装器/卸载器使用参数数组、`shell=false` 与隐藏窗口。固定生命周期为：旧版安装 → 旧版 packaged smoke → 当前版就地升级 → 当前版 smoke → userData 哨兵保留 → 旧版回装探测 → 再次以当前版本 smoke → 当前版卸载 → 主程序/卸载器、HKCU InstallLocation/DisplayVersion、Desktop/Start Menu 清理及 userData 保留。旧版回装进程退出码本身不作为保护证明，唯一判据是回装后应用与注册表仍报告当前版本。
+
+证据按 `windows-install-acceptance-v1.schema.json` 写为 canonical UTF-8/LF。运行时 exact validator 要求 PASS 恰好包含九个等序全绿阶段、无 failure，并把 current/previous 的版本、哈希和项目内路径绑定在 plan；失败可追加一次 `cleanup_uninstall`，但总体必须保持 FAIL。当前仅完成代码、反向测试和只读预检；真实安装会写用户 HKCU 和快捷方式，未另获授权前不得执行，更不能把预检写成安装通过。
+
 ## 6. Ace 作者内容隔离与剩余边界
 
 阶段化 Ace runner 在加载作者 XHTML 时先关闭 JavaScript，再用固定的 `@xmldom/xmldom` 清洗器移除 `script`、`iframe`、`object`、`embed`、`base`、事件属性、危险 URL、XSLT processing instruction、meta refresh 与作者 CSP。清洗完成后才启用 JavaScript 并注入固定 Ace/axe 脚本。请求拦截只允许解包 EPUB `basedir` 真实路径内的 `file:`，以及运行所需的 `data:`、`blob:`、`about:`；其它协议和目录逃逸一律拒绝，同时抑制 Chromium 后台联网。
@@ -238,5 +246,5 @@ alpha.7 在构建输出端增加独立证据链。`build:win` 首先调用 `rele
 - 源码 smoke 与打包 smoke 都通过 `app:info` 核对 Electron 版本和 freshly verified `standardIdentity`；随后读取本次真实生成的 `project.json`、检查记录和导出 `report.json`，核对 Python core 版本、check ID 及四方七字段身份一致。打包 smoke 还强制证明 `app.isPackaged=true`，防止把旧版、陈旧 core 或错误规则包误记为新打包版。
 - 源码 smoke 每次生成独立 `out/source-smoke/runs/<run-id>/`，项目、标准 store、缓存、临时目录、用户数据、HOME/APPDATA/XDG 与 crash dumps 不复用；打包 smoke 同样按运行 ID 隔离并受仓库 `out/` 边界控制。Windows EXE 还须先通过 x64 PE32+ 校验。
 - macOS 构建拆为 `build:mac:x64` 与 `build:mac:arm64`；聚合入口 `build:mac` 只选择当前原生 host 架构，不在一个进程伪造双架构探针。`verify:resources:mac` 只是带 `--no-runtime-probe` 的跨架构静态聚合，不能替代两个原生 runner 的执行证据。
-- alpha.13 最终隐藏 packaged smoke 已 PASS：`out/packaged-smoke/runs/ms4mqaar-f6f3d43d55a2726d/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,655/178,394 字节；EPUB 通过受控 utilityProcess 实际运行 EpubCheck/Ace，缺陷结果分别为 5 error/8 项失败断言。
-- alpha.13 以 `oak-manuscript://renderer/` 的四文件白名单在 `GrantFileProtocolExtraPrivileges=false` 下保持 ASAR UI 可用；Python `-B` 防止运行时修改 loose 可信树；顶层 2.1.3 afterPack 严格写入并回读 Electron 43 全 9 fuse。真实 builder 锁、NSIS/ZIP、packaged 资源与证据已成立；仍无生产凭证、持久队列、上传 transport、Windows 签名、macOS 或 Web。packaged 资源门禁仍为 11 项。
+- alpha.14 最终外层隐藏 packaged smoke 已 PASS：`out/packaged-smoke/runs/ms4oftya-1a2f6ac1ad56c4cd/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,659/178,401 字节；EPUB 通过受控 utilityProcess 实际运行 EpubCheck/Ace，缺陷结果分别为 5 error/8 项失败断言。Electron sandbox 保持开启；诊断性 `--no-sandbox` 结果未计入证据。
+- alpha.14 以 `oak-manuscript://renderer/` 的四文件白名单在 `GrantFileProtocolExtraPrivileges=false` 下保持 ASAR UI 可用；Python `-B` 防止运行时修改 loose 可信树；顶层 2.1.3 afterPack 严格写入并回读 Electron 43 全 9 fuse。真实 builder 锁、NSIS/ZIP、packaged 资源与发布证据已成立；安装生命周期仅完成只读预检，仍无生产凭证、持久队列、上传 transport、Windows 签名、macOS 或 Web。packaged 资源门禁仍为 11 项。

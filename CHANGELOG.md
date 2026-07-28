@@ -4,6 +4,18 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.14（ChatGPT Windows 安装生命周期验收工具检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.14`。已生成未签名 Windows x64 NSIS 与 ZIP；实际系统安装生命周期仍未获授权执行，不是可售卖正式版。
+
+- 新增 Windows 安装生命周期编排器：默认只读核对当前/旧版发布 manifest、SHA256SUMS、大小、SHA-256 与 NSIS PE；只有同时提供 `--run --allow-system-mutation` 才允许进入会写 HKCU/快捷方式的阶段；
+- 授权序列固定为 alpha.12 安装和 smoke、alpha.14 就地升级和 smoke、userData 哨兵保留、alpha.12 回装后仍保持 alpha.14、卸载及注册表/桌面/开始菜单清理；目录、日志、用户数据和证据都限定在仓库 `out/install-acceptance/`；
+- 新增证据 v1 JSON Schema、exact 运行时 validator 与 canonical 文件/安装器字节复验；PASS 必须九阶段等序全绿。新增 12 项专项测试覆盖旧制品篡改、完整 SemVer 排序、x86 NSIS/x64 APP 区分、零授权零启动、路径逃逸、隐藏阶段、回装未启动、降级成功时失败与清理；
+- smoke 专用启动在 `app.ready` 前禁用硬件加速，普通启动不变。Codex 受限令牌下 Electron sandbox 子进程以 `0xC0000135` 退出，同一 alpha.13 复现；没有采用 `--no-sandbox`，改在获准的外层隐藏 GUI 进程运行，alpha.14 packaged smoke 34.7 秒 PASS；
+- 完整回归：Node 323 total / 316 pass / 0 fail / 7 skip；Python 351 total / 0 failures / 0 errors / 3 skipped；
+- 最终 NSIS：189,946,367 字节，SHA-256 `e8ff13a093aa48d25de74afbbd9311676ec8afb9037bcafee946d4bcdac21647`；ZIP：233,759,796 字节，SHA-256 `15e8a34e5ee35806d12e452b991ff1c7db867827278262af7ba931c5f631da9b`；证据与只读安装预检复验通过；
+- 实际安装/升级/降级探测/卸载尚未执行；历史 alpha.12 安装器能否阻止回退仍未知，Windows 签名、干净机与 11 项 packaged sale blocker 继续阻止正式售卖。
+
 ### 2026-07-28 — 0.1.0-alpha.13（ChatGPT Electron 43 全 fuse 固定检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.13`。已生成未签名 Windows x64 NSIS 与 ZIP；仍不是可售卖正式版。

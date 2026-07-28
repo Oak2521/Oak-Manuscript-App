@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.13`
+> 当前版本：`0.1.0-alpha.14`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.13`（含未签名 Windows alpha 制品证据，不代表正式发行）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.14`（含未签名 Windows alpha 制品证据，不代表正式发行）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,17 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.14 Windows 安装生命周期验收工具检查点
+
+- 新增默认只读的 `verify:install-lifecycle:win`：先交叉验证当前 alpha.14 与归档 alpha.12 的 canonical release manifest、SHA256SUMS、文件大小/摘要和 NSIS PE 身份；未携带双重 `--run --allow-system-mutation` 时不创建输出目录、不启动安装器；
+- 授权运行器固定九阶段：旧版安装/冒烟、当前版就地升级/冒烟、userData 哨兵保留、旧版回装探测后仍须保持当前版、当前版卸载、二进制/注册表/Desktop/Start Menu 清理与用户数据保留；所有安装目录、日志、用户数据和 canonical JSON 证据限定在项目 `out/install-acceptance/`，系统集成只读探针验证 HKCU 与快捷方式；
+- `config/schemas/windows-install-acceptance-v1.schema.json` 与运行时 exact validator 将 PASS 严格绑定到九阶段全绿和当前/归档安装器真实字节；路径逃逸、旧制品篡改、隐藏阶段、回装未启动、降级成功、证据乱序或非 canonical 字节均 fail-closed；相关专项 12/12 通过；
+- 实际安装器尚未运行，因为它会写 HKCU、Desktop 与 Start Menu，仍须单独取得项目外系统写入授权。尤其是历史 alpha.12 NSIS 没有已验证的降级阻止机制，真实回装探测结果当前未知，不能预判通过；
+- alpha.14 Windows x64 NSIS/ZIP、全 9 fuse、packaged 资源、强制 EpubCheck/Ace smoke 与发布摘要已完成。Codex 受限令牌会阻止 Electron sandbox 子进程；同一 alpha.13 也复现。保持 Electron `sandbox: true` 后，以外层隐藏 GUI 进程运行 alpha.14 smoke，34.7 秒 PASS；没有使用 `--no-sandbox` 作为证据；
+- 最终 `npm test`：Node 323 total / 316 pass / 0 fail / 7 skip（3.032 秒），Python 351 total / 0 failures / 0 errors / 3 skipped（103.078 秒），墙钟 110.8 秒；
+- NSIS 189,946,367 字节，SHA-256 `e8ff13a093aa48d25de74afbbd9311676ec8afb9037bcafee946d4bcdac21647`；ZIP 233,759,796 字节，SHA-256 `15e8a34e5ee35806d12e452b991ff1c7db867827278262af7ba931c5f631da9b`；发布证据和安装预检均独立复验通过；
+- 该版本仍未签名，不是可售卖正式版；真实安装生命周期、干净机、macOS/Web、生产账号/订阅/同步及 11 项 packaged sale blocker 未完成。
 
 ### 已完成：0.1.0-alpha.13 Electron 43 全 fuse 固定检查点
 
@@ -280,8 +291,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.13 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
-- Windows：alpha.13 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源与 packaged smoke 证据；仍缺干净系统安装、升级、卸载、无开发运行时验证和 Authenticode 签名；
+- 打包版 Ace：alpha.14 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
+- Windows：alpha.14 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、packaged smoke 和安装生命周期只读预检证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：服务端任务 API、隔离执行、限额、零留存和官网嵌入尚未实现；
 - 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览和当前进程队列契约已实现；生产 Supabase、OS 凭据存储、签名授权、支付、持久队列、网络 transport 和网站后台未连接；
@@ -291,7 +302,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ### Windows sale 门禁的当前明确阻断
 
-源码资源门禁现列 16 项（builder 独立全树锁已成立）；真实 alpha.13 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 11 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
+源码资源门禁现列 16 项（builder 独立全树锁已成立）；真实 alpha.14 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 11 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
 
 以下机器码来自当前 `verify_packaged_resources.js` 与实测 sale 输出，不得合并或省略：
 
@@ -311,7 +322,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划，按 v2.0 方案继续：
 
-1. 在不违反“只写仓库内”的环境中补 Windows 安装/升级/卸载自动化设计；真实系统安装会写仓库外，执行前必须另获明确授权；
+1. 已完成 Windows 安装生命周期编排器与只读预检；下一步须单独取得系统写入授权后，真实执行 alpha.12 → alpha.14 安装/升级/降级探测/卸载，核对 HKCU 与快捷方式并保留 canonical 证据；若历史安装器确实回退，必须把它记为产品 blocker，不能修改证据口径；
 2. 完成 Windows 代码签名方案，并逐项关闭 11 个 packaged sale blocker；取得证书或生产密钥前不得伪造签名通过；
 3. 完成 Electron、builder、CPython、EpubCheck、Temurin 和 Ace 的 provenance/许可证正式审计证据；
 4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
@@ -336,6 +347,9 @@ npm run smoke
 npm run verify:resources:win
 npm run build:win
 npm run release:evidence:verify:win
+npm run verify:install-lifecycle:win  # 只读预检；不会启动安装器
+# 真实生命周期只能在用户另行授权系统写入后运行：
+# node scripts/windows_install_acceptance.js --run --allow-system-mutation
 git diff --check
 ```
 
