@@ -8,6 +8,7 @@ const path = require("path");
 const fs = require("fs");
 
 const { serializeStandardIdentity } = require("./python-invocation");
+const providers = require("./providers");
 
 const PACKAGED_OUTPUT_ENV = "OAK_SMOKE_OUTPUT_ROOT";
 const EXPECTED_VERSION_ENV = "OAK_EXPECTED_APP_VERSION";
@@ -432,6 +433,46 @@ async function runSmoke(win, pathPolicy) {
   const queue = await js("window.oak.syncQueue()");
   assert(Array.isArray(queue.items) && queue.items.length === 0, "未登录状态同步队列必须为空");
   console.log("[smoke] 离线账号、Free 权益与未授权同步纪律检查通过");
+
+  // 只在隔离 smoke userData 内写入一条无稿件内容的合成 SyncRecord，供同一
+  // runner 随后的第二次进程启动验证 safeStorage 解密与重启恢复。
+  const smokeRecord = providers.buildSyncRecordV1({
+    projectId: "0000000000000001",
+    runId: "check-9001",
+    event: "export",
+    format: "docx",
+    manuscriptType: "paper",
+    checkConfig: "full",
+    languageBucket: "undetermined",
+    lengthBucket: "5千字以内",
+    citation: {
+      requestedStyle: "default",
+      resolvedStyle: null,
+      mode: "structure_only",
+      confidence: "low",
+      reasonCode: "smoke_persistence_probe",
+      resolverVersion: "1.0.0",
+    },
+    rulepackVersion: appInfo.standardIdentity.version,
+    appVersion: appInfo.appVersion,
+    platform: process.platform,
+    createdAt: new Date().toISOString(),
+    authorizedAt: null,
+    issues: [],
+    externalValidation: { epubcheck: "not_applicable", ace: "not_applicable" },
+    exportState: "completed",
+  });
+  const persisted = providers.syncProvider.confirm(smokeRecord, "sync_once", {
+    state: "authenticated",
+    loggedIn: true,
+    accountId: "smoke-account",
+  });
+  assert(
+    persisted.queued === true && persisted.persistence?.persistent === true &&
+      persisted.persistence?.encrypted === true,
+    "smoke SyncRecord 必须进入系统安全存储加密队列",
+  );
+  console.log("[smoke] 加密同步队列写入完成；等待第二进程重启恢复验证");
 }
 
 module.exports = {

@@ -2,7 +2,18 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.20 打包发行身份与真实 ASAR 元数据绑定验收（2026-07-28）
+## 0.1.0-alpha.21 本机加密同步队列与重启恢复验收（2026-07-28）
+
+- [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.21`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] `safeStorage` 加密持久队列使用 exact schema、canonical JSON、revision CAS、原子替换和提交后复验，拒绝链接、篡改、短读与路径逃逸；
+- [x] 队列、幂等 ID 和项目阻止项按账户隔离；未登录不可查看或操作，Renderer 不接收内部账户 ID；
+- [x] 系统安全存储不可用或队列损坏时同步 fail-closed，本地稿件检查、修复和导出不受影响；生产 transport 保持未配置且不联网；
+- [x] source 与 packaged 双阶段隐藏 smoke 真实证明首次进程加密写入、第二进程恢复；密文无 store type/record ID 明文；
+- [x] 最终 Node 370 / Python 351 全量零失败；Windows NSIS/ZIP、真实 ASAR、9 fuse、packaged 门禁、双阶段 smoke 和发行证据通过；
+- [x] alpha.12 → alpha.21 安装生命周期只读预检通过，`authorized=false`，未启动安装器；
+- [ ] 生产 Auth/凭据、独立网络 transport、服务端/网站后台、支付订阅、真实安装、签名、macOS/Web 和全部 sale 门禁完成；因此本节仍不是正式发行验收。
+
+## 0.1.0-alpha.20 打包发行身份与真实 ASAR 元数据绑定验收（历史，2026-07-28）
 
 - [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.20`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] packaged 门禁从真实 `app.asar/package.json` 读取生产身份，报告 `package_evidence_scope=packaged-app-asar`；修改源码 package 不能伪造 packaged 证据；
@@ -176,11 +187,12 @@
 - [x] `SyncRecord v1` 使用 exact runtime validator 与 tracked JSON Schema；未知字段、内容字段、路径和哈希注入反向测试均 fail-closed；计数、issues 数量与幂等 ID有交叉约束；
 - [x] Renderer 不能提交任意 payload、令牌或网络目标；主进程只接受可信项目路径、固定事件/选择和已缓存预览 ID；
 - [x] 导出后询问非阻断；未登录不询问；已登录时逐字段安全显示完整本次负载，并提供仅本次、同步本次以后仍询问、暂不同步、不再询问此项目四项；
-- [x] 当前进程队列同一幂等 ID 不重复，支持取消、重试、删除；预览、暂不同步或不再询问均不会误入队；
+- [x] 同一账号队列的同一幂等 ID 不重复，支持取消、重试、删除；预览、暂不同步或不再询问均不会误入队；
 - [x] 账号/同步 Node/Python/IPC/UI 测试、统一 `npm test`、标准、Electron runtime、Windows alpha 资源门禁及沙箱外隐藏双样本 smoke 均通过；原稿哈希不变；
-- [x] `pending_transport`、未签名模拟权益、非持久队列与生产未配置状态在 UI/文档中明确，不声称已上传或已接入网站；
+- [x] `pending_transport`、未签名模拟权益、OS 加密本机队列与生产 transport 未配置状态在 UI/文档中明确，不声称已上传或已接入网站；
 - [ ] 系统浏览器真实 PKCE、OS 安全凭据、生产签名授权缓存和设备撤销完成；
-- [ ] 加密持久队列、独立网络 transport、Supabase/支付/网站后台、云端查看/导出/删除和双端 schema 验证完成；
+- [x] 加密持久队列、账户隔离、取消/重试/删除、篡改拒绝与第二进程恢复完成；
+- [ ] 独立网络 transport、Supabase/支付/网站后台、云端查看/导出/删除和双端 schema 验证完成；
 - [ ] 生产隐私/安全测试、账号删除、跨端验收与真实用户授权流程通过。
 
 ## 0.1.0-alpha.7 Windows 发布制品证据链验收（2026-07-28）
@@ -317,7 +329,7 @@
 - [ ] macOS x64/arm64 Python/JRE 资源及锁、DMG 构建、签名、公证、Gatekeeper 和实机 smoke 已完成；
 - [ ] 正式售卖 `sale` 门禁已通过。
 
-当前源码 Windows sale 门禁为 17 类机器码；真实 alpha.20 packaged ASAR 会关闭其中 5 个 loose 可信根项，保留 12 类：
+当前源码 Windows sale 门禁为 17 类机器码；真实 alpha.21 packaged ASAR 会关闭其中 5 个 loose 可信根项，保留 12 类：
 
 1. `RELEASE_PUBLISHER_METADATA_PENDING`；
 2. `FORMAL_LICENSE_AUDIT_REQUIRED`；
@@ -453,7 +465,7 @@ packaged 门禁会关闭上列第 6、7、8、9、13 项，保留 12 项；这�
 - [x] 授权到期或网站故障不会锁住本地文件（LicenseProvider Free/Pro/宽限/过期状态均保持 `localProjectsLocked=false`）
 - [x] 引用体例「默认」选项按映射表确定性选定，并在报告中说明
 - [x] 未登录状态下全部核心流程可完成，且不出现同步询问（冒烟断言）
-- [x] 登录、逐字段确认、负载白名单和当前进程入队契约已验证；未登录不询问，负载不含稿件、正文/预览、标题、文件名、路径、参考文献原文或哈希
+- [x] 登录、逐字段确认、负载白名单、按账户加密入队和重启恢复契约已验证；未登录不询问/不显示队列，负载不含稿件、正文/预览、标题、文件名、路径、参考文献原文或哈希
 - [ ] 生产网络同步仍只在上述明确确认后发生，并通过服务端同 schema、账号归属、持久队列、撤销/删除与真实隐私验收
 - [ ] 网站后台可查看并删除已同步记录（阶段 4 验收）
 - [ ] 正式发布包候选的 Python 单元/集成 + CLI 端到端 + UI 冒烟 E2E 全部通过（alpha.8 源码全量基线与隐藏源码 smoke 已通过；因尚无 alpha.8 安装包或 ZIP，打包版 E2E 仍未运行）

@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.20`
+> 当前版本：`0.1.0-alpha.21`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.20`（含未签名 Windows alpha 制品证据，不代表正式发行）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.21`（含未签名 Windows alpha 制品证据，不代表正式发行）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,19 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.21 本机加密同步队列与重启恢复检查点
+
+- 新增 `electron/sync-store.js`：SyncRecord 队列状态使用 Electron `safeStorage` / 操作系统安全存储加密，磁盘格式固定为 `OAKSYNC1 + 长度 + 密文`；写入采用同目录独占候选、文件 `fsync`、原子替换、提交后解密复验和 revision CAS，拒绝链接、硬链接、路径逃逸、超限、篡改、非 canonical JSON、短读与读取期间身份变化；
+- 持久状态 exact schema 为 `config/schemas/sync-queue-store-v1.schema.json`。账号绑定只保存在加密状态内部；Renderer 永远看不到 `account_id`。队列、幂等键和“不再询问此项目”均按账户隔离；未登录读取返回空集，未登录取消/重试/删除拒绝；
+- 生产 `SyncProvider` 强制要求加密持久层。系统安全存储不可用或文件损坏时同步 fail-closed，不创建预览、不保存负载、不发送数据；本地检查、修复和导出继续可用。生产网络 transport 仍未实现、默认禁用，`pending_transport` 不代表已上传；
+- 设置页显示本机加密队列状态以及当前账号的队列项，支持取消、重试和删除。全部动态内容只用 `textContent` / `replaceChildren`；退出后不显示任何账号的队列内容；
+- source/packaged smoke 现在固定两次启动：第一次在隔离 `userData` 写入一条无稿件内容的合成 SyncRecord，第二次只用同一系统安全存储恢复并核对账户、项目、run、版本和状态。最终源码根 `out/source-smoke/runs/ms50hk0f-79612db60f3fa6f5/projects/`、packaged 根 `out/packaged-smoke/runs/ms50e86n-c12719289316148e/projects/` 均 PASS；packaged 队列文件为 1,960 字节、头 `OAKSYNC1`，密文中不含 store type 或记录 ID 明文；
+- 最终 `npm test`：Node 370 total / 363 pass / 0 fail / 7 skip（3.448 秒），Python 351 total / 0 failures / 0 errors / 3 skipped（102.669 秒），整条命令 151.5 秒；
+- Windows build 的打包、真实 ASAR/9 fuse/资源门禁、EpubCheck/Ace 与双阶段 packaged smoke 均通过；首次最终证据生成因 `release/` 根残留已归档的 alpha.20 重复制品而按设计拒绝。确认三个旧文件与 `0.1.0-alpha.20-final` SHA-256 完全一致后，只移除根目录副本，随后发行证据生成/复验 PASS；
+- 文档同步发现 Electron/Renderer README 会进入 ASAR；首轮已通过门禁的制品因此归档为 `release/archive/0.1.0-alpha.21-superseded-pre-doc-sync/`，不再作为最终证据。最终完整 `npm run build:win` 193.7 秒退出 0；
+- 最终 NSIS 189,992,003 字节，SHA-256 `be7759f69916be3b65e94e3f66893d0498406e0a5604915f118b379aaa06782e`；ZIP 233,810,027 字节，SHA-256 `99141599e9909c56250f81ec76497ec2bcffac22691b7d04df897e4512f2b722`；`SHA256SUMS.txt` SHA-256 `0e392de35194b8fcbcee8ba7bd837ed24e0180ca8d65e0d1c61726bf11a7ddd1`。六项最终发行文件已完整归档至 `release/archive/0.1.0-alpha.21-final/`；alpha.12 → alpha.21 安装生命周期只读预检 PASS，`authorized=false`，没有启动安装器；
+- 应用资源清单为 73 文件 / 2,117,464 字节，manifest SHA-256 `6a1cfd564920d83ffa72d89cb6f7b407f0f3181ef551f2f768b08eb60fb9c0bb`，锚点 SHA-256 `2483b7f0c44995375ee25a6c51eb1185c03f1cbcb5a08991bd713b22715e4c81`。实际安装器仍未运行；生产登录/凭据、网络 transport、网站后台、计费、签名、macOS/Web 和其余 sale blocker 仍未完成。
 
 ### 已完成：0.1.0-alpha.20 打包发行身份与真实 ASAR 元数据绑定检查点
 
@@ -202,7 +215,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - Python 新增严格只读 `sync-source`，只返回随机项目 ID、检查 ID、枚举、版本、计数所需的结构化问题记录和状态；不返回标题、解释、位置、预览、文件名、路径或哈希；
 - Electron `buildSyncRecordV1` 和 `validateSyncRecordV1` 使用 exact schema、交叉计数和禁止字段反向门禁；`config/schemas/sync-record-v1.schema.json` 作为未来网站服务端复用的 JSON Schema 2020-12 合同；
 - Renderer 不能提交任意同步 payload，只能提交项目句柄和固定枚举。已登录用户在导出后可看到逐字段安全预览，并选择仅本次、同步本次以后仍询问、暂不同步或不再询问此项目；未登录不询问；失败不影响导出；
-- `SyncProvider` 提供幂等的当前进程内 `pending_transport` 队列以及取消、重试、删除契约。生产 transport 与持久队列未实现，因此当前真实 APP 不会上传，重启后模拟队列不保留；完整边界见 `docs/SYNC_RECORD_V1.md`。
+- `SyncProvider` 提供按账号隔离、OS `safeStorage` 加密的 `pending_transport` 队列以及取消、重试、删除和重启恢复契约。生产网络 transport 未实现，因此当前真实 APP 不会上传；完整边界见 `docs/SYNC_RECORD_V1.md`。
 
 ### 现场验证（2026-07-28，alpha.8）
 
@@ -358,18 +371,18 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.20 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
-- Windows：alpha.20 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、packaged smoke，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据和安装生命周期只读预检；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
+- 打包版 Ace：alpha.21 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
+- Windows：alpha.21 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：服务端任务 API、隔离执行、限额、零留存和官网嵌入尚未实现；
-- 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览和当前进程队列契约已实现；生产 Supabase、OS 凭据存储、签名授权、支付、持久队列、网络 transport 和网站后台未连接；
+- 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览、按账户隔离的 OS 加密队列和重启恢复已实现；生产 Supabase、登录凭据存储、签名授权、支付、网络 transport 和网站后台未连接；
 - 标准库：治理结构和引用解析政策已完成，13 项标准、35 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
 - 标准升级：本地验证、签名包导入/回滚骨架、项目固定与显式升级已编码；生产 trust pin、在线获取/下载、签名撤回分发与联网自动更新未实现；
 - 正式发布仍缺隐私/条款最终文本、证书、生产密钥、人工内测、macOS 硬件和网站联调。
 
 ### Windows sale 门禁的当前明确阻断
 
-源码资源门禁现列 17 项（builder 独立全树锁已成立）；真实 alpha.20 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 12 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
+源码资源门禁现列 17 项（builder 独立全树锁已成立）；真实 alpha.21 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 12 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
 
 以下机器码来自当前 `verify_packaged_resources.js` 与实测 sale 输出，不得合并或省略：
 
@@ -390,12 +403,12 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划，按 v2.0 方案继续：
 
-1. 已完成 Windows 安装生命周期编排器与 alpha.20 只读预检；下一步须单独取得系统写入授权后，真实执行 alpha.12 → alpha.20 安装/升级/降级探测/卸载，核对 HKCU 与快捷方式并保留 canonical 证据；若历史安装器确实回退，必须把它记为产品 blocker，不能修改证据口径；
+1. 已完成 Windows 安装生命周期编排器与 alpha.21 只读预检；下一步须单独取得系统写入授权后，真实执行 alpha.12 → alpha.21 安装/升级/降级探测/卸载，核对 HKCU 与快捷方式并保留 canonical 证据；若历史安装器确实回退，必须把它记为产品 blocker，不能修改证据口径；
 2. CPython、EpubCheck、Temurin/JRE、Electron 与 builder 的机器来源证据已完成；下一步必须由具名人员完成许可、商标、第三方通知、签名边界与再分发签核，再完成 Windows 代码签名方案并逐项关闭相应 packaged sale blocker；代码不能替代该签署；
 3. Ace 的 provenance/全闭包许可证、自带浏览器、OS 级网络隔离及与制品哈希绑定的不可伪造 smoke 证明仍未完成；任何需扩大 Ace 证明范围的实现先确认验收口径；
 4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
 5. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
-6. 在现有 Auth / License / Sync 离线契约上实现持久安全凭据/队列与独立网络 transport，再经授权连接 Supabase、支付和网站后台；
+6. 在现有 Auth / License / Sync 离线契约和 OS 加密持久队列上实现生产登录凭据与独立网络 transport，再经授权连接 Supabase、支付和网站后台；
 7. 实现服务端统一处理的 Web 作业 API、零留存和官网嵌入；完成 Free/Pro、支付、隐私、内测和正式发布门禁。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。

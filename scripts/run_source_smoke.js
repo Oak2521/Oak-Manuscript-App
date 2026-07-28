@@ -6,14 +6,17 @@ const { spawnSync } = require("child_process");
 
 const {
   DEFAULT_TIMEOUT_MS,
-  FAIL_MARKER,
   PASS_MARKER,
+  SYNC_RECOVERY_FAIL_MARKER,
+  SYNC_RECOVERY_PASS_MARKER,
+  assertSmokeProcessResult,
   createSmokeRunId,
   createSmokeEnvironment,
   ensureLocalDirectory,
   isInside,
   readExpectedAppVersion,
   smokeArguments,
+  syncRecoveryArguments,
   validateSmokeRunId,
 } = require("./run_packaged_smoke");
 
@@ -110,23 +113,31 @@ function runSourceSmoke({
     killSignal: "SIGKILL",
     maxBuffer: MAX_OUTPUT_BYTES,
   });
-  if (!result || typeof result !== "object") throw new Error("源码冒烟未返回进程结果");
-  if (result.error) throw new Error(`无法运行源码冒烟：${result.error.message}`);
-  if (result.signal) throw new Error(`源码冒烟被信号 ${result.signal} 终止`);
-  const stdout = typeof result.stdout === "string" ? result.stdout : "";
-  const stderr = typeof result.stderr === "string" ? result.stderr : "";
-  const combined = `${stdout}\n${stderr}`;
-  if (result.status !== 0) {
-    throw new Error(
-      `源码冒烟退出码为 ${String(result.status)}；输出：`
-      + `${combined.trim().slice(-2000) || "<empty>"}`,
-    );
-  }
-  const passLines = combined.split(/\r?\n/u)
-    .filter((line) => line.trim() === PASS_MARKER).length;
-  if (combined.includes(FAIL_MARKER) || passLines !== 1) {
-    throw new Error(`源码冒烟缺少唯一成功标志 ${PASS_MARKER}`);
-  }
+  const first = assertSmokeProcessResult(result, {
+    timeoutMs,
+    passMarker: PASS_MARKER,
+    failMarker: "SMOKE-RESULT: FAIL",
+    label: "源码冒烟",
+  });
+  const recovery = spawn(paths.electronExecutable, [paths.projectRoot, ...syncRecoveryArguments(paths)], {
+    cwd: paths.projectRoot,
+    env: createSmokeEnvironment(paths, inheritedEnv, expectedVersion, {
+      expectedPackaged: "0",
+      externalValidation: false,
+    }),
+    encoding: "utf8",
+    shell: false,
+    windowsHide: true,
+    timeout: timeoutMs,
+    killSignal: "SIGKILL",
+    maxBuffer: MAX_OUTPUT_BYTES,
+  });
+  const second = assertSmokeProcessResult(recovery, {
+    timeoutMs,
+    passMarker: SYNC_RECOVERY_PASS_MARKER,
+    failMarker: SYNC_RECOVERY_FAIL_MARKER,
+    label: "源码同步队列重启恢复冒烟",
+  });
   return {
     ok: true,
     electronExecutable: paths.electronExecutable,
@@ -134,8 +145,10 @@ function runSourceSmoke({
     runId,
     smokeRoot: paths.smokeRoot,
     outputRoot: paths.projectOutput,
-    stdout,
-    stderr,
+    stdout: first.stdout,
+    stderr: first.stderr,
+    syncRecoveryStdout: second.stdout,
+    syncRecoveryStderr: second.stderr,
   };
 }
 

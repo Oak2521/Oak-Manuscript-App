@@ -10,11 +10,13 @@ const {
   EXPECT_PACKAGED_ENV,
   PASS_MARKER,
   PRODUCT_EXE,
+  SYNC_RECOVERY_PASS_MARKER,
   createSmokeEnvironment,
   getSmokePaths,
   readExpectedAppVersion,
   runPackagedSmoke,
   smokeArguments,
+  syncRecoveryArguments,
   verifyWindowsX64Executable,
 } = require("../scripts/run_packaged_smoke");
 const {
@@ -415,15 +417,16 @@ test("smoke environment removes inherited injection and keeps every writable loc
 
 test("packaged runner launches the fixed executable hidden and accepts exit 0 plus PASS marker", (t) => {
   const { root, executable } = prepareExecutable(t);
-  let invocation;
+  const invocations = [];
   const result = runPackagedSmoke({
     root,
     runId: TEST_SMOKE_RUN_ID,
     hostPlatform: "win32",
     inheritedEnv: { SAFE_VALUE: "yes", NODE_OPTIONS: "--require=evil.js" },
     spawn(command, args, options) {
-      invocation = { command, args, options };
-      return { status: 0, signal: null, stdout: `[app]\n${PASS_MARKER}\n`, stderr: "" };
+      invocations.push({ command, args, options });
+      const marker = args.includes("--smoke-sync-recovery") ? SYNC_RECOVERY_PASS_MARKER : PASS_MARKER;
+      return { status: 0, signal: null, stdout: `[app]\n${marker}\n`, stderr: "" };
     },
   });
 
@@ -431,18 +434,21 @@ test("packaged runner launches the fixed executable hidden and accepts exit 0 pl
   assert.equal(result.ok, true);
   assert.equal(result.expectedVersion, DEFAULT_EXPECTED_APP_VERSION);
   assert.equal(result.executable, executable);
-  assert.equal(invocation.command, executable);
-  assert.deepEqual(invocation.args, smokeArguments(paths));
-  assert.equal(invocation.options.cwd, root);
-  assert.equal(invocation.options.windowsHide, true);
-  assert.equal(invocation.options.shell, false);
-  assert.equal(invocation.options.env.OAK_SMOKE_OUTPUT_ROOT, paths.projectOutput);
-  assert.equal(invocation.options.env[EXPECTED_VERSION_ENV], readExpectedAppVersion(root));
-  assert.equal(invocation.options.env[EXPECT_PACKAGED_ENV], "1");
-  assert.equal(invocation.options.env.OAK_SMOKE_EXTERNAL_VALIDATION, "1");
-  assert.equal(Object.hasOwn(invocation.options.env, "NODE_OPTIONS"), false);
-  assert.equal(invocation.args.includes("--disable-background-networking"), true);
-  assert.equal(invocation.args.some((arg) => arg.startsWith("--user-data-dir=")), true);
+  assert.equal(invocations.length, 2);
+  assert.equal(invocations[0].command, executable);
+  assert.deepEqual(invocations[0].args, smokeArguments(paths));
+  assert.deepEqual(invocations[1].args, syncRecoveryArguments(paths));
+  assert.equal(invocations[0].options.cwd, root);
+  assert.equal(invocations[0].options.windowsHide, true);
+  assert.equal(invocations[0].options.shell, false);
+  assert.equal(invocations[0].options.env.OAK_SMOKE_OUTPUT_ROOT, paths.projectOutput);
+  assert.equal(invocations[0].options.env[EXPECTED_VERSION_ENV], readExpectedAppVersion(root));
+  assert.equal(invocations[0].options.env[EXPECT_PACKAGED_ENV], "1");
+  assert.equal(invocations[0].options.env.OAK_SMOKE_EXTERNAL_VALIDATION, "1");
+  assert.equal(Object.hasOwn(invocations[1].options.env, "OAK_SMOKE_EXTERNAL_VALIDATION"), false);
+  assert.equal(Object.hasOwn(invocations[0].options.env, "NODE_OPTIONS"), false);
+  assert.equal(invocations[0].args.includes("--disable-background-networking"), true);
+  assert.equal(invocations[0].args.some((arg) => arg.startsWith("--user-data-dir=")), true);
 });
 
 test("source smoke keeps every writable Electron path inside repo/out and launches hidden", (t) => {
@@ -451,7 +457,7 @@ test("source smoke keeps every writable Electron path inside repo/out and launch
   const electronExecutable = path.join(root, "node_modules", "electron", "dist", "electron.exe");
   fs.mkdirSync(path.dirname(electronExecutable), { recursive: true });
   fs.writeFileSync(electronExecutable, "source smoke fixture\n");
-  let invocation = null;
+  const invocations = [];
   const result = runSourceSmoke({
     root,
     electronExecutable,
@@ -464,30 +470,34 @@ test("source smoke keeps every writable Electron path inside repo/out and launch
       OAK_SMOKE_EXTERNAL_VALIDATION: "1",
     },
     spawn(command, args, options) {
-      invocation = { command, args, options };
-      return { status: 0, signal: null, stdout: `${PASS_MARKER}\n`, stderr: "" };
+      invocations.push({ command, args, options });
+      const marker = args.includes("--smoke-sync-recovery") ? SYNC_RECOVERY_PASS_MARKER : PASS_MARKER;
+      return { status: 0, signal: null, stdout: `${marker}\n`, stderr: "" };
     },
   });
   const paths = getSourceSmokePaths(root, electronExecutable, TEST_SMOKE_RUN_ID);
   assert.equal(result.ok, true);
-  assert.equal(invocation.command, electronExecutable);
-  assert.deepEqual(invocation.args, [root, ...smokeArguments(paths)]);
-  assert.equal(invocation.options.windowsHide, true);
-  assert.equal(invocation.options.shell, false);
-  assert.equal(invocation.options.env[EXPECT_PACKAGED_ENV], "0");
-  assert.equal(invocation.options.env.OAK_SMOKE_OUTPUT_ROOT, paths.projectOutput);
-  assert.equal(invocation.options.env.OAK_SMOKE_EXTERNAL_VALIDATION, "1");
-  assert.equal(Object.hasOwn(invocation.options.env, "ELECTRON_RUN_AS_NODE"), false);
-  assert.equal(Object.hasOwn(invocation.options.env, "HTTPS_PROXY"), false);
-  assert.equal(Object.hasOwn(invocation.options.env, "NODE_OPTIONS"), false);
+  assert.equal(invocations.length, 2);
+  assert.equal(invocations[0].command, electronExecutable);
+  assert.deepEqual(invocations[0].args, [root, ...smokeArguments(paths)]);
+  assert.deepEqual(invocations[1].args, [root, ...syncRecoveryArguments(paths)]);
+  assert.equal(invocations[0].options.windowsHide, true);
+  assert.equal(invocations[0].options.shell, false);
+  assert.equal(invocations[0].options.env[EXPECT_PACKAGED_ENV], "0");
+  assert.equal(invocations[0].options.env.OAK_SMOKE_OUTPUT_ROOT, paths.projectOutput);
+  assert.equal(invocations[0].options.env.OAK_SMOKE_EXTERNAL_VALIDATION, "1");
+  assert.equal(Object.hasOwn(invocations[1].options.env, "OAK_SMOKE_EXTERNAL_VALIDATION"), false);
+  assert.equal(Object.hasOwn(invocations[0].options.env, "ELECTRON_RUN_AS_NODE"), false);
+  assert.equal(Object.hasOwn(invocations[0].options.env, "HTTPS_PROXY"), false);
+  assert.equal(Object.hasOwn(invocations[0].options.env, "NODE_OPTIONS"), false);
   for (const name of [
     "OAK_SMOKE_OUTPUT_ROOT", "TEMP", "TMP", "TMPDIR", "HOME", "USERPROFILE",
     "APPDATA", "LOCALAPPDATA", "XDG_CACHE_HOME", "XDG_CONFIG_HOME", "XDG_DATA_HOME",
   ]) {
-    const relative = path.relative(paths.outRoot, invocation.options.env[name]);
+    const relative = path.relative(paths.outRoot, invocations[0].options.env[name]);
     assert.equal(relative.startsWith("..") || path.isAbsolute(relative), false, name);
   }
-  for (const argument of smokeArguments(paths)) assert.equal(invocation.args.includes(argument), true);
+  for (const argument of smokeArguments(paths)) assert.equal(invocations[0].args.includes(argument), true);
 });
 
 test("packaged runner fails closed on missing marker, nonzero exit, timeout, signal, or missing EXE", (t) => {
@@ -521,6 +531,20 @@ test("packaged runner fails closed on missing marker, nonzero exit, timeout, sig
   assert.throws(
     () => invoke({ status: null, signal: "SIGKILL", stdout: "", stderr: "" }),
     /被信号 SIGKILL 终止/,
+  );
+  let calls = 0;
+  assert.throws(
+    () => runPackagedSmoke({
+      root,
+      hostPlatform: "win32",
+      spawn() {
+        calls += 1;
+        return calls === 1
+          ? { status: 0, signal: null, stdout: `${PASS_MARKER}\n`, stderr: "" }
+          : { status: 0, signal: null, stdout: "recovery missing", stderr: "" };
+      },
+    }),
+    /同步队列重启恢复冒烟缺少唯一成功标志/,
   );
 
   const missingRoot = makeRoot(t);

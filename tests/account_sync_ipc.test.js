@@ -216,3 +216,61 @@ test("signed-out IPC never reads a sync source and account changes invalidate pr
   assert.equal(switched.ok, false);
   assert.match(switched.error, /账号已变化|失效/);
 });
+
+test("queue IPC is account-scoped and signed-out callers cannot inspect or mutate it", async () => {
+  const handlers = new Map();
+  let accountId = null;
+  const calls = [];
+  const persistence = { state: "ready", encrypted: true, persistent: true };
+  const authProvider = {
+    status: () => accountId
+      ? { state: "authenticated", loggedIn: true, accountId }
+      : { state: "signed_out", loggedIn: false, accountId: null },
+    beginLogin: () => ({}),
+    logout: () => ({}),
+  };
+  const syncProvider = {
+    getPreference: () => "never_asked", setPreference: () => "never_asked",
+    persistenceStatus: () => persistence,
+    preview: () => ({}), confirm: () => ({}),
+    listQueue: (status) => { calls.push(["list", status]); return [{ queue_id: "queue-1" }]; },
+    cancel: (id, status) => { calls.push(["cancel", id, status]); return { queue_id: id }; },
+    retry: (id, status) => { calls.push(["retry", id, status]); return { queue_id: id }; },
+    delete: (id, status) => { calls.push(["delete", id, status]); return true; },
+  };
+  registerAccountSyncIpc({
+    ipcMain: { handle: (name, fn) => handlers.set(name, fn) },
+    pathPolicy: { looksLikeProject: () => true },
+    authProvider,
+    licenseProvider: { status: () => ({}) },
+    syncProvider,
+    syncRecordSource: async () => ({}),
+  });
+
+  const signedOutQueue = await handlers.get("provider:sync-queue")();
+  assert.deepEqual(signedOutQueue, {
+    ok: true, items: [], signedOut: true, persistence,
+  });
+  for (const channel of ["provider:sync-cancel", "provider:sync-retry", "provider:sync-delete"]) {
+    const response = await handlers.get(channel)(null, { queueId: "queue-1" });
+    assert.equal(response.ok, false);
+    assert.match(response.error, /必须先登录/);
+  }
+  assert.deepEqual(calls, []);
+
+  accountId = "account-1";
+  const signedInQueue = await handlers.get("provider:sync-queue")();
+  assert.equal(signedInQueue.ok, true);
+  assert.equal(signedInQueue.signedOut, false);
+  assert.deepEqual(signedInQueue.items, [{ queue_id: "queue-1" }]);
+  assert.deepEqual(signedInQueue.persistence, persistence);
+  await handlers.get("provider:sync-cancel")(null, { queueId: "queue-1" });
+  await handlers.get("provider:sync-retry")(null, { queueId: "queue-1" });
+  await handlers.get("provider:sync-delete")(null, { queueId: "queue-1" });
+
+  for (const call of calls) {
+    const status = call.at(-1);
+    assert.equal(status.accountId, "account-1");
+    assert.equal(status.loggedIn, true);
+  }
+});

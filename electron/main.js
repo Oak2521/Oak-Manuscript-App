@@ -4,7 +4,9 @@
 
 const path = require("path");
 const fs = require("fs");
-const { app, BrowserWindow, dialog, ipcMain, protocol, shell, session, utilityProcess } = require("electron");
+const {
+  app, BrowserWindow, dialog, ipcMain, protocol, safeStorage, shell, session, utilityProcess,
+} = require("electron");
 
 const pathPolicy = require("./path-policy");
 const bridge = require("./python-bridge");
@@ -16,6 +18,7 @@ const { registerP0Ipc } = require("./p0-ipc");
 const { registerCoreIpc } = require("./core-ipc");
 const { registerStandardsIpc } = require("./standards-ipc");
 const { StandardsProvider } = require("./standards-provider");
+const { EncryptedSyncStore } = require("./sync-store");
 const { createStandardBoundCore } = require("./standard-bound-core");
 const { readCoreCommandResult, toFailureResponse } = require("./core-result");
 const { createPdfPreview } = require("./pdf-preview");
@@ -31,7 +34,8 @@ const {
   registerAppSchemeAsPrivileged,
 } = require("./app-protocol");
 
-const SMOKE = process.argv.includes("--smoke");
+const SYNC_RECOVERY_SMOKE = process.argv.includes("--smoke-sync-recovery");
+const SMOKE = process.argv.includes("--smoke") || SYNC_RECOVERY_SMOKE;
 const ALLOWED_EXTERNAL_HOSTS = new Set(["oakbylake.com", "www.oakbylake.com"]);
 
 // 必须发生在 app ready 之前；正常启动和 smoke 使用同一默认离线基线。
@@ -360,6 +364,42 @@ app.whenReady().then(async () => {
     }
   }
   installAppProtocol(protocol, path.join(pathPolicy.repoRoot(), "renderer"));
+  try {
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error("当前系统安全存储不可用");
+    }
+    providers.syncProvider.configurePersistence(new EncryptedSyncStore({
+      rootDir: path.join(app.getPath("userData"), "sync"),
+      protect: (plaintext) => safeStorage.encryptString(plaintext),
+      unprotect: (ciphertext) => safeStorage.decryptString(ciphertext),
+    }));
+    console.log("[sync] encrypted local queue ready; transport disabled");
+  } catch (error) {
+    providers.syncProvider.disablePersistence(error);
+    // Sync remains fail-closed while all local manuscript functions stay available.
+    console.error("[sync] encrypted local queue unavailable:", error && error.message);
+  }
+  if (SYNC_RECOVERY_SMOKE) {
+    try {
+      const persistence = providers.syncProvider.persistenceStatus();
+      const items = providers.syncProvider.listQueue({
+        state: "authenticated",
+        loggedIn: true,
+        accountId: "smoke-account",
+      });
+      if (persistence.state !== "ready" || persistence.encrypted !== true || items.length !== 1 ||
+          items[0].state !== "pending_transport" || items[0].payload.project_id !== "0000000000000001" ||
+          items[0].payload.run_id !== "check-9001" || items[0].payload.versions.app !== app.getVersion()) {
+        throw new Error("加密同步队列重启恢复证据不完整或身份不一致");
+      }
+      console.log("SYNC-RECOVERY-RESULT: PASS");
+      app.exit(0);
+    } catch (error) {
+      console.error("SYNC-RECOVERY-RESULT: FAIL", error && error.message);
+      app.exit(1);
+    }
+    return;
+  }
   const standardsStoreRoot = path.join(app.getPath("userData"), "standards");
   bridge.configureStandardsStoreRoot(standardsStoreRoot);
   standardsProvider = new StandardsProvider({

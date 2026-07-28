@@ -192,6 +192,8 @@
         <p id="license-status-text">正在读取 Free / Pro 权益状态…</p>
         <p>登录不等于同意同步。检查结果与必要元数据同步<strong>默认关闭</strong>，每次发送前逐字段预览；稿件、正文、标题、摘要、文件名、路径和哈希永不进入账号同步。</p>
         <button id="btn-login2" class="ghost">注册 / 登录湖岸账号</button>
+        <p id="sync-queue-status" class="muted">正在检查本机加密待发送队列…</p>
+        <div id="sync-queue-list" class="sync-queue-list" aria-live="polite"></div>
       </div>
       <h3>隐私</h3>
       <p class="muted">默认网络关闭、默认分析关闭；诊断信息不含正文、标题、文件名和路径。详见随附 PRIVACY_AND_SECURITY 文档。</p>
@@ -304,7 +306,7 @@
       </div>
     </div>
     <div class="callout sync-transport-warning">
-      当前仅实现本地预览与待发送队列契约；生产网站同步尚未配置，确认后也不会声称已经上传。
+      当前使用本机系统安全存储加密待发送队列；生产网站 transport 尚未配置，确认后也不会声称已经上传。
     </div>
     <ol id="sync-preview-fields" class="sync-preview-fields" aria-live="polite"></ol>
     <div class="modal-actions sync-choice-actions">

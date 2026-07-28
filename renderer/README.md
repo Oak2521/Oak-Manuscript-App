@@ -6,9 +6,9 @@ P0 批量修复界面遵循“计划—集中预览—一次确认”：Renderer
 
 检查同样先走引用计划：`planCitationResolution` 返回体例/模式、理由、置信度、纯数量证据和实际覆盖规则；用户确认后才由 `runCheck` 携带 opaque `citation_plan_id`。选“默认”且证据不足时界面明确显示 `structure_only`，不猜测具体体例。切换稿件或项目目录会清空上一项目的 session、计划与结果，防止连续处理多稿时串项目。
 
-账号入口保留在欢迎页、导出页和设置页。生产认证未配置时，界面明确说明不联网；测试模拟状态不暴露给生产 Renderer。只有登录用户导出后才出现 SyncRecord v1 逐字段预览；四个选择通过 opaque 幂等 ID 确认，Renderer 不能提交任意负载。负载使用 `textContent`/`replaceChildren` 渲染，不插入 HTML；当前队列文案明确为当前进程 `pending_transport`，不声称已上传。
+账号入口保留在欢迎页、导出页和设置页。生产认证未配置时，界面明确说明不联网；测试模拟状态不暴露给生产 Renderer。只有登录用户导出后才出现 SyncRecord v1 逐字段预览；四个选择通过 opaque 幂等 ID 确认，Renderer 不能提交任意负载。负载和队列使用 `textContent`/`replaceChildren` 渲染，不插入 HTML；设置页只显示当前账号的 OS 加密本机队列，可取消、重试、删除，并明确 `pending_transport` 尚未上传。
 
-`app.js` 中的 `window.__oakActions` 是按钮与自动化 smoke 共用的业务动作层，不是额外特权接口。当前 `0.1.0-alpha.20` source/packaged 隐藏 smoke 已通过真实 Renderer → preload → IPC → 固定 Python bootstrap 完成 DOCX/EPUB 的引用计划确认、检查、集中修复、恢复、重新修复、导出与验证；两个项目各有 4 次检查、1 次批量修复、3 个检查点且 `source_hash_ok=true`，并断言真实打包身份与外部验证链路。动态运行根不写入 ASAR，准确路径以仓库 `docs/TEST_REPORT.md` 为准。
+`app.js` 中的 `window.__oakActions` 是按钮与自动化 smoke 共用的业务动作层，不是额外特权接口。当前 `0.1.0-alpha.21` source/packaged 隐藏 smoke 已通过真实 Renderer → preload → IPC → 固定 Python bootstrap 完成 DOCX/EPUB 的引用计划确认、检查、集中修复、恢复、重新修复、导出与验证；随后用第二进程恢复同一 OS 加密队列。两个项目各有 4 次检查、1 次批量修复、3 个检查点且 `source_hash_ok=true`。动态运行根不写入 ASAR，准确路径以仓库 `docs/TEST_REPORT.md` 为准。
 
 标准资源页会分别显示项目固定版本与当前全局版本。已有项目只有在用户打开完整差异并一次确认后才会升级；目标由主进程选择，Renderer 不能提交任意 digest。升级成功后清空旧问题状态并自动重检。界面提供本地签名包安装与全局回滚入口，但当前构建没有生产信任根，因此本地导入默认禁用；没有联网自动下载。这些源码闭环不等于打包版或可售卖发行证据；生产账号/订阅/同步、Web 与 macOS 仍未实现。
 

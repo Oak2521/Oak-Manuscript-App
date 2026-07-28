@@ -2,7 +2,41 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.20 打包发行身份与真实 ASAR 元数据绑定检查点
+## 最新验证结论：0.1.0-alpha.21 本机加密同步队列与重启恢复检查点
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网；所有 Electron/packaged 进程隐藏执行，实际安装器未运行。
+
+| 命令 / 检查 | 结果 | 关键事实 |
+|---|---|---|
+| 同步持久化/IPC/Renderer/烟测定向回归 | **PASS** | 最终定向 33/33；另有持久 schema 对齐回归；覆盖加密往返、无明文、重启、账户隔离、项目阻止项、revision 冲突、篡改、非 canonical、硬链接、原子替换失败、持久层不可用、未登录拒绝和第二进程 marker |
+| 最终 `npm test` | **PASS** | 墙钟 151.5 秒；Node 370 total / 363 pass / 0 fail / 7 skip（3.448 秒）；Python 351 total / 0 failures / 0 errors / 3 skipped（102.669 秒） |
+| `npm run smoke` | **PASS** | 两次隐藏启动；最终输出 `out/source-smoke/runs/ms50hk0f-79612db60f3fa6f5/projects/`；首次写入 OS 加密队列，第二进程恢复，原稿哈希不变 |
+| 最终外层隐藏 `npm run build:win` | **PASS** | 193.7 秒；JRE/Ace staging、真实 ASAR、9 fuse、源/packaged 资源、NSIS/ZIP、EpubCheck/Ace、双阶段 packaged smoke 与发布证据同链退出码 0 |
+| `npm run release:evidence:win` + `verify` | **PASS** | 旧根目录文件与 alpha.20-final 归档逐字节同值后只清理重复副本；alpha.21 NSIS/ZIP、SHA256SUMS 与 canonical manifest 全量交叉复验 |
+| `npm run verify:packaged:win` | **PASS（alpha）** | `package_evidence_scope=packaged-app-asar`；应用资源 73 文件 / 2,117,464 字节；源码/packaged sale blocker 仍为 17/12 |
+| `npm run verify:install-lifecycle:win` | **PASS（只读预检）** | 当前 alpha.21 与归档 alpha.12 字节/manifest/PE 匹配；`authorized=false`、`ready_for_authorized_run=true`；未启动安装器 |
+| 真实安装生命周期 | **未运行** | 会写 HKCU、Desktop 与 Start Menu；仍需单独系统写入授权，不能写成通过 |
+
+最终 packaged smoke 运行根：`out/packaged-smoke/runs/ms50e86n-c12719289316148e/projects/`。首次进程写入 `electron-user-data/sync/queue-v1.enc`，第二进程恢复成功；文件 1,960 字节、头 `OAKSYNC1`、SHA-256 `d60f3a18bda483db98bd6cd5bc777fe009625413289a7361b05bd8e1cb61e891`，二进制中未发现 `oak_manuscript_sync_queue` 或合成记录 ID 明文。
+
+| 项目 | APP/core | 检查 | 修复批次 | 应用 issue fixes | 检查点 | 当前问题 | PDF 字节 | 引用模式 | 外部验证 | 原稿 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---|---|
+| `ui-smoke-docx` | 0.1.0-alpha.21 | 4 | 1 | 5 | 3 | 13 | 251,660 | `structure_only` | 不适用 | unchanged |
+| `ui-smoke-epub` | 0.1.0-alpha.21 | 4 | 1 | 2 | 3 | 5 | 178,401 | `structure_only` | EpubCheck failed：0 fatal / 5 error / 0 warning；Ace failed：8 项断言 | unchanged |
+
+最终制品：
+
+| 文件 | 字节 | SHA-256 |
+|---|---:|---|
+| `Oak-Manuscript-0.1.0-alpha.21-Windows-x64.exe` | 189,992,003 | `be7759f69916be3b65e94e3f66893d0498406e0a5604915f118b379aaa06782e` |
+| `Oak-Manuscript-0.1.0-alpha.21-Windows-x64.zip` | 233,810,027 | `99141599e9909c56250f81ec76497ec2bcffac22691b7d04df897e4512f2b722` |
+| `SHA256SUMS.txt` | 224 | `0e392de35194b8fcbcee8ba7bd837ed24e0180ca8d65e0d1c61726bf11a7ddd1` |
+
+首轮已通过功能门禁的制品在 README/最终源码同步后归档为 `release/archive/0.1.0-alpha.21-superseded-pre-doc-sync/`，不作为最终证据。上述六项最终发行文件（含 blockmap、manifest 与 builder debug 记录）已复制到 `release/archive/0.1.0-alpha.21-final/`。
+
+证据边界：本检查点完成的是本机加密队列、账户隔离和真实重启恢复，不是网站同步。生产 Auth/OS 凭据、独立网络 transport、服务端同 schema/幂等/归属验证、云端查看与删除、签名、真实安装、macOS/Web 和销售门禁仍待完成。
+
+## 历史验证结论：0.1.0-alpha.20 打包发行身份与真实 ASAR 元数据绑定检查点
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网；所有 Electron/packaged 进程隐藏执行，实际安装器未运行。
 
@@ -449,8 +483,8 @@ alpha.11 隐藏 smoke 运行根：`out/source-smoke/runs/ms4eowx9-64e0aab5311e2a
 
 - 生产 Auth 未配置，真实 `beginLogin` 返回 `configuration_required`，不开网页、不联网；测试模拟登录不是生产登录；
 - 模拟 License 没有签名证据，`signatureVerified=false`；生产签名授权缓存、设备服务和支付不存在；
-- 同步队列只存在于当前 Electron 进程，`pending_transport` 不是上传成功；没有加密持久队列、网络 transport、Supabase 表、网站用户后台或云端查看/导出/删除；
-- `project.json.sync` 继续保持既有 `never_asked` / 空历史格式；alpha.8 没有把当前进程模拟队列伪写为云端同步历史；
+- 本节记录的 alpha.8 同步队列只存在于当时的 Electron 进程，`pending_transport` 不是上传成功；alpha.21 已加入加密持久本地队列，但网络 transport、Supabase 表、网站用户后台或云端查看/导出/删除仍不存在；
+- `project.json.sync` 继续保持既有 `never_asked` / 空历史格式；alpha.8 没有把当时的进程内模拟队列伪写为云端同步历史，alpha.21 也不把本地持久队列写成云端成功历史；
 - 默认 Electron session 继续拒绝网络。未来生产 Provider 必须使用独立最小权限传输，不能修改这条基线。
 
 ### 真实 smoke 证据
@@ -608,7 +642,7 @@ alpha.11 隐藏 smoke 运行根：`out/source-smoke/runs/ms4eowx9-64e0aab5311e2a
 
 ### Windows sale 门禁
 
-alpha 门禁实际执行运行时探针并通过；当前源码 sale 门禁以以下 17 项机器可读 blocker 按设计失败，真实 alpha.20 packaged ASAR 关闭其中 5 个 loose 可信根项后保留 12 项：
+alpha 门禁实际执行运行时探针并通过；当前源码 sale 门禁以以下 17 项机器可读 blocker 按设计失败，真实 alpha.21 packaged ASAR 关闭其中 5 个 loose 可信根项后保留 12 项：
 
 1. `RELEASE_PUBLISHER_METADATA_PENDING`：完整发行身份、具名复核与 package/signing 元数据待确认；
 2. `FORMAL_LICENSE_AUDIT_REQUIRED`：Ace 18 个依赖包仍需正式人工许可证审计；

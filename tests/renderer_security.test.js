@@ -16,6 +16,18 @@ test("user-controlled export paths are rendered only through textContent", () =>
   assert.doesNotMatch(APP_SOURCE, /innerHTML[^\n]*(?:\$\{\s*f\s*\}|\$\{\s*r\.path\s*\})/);
 });
 
+test("account sync queue is rebuilt with text nodes and never renders internal account ids", () => {
+  const start = APP_SOURCE.indexOf("function renderSyncQueue()");
+  const end = APP_SOURCE.indexOf("async function refreshSyncQueue()", start);
+  assert.notEqual(start, -1);
+  assert.ok(end > start);
+  const queueRenderer = APP_SOURCE.slice(start, end);
+  assert.match(queueRenderer, /meta\.textContent = `\$\{item\.payload\.event\}/);
+  assert.match(queueRenderer, /root\.replaceChildren\(\.\.\.children\)/);
+  assert.doesNotMatch(queueRenderer, /item\.account_id/);
+  assert.doesNotMatch(queueRenderer, /innerHTML/);
+});
+
 test("renderer CSP blocks active embedded content and contains no inline styles", () => {
   const html = fs.readFileSync(
     path.resolve(__dirname, "..", "renderer", "index.html"),

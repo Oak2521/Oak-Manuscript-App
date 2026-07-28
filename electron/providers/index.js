@@ -12,6 +12,14 @@ const SYNC_CHOICES = Object.freeze([
   "never_for_project",
 ]);
 const SYNC_PREFERENCES = new Set(["never_asked", "off", "ask_each_time", "always"]);
+const SYNC_QUEUE_STATES = new Set(["pending_transport", "canceled"]);
+const SYNC_STORE_KEYS = Object.freeze([
+  "schema_version", "store_type", "revision", "preference", "project_blocks", "queue",
+]);
+const SYNC_QUEUE_ITEM_KEYS = Object.freeze([
+  "account_id", "queue_id", "idempotency_id", "state", "created_at", "updated_at",
+  "attempts", "last_error", "payload",
+]);
 const FORBIDDEN_KEY_PATTERN = /(?:content|body|text|title|abstract|keyword|preview|excerpt|snippet|filename|file_name|path|username|device|reference|footnote|image|sha(?:256)?|hash|fingerprint)/i;
 
 function clone(value) {
@@ -255,6 +263,57 @@ function validateSyncRecordV1(record) {
   return true;
 }
 
+function accountId(value) {
+  return safeString(value, "account_id", /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/);
+}
+
+function validateStoredQueueItem(item) {
+  exactKeys(item, SYNC_QUEUE_ITEM_KEYS, "同步队列项");
+  accountId(item.account_id);
+  safeString(item.queue_id, "queue_id", /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/);
+  safeString(item.idempotency_id, "idempotency_id", /^sync-v1:[0-9a-f]{16}:check-[0-9]{4,}$/);
+  enumValue(item.state, SYNC_QUEUE_STATES, "同步队列 state");
+  isoTime(item.created_at, "同步队列 created_at");
+  isoTime(item.updated_at, "同步队列 updated_at");
+  nonnegativeInteger(item.attempts, "同步队列 attempts");
+  if (item.last_error !== null) {
+    safeString(item.last_error, "同步队列 last_error", /^[A-Z][A-Z0-9_]{0,63}$/);
+  }
+  validateSyncRecordV1(item.payload);
+  if (item.idempotency_id !== item.payload.idempotency_id || item.payload.authorized_at === null) {
+    throw new Error("同步队列项与 payload 身份或授权时间不一致");
+  }
+  return item;
+}
+
+function validateSyncStoreState(state) {
+  exactKeys(state, SYNC_STORE_KEYS, "同步持久状态");
+  enumValue(state.schema_version, new Set(["1.0"]), "同步持久状态 schema_version");
+  enumValue(state.store_type, new Set(["oak_manuscript_sync_queue"]), "同步持久状态 store_type");
+  if (!Number.isSafeInteger(state.revision) || state.revision < 1) throw new Error("同步持久状态 revision 非法");
+  enumValue(state.preference, SYNC_PREFERENCES, "同步持久状态 preference");
+  if (!Array.isArray(state.project_blocks) || !Array.isArray(state.queue)) {
+    throw new Error("同步持久状态集合非法");
+  }
+  const blocks = new Set();
+  for (const block of state.project_blocks) {
+    exactKeys(block, ["account_id", "project_id"], "同步项目阻止项");
+    const key = `${accountId(block.account_id)}\0${safeString(block.project_id, "project_id", /^[0-9a-f]{16}$/)}`;
+    if (blocks.has(key)) throw new Error("同步项目阻止项重复");
+    blocks.add(key);
+  }
+  const queueIds = new Set();
+  const idempotency = new Set();
+  for (const item of state.queue) {
+    validateStoredQueueItem(item);
+    const idemKey = `${item.account_id}\0${item.idempotency_id}`;
+    if (queueIds.has(item.queue_id) || idempotency.has(idemKey)) throw new Error("同步队列身份重复");
+    queueIds.add(item.queue_id);
+    idempotency.add(idemKey);
+  }
+  return true;
+}
+
 class AuthProvider {
   constructor({ allowLocalSimulation = false, clock = () => new Date() } = {}) {
     this.allowLocalSimulation = allowLocalSimulation;
@@ -382,20 +441,108 @@ class LicenseProvider {
 }
 
 class SyncProvider {
-  constructor({ clock = () => new Date(), idFactory = null } = {}) {
+  constructor({ clock = () => new Date(), idFactory = null, requirePersistence = false } = {}) {
     this.clock = clock;
     this.idFactory = idFactory || (() => `queue-${randomUUID()}`);
+    this.requirePersistence = requirePersistence === true;
     this.preference = "never_asked";
     this.projectBlocks = new Set();
     this.queue = new Map();
     this.byIdempotency = new Map();
+    this.revision = 0;
+    this.store = null;
+    this.persistenceFailure = null;
   }
 
   getPreference() { return this.preference; }
 
+  persistenceStatus() {
+    if (this.store) return { state: "ready", encrypted: this.store.encrypted === true, persistent: true };
+    if (this.persistenceFailure) return { state: "unavailable", encrypted: false, persistent: false };
+    return {
+      state: this.requirePersistence ? "initializing" : "memory_only",
+      encrypted: false,
+      persistent: false,
+    };
+  }
+
+  configurePersistence(store) {
+    if (!store || typeof store.load !== "function" || typeof store.save !== "function" || store.encrypted !== true) {
+      throw new TypeError("同步持久存储必须提供加密 load/save 契约");
+    }
+    const loaded = store.load();
+    if (loaded !== null) {
+      validateSyncStoreState(loaded);
+      this._importState(loaded);
+    }
+    this.store = store;
+    this.persistenceFailure = null;
+    return this.persistenceStatus();
+  }
+
+  disablePersistence(error = null) {
+    this.store = null;
+    this.persistenceFailure = error || new Error("系统安全存储不可用");
+    return this.persistenceStatus();
+  }
+
+  _blockKey(account, project) { return `${account}\0${project}`; }
+
+  _idempotencyKey(account, idempotencyId) { return `${account}\0${idempotencyId}`; }
+
+  _exportState(revision = this.revision) {
+    const projectBlocks = [...this.projectBlocks]
+      .sort()
+      .map((key) => {
+        const separator = key.indexOf("\0");
+        return { account_id: key.slice(0, separator), project_id: key.slice(separator + 1) };
+      });
+    const queue = [...this.queue.values()]
+      .map(clone)
+      .sort((left, right) => left.queue_id < right.queue_id ? -1 : left.queue_id > right.queue_id ? 1 : 0);
+    return {
+      schema_version: "1.0",
+      store_type: "oak_manuscript_sync_queue",
+      revision,
+      preference: this.preference,
+      project_blocks: projectBlocks,
+      queue,
+    };
+  }
+
+  _importState(state) {
+    validateSyncStoreState(state);
+    this.revision = state.revision;
+    this.preference = state.preference;
+    this.projectBlocks = new Set(state.project_blocks.map((item) => this._blockKey(item.account_id, item.project_id)));
+    this.queue = new Map(state.queue.map((item) => [item.queue_id, clone(item)]));
+    this.byIdempotency = new Map(state.queue.map((item) => [
+      this._idempotencyKey(item.account_id, item.idempotency_id),
+      item.queue_id,
+    ]));
+  }
+
+  _transaction(mutator) {
+    if (this.requirePersistence && !this.store) {
+      throw new Error("本机加密同步队列不可用；没有发送或保存任何同步负载");
+    }
+    const draftProvider = new SyncProvider({ clock: this.clock, idFactory: this.idFactory });
+    draftProvider.preference = this.preference;
+    draftProvider.projectBlocks = new Set(this.projectBlocks);
+    draftProvider.queue = new Map([...this.queue].map(([key, value]) => [key, clone(value)]));
+    draftProvider.byIdempotency = new Map(this.byIdempotency);
+    draftProvider.revision = this.revision;
+    const result = mutator(draftProvider);
+    const next = draftProvider._exportState(this.revision + 1);
+    validateSyncStoreState(next);
+    if (this.store) this.store.save(next, { expectedRevision: this.revision });
+    this._importState(next);
+    return result;
+  }
+
   setPreference(value) {
     if (!SYNC_PREFERENCES.has(value)) throw new Error("同步偏好非法");
-    this.preference = value;
+    if (value !== this.preference) this._transaction((draft) => { draft.preference = value; });
     return value;
   }
 
@@ -407,14 +554,22 @@ class SyncProvider {
 
   shouldOffer(projectId, authStatus) {
     if (!authStatus || authStatus.loggedIn !== true || authStatus.state !== "authenticated") return false;
-    return this.preference !== "off" && !this.projectBlocks.has(projectId);
+    return this.preference !== "off" && !this.projectBlocks.has(this._blockKey(accountId(authStatus.accountId), projectId));
   }
 
   preview(record, authStatus) {
     this._requireAuth(authStatus);
     validateSyncRecordV1(record);
     if (!this.shouldOffer(record.project_id, authStatus)) throw new Error("该项目已关闭同步询问");
-    return { record: clone(record), choices: [...SYNC_CHOICES], transportConfigured: false };
+    if (this.requirePersistence && !this.store) {
+      throw new Error("本机加密同步队列不可用；没有读取稿件，也不会创建同步预览");
+    }
+    return {
+      record: clone(record),
+      choices: [...SYNC_CHOICES],
+      transportConfigured: false,
+      persistence: this.persistenceStatus(),
+    };
   }
 
   confirm(record, choice, authStatus) {
@@ -425,19 +580,21 @@ class SyncProvider {
       return { action: choice, queued: false, preference: this.preference };
     }
     if (choice === "never_for_project") {
-      this.projectBlocks.add(record.project_id);
+      const key = this._blockKey(accountId(authStatus.accountId), record.project_id);
+      if (!this.projectBlocks.has(key)) this._transaction((draft) => { draft.projectBlocks.add(key); });
       return { action: choice, queued: false, preference: this.preference };
     }
-    if (choice === "ask_each_time") this.preference = "ask_each_time";
+    const account = accountId(authStatus.accountId);
 
-    const existingId = this.byIdempotency.get(record.idempotency_id);
+    const existingId = this.byIdempotency.get(this._idempotencyKey(account, record.idempotency_id));
     if (existingId && this.queue.has(existingId)) {
       return {
         action: choice,
         queued: true,
         preference: this.preference,
         duplicate: true,
-        item: clone(this.queue.get(existingId)),
+        item: this._publicItem(this.queue.get(existingId)),
+        persistence: this.persistenceStatus(),
       };
     }
     const now = this.clock().toISOString();
@@ -445,51 +602,94 @@ class SyncProvider {
     if (payload.authorized_at === null) payload.authorized_at = now;
     validateSyncRecordV1(payload);
     const item = {
+      account_id: account,
       queue_id: safeString(this.idFactory(), "queue_id", /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/),
       idempotency_id: payload.idempotency_id,
       state: "pending_transport",
       created_at: now,
+      updated_at: now,
       attempts: 0,
       last_error: null,
       payload,
     };
-    this.queue.set(item.queue_id, item);
-    this.byIdempotency.set(item.idempotency_id, item.queue_id);
-    return { action: choice, queued: true, preference: this.preference, duplicate: false, item: clone(item) };
+    this._transaction((draft) => {
+      if (choice === "ask_each_time") draft.preference = "ask_each_time";
+      draft.queue.set(item.queue_id, clone(item));
+      draft.byIdempotency.set(draft._idempotencyKey(account, item.idempotency_id), item.queue_id);
+    });
+    return {
+      action: choice,
+      queued: true,
+      preference: this.preference,
+      duplicate: false,
+      item: this._publicItem(item),
+      persistence: this.persistenceStatus(),
+    };
   }
 
-  listQueue() { return [...this.queue.values()].map(clone); }
+  _publicItem(item) {
+    const result = clone(item);
+    delete result.account_id;
+    return result;
+  }
 
-  _item(queueId) {
+  listQueue(authStatus) {
+    this._requireAuth(authStatus);
+    const account = accountId(authStatus.accountId);
+    return [...this.queue.values()]
+      .filter((item) => item.account_id === account)
+      .map((item) => this._publicItem(item));
+  }
+
+  _item(queueId, authStatus) {
+    this._requireAuth(authStatus);
     safeString(queueId, "queueId", /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/);
     const item = this.queue.get(queueId);
     if (!item) throw new Error("同步队列项不存在");
+    if (item.account_id !== accountId(authStatus.accountId)) throw new Error("同步队列项不属于当前账号");
     return item;
   }
 
-  cancel(queueId) {
-    const item = this._item(queueId);
-    item.state = "canceled";
-    return clone(item);
+  cancel(queueId, authStatus) {
+    const item = this._item(queueId, authStatus);
+    if (item.state !== "canceled") {
+      const now = this.clock().toISOString();
+      this._transaction((draft) => {
+        const target = draft.queue.get(queueId);
+        target.state = "canceled";
+        target.updated_at = now;
+      });
+    }
+    return this._publicItem(this.queue.get(queueId));
   }
 
-  retry(queueId) {
-    const item = this._item(queueId);
-    item.state = "pending_transport";
-    item.last_error = null;
-    return clone(item);
+  retry(queueId, authStatus) {
+    const item = this._item(queueId, authStatus);
+    if (item.state !== "pending_transport" || item.last_error !== null) {
+      const now = this.clock().toISOString();
+      this._transaction((draft) => {
+        const target = draft.queue.get(queueId);
+        target.state = "pending_transport";
+        target.updated_at = now;
+        target.last_error = null;
+      });
+    }
+    return this._publicItem(this.queue.get(queueId));
   }
 
-  delete(queueId) {
-    const item = this._item(queueId);
-    this.byIdempotency.delete(item.idempotency_id);
-    return this.queue.delete(queueId);
+  delete(queueId, authStatus) {
+    const item = this._item(queueId, authStatus);
+    this._transaction((draft) => {
+      draft.byIdempotency.delete(draft._idempotencyKey(item.account_id, item.idempotency_id));
+      draft.queue.delete(queueId);
+    });
+    return true;
   }
 }
 
 const authProvider = new AuthProvider();
 const licenseProvider = new LicenseProvider();
-const syncProvider = new SyncProvider();
+const syncProvider = new SyncProvider({ requirePersistence: true });
 
 const EvaluationProvider = {
   evaluationUrl() {
@@ -503,6 +703,8 @@ module.exports = {
   SyncProvider,
   buildSyncRecordV1,
   validateSyncRecordV1,
+  validateStoredQueueItem,
+  validateSyncStoreState,
   SYNC_CHOICES,
   authProvider,
   licenseProvider,

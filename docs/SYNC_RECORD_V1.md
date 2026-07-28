@@ -1,6 +1,6 @@
 # SyncRecord v1 — 结果与元数据同步契约
 
-> 状态：`0.1.0-alpha.8` 已实现客户端/核心离线契约、逐字段预览和当前进程内队列；生产账号、凭据存储、网络 transport、服务端验收与网站后台尚未实现。本文件不能作为“数据已可同步到网站”的证明。
+> 状态：`0.1.0-alpha.21` 已实现客户端/核心离线契约、逐字段预览、按账户隔离的 OS 加密持久队列和第二进程重启恢复；生产账号凭据、网络 transport、服务端验收与网站后台尚未实现。本文件不能作为“数据已可同步到网站”的证明。
 
 ## 1. 信任边界
 
@@ -13,7 +13,7 @@
   -> validateSyncRecordV1 拒绝未知/禁止字段
   -> 已登录用户逐字段预览
   -> 四选一明确确认
-  -> 当前进程内幂等队列（生产 transport 未配置）
+  -> safeStorage 加密幂等队列（生产 transport 未配置）
 ```
 
 Renderer 只能向主进程提交项目句柄、`check | export` 事件、是否包含结构化问题记录、幂等 ID 和固定选择枚举；不能提交同步 payload、令牌或网络目标。未来服务端必须对同一 schema 再验证一次，不得信任客户端已过滤。
@@ -55,9 +55,13 @@ Renderer 只能向主进程提交项目句柄、`check | export` 事件、是否
 | `sync_once` | 入幂等队列 | 不改变全局询问偏好 |
 | `ask_each_time` | 入幂等队列 | 偏好设为以后仍询问 |
 | `not_now` | 不入队 | 保持现有偏好 |
-| `never_for_project` | 不入队 | 当前进程内不再询问该项目 |
+| `never_for_project` | 不入队 | 当前账号持久记录不再询问该项目 |
 
-同一 `idempotency_id` 重复确认只能得到同一队列项。队列项支持 `cancel`、`retry`、`delete`；当前实现没有持久 transport，状态为 `pending_transport` 不能解释为已上传。关闭 APP 后当前进程内模拟队列和项目阻止集会消失；持久化、发送、云端查看/导出/删除必须在生产联调阶段另行实现。
+同一账户下同一 `idempotency_id` 重复确认只能得到同一队列项。队列项支持 `cancel`、`retry`、`delete`；状态为 `pending_transport` 不能解释为已上传。队列、幂等键和项目阻止项按账户隔离；未登录查询固定返回空集，所有修改必须重新验证当前账户。内部 `account_id` 不返回 Renderer。
+
+本机持久状态的机器契约为 `config/schemas/sync-queue-store-v1.schema.json`。Electron `safeStorage` 提供 OS 绑定加密；磁盘文件为 `OAKSYNC1 + uint32 长度 + 密文`。明文必须是 exact/canonical JSON，写入采用同目录独占候选、文件 `fsync`、原子替换、提交后解密复验和 revision compare-and-swap。链接、硬链接、目录逃逸、大小超限、篡改、非 canonical、短读、读取期间身份变化或并发旧 revision 均拒绝。系统加密不可用或队列损坏时，同步预览和保存 fail-closed，本地检查、修复与导出继续可用。
+
+当前仍没有生产网络 transport、后台发送、退避调度或网站后台；关闭并重新打开 APP 只会恢复本机待发送状态，不会产生上传。
 
 ## 5. 账号与权益模拟边界
 
@@ -65,7 +69,7 @@ Renderer 只能向主进程提交项目句柄、`check | export` 事件、是否
 - 本地测试可模拟 authenticated、signed_out、expired、revoked，但生产运行不开放模拟入口；
 - `LicenseProvider` 给出 Free/Pro 能力矩阵，并可按 `validUntil` / `graceUntil` 计算 active、grace、expired；模拟授权没有签名证据，`signatureVerified=false`；
 - 订阅过期只影响新的 Pro 权益，`localProjectsLocked` 永远为 false；
-- 令牌、操作系统安全凭据存储、设备撤销服务和生产签名授权缓存均未实现。
+- 队列已使用 `safeStorage`，但这不是登录 token 存储；令牌凭据、设备撤销服务和生产签名授权缓存均未实现。
 
 ## 6. 生产对接前必须补齐
 
@@ -73,6 +77,6 @@ Renderer 只能向主进程提交项目句柄、`check | export` 事件、是否
 2. 实现独立最小权限网络 transport，保持默认 Electron session 离线；
 3. 系统浏览器 PKCE、回调校验、OS 安全凭据存储、退出/过期/撤销；
 4. 服务端同 schema 白名单、账号归属、幂等唯一约束和授权时间写入；
-5. 持久队列的加密、取消、重试、退避、崩溃恢复与删除；
+5. 在现有加密、取消、重试、崩溃恢复与删除基础上，实现发送中状态、限次退避、网络错误分类和与 transport 的崩溃一致性；
 6. APP 与网站后台的查看、导出、删除和审计记录；
 7. 正文、文件名、路径、片段、哈希泄露反向集成测试及真实隐私验收。

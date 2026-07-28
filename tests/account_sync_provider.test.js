@@ -249,7 +249,7 @@ test("SyncProvider requires login and explicit choice before idempotent local qu
     () => provider.preview(record, { state: "signed_out", loggedIn: false }),
     /登录/,
   );
-  assert.equal(provider.listQueue().length, 0);
+  assert.equal(provider.listQueue(AUTHENTICATED).length, 0);
 
   const preview = provider.preview(record, AUTHENTICATED);
   assert.deepEqual(preview.choices, [
@@ -259,27 +259,28 @@ test("SyncProvider requires login and explicit choice before idempotent local qu
     "never_for_project",
   ]);
   assert.deepEqual(preview.record, record);
-  assert.equal(provider.listQueue().length, 0, "preview alone must not queue");
+  assert.equal(provider.listQueue(AUTHENTICATED).length, 0, "preview alone must not queue");
 
   assert.deepEqual(provider.confirm(record, "not_now", AUTHENTICATED), {
     action: "not_now",
     queued: false,
     preference: "never_asked",
   });
-  assert.equal(provider.listQueue().length, 0);
+  assert.equal(provider.listQueue(AUTHENTICATED).length, 0);
 
   const queued = provider.confirm(record, "ask_each_time", AUTHENTICATED);
   assert.equal(queued.queued, true);
   assert.equal(queued.item.state, "pending_transport");
+  assert.equal(queued.item.account_id, undefined, "account binding must remain internal");
   assert.equal(queued.preference, "ask_each_time");
   const duplicate = provider.confirm(record, "sync_once", AUTHENTICATED);
   assert.equal(duplicate.item.queue_id, queued.item.queue_id);
-  assert.equal(provider.listQueue().length, 1, "idempotency id must collapse duplicates");
+  assert.equal(provider.listQueue(AUTHENTICATED).length, 1, "idempotency id must collapse duplicates");
 
-  assert.equal(provider.cancel(queued.item.queue_id).state, "canceled");
-  assert.equal(provider.retry(queued.item.queue_id).state, "pending_transport");
-  assert.equal(provider.delete(queued.item.queue_id), true);
-  assert.equal(provider.listQueue().length, 0);
+  assert.equal(provider.cancel(queued.item.queue_id, AUTHENTICATED).state, "canceled");
+  assert.equal(provider.retry(queued.item.queue_id, AUTHENTICATED).state, "pending_transport");
+  assert.equal(provider.delete(queued.item.queue_id, AUTHENTICATED), true);
+  assert.equal(provider.listQueue(AUTHENTICATED).length, 0);
 
   const never = provider.confirm(record, "never_for_project", AUTHENTICATED);
   assert.equal(never.queued, false);

@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.20` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约、真实 ASAR production package 发行身份门禁、Windows builder 独立锁、ASAR/全 9 fuse/资源可信链、受限应用协议、Ace 受控 utilityProcess、CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据、未签名 NSIS/ZIP、source/packaged smoke，以及 Windows 安装生命周期的 fail-closed 编排与证据契约。生产认证/同步、联网标准获取、完整发行身份、代码签名、真实安装生命周期、macOS 和 Web 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.21` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、真实 ASAR production package 发行身份门禁、Windows builder 独立锁、ASAR/全 9 fuse/资源可信链、受限应用协议、Ace 受控 utilityProcess、CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据、未签名 NSIS/ZIP、source/packaged 双启动 smoke，以及 Windows 安装生命周期的 fail-closed 编排与证据契约。生产认证/网络同步、联网标准获取、完整发行身份、代码签名、真实安装生命周期、macOS 和 Web 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -19,7 +19,8 @@ Electron Main
   ├─ standard-bound-core：项目 release 预检 + 七字段 Python 绑定
   ├─ core-ipc：引用计划 / 检查参数的固定白名单
   ├─ AuthProvider / LicenseProvider：离线状态机、PKCE 固定契约与 Free/Pro 权益矩阵
-  ├─ account-sync-ipc / SyncProvider：可信来源负载、逐字段预览、四选一授权与进程内队列
+  ├─ account-sync-ipc / SyncProvider：可信来源负载、逐字段预览、四选一授权、账户隔离队列
+  ├─ sync-store / safeStorage：canonical 状态、revision CAS、原子加密持久化与重启恢复
   ├─ external-validation-ipc：项目路径 → 受绑定 plan/prepare/finalize；Renderer 不提交工具状态
   ├─ chrome-controller：固定隐藏 Chrome + 独立 profile + 随机 loopback DevTools
   ├─ ace-utility-runner：固定 utilityProcess 入口/参数/环境/超时/输出上限
@@ -125,9 +126,9 @@ Renderer 必须先调用严格只读的 `plan-citation`，展示体例/模式、
 
 Renderer 不能构造同步负载，也不能提供 token、任意 URL 或 transport。主进程只接受受路径门禁保护的项目和固定 `check|export` 事件，调用 Python `sync-source` 取得只读结构来源，再由 `buildSyncRecordV1` 生成并以 exact validator 校验负载。字段权威定义为 `config/schemas/sync-record-v1.schema.json`；标题、正文、解释、位置、预览、文件名、路径、用户名、引用原文和任何内容哈希都没有可用字段，未知字段一律拒绝。
 
-只有已登录状态才可生成预览；预览本身不入队、不发送。界面必须逐字段展示同一份缓存负载，用户随后明确选择 `sync_once`、`ask_each_time`、`not_now` 或 `never_for_project`。确认只提交 opaque `idempotency_id` 和固定选择，过期或替换后的预览拒绝。当前队列仅存在于当前进程并固定为 `pending_transport`，没有持久化、重启恢复、后台重试或网络上传；因此“已入队”绝不等于“已同步到网站”。
+只有已登录状态才可生成预览；预览本身不入队、不发送。界面必须逐字段展示同一份缓存负载，用户随后明确选择 `sync_once`、`ask_each_time`、`not_now` 或 `never_for_project`。确认只提交 opaque `idempotency_id` 和固定选择，过期或替换后的预览拒绝。alpha.21 队列固定为 `pending_transport|canceled`，使用 Electron `safeStorage` 加密并按账户隔离；内部状态以 exact schema/canonical JSON 校验，经同目录独占候选、文件 `fsync`、原子替换、提交后解密复验和 revision CAS 落盘。未登录不读取队列，Renderer 不接收内部账户 ID。没有后台发送或网络上传，因此“已入队”绝不等于“已同步到网站”。
 
-`AuthProvider` 当前固定未来生产形态为系统浏览器 PKCE，但未配置服务时只返回 `configuration_required` 且不打开页面；登录/过期/撤销仅能由测试专用实例模拟。`LicenseProvider` 已固定 Free/Pro 能力矩阵、有效期和离线宽限语义；签名订阅凭证、服务端设备管理与计费尚未实现。生产 transport 上线时必须保持默认 Electron session 离线，并把凭证存入系统安全存储、队列存入加密持久层，在不改变 SyncRecord v1 最小字段边界的前提下另行威胁建模。
+`AuthProvider` 当前固定未来生产形态为系统浏览器 PKCE，但未配置服务时只返回 `configuration_required` 且不打开页面；登录/过期/撤销仅能由测试专用实例模拟。`LicenseProvider` 已固定 Free/Pro 能力矩阵、有效期和离线宽限语义；签名订阅凭证、服务端设备管理与计费尚未实现。当前 `safeStorage` 只保护待发送队列，不等于生产 token 凭据层。生产 transport 上线时必须保持默认 Electron session 离线，使用独立最小权限网络通道，并在不改变 SyncRecord v1 最小字段边界的前提下另行威胁建模。
 
 ### AD-014 Electron fuses 必须“显式固定—构建后读回—未知项失败关闭”（2026-07-28，冻结）
 
@@ -257,4 +258,4 @@ alpha.20 进一步把“源码构建配置正确”和“制品实际身份正�
 - 源码 smoke 每次生成独立 `out/source-smoke/runs/<run-id>/`，项目、标准 store、缓存、临时目录、用户数据、HOME/APPDATA/XDG 与 crash dumps 不复用；打包 smoke 同样按运行 ID 隔离并受仓库 `out/` 边界控制。Windows EXE 还须先通过 x64 PE32+ 校验。
 - macOS 构建拆为 `build:mac:x64` 与 `build:mac:arm64`；聚合入口 `build:mac` 只选择当前原生 host 架构，不在一个进程伪造双架构探针。`verify:resources:mac` 只是带 `--no-runtime-probe` 的跨架构静态聚合，不能替代两个原生 runner 的执行证据。
 - alpha.20 最终 source/packaged 隐藏 smoke 已 PASS：`out/packaged-smoke/runs/ms4yn5a2-2412f8598c07f65e/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,665/178,403 字节；EPUB 通过受控 utilityProcess 实际运行 EpubCheck/Ace，缺陷结果分别为 5 error/8 项失败断言。Electron sandbox 保持开启。
-- alpha.20 以 `oak-manuscript://renderer/` 的四文件白名单在 `GrantFileProtocolExtraPrivileges=false` 下保持 ASAR UI 可用；Python `-B` 防止运行时修改 loose 可信树；顶层 2.1.3 afterPack 严格写入并回读 Electron 43 全 9 fuse。真实 ASAR production package 身份、builder 锁、CPython/EpubCheck/Temurin-JRE/Electron/builder provenance、NSIS/ZIP、source/packaged smoke、资源与发布证据已成立；安装生命周期仅完成只读预检，仍无完整法定身份、五类 provenance 人工签署、生产凭证、持久队列、上传 transport、Windows 签名、macOS 或 Web。packaged 资源门禁为 12 项。
+- alpha.21 以 `oak-manuscript://renderer/` 的四文件白名单在 `GrantFileProtocolExtraPrivileges=false` 下保持 ASAR UI 可用；Python `-B` 防止运行时修改 loose 可信树；顶层 2.1.3 afterPack 严格写入并回读 Electron 43 全 9 fuse。真实 ASAR production package 身份、builder 锁、CPython/EpubCheck/Temurin-JRE/Electron/builder provenance、NSIS/ZIP、source/packaged 双启动 smoke、safeStorage 队列恢复、资源与发布证据已成立；安装生命周期仅完成只读预检，仍无完整法定身份、五类 provenance 人工签署、生产凭证/上传 transport、Windows 签名、macOS 或 Web。packaged 资源门禁为 12 项。

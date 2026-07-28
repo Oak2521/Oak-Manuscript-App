@@ -589,12 +589,12 @@ function createToolchainFixture(t, existingRoot = null) {
   return { root, toolchain };
 }
 
-test("electron-builder config is valid and pins alpha.20 Windows installer policy", async () => {
+test("electron-builder config is valid and pins alpha.21 Windows installer policy", async () => {
   const packageJson = require("../package.json");
   const packageLock = require("../package-lock.json");
   await validateConfiguration(packageJson.build, { isEnabled: false, add() {} });
 
-  assert.equal(packageJson.version, "0.1.0-alpha.20");
+  assert.equal(packageJson.version, "0.1.0-alpha.21");
   assert.equal(packageLock.version, packageJson.version);
   assert.equal(packageLock.packages[""].version, packageJson.version);
   assert.deepEqual(packageJson.build.extraMetadata.oakReleaseIdentity, {
@@ -974,7 +974,7 @@ test("beforePack forwards the builder project root and target platform", () => {
   const calls = [];
   beforePack(
     {
-      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.20" } },
+      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.21" } },
       electronPlatformName: "darwin",
       arch: 1,
     },

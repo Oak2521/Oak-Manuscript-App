@@ -4,6 +4,18 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.21（ChatGPT 本机加密同步队列与重启恢复检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.21`。已生成未签名 Windows x64 NSIS 与 ZIP；网络 transport、生产登录、网站后台、真实安装、签名和其余 sale 门禁仍未完成，不是可售卖正式版。
+
+- SyncRecord 待发送项改用 Electron `safeStorage` 加密持久化；固定二进制封装、canonical 明文、revision CAS、独占候选、`fsync`、原子替换和提交后复验，异常时 fail-closed；
+- 队列与项目阻止项按账户隔离，未登录不可读取或操作；Renderer 不接收内部 `account_id`，设置页可查看当前账号队列并取消、重试、删除；
+- 新增 exact `sync-queue-store-v1` schema，以及篡改、硬链接、revision 冲突、原子替换失败、账户切换、持久层不可用和无明文泄露反向测试；
+- source/packaged smoke 均升级为两次隐藏启动，真实证明首次写入后可由第二进程通过 OS 安全存储恢复；生产 transport 仍固定禁用；
+- 最终全量：Node 370 total / 363 pass / 0 fail / 7 skip，Python 351 total / 0 failures / 0 errors / 3 skipped；source 与 packaged 双阶段 smoke 均 PASS；
+- 首轮制品通过 packaged smoke 后，文档同步发现 ASAR 内 README 与最终源码状态应保持一致；首轮制品归档为 `0.1.0-alpha.21-superseded-pre-doc-sync`，不作为最终发行证据。完整重构建 193.7 秒退出 0；
+- 最终 NSIS：189,992,003 字节，SHA-256 `be7759f69916be3b65e94e3f66893d0498406e0a5604915f118b379aaa06782e`；ZIP：233,810,027 字节，SHA-256 `99141599e9909c56250f81ec76497ec2bcffac22691b7d04df897e4512f2b722`。
+
 ### 2026-07-28 — 0.1.0-alpha.20（ChatGPT 打包发行身份与真实 ASAR 元数据绑定检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.20`。已生成未签名 Windows x64 NSIS 与 ZIP；实际安装、签名、法定身份补全和其余 sale 门禁仍未完成，不是可售卖正式版。

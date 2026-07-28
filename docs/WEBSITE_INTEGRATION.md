@@ -2,16 +2,16 @@
 
 > 当前依据为商业正式版方案 v2.0。网站现状只在 2026-07-11 做过只读快照，启动真实对接前必须重新核对，不能把旧分支状态写成当前线上事实。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.15）
+## Provider 一览（当前 alpha.21）
 
-alpha.15 继承 alpha.8 已固定的账号、权益和结果同步离线客户端契约，但没有生产认证、计费、持久队列或网络 transport。CPython 来源审计与 Windows builder 下载只发生在开发者明确授权的构建/审计输入阶段，与账号/同步 Provider 隔离；真实 APP 默认 session 仍离线，Ace loopback 仅为本机进程控制。SyncRecord v1 可包含最终体例、解析模式、原因码、置信度和解析器版本，但不得包含引用/书目原文、姓名、路径或内容哈希；权威字段见 `SYNC_RECORD_V1.md` 和 schema。
+alpha.21 继承 alpha.8 已固定的账号、权益和结果同步离线客户端契约，并加入按账号隔离、由操作系统安全存储加密、可跨重启恢复的本地 `pending_transport` 队列；生产认证、签名权益/计费、网络 transport 与网站后台仍不存在。CPython 来源审计与 Windows builder 下载只发生在开发者明确授权的构建/审计输入阶段，与账号/同步 Provider 隔离；真实 APP 默认 session 仍离线，Ace loopback 仅为本机进程控制。SyncRecord v1 可包含最终体例、解析模式、原因码、置信度和解析器版本，但不得包含引用/书目原文、姓名、路径或内容哈希；权威字段见 `SYNC_RECORD_V1.md` 和 schema。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
 | `AuthProvider` | 状态机覆盖未登录/已登录/过期/撤销，固定生产方式为系统浏览器 PKCE；未配置时返回 `configuration_required`，不打开页面、不联网；登录模拟仅供测试实例 | 湖岸橡树官网统一认证、系统浏览器 PKCE、系统安全存储、邮箱与 Google OAuth |
 | `LicenseProvider` | Free/Pro 能力矩阵、有效期/宽限/过期降级已固定；`signatureVerified=false`，永不锁已有本地文件 | 服务端签名权益、离线宽限、设备管理和订阅计费；价格未拍板 |
 | `EvaluationProvider` | 用户点击后返回固定湖岸 HTTPS 评估页 URL，由主进程白名单校验并交给系统浏览器打开；APP 不在该 Provider 中生成或上传摘要 | 用户确认后提交脱敏摘要（§8.3–§8.4） |
-| `SyncProvider` | 可信 Python 来源 → SyncRecord v1 exact 校验 → 完整预览 → 四选一确认 → 当前进程 `pending_transport` 队列；不联网、不持久化、不声称上传成功 | 登录用户明确选择后，只同步检查结果和必要元数据；加密持久队列、幂等 API、重试/撤销/删除 |
+| `SyncProvider` | 可信 Python 来源 → SyncRecord v1 exact 校验 → 完整预览 → 四选一确认 → 按账户隔离的 OS 加密 `pending_transport` 队列；可重启恢复，不联网、不声称上传成功 | 登录用户明确选择后，只同步检查结果和必要元数据；独立最小权限 transport、服务端幂等/归属验证、重试退避和云端撤销/删除 |
 | `StandardsProvider` | 离线验证内置 release；本地签名包预览/安装/全局回滚、项目固定版本与显式升级已实现；生产 trust pin 缺失时导入禁用 | 用户主动触发的在线检查/下载、签名与撤回分发、可观测回滚；绝不上传稿件 |
 | `UpdateProvider` | 尚未实现或导出 | 签名应用更新 |
 | `FeedbackProvider` | 尚未实现或导出 | 用户主动发送不含正文的规则反馈 |

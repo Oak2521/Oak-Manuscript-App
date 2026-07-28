@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript/sync-queue-store-v1.schema.json",
+  "title": "Oak Manuscript encrypted sync queue plaintext v1",
+  "description": "This exact state is encrypted by Electron safeStorage before it is written locally. It is not a network payload.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "store_type",
+    "revision",
+    "preference",
+    "project_blocks",
+    "queue"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "store_type": { "const": "oak_manuscript_sync_queue" },
+    "revision": { "type": "integer", "minimum": 1 },
+    "preference": { "enum": ["never_asked", "off", "ask_each_time", "always"] },
+    "project_blocks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/project_block" }
+    },
+    "queue": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/queue_item" }
+    }
+  },
+  "$defs": {
+    "project_block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["account_id", "project_id"],
+      "properties": {
+        "account_id": { "$ref": "#/$defs/account_id" },
+        "project_id": { "type": "string", "pattern": "^[0-9a-f]{16}$" }
+      }
+    },
+    "queue_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "account_id",
+        "queue_id",
+        "idempotency_id",
+        "state",
+        "created_at",
+        "updated_at",
+        "attempts",
+        "last_error",
+        "payload"
+      ],
+      "properties": {
+        "account_id": { "$ref": "#/$defs/account_id" },
+        "queue_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9:._-]{0,127}$" },
+        "idempotency_id": {
+          "type": "string",
+          "pattern": "^sync-v1:[0-9a-f]{16}:check-[0-9]{4,}$"
+        },
+        "state": { "enum": ["pending_transport", "canceled"] },
+        "created_at": { "type": "string", "format": "date-time" },
+        "updated_at": { "type": "string", "format": "date-time" },
+        "attempts": { "type": "integer", "minimum": 0 },
+        "last_error": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+        },
+        "payload": { "$ref": "sync-record-v1.schema.json" }
+      }
+    },
+    "account_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    }
+  }
+}

@@ -63,7 +63,12 @@ function registerAccountSyncIpc({
   ipcMain.handle("provider:sync-preference", (_event, payload = {}) => {
     try {
       if (payload.value !== undefined) syncProvider.setPreference(payload.value);
-      return ok({ preference: syncProvider.getPreference() });
+      return ok({
+        preference: syncProvider.getPreference(),
+        persistence: typeof syncProvider.persistenceStatus === "function"
+          ? syncProvider.persistenceStatus()
+          : { state: "memory_only", encrypted: false, persistent: false },
+      });
     } catch (error) { return fail(error); }
   });
 
@@ -102,18 +107,48 @@ function registerAccountSyncIpc({
   });
 
   ipcMain.handle("provider:sync-queue", () => {
-    try { return ok({ items: syncProvider.listQueue() }); } catch (error) { return fail(error); }
+    try {
+      const status = authProvider.status();
+      const persistence = typeof syncProvider.persistenceStatus === "function"
+        ? syncProvider.persistenceStatus()
+        : { state: "memory_only", encrypted: false, persistent: false };
+      if (!status || status.loggedIn !== true || status.state !== "authenticated") {
+        return ok({ items: [], signedOut: true, persistence });
+      }
+      return ok({ items: syncProvider.listQueue(status), signedOut: false, persistence });
+    } catch (error) { return fail(error); }
   });
   ipcMain.handle("provider:sync-cancel", (_event, payload = {}) => {
-    try { return ok({ item: syncProvider.cancel(opaqueId(payload.queueId, "queueId")) }); }
+    try {
+      return ok({
+        item: syncProvider.cancel(
+          opaqueId(payload.queueId, "queueId"),
+          authenticatedStatus(authProvider),
+        ),
+      });
+    }
     catch (error) { return fail(error); }
   });
   ipcMain.handle("provider:sync-retry", (_event, payload = {}) => {
-    try { return ok({ item: syncProvider.retry(opaqueId(payload.queueId, "queueId")) }); }
+    try {
+      return ok({
+        item: syncProvider.retry(
+          opaqueId(payload.queueId, "queueId"),
+          authenticatedStatus(authProvider),
+        ),
+      });
+    }
     catch (error) { return fail(error); }
   });
   ipcMain.handle("provider:sync-delete", (_event, payload = {}) => {
-    try { return ok({ deleted: syncProvider.delete(opaqueId(payload.queueId, "queueId")) }); }
+    try {
+      return ok({
+        deleted: syncProvider.delete(
+          opaqueId(payload.queueId, "queueId"),
+          authenticatedStatus(authProvider),
+        ),
+      });
+    }
     catch (error) { return fail(error); }
   });
 }

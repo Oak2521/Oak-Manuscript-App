@@ -11,6 +11,8 @@ const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
 const MAX_OUTPUT_BYTES = 16 * 1024 * 1024;
 const PASS_MARKER = "SMOKE-RESULT: PASS";
 const FAIL_MARKER = "SMOKE-RESULT: FAIL";
+const SYNC_RECOVERY_PASS_MARKER = "SYNC-RECOVERY-RESULT: PASS";
+const SYNC_RECOVERY_FAIL_MARKER = "SYNC-RECOVERY-RESULT: FAIL";
 const EXPECTED_VERSION_ENV = "OAK_EXPECTED_APP_VERSION";
 const EXPECT_PACKAGED_ENV = "OAK_EXPECT_PACKAGED";
 const RUN_ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -250,6 +252,37 @@ function smokeArguments(paths) {
   ];
 }
 
+function syncRecoveryArguments(paths) {
+  const args = smokeArguments(paths);
+  args[0] = "--smoke-sync-recovery";
+  return args;
+}
+
+function assertSmokeProcessResult(result, {
+  timeoutMs,
+  passMarker,
+  failMarker,
+  label,
+}) {
+  if (!result || typeof result !== "object") throw new Error(`${label} 未返回进程结果`);
+  if (result.error) {
+    const timedOut = result.error.code === "ETIMEDOUT" || result.error.errno === "ETIMEDOUT";
+    throw new Error(timedOut ? `${label}超时（${timeoutMs} ms），已终止` : `无法运行${label}：${result.error.message}`);
+  }
+  if (result.signal) throw new Error(`${label}被信号 ${result.signal} 终止`);
+  const stdout = typeof result.stdout === "string" ? result.stdout : "";
+  const stderr = typeof result.stderr === "string" ? result.stderr : "";
+  const combined = `${stdout}\n${stderr}`;
+  if (result.status !== 0) {
+    throw new Error(`${label}退出码为 ${String(result.status)}；输出：${combined.trim().slice(-2000) || "<empty>"}`);
+  }
+  const passLines = combined.split(/\r?\n/u).filter((line) => line.trim() === passMarker).length;
+  if (combined.includes(failMarker) || passLines !== 1) {
+    throw new Error(`${label}缺少唯一成功标志 ${passMarker}；输出：${combined.trim().slice(-2000) || "<empty>"}`);
+  }
+  return { stdout, stderr };
+}
+
 function runPackagedSmoke({
   root = PROJECT_ROOT,
   spawn = spawnSync,
@@ -308,36 +341,31 @@ function runPackagedSmoke({
     killSignal: "SIGKILL",
     maxBuffer: MAX_OUTPUT_BYTES,
   });
-  if (!result || typeof result !== "object") {
-    throw new Error("打包 EXE 冒烟未返回进程结果");
-  }
-  if (result.error) {
-    const timedOut = result.error.code === "ETIMEDOUT" || result.error.errno === "ETIMEDOUT";
-    throw new Error(
-      timedOut
-        ? `打包 EXE 冒烟超时（${timeoutMs} ms），已终止`
-        : `无法运行打包 EXE 冒烟：${result.error.message}`,
-    );
-  }
-  if (result.signal) throw new Error(`打包 EXE 冒烟被信号 ${result.signal} 终止`);
-
-  const stdout = typeof result.stdout === "string" ? result.stdout : "";
-  const stderr = typeof result.stderr === "string" ? result.stderr : "";
-  const combined = `${stdout}\n${stderr}`;
-  if (result.status !== 0) {
-    throw new Error(
-      `打包 EXE 冒烟退出码为 ${String(result.status)}；输出：${combined.trim().slice(-2000) || "<empty>"}`,
-    );
-  }
-  const passLines = combined
-    .split(/\r?\n/u)
-    .filter((line) => line.trim() === PASS_MARKER).length;
-  if (combined.includes(FAIL_MARKER) || passLines !== 1) {
-    throw new Error(
-      `打包 EXE 冒烟缺少唯一成功标志 ${PASS_MARKER}；输出：`
-      + `${combined.trim().slice(-2000) || "<empty>"}`,
-    );
-  }
+  const first = assertSmokeProcessResult(result, {
+    timeoutMs,
+    passMarker: PASS_MARKER,
+    failMarker: FAIL_MARKER,
+    label: "打包 EXE 冒烟",
+  });
+  const recovery = spawn(paths.executable, syncRecoveryArguments(paths), {
+    cwd: paths.projectRoot,
+    env: createSmokeEnvironment(paths, inheritedEnv, expectedVersion, {
+      expectedPackaged: "1",
+      externalValidation: false,
+    }),
+    encoding: "utf8",
+    shell: false,
+    windowsHide: true,
+    timeout: timeoutMs,
+    killSignal: "SIGKILL",
+    maxBuffer: MAX_OUTPUT_BYTES,
+  });
+  const second = assertSmokeProcessResult(recovery, {
+    timeoutMs,
+    passMarker: SYNC_RECOVERY_PASS_MARKER,
+    failMarker: SYNC_RECOVERY_FAIL_MARKER,
+    label: "打包 EXE 同步队列重启恢复冒烟",
+  });
 
   return {
     ok: true,
@@ -346,8 +374,10 @@ function runPackagedSmoke({
     runId,
     smokeRoot: paths.smokeRoot,
     outputRoot: paths.projectOutput,
-    stdout,
-    stderr,
+    stdout: first.stdout,
+    stderr: first.stderr,
+    syncRecoveryStdout: second.stdout,
+    syncRecoveryStderr: second.stderr,
   };
 }
 
@@ -366,18 +396,22 @@ if (require.main === module) {
 module.exports = {
   DEFAULT_TIMEOUT_MS,
   FAIL_MARKER,
+  SYNC_RECOVERY_FAIL_MARKER,
+  SYNC_RECOVERY_PASS_MARKER,
   EXPECTED_VERSION_ENV,
   EXPECT_PACKAGED_ENV,
   PASS_MARKER,
   PRODUCT_EXE,
   createSmokeRunId,
   createSmokeEnvironment,
+  assertSmokeProcessResult,
   ensureLocalDirectory,
   getSmokePaths,
   isInside,
   readExpectedAppVersion,
   runPackagedSmoke,
   smokeArguments,
+  syncRecoveryArguments,
   validateSmokeRunId,
   verifyWindowsX64Executable,
 };

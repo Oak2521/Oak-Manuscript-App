@@ -30,6 +30,8 @@ const state = {
   licenseStatus: null,
   syncPreview: null,
   syncConfirming: false,
+  syncQueue: [],
+  syncPersistence: null,
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -878,8 +880,9 @@ const actions = {
       $("#sync-preview-dialog").close(choice);
       if (result.queued) {
         $("#sync-offer-status").textContent =
-          "本次负载已进入当前进程内的待发送队列；生产同步尚未配置，当前没有上传到网站。";
-        toast("已记录当前进程内待发送项；尚未上传到网站。", 5000);
+          "本次负载已写入本机加密待发送队列；生产同步尚未配置，当前没有上传到网站。";
+        toast("已写入本机加密待发送队列；尚未上传到网站。", 5000);
+        await refreshSyncQueue();
       } else if (choice === "never_for_project") {
         $("#sync-offer-status").textContent = "已记录：不再询问此项目；本地项目和导出不受影响。";
         toast("已关闭此项目的同步询问");
@@ -1215,6 +1218,7 @@ async function toggleAccountAuth() {
     const signedOut = unwrap(await window.oak.logout());
     state.authStatus = signedOut;
     renderAccountStatus();
+    await refreshSyncQueue();
     toast("已退出湖岸账号；本地项目和导出仍可使用。", 3600);
     return signedOut;
   }
@@ -1244,6 +1248,71 @@ function renderAccountStatus() {
   }
 }
 
+function renderSyncQueue() {
+  const root = $("#sync-queue-list");
+  const persistence = state.syncPersistence;
+  if (!persistence || persistence.state !== "ready" || persistence.encrypted !== true) {
+    $("#sync-queue-status").textContent =
+      "本机加密队列不可用；同步功能已安全停止，本地检查、修复和导出不受影响。";
+    root.replaceChildren();
+    return;
+  }
+  if (!state.authStatus || !state.authStatus.loggedIn) {
+    $("#sync-queue-status").textContent = "本机加密队列已启用；登录后只显示当前账号的待发送项。";
+    root.replaceChildren();
+    return;
+  }
+  $("#sync-queue-status").textContent = state.syncQueue.length
+    ? `当前账号有 ${state.syncQueue.length} 个本机队列项；production transport 未配置，均未上传。`
+    : "当前账号没有本机待发送项；production transport 未配置。";
+  const children = state.syncQueue.map((item) => {
+    const row = document.createElement("div");
+    row.className = "sync-queue-item";
+    const meta = document.createElement("div");
+    meta.className = "sync-queue-meta";
+    meta.textContent = `${item.payload.event} ｜ ${item.payload.run_id} ｜ ${item.state} ｜ ${item.created_at}`;
+    const buttons = document.createElement("div");
+    buttons.className = "sync-queue-actions";
+    const stateButton = document.createElement("button");
+    stateButton.textContent = item.state === "canceled" ? "重新加入待发送" : "取消待发送";
+    stateButton.addEventListener("click", () => handleSyncQueueAction(
+      item.state === "canceled" ? "retry" : "cancel",
+      item.queue_id,
+    ));
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "删除本机记录";
+    deleteButton.addEventListener("click", () => handleSyncQueueAction("delete", item.queue_id));
+    buttons.append(stateButton, deleteButton);
+    row.append(meta, buttons);
+    return row;
+  });
+  root.replaceChildren(...children);
+}
+
+async function refreshSyncQueue() {
+  const response = unwrap(await window.oak.syncQueue());
+  state.syncQueue = Array.isArray(response.items) ? response.items : [];
+  state.syncPersistence = response.persistence || null;
+  renderSyncQueue();
+  return response;
+}
+
+async function handleSyncQueueAction(action, queueId) {
+  const operations = {
+    cancel: () => window.oak.syncCancel(queueId),
+    retry: () => window.oak.syncRetry(queueId),
+    delete: () => window.oak.syncDelete(queueId),
+  };
+  if (!operations[action]) throw new Error("同步队列操作非法");
+  try {
+    unwrap(await operations[action]());
+    await refreshSyncQueue();
+    toast(action === "delete" ? "已删除本机队列记录" : "本机队列状态已更新", 3600);
+  } catch (error) {
+    toast(String(error.message || error), 5000);
+  }
+}
+
 async function refreshAccountStatus() {
   const [auth, license] = await Promise.all([
     window.oak.authStatus(),
@@ -1252,6 +1321,7 @@ async function refreshAccountStatus() {
   state.authStatus = unwrap(auth);
   state.licenseStatus = unwrap(license);
   renderAccountStatus();
+  await refreshSyncQueue();
   return { auth: state.authStatus, license: state.licenseStatus };
 }
 
