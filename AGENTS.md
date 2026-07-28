@@ -56,4 +56,4 @@ release/     # 发布产物（不入库）
 
 ## 6. 里程碑与当前阶段
 
-当前开发版本为 `0.1.0-alpha.6`。P0 已完成可信批量修复、确定性默认引用解析、标准包本地验证/项目固定/显式升级、Windows alpha 运行资源与 Electron 全树锁。Windows builder 已有受控归档下载器和安全导入器；下载必须由用户先批准并显式运行 `npm run download:builder:win`，普通 build/test 永不联网或自动导入。当前仍未取得三份真实归档，也没有真实工具树、独立 tracked lock、NSIS 或 ZIP。具体事实必须以代码、`npm test` 和 `docs/DEVELOPMENT_STATUS.md` 交叉核对。标准包在线更新与生产信任根、Windows 正式签名、macOS 可安装版本、Web、统一账号、订阅和结果同步仍未完成，未经真实验收不得写成已完成。
+当前开发版本为 `0.1.0-alpha.7`。P0 已完成可信批量修复、确定性默认引用解析、标准包本地验证/项目固定/显式升级、Windows alpha 运行资源与 Electron 全树锁。Windows builder 已有受控归档下载器和安全导入器；下载必须由用户先批准并显式运行 `npm run download:builder:win`，普通 build/test 永不联网或自动导入。Windows 构建必须先清除旧发布证据，并且只有 packaged 资源门禁与隐藏 smoke 成功后才可生成当前版本 `SHA256SUMS.txt` 和 canonical release manifest；证据文件不等于制品已生成。当前仍未取得三份真实归档，也没有真实工具树、独立 tracked lock、NSIS 或 ZIP。具体事实必须以代码、`npm test` 和 `docs/DEVELOPMENT_STATUS.md` 交叉核对。标准包在线更新与生产信任根、Windows 正式签名、macOS 可安装版本、Web、统一账号、订阅和结果同步仍未完成，未经真实验收不得写成已完成。

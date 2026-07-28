@@ -1,6 +1,6 @@
 # tests/ — Node 契约、发布资源与打包验证
 
-`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.6 最终统一结果为 Node **261 total / 255 pass / 0 fail / 6 skip / 2.627 秒**，Python **344 项 / 0 失败 / 0 错误 / 3 跳过 / 89.446 秒**，墙钟 97.2 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
+`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.7 最终统一结果为 Node **267 total / 260 pass / 0 fail / 7 skip / 2.487 秒**，Python **344 项 / 0 失败 / 0 错误 / 3 跳过 / 80.833 秒**，墙钟 88.1 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
 
 本目录覆盖：
 
@@ -13,6 +13,7 @@
 - Electron manifest 显式更新覆盖安全父链、目标 symlink/hardlink 拒绝、独占候选写入、`fsync`、原子替换、换入后复验、失败回滚与回滚失败证据保留；Electron runtime 锁专项为 **37/36/0/1**，hardlink/junction 本机实测通过，文件 symlink 因 Windows `EPERM` 条件跳过；
 - JRE/Ace 候选 stage 与锁的事务提交、故障注入回滚、普通 staging 不准改锁，以及 locale-independent UTF-16 清单顺序；
 - Windows builder 受控下载器固定官方 URL/HTTPS 主机/文件名/SHA-256，要求显式联网开关并覆盖零授权零写入、重定向/容量/哈希、事务提交/碰撞回滚及仓库路径边界；安全导入器继续拒绝 UNC、未知归档、路径穿越、链接/reparse、备用流、加密条目、名称冲突和解压膨胀，只有显式 `--update-lock` 才可建立/更新独立 tracked lock；真实归档、工具树和 lock 仍缺失，注入响应与测试夹具不能冒充发布资产；
+- Windows 发布证据只接受 package/lock 当前版本的精确 NSIS/ZIP；覆盖 PE/ZIP 结构、旧制品/版本漂移、稳定文件身份、SHA256SUMS 与 canonical manifest 交叉绑定、两文件提交回滚、clear 全预检，以及真实缺制品 fail-closed；
 - 许可证字段/文件为空的拒绝路径，以及“有许可证文件仍不能替代全部 236 包人工审计”的 sale blocker 契约；
 - 资源门禁两阶段顺序：静态全量检查有任一错误时不执行 Python/Java，静态全绿后才运行探针；非原生 host/arch fail-closed，纯静态必须显式 `--no-runtime-probe`；
 - Electron 桥与资源探针共享 `-I -S -X utf8` bootstrap、显式受控 core 目录及隔离环境；CPython 探针精确核对 implementation、三段版本、releaselevel 和 serial；
@@ -24,6 +25,6 @@
 
 Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零污染创建、锁内单 FD 输入、OneDrive/reparse 来源、精确失败清理和安全原子导出覆盖在 `python/tests/test_project_validation.py` 与 `python/tests/test_project_write_lock.py`。
 
-真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。最新真实 Chrome 条件套件证据来自 alpha.4（**312 / 0 / 0 / 1 / 44.807 秒**）；alpha.6 本轮没有重跑该条件套件，不将旧结果冒充为新运行。缺少 alpha.6 EXE 时，`smoke:packaged:win` 应失败而不是复用旧制品。
+真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。最新真实 Chrome 条件套件证据来自 alpha.4（**312 / 0 / 0 / 1 / 44.807 秒**）；alpha.7 本轮没有重跑该条件套件，不将旧结果冒充为新运行。缺少 alpha.7 EXE 时，`smoke:packaged:win` 和 `release:evidence:verify:win` 都应失败而不是复用旧制品。
 
-alpha.6 最新隐藏源码 smoke 为 **PASS**，运行根为 `out/source-smoke/runs/ms46fhdh-230a41fd46481179/projects/`；DOCX/EPUB 均先确认引用计划，各有 4 次检查、1 次批量修复、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,661 / 177,434 字节。这是源码 UI 闭环证据，不是打包版或安装器证据。
+alpha.7 最新隐藏源码 smoke 为 **PASS**，运行根为 `out/source-smoke/runs/ms47c3l8-9b6bf78452308a33/projects/`；DOCX/EPUB 均先确认引用计划，各有 4 次检查、1 次批量修复、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,656 / 177,263 字节。这是源码 UI 闭环证据，不是打包版、安装器或发布 SHA 证据。

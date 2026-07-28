@@ -546,12 +546,12 @@ function createToolchainFixture(t) {
   return { root, toolchain };
 }
 
-test("electron-builder config is valid and pins alpha.6 Windows installer policy", async () => {
+test("electron-builder config is valid and pins alpha.7 Windows installer policy", async () => {
   const packageJson = require("../package.json");
   const packageLock = require("../package-lock.json");
   await validateConfiguration(packageJson.build, { isEnabled: false, add() {} });
 
-  assert.equal(packageJson.version, "0.1.0-alpha.6");
+  assert.equal(packageJson.version, "0.1.0-alpha.7");
   assert.equal(packageLock.version, packageJson.version);
   assert.equal(packageLock.packages[""].version, packageJson.version);
   const pythonInit = fs.readFileSync(
@@ -593,9 +593,13 @@ test("electron-builder config is valid and pins alpha.6 Windows installer policy
     packageJson.build.extraResources.some((item) => item.from === "python-runtime"),
     false,
   );
-  assert.match(packageJson.scripts["build:win"], /^npm run stage:jre:win .*stage:ace .*verify:resources:win/);
-  assert.match(packageJson.scripts["build:win"], /verify:packaged:win .*smoke:packaged:win$/);
+  assert.match(packageJson.scripts["build:win"], /^npm run release:evidence:clear:win .*stage:jre:win .*stage:ace .*verify:resources:win/);
+  assert.match(packageJson.scripts["build:win"], /verify:packaged:win .*smoke:packaged:win .*release:evidence:win$/);
   assert.equal(packageJson.scripts["smoke:packaged:win"], "node scripts/run_packaged_smoke.js");
+  assert.equal(
+    packageJson.scripts["release:evidence:win"],
+    "node scripts/release_artifact_manifest.js --generate --platform win32 --arch x64",
+  );
   const gitignore = fs.readFileSync(path.join(REPO_ROOT, ".gitignore"), "utf8");
   assert.match(gitignore, /^python-runtime-macos-\*\/$/m);
   for (const scriptName of [
@@ -834,7 +838,7 @@ test("beforePack forwards the builder project root and target platform", () => {
   const calls = [];
   beforePack(
     {
-      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.6" } },
+      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.7" } },
       electronPlatformName: "darwin",
       arch: 1,
     },
@@ -847,7 +851,7 @@ test("beforePack forwards the builder project root and target platform", () => {
     source: true,
     releaseTier: "alpha",
   }]);
-  assert.equal(releaseTierForVersion("0.1.0-alpha.6"), "alpha");
+  assert.equal(releaseTierForVersion("0.1.0-alpha.7"), "alpha");
   assert.equal(releaseTierForVersion("1.0.0"), "sale");
   assert.equal(parseResourceGateArgs(["--release-tier", "auto"]).releaseTier, "alpha");
   assert.equal(parseResourceGateArgs(["--no-runtime-probe"]).executeRuntimes, false);

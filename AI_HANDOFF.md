@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.6`
+> 当前版本：`0.1.0-alpha.7`
 > 当前分支：`chatgpt/commercial-v1`
-> 源码检查点标签：`chatgpt-v0.1.0-alpha.6`（只标记源码与本地验证状态，不代表安装包或正式发行）
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.7`（只标记源码与本地验证状态，不代表安装包或正式发行）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,24 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.7 Windows 发布制品证据链
+
+- APP、Python 核心和 lockfile 已统一到 `0.1.0-alpha.7`；标准内容和自动修复白名单未变化；
+- 新增 Windows x64 发布证据生成/验证器，只接受与 package/lock 当前版本精确匹配的 NSIS EXE 与 ZIP；坏 PE/ZIP、缺档、同系列旧制品、symlink/reparse、hardlink、路径逃逸或哈希期间身份变化均 fail-closed；
+- `SHA256SUMS.txt` 固定两件制品有序摘要；canonical `release-manifest-win32-x64.json` 固定产品、appId、版本、目标、类型、大小/摘要，以及 SHA 文件原始字节摘要；验证时重新读取全部制品并交叉核对；
+- 两份证据采用独占候选、`fsync` 与联合提交，第二次 rename 或换入后复验失败会恢复两份旧证据；清除旧证据前先预检两份文件，拒绝链接/硬链接；
+- `build:win` 现在先清除旧证据，只有 electron-builder、packaged 资源门禁与隐藏 packaged smoke 全部成功后才生成新证据；失败构建不会留下本次新证据；
+- 真实 `release/` 只有 `.gitkeep`，`release:evidence:verify:win` 已按预期拒绝缺失的 alpha.7 NSIS；没有生成伪造 SHA 或 manifest。
+
+### 现场验证（2026-07-28，alpha.7）
+
+- 发布证据专项：6 项，5 通过、0 失败、1 项因本机文件 symlink 权限条件跳过；hardlink、坏格式、旧制品、版本漂移、篡改、联合提交回滚与清除预检均实测；
+- 最终统一 `npm test`：**PASS，退出码 0，墙钟 88.1 秒**；Node 267/260/0/7（2.487 秒），Python 344/0 failures/0 errors/3 skipped（80.833 秒）；
+- `npm run verify:standards`、`npm run verify:electron-runtime`、`npm run verify:resources:win`：**PASS**；Windows alpha 探针读到 core `0.1.0-alpha.7`，sale 门禁仍保留 17 项 blocker；
+- `npm run verify:resources:mac:static`：按预期退出 1，精确缺两架构 Electron dist、Python runtime manifest 与 JRE；
+- 独立隐藏 `npm run smoke`：**PASS**，运行根 `out/source-smoke/runs/ms47c3l8-9b6bf78452308a33/projects/`；DOCX/EPUB 均 4 次检查、1 次修复、3 个检查点、原稿哈希不变，当前问题 13/5、报告 applied fixes 4/2、PDF 251,656/177,263 字节；
+- 本轮没有联网、没有下载 builder 归档、没有工具树/tracked lock，也没有 alpha.7 NSIS、ZIP 或发布证据文件。
 
 ### 已完成：0.1.0-alpha.6 Windows builder 受控归档下载入口
 
@@ -158,8 +176,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.6 继承了可复制、可执行、由 tracked full lock 固定的生产闭包，并通过 Windows alpha 资源门禁；正式版仍缺最小权限受控 helper、自带且校验过的浏览器运行时、OS 级默认拒绝网络、可信根加固和正式人工许可审计；
-- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.6 尚无安装器或 ZIP，未做打包版 smoke、干净系统安装/升级/卸载或签名。受控下载器和安全导入器已实现，但本轮未联网，三份固定归档、真实工具树和独立 tracked lock 尚缺；
+- 打包版 Ace：alpha.7 继承了可复制、可执行、由 tracked full lock 固定的生产闭包，并通过 Windows alpha 资源门禁；正式版仍缺最小权限受控 helper、自带且校验过的浏览器运行时、OS 级默认拒绝网络、可信根加固和正式人工许可审计；
+- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.7 尚无安装器或 ZIP，未做打包版 smoke、干净系统安装/升级/卸载或签名。受控下载/导入及构建尾部发布证据链已实现，但本轮未联网，三份固定归档、真实工具树和独立 tracked lock 尚缺；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：服务端任务 API、隔离执行、限额、零留存和官网嵌入尚未实现；
 - 账号/订阅/同步：UI 入口和 Provider 仍是离线占位，未连接生产 Supabase、支付或网站后台；
@@ -195,7 +213,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 1. 经用户联网授权后显式运行 `npm run download:builder:win`，仅从合同固定的 electron-builder 官方 GitHub release URL 下载三份归档到仓库 `out/downloads/windows-builder/`；
 2. 下载器全部验哈希后运行 `node scripts/import_windows_builder_toolchain.js --archive-dir out/downloads/windows-builder --update-lock`，提交并复核真实独立 lock；
-3. 生成 alpha.6 NSIS 安装器与 ZIP，逐项运行打包资源门禁、应用身份断言、打包版 smoke、SHA-256 和干净环境检查；
+3. 生成 alpha.7 NSIS 安装器与 ZIP；构建链必须依次通过打包资源门禁、应用身份断言、隐藏 packaged smoke，最后生成并复验 `SHA256SUMS.txt` 与 canonical release manifest；
 4. 完成 Windows 代码签名，并逐项关闭 provenance、许可证、可信根、Ace helper/browser 等 sale blocker；
 5. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
 6. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
@@ -216,6 +234,7 @@ npm run download:builder:win  # 仅在用户明确批准联网后
 npm run smoke
 npm run verify:resources:win
 npm run build:win
+npm run release:evidence:verify:win
 git diff --check
 ```
 

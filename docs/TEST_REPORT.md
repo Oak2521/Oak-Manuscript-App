@@ -2,7 +2,34 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.6 Windows builder 受控下载入口
+## 最新验证结论：0.1.0-alpha.7 Windows 发布制品证据链
+
+环境：Windows 11；Python 3.14.6；Node 24.16.0；npm 11.13.0；Electron 43.1.0；Java 21.0.11。
+
+| 命令 | 结果 | 说明 |
+|---|---|---|
+| `node --test tests/release_artifact_manifest.test.js` | **6 项：5 通过、0 失败、1 跳过；0.162 秒** | 确定性 SHA/manifest、坏 PE/ZIP、旧制品、版本漂移、链接/硬链接、篡改、两文件回滚和 clear 全预检；文件 symlink 因本机 `EPERM` 条件跳过 |
+| `npm run test:node` | **267 项：260 通过、0 失败、7 跳过；2.597 秒** | 分项终检；新增 6 项发布证据测试，跳过项不计作通过 |
+| `npm run test:python` | **344 项：0 失败、0 错误、3 跳过；83.537 秒** | 分项终检；核心版本为 alpha.7 |
+| 最终 `npm test` | **PASS；退出码 0；墙钟 88.1 秒** | Node 267/260/0/7（2.487 秒）；Python 344/0/0/3（80.833 秒） |
+| `npm run verify:standards` | **PASS** | `oak-standards 2.0.0` sequence 2，manifest `0aff75eb…8427` |
+| `npm run verify:electron-runtime` | **PASS** | Electron 43.1.0 win32-x64：2 目录、75 文件、364,083,658 字节 |
+| `npm run verify:resources:win` | **PASS（alpha）** | 实际执行 Python/JRE/EpubCheck 探针；Python core `0.1.0-alpha.7`；仍返回 17 项 sale blocker |
+| `npm run verify:resources:mac:static` | **按预期退出 1** | 缺 darwin-x64/arm64 Electron dist、Python runtime manifest 与 JRE；未执行探针 |
+| 独立隐藏窗口 `npm run smoke` | **SMOKE-RESULT PASS** | `out/source-smoke/runs/ms47c3l8-9b6bf78452308a33/projects/`；DOCX/EPUB 均 4 次检查、1 次修复、3 个检查点、原稿哈希不变，问题 13/5、applied fixes 4/2、PDF 251,656/177,263 字节 |
+| `npm run release:evidence:verify:win` | **按预期退出 1** | 真实 `release/` 只有 `.gitkeep`，明确拒绝缺失的 `Oak-Manuscript-0.1.0-alpha.7-Windows-x64.exe`，没有创建证据 |
+
+发布证据专项证明：
+
+- package.json、package-lock 根版本与应用身份必须一致；只接受精确当前版本 `Oak-Manuscript-<version>-Windows-x64.exe/.zip`，同系列旧文件不被忽略；
+- 制品在单一文件描述符上分块哈希，并在打开前、打开后和读取后核对文件身份、大小、单链接和真实路径；NSIS 至少通过 MZ/PE 结构，ZIP 同时通过头部与 EOCD 结构；
+- `SHA256SUMS.txt` 固定有序的两条摘要；canonical manifest 固定产品、appId、版本、win32/x64、种类、字节数/摘要，并固定 SHA 文件原始字节摘要；验证器重读当前制品、SHA 文件和 manifest 全量交叉核对；
+- 两份证据用独占候选和 `fsync` 写入后联合提交；第二次 rename 或最终复验失败会恢复两份旧文件。clear 会在删除第一份前预检两份目标，链接/硬链接不会被删除；
+- `build:win` 首项清除旧证据，末尾顺序为 packaged 资源门禁 → 隐藏 packaged smoke → 新证据生成。任何前序失败均不会产生本次发布证据。
+
+本轮没有用户联网授权，没有执行 `download:builder:win` 或 `build:win`。真实三归档、工具树、独立 tracked lock、NSIS、ZIP、packaged smoke、干净系统和签名仍未完成；因此真实 `SHA256SUMS.txt` 与 release manifest 也不存在。源码检查点标签为 `chatgpt-v0.1.0-alpha.7`，不代表二进制发行。
+
+## 上一检查点：0.1.0-alpha.6 Windows builder 受控下载入口
 
 环境：Windows 11；Python 3.14.6；Node 24.16.0；npm 11.13.0；Electron 43.1.0；Java 21.0.11。
 
@@ -201,7 +228,7 @@ alpha 门禁实际执行运行时探针并通过；sale 门禁以以下 17 项�
 - CLI `json.ok=false` 或退出码 2 不再被外层包装为成功；退出码 1 的有效检查 JSON 仍兼容；
 - Electron 保持 `contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`。
 
-## 5. 真实 UI 冒烟结果（最新安全收口后）
+## 5. alpha.5 真实 UI 冒烟历史结果
 
 沙箱外隐藏 Electron 最终结果：
 
@@ -218,9 +245,9 @@ Python core：项目 manifest.app_version = 0.1.0-alpha.5；检查报告 app_ver
 SMOKE-RESULT: PASS
 ```
 
-冒烟运行在 `show: false` 的独立隐藏窗口，不抢占用户当前应用窗口。最新包装器把项目、缓存、临时目录、用户数据和崩溃目录全部限制在 `out/source-smoke/`；路径契约与完整 UI 均已实际验证。
+该次冒烟运行在 `show: false` 的独立隐藏窗口，不抢占用户当前应用窗口。当时的包装器把项目、缓存、临时目录、用户数据和崩溃目录全部限制在 `out/source-smoke/`；路径契约与完整 UI 均已实际验证。
 
-最新实际输出根为 `out/source-smoke/runs/ms44nzhb-8186d1b3c5148eba/projects/`；DOCX 与 EPUB 的 `project.json` 均记录 `app_version=0.1.0-alpha.5`、`integrity.source_hash_ok=true`，各有 4 次检查记录、1 次修复运行和 3 个检查点。`report_preview.pdf` 分别为 251,646 字节和 177,416 字节。完整身份为 `oak-rules 2.0.0`、`pinned=true`、release sequence 2，以及第 2 节列出的规则包/manifest digest。
+alpha.5 当时的实际输出根为 `out/source-smoke/runs/ms44nzhb-8186d1b3c5148eba/projects/`；DOCX 与 EPUB 的 `project.json` 均记录 `app_version=0.1.0-alpha.5`、`integrity.source_hash_ok=true`，各有 4 次检查记录、1 次修复运行和 3 个检查点。`report_preview.pdf` 分别为 251,646 字节和 177,416 字节。完整身份为 `oak-rules 2.0.0`、`pinned=true`、release sequence 2，以及第 2 节列出的规则包/manifest digest。
 
 ### 失败与修复记录
 
@@ -238,14 +265,14 @@ alpha.5 首次冒烟在检查后直接断言问题数，未先确认新的引用
 
 | 工具 | 本轮事实 | 发布包事实 |
 |---|---|---|
-| EpubCheck 5.3.0 | Java 21 环境下真实运行；好样本通过、缺陷样本报告错误，双向状态矩阵通过 | alpha.5 完整分发和 JRE 已进入资源门禁，但尚无 alpha.5 包；来源/再分发和可信根审计未完成 |
-| Ace by DAISY 1.4.6 | tracked full lock、manifest 原始字节身份、空许可证拒绝和事务 stage 由默认回归覆盖；最新真实好/坏样本 Chrome 证据来自 alpha.4 检查点，alpha.5 本轮未重跑该条件套件 | alpha.5 生产闭包和隔离替换通过资源门禁，但尚无 alpha.5 包；helper/browser/OS 网络隔离/可信根、18 包原始许可证及全闭包人工审计未完成 |
+| EpubCheck 5.3.0 | alpha.7 Windows 资源门禁在 Java 21 环境真实运行；好样本通过、缺陷样本报告错误，双向状态矩阵通过 | 完整分发和 JRE 已进入资源门禁，但尚无 alpha.7 包；来源/再分发和可信根审计未完成 |
+| Ace by DAISY 1.4.6 | tracked full lock、manifest 原始字节身份、空许可证拒绝和事务 stage 由默认回归覆盖；最新真实好/坏样本 Chrome 证据仍来自 alpha.4 检查点，alpha.7 本轮未重跑该条件套件 | 生产闭包和隔离替换通过 alpha.7 Windows 资源门禁，但尚无 alpha.7 包；helper/browser/OS 网络隔离/可信根、18 包原始许可证及全闭包人工审计未完成 |
 
-因此当前可以说“alpha.5 源码、引用解析、标准身份链、Electron 构建输入和 Windows 资源集已固定，开发环境 EpubCheck 探针与 alpha 门禁通过”，不能说“alpha.5 发布包已经生成或通过正式售卖验收”。
+因此当前可以说“alpha.7 源码、引用解析、标准身份链、Electron 构建输入、Windows 资源集和制品证据生成契约已固定，开发环境 EpubCheck 探针与 alpha 门禁通过”，不能说“alpha.7 发布包或 SHA 清单已经生成”，更不能说已通过正式售卖验收。
 
 ## 7. 尚未运行或尚未通过的发布级测试
 
-- 0.1.0-alpha.5 Windows unpacked / ZIP / NSIS：**未生成**，因此打包后资源门禁与 packaged smoke **未运行**；
+- 0.1.0-alpha.7 Windows unpacked / ZIP / NSIS：**未生成**，因此打包后资源门禁、packaged smoke 和真实发布证据生成 **未运行**；
 - Windows 干净系统首次安装、卸载、升级、无 Python/Node 环境运行：**未运行**；
 - Windows 代码签名与 SmartScreen 信誉：**未运行**；
 - macOS arm64 / x64：原生 runner、静态聚合、分架构 lock 路径和 CPython `3.13.14` 固定契约已实现；实际 Electron/Python/JRE 仍缺，构建、签名、公证、staple、Gatekeeper 和实机 smoke **未运行**；

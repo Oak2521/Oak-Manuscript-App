@@ -4,6 +4,25 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.7（ChatGPT Windows 发布制品证据链检查点）
+
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.7`。该标签只表示经本地验证的源码状态；当前没有 alpha.7 安装包、ZIP 或可售卖发行版。
+
+**发布制品证据链**
+
+- APP、Python 核心和 lockfile 统一到 `0.1.0-alpha.7`；标准 release 与规则能力均未变化；
+- 新增 `release_artifact_manifest.js`，只接受当前 `package.json` / lockfile 一致版本的精确 Windows x64 NSIS 与 ZIP 文件名，拒绝缺失、格式错误、同系列旧制品、链接/硬链接、路径逃逸和读取期间身份变化；
+- `SHA256SUMS.txt` 以固定顺序记录两件制品的完整 SHA-256；canonical `release-manifest-win32-x64.json` 同时固定产品/appId/版本/目标、种类、字节数、制品摘要与 SHA 文件原始字节摘要；验证器重新读取制品并交叉复核全部字段；
+- 两份证据以独占候选、`fsync` 和联合提交生成；第二次换入或最终复验失败会恢复两份旧证据。构建开头先预检并清除旧证据，只有 packaged 资源门禁与隐藏 smoke 成功后才生成新证据；
+- 新增显式 `release:evidence:clear:win`、`release:evidence:win` 和 `release:evidence:verify:win` 命令；真实 `release/` 因缺 alpha.7 NSIS 而按预期 fail-closed。
+
+**验证与边界**
+
+- 发布证据专项 6 项：5 通过、0 失败、1 项因 Windows 文件 symlink 权限条件跳过；统一 `npm test` 为 Node 267/260/0/7（2.487 秒）、Python 344/0/0/3（80.833 秒），墙钟 88.1 秒；
+- 标准、Electron runtime 与 Windows alpha 资源门禁均 PASS；Windows sale 门禁仍有 17 项 blocker，macOS 静态门禁仍精确拒绝两架构缺失资源；
+- alpha.7 独立隐藏源码 smoke PASS：`out/source-smoke/runs/ms47c3l8-9b6bf78452308a33/projects/`；DOCX/EPUB 均 4 次检查、1 次修复、3 个检查点且原稿哈希不变，PDF 251,656 / 177,263 字节；
+- 本轮没有联网、没有下载 builder 归档、没有真实工具树/tracked lock，也没有生成 NSIS、ZIP、SHA 文件或 release manifest。
+
 ### 2026-07-28 — 0.1.0-alpha.6（ChatGPT Windows builder 受控下载检查点）
 
 > 源码检查点标签：`chatgpt-v0.1.0-alpha.6`。该标签只表示经本地验证的源码状态，不表示已经下载真实构建工具、生成安装包或正式发行。

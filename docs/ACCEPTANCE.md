@@ -2,6 +2,21 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.7 Windows 发布制品证据链验收（2026-07-28）
+
+> 本节只验收尚未有真实制品时可证明的生成/验证契约与流水线顺序；不把构造测试制品或源码 smoke 写成安装包证据。
+
+- [x] APP、Python 核心和 lockfile 统一为 `0.1.0-alpha.7`；标准 release 保持 2.0.0；
+- [x] 生成器只接受 package/lock 版本一致的精确当前 Windows x64 NSIS/ZIP 文件名，拒绝缺失、同系列旧版本、坏 PE/ZIP、链接/硬链接、路径逃逸和读取竞态；
+- [x] `SHA256SUMS.txt` 固定两件制品完整摘要与顺序；canonical manifest 固定产品、appId、版本、平台/架构、种类、大小、制品摘要及 SHA 文件原始字节摘要，验证时重新读取并交叉复核；
+- [x] 两份证据联合事务提交；候选独占创建并 `fsync`，提交/复验失败恢复旧证据；清除操作在删除首个文件前预检两份旧证据；
+- [x] `build:win` 先清除旧证据，且只有 electron-builder、packaged 资源门禁和隐藏 packaged smoke 成功后才生成新证据；
+- [x] 证据专项 6 项为 5 通过/0 失败/1 条件跳过；最终统一 `npm test` 为 Node 267/260/0/7、Python 344/0/0/3，退出码 0；
+- [x] 标准、Electron runtime、Windows alpha 资源门禁与 alpha.7 隐藏源码 smoke 通过；原稿哈希不变；
+- [x] 在真实空 `release/` 上运行验证器明确拒绝缺失的 `Oak-Manuscript-0.1.0-alpha.7-Windows-x64.exe`；未生成虚假证据；
+- [ ] 已生成真实 alpha.7 NSIS/ZIP，且构建尾部产生的 SHA 文件和 release manifest 复验通过；
+- [ ] packaged smoke、干净 Windows、签名、正式审计及 17 项 sale blocker 全部关闭。
+
 ## 0.1.0-alpha.6 Windows builder 受控下载验收（2026-07-28）
 
 > 本节只验收显式联网入口及其本地安全契约；本轮没有联网，没有真实归档、工具树、安装包或正式发行证据。
@@ -216,7 +231,7 @@
 
 > 完成标准（方案 §18）：匿名 DOCX 与 EPUB 均能在 UI 中完成完整闭环。
 > 证据：`npm run smoke` 冒烟驱动真实 UI 代码路径（与按钮同一 actions + 真实 IPC + 真实核心），
-> DOCX 与 EPUB 双闭环 PASS；旧 `0.0.1` 打包版历史结果同样 PASS，不能替代当前 alpha.5 打包验收。
+> DOCX 与 EPUB 双闭环 PASS；旧 `0.0.1` 打包版历史结果同样 PASS，不能替代当前 alpha.7 打包验收。
 
 - [x] Electron 壳安全基线：contextIsolation / sandbox / nodeIntegration=false / IPC 固定通道 + 输入验证 / 子进程 shell=false / CSP / 导航与新窗口拦截 / 外链仅 HTTPS 白名单域名；
 - [x] 七个主页面（中文 UI）：欢迎隐私 / 创建项目 / 检查目标 / 进度（阶段式，无虚假百分比）/ 问题双栏（接受·拒绝·暂不处理）/ 导出中心 / 标准资源与设置；
@@ -258,5 +273,5 @@
 - [x] 未登录状态下全部核心流程可完成，且不出现同步询问（冒烟断言）
 - [ ] 任何结果同步只在登录用户逐字段确认后发生；负载不含稿件、正文/预览、标题、文件名、路径、参考文献原文或哈希（真实同步上线时验收；当前占位不联网）
 - [ ] 网站后台可查看并删除已同步记录（阶段 4 验收）
-- [ ] 正式发布包候选的 Python 单元/集成 + CLI 端到端 + UI 冒烟 E2E 全部通过（alpha.5 源码分项基线与隐藏源码 smoke 已通过；因尚无 alpha.5 安装包或 ZIP，打包版 E2E 仍未运行）
+- [ ] 正式发布包候选的 Python 单元/集成 + CLI 端到端 + UI 冒烟 E2E 全部通过（alpha.7 源码分项基线与隐藏源码 smoke 已通过；因尚无 alpha.7 安装包或 ZIP，打包版 E2E 仍未运行）
 - [ ] 当前正式发布包有版本、说明、校验值和已知限制（`RELEASE_NOTES_0.0.1.md` 仅是历史资料）
