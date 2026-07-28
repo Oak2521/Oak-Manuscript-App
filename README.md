@@ -1,12 +1,12 @@
 # 湖岸稿件（Oak Manuscript）
 
-本地优先的稿件检查与修订产品。当前开发版本为 `0.1.0-alpha.24`，已有 Electron 桌面端、Python 检查核心、经真实 packaged 门禁和隐藏烟测验证的 alpha.23 Windows x64 NSIS/ZIP 制品、离线标准包验证/项目固定/显式升级/回滚链路，以及无网络的 Web 临时作业状态机、同源 HTTPS handler 和 Supabase Bearer 会话适配契约；商业正式版目标为 Windows、macOS 与 Web。按论文、纸质出版物、电子书三类目标检查稿件，提供可追溯标准依据的问题解释、集中确认的白名单机械订正、检查点恢复、修订稿与检查报告导出。
+本地优先的稿件检查与修订产品。当前开发版本为 `0.1.0-alpha.25`，已有 Electron 桌面端、Python 检查核心、经真实 packaged 门禁和隐藏烟测验证的 alpha.23 Windows x64 NSIS/ZIP 制品、离线标准包验证/项目固定/显式升级/回滚链路，以及 Web 临时作业状态机、同源 HTTPS handler、真实 GoTrue 验证器边界、Netlify 风格 Fetch 适配器和首个未部署的官网工作台；商业正式版目标为 Windows、macOS 与 Web。按论文、纸质出版物、电子书三类目标检查稿件，提供可追溯标准依据的问题解释、集中确认的白名单机械订正、检查点恢复、修订稿与检查报告导出。
 
 **当前桌面核心承诺**：稿件默认只在本机处理；永不原地修改原稿（SHA-256 全程校验）；不强制注册；报告与导出不设营销门槛。
 
-`0.1.0-alpha.24` 的本地检查点标签为 `chatgpt-v0.1.0-alpha.24`。Web handler 的会话证明显式区分 `bearer` 与 `cookie`：官网现有 Supabase Bearer 模式必须由服务端验证 access token，写操作继续要求 HTTPS 与精确同源且不开放 CORS；只有浏览器自动携带 Cookie 的模式才附加 CSRF。适配器拒绝重复/合并/畸形 Authorization、无效 token 和带额外字段的身份，并且不会把 token、角色或用户对象送入作业状态机。当前仍没有生产 verifier、监听器、对象存储、隔离执行、计费或官网 UI，不能称为网页版已上线。
+`0.1.0-alpha.25` 的本地检查点标签为 `chatgpt-v0.1.0-alpha.25`。GoTrue 验证器只向固定 HTTPS `/auth/v1/user` 发起有界 GET，请求不带 Cookie；成功响应被压缩为 exact `{subject_id}`，无效/过期 token 与上游故障严格区分。Fetch 适配器把标准 `Request/Response` 接入既有 handler；`web/client/` 提供登录/注册、选择稿件、默认引用体例、单任务同意、创建/上传/轮询/取消/下载的浏览器工作台。工作台明确标注尚未部署生产处理与结果同步，不能称为网页版已上线。
 
-最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.24 全量回归为 Node 413 total / 406 pass / 0 fail / 7 skip、Python 351 total / 0 failures / 0 errors / 3 skipped；本检查点按收缩后的节奏未重复打包。最新真实 Windows 制品仍是 alpha.23：NSIS 189,995,462 字节（SHA-256 `3ae05010…ad3d`），ZIP 233,814,202 字节（`625b0fea…8d05`）。真实安装生命周期尚未执行；制品仍未签名，发行身份契约 `complete=false`，packaged 资源门禁保留 12 项 sale blocker。
+最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.25 全量回归为 Node 431 total / 424 pass / 0 fail / 7 skip、Python 351 total / 0 failures / 0 errors / 3 skipped；Web 定向为 61/61。本检查点没有重复打包。最新真实 Windows 制品仍是 alpha.23：NSIS 189,995,462 字节（SHA-256 `3ae05010…ad3d`），ZIP 233,814,202 字节（`625b0fea…8d05`）。真实安装生命周期尚未执行；制品仍未签名，发行身份契约 `complete=false`，packaged 资源门禁保留 12 项 sale blocker。
 
 当前桌面安全边界包括：默认 Electron session 离线与固定 CSP；PDF 使用禁 JavaScript/导航/网络的非持久隔离 session；项目 schema/路径完整校验与跨进程内核写锁；创建项目在锁内以单一输入文件描述符复制到 `source`，再生成 `working`；自选导出目录逐级验证、全部目标预检和逐文件原子换入；标准包以 canonical manifest、内容寻址存储、高水位和精确回滚目标 fail-closed。已有项目不会因全局标准更新而静默换规则，必须先查看差异并显式确认，升级后强制重检。
 

@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.25（ChatGPT GoTrue 验证、Fetch 桥与 Web 工作台检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.25`。本轮是源码、契约测试与隔离静态渲染检查点，没有部署网站或重新生成安装包；最新真实 Windows 制品仍为 alpha.23。
+
+- 新增 `web/gotrue-verifier.js`：只允许规范 HTTPS Supabase origin 和固定 `/auth/v1/user`，限制 token、API key、超时、响应体与媒体类型；请求不携带 Cookie、不跟随重定向，不把 token 或上游响应写入错误；无效/过期身份返回未认证，上游超时/故障/畸形响应使用稳定错误码；
+- 新增 `web/fetch-adapter.js`，把 Netlify v2 风格标准 Fetch `Request/Response` 接入既有 Node handler；上传保持流式并继续经过 HTTPS、同源、会话、长度/MIME 与接收预留门禁；
+- 新增 `web/client/` 首个 Web 工作台：保留湖岸账号登录/注册，引用体例默认自动选择，要求每次任务明确处理同意，并实现创建、文件上传、状态轮询、取消和结果下载；创建元数据不携带文件名/路径；结果同步尚未接通并在界面如实禁用；
+- 移动端 390px 与桌面 1440px 均在完全拦截网络的无界面浏览器中渲染核对；修复窄屏标题孤字和表单最小宽度溢出；
+- Web 定向 61/61；最终完整回归 Node 431 total / 424 pass / 0 fail / 7 skip，Python 351 total / 0 failures / 0 errors / 3 skipped，墙钟 111.2 秒；
+- 资源清单仍为 78 文件 / 2,124,858 字节，manifest SHA-256 `5df48f104e75b11f149be9ea1749738fc3d859bfd8f8bad66d17bf5a3a68e1dc`，锚点 SHA-256 `944ec0b152eaf08ccc385769d660396fbe63bff9a73d69a199d8e6e9dee40371`。
+
 ### 2026-07-28 — 0.1.0-alpha.24（ChatGPT Supabase Bearer 会话适配检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.24`。本轮是源码与测试检查点，没有重新生成安装包；最新真实 Windows 制品仍为 alpha.23。

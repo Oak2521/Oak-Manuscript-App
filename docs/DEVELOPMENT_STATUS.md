@@ -4,12 +4,12 @@
 
 ## 当前版本与基线
 
-- 当前版本：`0.1.0-alpha.24`
+- 当前版本：`0.1.0-alpha.25`
 - 当前分支：`chatgpt/commercial-v1`
-- 本地检查点标签：`chatgpt-v0.1.0-alpha.24`；本轮为源码/测试检查点，最新未签名 Windows x64 NSIS/ZIP 与真实 packaged 证据仍属于 alpha.23
+- 本地检查点标签：`chatgpt-v0.1.0-alpha.25`；本轮为源码/测试/隔离静态渲染检查点，最新未签名 Windows x64 NSIS/ZIP 与真实 packaged 证据仍属于 alpha.23
 - 商业版权威方案：`docs/湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`
 - 只读 Claude 基线：0.0.1，提交 `16736147ed734a3be3535d43152719cf4b97a07e`，标签 `claude-0.0.1-baseline`
-- 当前内置标准为 `oak-standards 2.0.0` / `oak-rules 2.0.0`（release sequence 2）：35 条规则、6 个白名单机械 fixer；alpha.5 新增默认引用解析政策，alpha.6—alpha.24 未改变标准内容或自动修复白名单。
+- 当前内置标准为 `oak-standards 2.0.0` / `oak-rules 2.0.0`（release sequence 2）：35 条规则、6 个白名单机械 fixer；alpha.5 新增默认引用解析政策，alpha.6—alpha.25 未改变标准内容或自动修复白名单。
 
 ## 商业正式版路线状态
 
@@ -19,7 +19,7 @@
 | P0：事务批量修复 | **完成（正常异常模型）** | working / issues / project 失败回滚；已有 5 个检查点时恢复被裁剪目录 |
 | P0：检查点列表、撤销与恢复 | **完成（代码与测试）** | 完整状态快照；恢复前安全点；损坏项 UI 禁用；恢复失败项目树不变 |
 | P0：默认引用体例与确认 | **完成（代码、迁移与 UI）** | 本地结构信号解析；证据不足退回 `structure_only`；`plan-citation` 只读并要求 `citation_plan_id` 确认；项目/报告记录原因、置信度与解析器版本 |
-| P0：Node + Python 统一测试 | **完成（最新统一回归通过）** | alpha.24 最终计数见下方“最新测试基线”；0 失败 |
+| P0：Node + Python 统一测试 | **完成（最新统一回归通过）** | alpha.25 最终计数见下方“最新测试基线”；0 失败 |
 | P0：真实桌面 UI 冒烟 | **完成（alpha.23 source + packaged 双启动 PASS）** | 保持 Electron sandbox，在外层隐藏进程完成 DOCX + EPUB 全闭环、EpubCheck/Ace、加密队列写入及第二进程恢复；原稿哈希不变 |
 | P0：文档与测试基线纠错 | **完成** | 权威改为 v2.0；纠正“185 + Ace = 186”错误 |
 | Windows alpha 运行资源 | **完成（源码资源门禁）** | Python/JRE/EpubCheck/Ace 均有全量哈希/锁；Python 与 EpubCheck 双向探针实际执行并通过 |
@@ -39,15 +39,15 @@
 | macOS arm64/x64 安装版 | **基础设施完成，发行未完成** | 已拆原生 x64/arm64 runner；静态聚合不执行探针；缺 Electron/Python/JRE、`.app`/DMG、签名、公证和真实硬件证据 |
 | 标准包本地验证、升级与回滚 | **完成（代码与测试）** | 内置 2.0.0；canonical manifest、签名/CAS/高水位/回滚、项目七字段 pin、差异确认、升级后强制重检均已实现；旧 release 缺失时 fail-closed；生产 trust pin 与联网传输未实现 |
 | 标准与规则补全 | **治理结构完成，内容补全未完成** | 13 标准/35 规则/6 fixer 映射一致；外部来源核验 0 项，4 项仍 under_review，真实审校签核与多类标准深度不足 |
-| 湖岸统一账号 / Free+Pro / 结果同步 | **Bearer 适配契约与加密本地队列完成，生产联调未开始** | 官网现有 Supabase Bearer 流程已只读核对；exact token→principal 适配、PKCE 状态、Free/Pro、SyncRecord、四选一预览和 safeStorage 队列已实现；无生产 verifier/凭据/支付、网络 transport 或网站后台 |
-| Web 服务端统一处理 | **同源 handler + Bearer 会话边界完成，生产未开始** | 状态机、HTTPS/Origin、Bearer/Cookie 分流、Cookie CSRF、上传前门禁和六个动作已实现；真实监听器/反向代理、生产 verifier、对象存储/容器、恶意文件门禁、计费与网站嵌入待实现 |
+| 湖岸统一账号 / Free+Pro / 结果同步 | **GoTrue 验证边界、Web 账号入口与加密本地队列完成，生产联调未开始** | 官网 Supabase Bearer 流程已只读核对；有界 GoTrue `/auth/v1/user` 验证、exact token→principal、PKCE 状态、Free/Pro、SyncRecord、四选一预览和 safeStorage 队列已实现；无生产部署/凭据/支付、网络同步 transport 或网站后台 |
+| Web 服务端统一处理 | **Fetch 纵向边界与首个工作台完成，生产未部署** | 状态机、HTTPS/Origin、Bearer/Cookie 分流、GoTrue verifier、Fetch 适配、上传前门禁、六个动作及登录/上传/轮询/取消/下载 UI 已实现；对象存储/隔离 worker、恶意文件门禁、计费、结果同步与官网部署待实现 |
 | 可售卖正式版发布 | **未达到** | 缺跨端产物、生产账号/支付、条款、签名、公证、内测和网站联调 |
 
 ## 最新测试基线
 
-- 最终统一 `npm test`：**PASS，退出码 0，墙钟 167.2 秒**；Node 413/406/0/7（4.483 秒），Python 351/0 failures/0 errors/3 skipped（104.577 秒）。跳过项不计作通过。
+- 最终统一 `npm test`：**PASS，退出码 0，墙钟 111.2 秒**；Node 431/424/0/7（3.566 秒），Python 351/0 failures/0 errors/3 skipped（102.909 秒）。跳过项不计作通过。
 - 发行身份专项纳入 Node 全量：当前仓库身份结构有效但 `complete=false`，12 个 Windows 完备性字段显式缺失；源码 `build.appId`、生产 `oakReleaseIdentity`、重复键、字段/顺序/schema/canonical 字节、占位文本、非官方 URL 和 package 漂移均 fail-closed。
-- ASAR/资源信任专项已纳入 Node 全量：packaged 身份从真实 `app.asar/package.json` 读取；raw header、精确短读循环、同路径重建、loose 源码伪造、ASAR 内身份漂移、源码清单/锚点、四类运行资源和启动顺序均通过。`verify:resource-trust` PASS，78 文件 / 2,124,858 字节，应用清单 SHA-256 `0105de22837471dcf3ccd35749119b8bcefe6b3764e6068f6e9032342b449241`，锚点 SHA-256 `6826bcf221d1a0677ca1c11147326819d941cfac0b2c1fc07d4dbdabc3548d3c`。
+- ASAR/资源信任专项已纳入 Node 全量：packaged 身份从真实 `app.asar/package.json` 读取；raw header、精确短读循环、同路径重建、loose 源码伪造、ASAR 内身份漂移、源码清单/锚点、四类运行资源和启动顺序均通过。`verify:resource-trust` PASS，78 文件 / 2,124,858 字节，应用清单 SHA-256 `5df48f104e75b11f149be9ea1749738fc3d859bfd8f8bad66d17bf5a3a68e1dc`，锚点 SHA-256 `944ec0b152eaf08ccc385769d660396fbe63bff9a73d69a199d8e6e9dee40371`。
 - CPython provenance 专项已纳入 Node 全量：tracked evidence、exact schema/canonical 字节、官方制品摘要、Sigstore leaf、SPDX、34/33/1 推导、证据/运行时清单绑定、真实 `python.exe` 漂移和原子更新故障均通过；证据保持 `machine_status=verified`、`human_review_status=pending`。
 - EpubCheck provenance 专项已纳入 Node 全量：官方 ZIP/服务端 digest、本地 49/49 原字节文件、exact schema/canonical 字节、证据/分发/JRE/资源锚点绑定、自批准与漂移拒绝均通过；证据保持 `machine_status=verified`、`human_review_status=pending`、`license_signal_consistent=false`。
 - Temurin/JRE provenance 专项已纳入 Node 全量：官方 ZIP/API/digest/checksum/build metadata、490/490 JDK 文件树、本机源 JDK、固定 jlink、207 文件 runtime、94 份许可材料、证据/锁/ASAR 绑定、自批准和漂移拒绝均通过；GPG 状态保持 `not_verified_no_openpgp_tool`，人工状态保持 pending。
@@ -55,7 +55,7 @@
 - Windows builder provenance 专项已纳入 Node 全量：三份官方归档/API、固定选择逻辑、受控重解压重组和 385/385 工具树、证据/tool manifest/lock 绑定及反向路径均通过；证据 SHA-256 `c1651839…bb5`，旧 release digest 状态保持 unavailable，人工状态 pending。
 - Ace utility/Chrome controller、两阶段外部验证、Fuse 与相关路径反向测试均纳入上述全量回归；afterPack 专项覆盖全 9 项严格写入、API 漂移、macOS arm64 临时签名和路径逃逸；真实 EXE 回读 `fully_known=true`、`unknown_fuses=[]`。
 - 账号/同步专项：Auth 状态机、Free/Pro 与离线宽限、SyncRecord/持久状态 exact schema、登录/明确确认门禁、按账户隔离、safeStorage 加密、原子提交/revision、重启恢复、幂等/取消/重试/删除、可信核心来源、IPC/preload 和 UI 均通过；未使用网络或生产服务。
-- Web HTTP/Supabase 适配/作业状态机合计 **43 项全通过**；其中 handler+适配器定向实跑 25/25。覆盖五份 exact schema、HTTPS/同源、Bearer/Cookie 分流、Cookie CSRF、重复/合并 Authorization、无效 token、身份字段夹带、非反射错误、上传前门禁、六动作、主体隔离、TTL、删除失败和无内容审计。handler 未监听端口，verifier 为注入测试替身，未使用生产会话或存储。
+- Web 客户端/Fetch/GoTrue/HTTP/Supabase/作业状态机合计 **61 项全通过**。覆盖五份 exact schema、HTTPS/同源、Bearer/Cookie 分流、固定 GoTrue 路径与超时/响应上限、Fetch 流式桥、无 Cookie 验证、重复/合并 Authorization、无效 token、身份字段夹带、无文件名创建负载、默认引用/单任务同意、六动作、主体隔离、TTL、删除失败和无内容审计。GoTrue 网络均为注入 fetch 的模拟；没有生产会话、监听器或存储。
 - 发布证据专项：**6 项，5 通过、0 失败、1 条件跳过**；覆盖确定性输出、交叉摘要、坏格式/旧制品/版本漂移、链接/硬链接、篡改、联合提交回滚和安全清除预检。
 - downloader 专项：**11/11 通过**；覆盖显式联网授权、固定来源、重定向/容量/哈希门禁、零授权零写入、事务落盘/回滚及路径安全。
 - Electron runtime 锁专项：**37 项、36 通过、0 失败、1 条件跳过**；hardlink 与 junction 反向路径本机实测通过，文件 symlink 因 Windows `EPERM` 条件跳过，不计作通过。
@@ -79,7 +79,7 @@
 ## 本轮关键实现
 
 - `release_identity.js` 默认只读，使用 exact/canonical 契约验证发行身份并交叉检查 `package.json`；待定字段不会自填，正式 sale 在 `RELEASE_PUBLISHER_METADATA_PENDING` 上失败；
-- `windows_install_acceptance.js` 默认只读并绑定 `package.json` 当前版本；alpha.24 无制品，当前不会通过预检。最近一次成功证据为 alpha.23 对归档 alpha.12；实际系统变更仍必须同时提供 `--run --allow-system-mutation`；
+- `windows_install_acceptance.js` 默认只读并绑定 `package.json` 当前版本；alpha.25 无制品，当前不会通过预检。最近一次成功证据为 alpha.23 对归档 alpha.12；实际系统变更仍必须同时提供 `--run --allow-system-mutation`；
 - 授权运行固定九阶段，并把安装目录、测试 userData、temp 与 canonical JSON 证据全部限制在 `out/install-acceptance/`；系统集成探针只读取并验证 HKCU InstallLocation/DisplayVersion、Desktop 与 Start Menu 快捷方式；失败时尽力运行精确卸载清理并仍记录 FAIL；
 - 新增 Windows 安装证据 v1 JSON Schema、运行时 exact validator 与 canonical 文件复验。历史 alpha.12 是否能覆盖当前版本仍须真实探测，当前不宣称具备降级保护；
 - smoke 模式在 ready 前禁用硬件加速，普通启动不变；受限 Codex 令牌的 sandbox 子进程故障通过同版对照定位，最终证据保持 Electron sandbox 并在外层隐藏进程取得；
@@ -143,7 +143,7 @@
 - 当前 packaged 资源门禁的 12 项 sale blocker 仍机器可读保留；其中发行身份 blocker 明确绑定待确认字段，fuse 未知项已为 0，不允许用该进展掩盖其余正式售卖责任。
 - 新增 `web/job-contract.js` 内存参考状态机和三份 exact schema：可信主体与创建请求分离，单任务同意/时效、幂等、并发、大小/MIME 和 UUID 碰撞在接收内容前门禁；公开状态不含主体或稿件元数据；
 - Web 任务完成先删输入再开放短期结果；取消、用户删除和 TTL 清扫删除输入/输出并传递 `deleteAt`。删除部分失败进入 `deletion_pending`，准确报告保留状态且不生成成功回执；终态幂等墓碑拒绝同键重建；
-- Web 参考实现不启动 HTTP、不持久化任务、不连接 Supabase/网站，也没有对象存储、隔离执行、恶意文件门禁或计费；它只交付生产实现必须遵守的服务端契约和测试夹具。
+- Web 参考实现已有标准 Fetch 边界、可注入的 GoTrue 验证器和未部署工作台，但不启动公网 HTTP、不持久化任务、不连接真实 Supabase/网站，也没有对象存储、隔离执行、恶意文件门禁或计费；它只交付生产实现必须遵守的纵向契约与测试夹具。
 
 上一阶段保留的批量修复实现：
 
@@ -180,11 +180,12 @@
 - 标准治理 schema、完整身份和本地升级链已实现，但没有任何外部来源完成核验，4 项外部标准仍在审阅，reviewer 仅为角色占位，GB/T、APA、Chicago、EPUB、TXT/Markdown、纸质出版和可访问性覆盖仍不够，不能宣传为“标准库完整”；
 - 标准包生产 trust pin、联网检查/下载和签名撤回分发尚未实现；当前本地签名包导入按设计禁用；
 - Windows 开发机无法替代真实 macOS 构建、签名、公证和实机 smoke；
-- 本机加密同步队列、Web 作业状态机、同源 HTTP handler 和 Supabase Bearer 净化适配器已实现；生产 verifier、OS 凭据、订阅、网络 transport、真实监听器/反向代理、对象存储/容器、真实零留存和网站 UI 仍涉及生产系统，网站保持只读；
+- 本机加密同步队列、Web 作业状态机、同源 HTTP handler、GoTrue verifier、Fetch 适配器和未部署工作台已实现；生产环境配置、OS 凭据、订阅、网络同步 transport、对象存储/容器、真实零留存与官网发布仍涉及生产系统，网站保持只读；
 - “接入用户自己的 AI”的六项设计决定已确认，但尚未获用户明确批准正式写入 v2.0 方案或实现，不在当前实现范围。
 
 ## 历史里程碑
 
+- 2026-07-28：推进到 `0.1.0-alpha.25`；新增有界 GoTrue verifier、Fetch 桥和保留统一账号入口的 Web 工作台，完成无文件名创建、单任务同意、默认引用、上传/轮询/取消/下载；Web 61/61、Node 431、Python 351 全量零失败；桌面/390px 隔离渲染通过，未部署或打包。
 - 2026-07-28：推进到 `0.1.0-alpha.24`；只读核对官网 Supabase Bearer/GoTrue 模式，新增唯一 Authorization→exact principal 适配及 Bearer/Cookie 安全分流；Node 413、Python 351 全量零失败；未重复打包，最新制品仍为 alpha.23。
 - 2026-07-28：推进到 `0.1.0-alpha.23`；完成同源 HTTPS handler、会话/CSRF、上传前预留、稳定错误与无内容审计 exact schema；Node 406、Python 351、source/packaged smoke、完整 Windows build、发行摘要和只读安装预检通过；真实会话/监听器/存储/隔离执行/官网仍待办。
 - 2026-07-28：推进到 `0.1.0-alpha.22`；完成 Web 作业 exact schema、可信主体隔离、单任务同意、幂等/并发/TTL 与惰性过期门禁、内容与元数据分道及删除失败可见的内存参考状态机；Node 387、Python 351、source/packaged smoke、完整 Windows build、发行摘要和只读安装预检通过；真实 HTTPS/存储/隔离执行/零留存/官网仍待办。

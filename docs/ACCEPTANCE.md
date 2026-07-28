@@ -2,7 +2,18 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.24 Supabase Bearer 会话适配验收（2026-07-28）
+## 0.1.0-alpha.25 GoTrue、Fetch 与 Web 工作台验收（2026-07-28）
+
+- [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.25`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] GoTrue verifier 只接受规范 HTTPS Supabase origin，固定 `/auth/v1/user`，不带 Cookie、不跟随重定向；token/API key/超时/响应大小/媒体/JSON/subject 全部有界，身份失败与上游失败分流且错误不反射秘密；
+- [x] 标准 Fetch `Request/Response` 可流式接入现有 handler；Fetch → GoTrue → Supabase resolver → handler → job 端到端契约通过；
+- [x] Web 工作台保留湖岸账号登录、注册、账户入口，引用体例含“默认”，任务创建前要求本次临时处理同意；支持创建、上传、轮询、取消和结果下载，创建 JSON 不含文件名/路径；
+- [x] 结果同步未接通时明确禁用并说明四选一未来边界；登录不等于同意长期同步；
+- [x] Web 定向 61/61；最终 Node 431 / Python 351 全量零失败；桌面 1440px 与真实 390px 断网静态渲染通过；
+- [x] 本检查点没有部署官网或重复打包；文档明确保留 alpha.23 为最新真实 Windows 制品，不借用其 smoke/安装证据证明 alpha.25；
+- [ ] 生产 Netlify/Supabase 配置、真实账号 E2E、隔离对象存储/worker、恶意文件门禁、计费、短时下载、结果同步、隐私/条款与官网发布已实现并验收；因此本节不是上线或销售验收。
+
+## 0.1.0-alpha.24 Supabase Bearer 会话适配验收（历史，2026-07-28）
 
 - [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.24`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] 官网现有 Supabase Bearer/GoTrue 验证模式经只读源码核对；网站目录没有修改；

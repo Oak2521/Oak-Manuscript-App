@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.24` 已实现的桌面隐私边界及 Web 作业/同源 HTTP/Bearer 会话适配契约。现有 alpha.23 Windows 制品未签名，不是可售卖正式版。统一账号、Free/Pro、SyncRecord v1、OS 加密持久队列、Web 状态机/handler 和 Supabase token 净化边界已实现；生产 verifier、同步网络 transport、真实监听器/反向代理、计费和官网 Web 上传仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.25` 已实现的桌面隐私边界及 Web 作业/同源 HTTP/Bearer/GoTrue/Fetch 契约。现有 alpha.23 Windows 制品未签名，不是可售卖正式版。统一账号、Free/Pro、SyncRecord v1、OS 加密持久队列、Web 状态机/handler、GoTrue 验证边界和未部署工作台已实现；生产同步 transport、对象存储/隔离执行、计费和官网发布仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -30,7 +30,7 @@
 本地技术日志（`logs/`）与导出诊断信息不得包含正文、标题、文件名和路径。
 脱敏评估摘要仅含：稿件类型、语言、字数区间、问题统计、出版目标、规则版本、咨询意图；当前只在本地生成，未来真实发送仍须用户逐字段确认。
 
-上述“数据不出本机”描述当前桌面 alpha。alpha.24 的 Web 代码仍是无网络参考：handler 规定 HTTPS、同源、Bearer/Cookie 证明、上传前门禁、TTL 与删除失败可见，Supabase 适配器只调用注入 verifier，但不监听端口，也没有接收真实 HTTP 上传。在隔离存储/执行、隐私文案、生命周期策略和生产零留存验收完成前，不得宣称 Web 能力已上线。
+上述“数据不出本机”只描述当前桌面 alpha。alpha.25 的 Web 代码具备可发出 GoTrue 验证请求与稿件 API 请求的生产形状，但本轮测试使用注入替身且页面未部署。客户端只在用户选择文件并勾选本次处理同意后上传，创建元数据不含文件名/路径；Bearer 请求显式 `credentials:"omit"`。在隔离存储/执行、隐私文案、生命周期策略和生产零留存验收完成前，不得宣称 Web 能力已上线。
 
 开发者构建输入是另一条隔离边界：`npm run download:builder:win` 只在用户明确批准后由命令行显式启动，只能请求合同固定的 electron-builder GitHub release URL/受限重定向主机，并把归档写入仓库 `out/`。它不接触项目、稿件、报告、账号或应用用户数据，也不会被普通 build/test 或桌面应用隐式触发。
 

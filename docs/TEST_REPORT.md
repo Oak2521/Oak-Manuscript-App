@@ -2,7 +2,22 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.24 Supabase Bearer 会话适配检查点
+## 最新验证结论：0.1.0-alpha.25 GoTrue、Fetch 与 Web 工作台检查点
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。未联网、未修改官网、未启动 Electron/安装器，也未生成 alpha.25 安装包。GoTrue 请求只由注入的测试 fetch 模拟；UI 截图由完全拦截非本地请求的无界面 Chrome 生成。
+
+| 验证 | 结果 | 证据 |
+|---|---|---|
+| GoTrue / Fetch / Web client 定向 | **PASS** | 18/18：固定 HTTPS `/auth/v1/user`、无 Cookie/重定向、超时/64 KiB/媒体/JSON/subject 门禁、Fetch 流式桥、账号入口、默认引用、单任务同意、无文件名创建、取消/下载和同步未启用文案 |
+| 全部 Web 定向 | **PASS** | 61/61，包含此前状态机、HTTP handler、Supabase resolver 五份 exact schema 与本轮 18 项 |
+| `npm test` | **PASS** | 退出码 0，墙钟 111.2 秒；Node 431 total / 424 pass / 0 fail / 7 skip（3.566 秒）；Python 351 total / 0 failures / 0 errors / 3 skipped（102.909 秒） |
+| `resource_trust_manifest.js` 更新并只读复验 | **PASS** | 78 文件 / 2,124,858 字节；manifest SHA-256 `5df48f104e75b11f149be9ea1749738fc3d859bfd8f8bad66d17bf5a3a68e1dc`；anchor SHA-256 `944ec0b152eaf08ccc385769d660396fbe63bff9a73d69a199d8e6e9dee40371` |
+| Web 静态视觉核对 | **PASS（非生产 E2E）** | 1440×1800 桌面与真实 390×1400 CSS 像素窄屏；修复标题孤字及表单最小宽度溢出；只证明本地布局，不证明真实账号、API 或可访问性全量验收 |
+| alpha.25 Windows build / smoke / 安装生命周期 | **未运行** | 按里程碑节奏不重复打包；不得沿用 alpha.23 证据声称 alpha.25 制品通过 |
+
+证据边界：`web/gotrue-verifier.js` 是可配置的真实请求验证逻辑，但本轮没有生产 Supabase URL/key、真实 token 或网络验收；`web/fetch-adapter.js` 未部署到 Netlify；`web/client/` 未写入官网，生产处理、对象存储、隔离 worker、恶意文件门禁、计费、短期下载与结果同步均未接通。最新可复验 Windows 制品仍为 alpha.23。
+
+## 历史验证结论：0.1.0-alpha.24 Supabase Bearer 会话适配检查点
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。官网仅作本地只读核对；未联网、未修改网站、未启动 Electron/安装器，也未生成 alpha.24 安装包。
 

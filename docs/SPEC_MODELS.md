@@ -198,9 +198,9 @@
 
 未登录状态不询问、不发送；登录不等于授权。Renderer 不可构造负载；主进程从 Python `sync-source` 取得只读来源并构造 exact-schema 记录。发送前必须逐字段展示同一份缓存负载并由用户选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。alpha.21 起使用按账户隔离的 OS 加密 `pending_transport` 队列并支持重启恢复，但没有网络上传；入队不等于同步成功。Web 端用户主动发起的临时稿件处理属于独立作业协议，不得混入结果同步 schema 或长期账号历史。
 
-## 9. Web 临时作业模型（alpha.24 契约、HTTP 与账号边界）
+## 9. Web 临时作业模型（alpha.25 契约、HTTP、GoTrue 与客户端边界）
 
-五份机器可读 schema 分别定义创建请求、公开状态、删除回执、HTTP 错误和无内容安全审计：`web-job-create-v1`、`web-job-status-v1`、`web-job-deletion-v1`、`web-http-error-v1`、`web-http-audit-v1`。参考状态机位于 `web/job-contract.js`，不监听端口的 HTTP handler 位于 `web/http-handler.js`，Supabase Bearer 净化边界位于 `web/supabase-session-adapter.js`。
+五份机器可读 schema 分别定义创建请求、公开状态、删除回执、HTTP 错误和无内容安全审计：`web-job-create-v1`、`web-job-status-v1`、`web-job-deletion-v1`、`web-http-error-v1`、`web-http-audit-v1`。参考状态机位于 `web/job-contract.js`，不监听端口的 HTTP handler 位于 `web/http-handler.js`，Supabase Bearer 净化边界位于 `web/supabase-session-adapter.js`，有界 GoTrue 请求位于 `web/gotrue-verifier.js`，标准 Fetch 桥位于 `web/fetch-adapter.js`，浏览器 exact create contract 位于 `web/client/client-contract.js`。
 
 创建请求 exact 字段：
 

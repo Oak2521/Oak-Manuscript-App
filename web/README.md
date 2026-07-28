@@ -1,6 +1,6 @@
 # Web 作业契约与同源 HTTP handler（alpha）
 
-`job-contract.js` 是商业方案 v2.0 的服务端任务契约与内存参考实现；`http-handler.js` 是不监听端口的 Node HTTP 请求处理边界；`supabase-session-adapter.js` 是把已验证湖岸 Supabase Bearer token 净化为任务主体的适配契约。三者都不是已部署的网页版或生产上传服务。
+`job-contract.js` 是商业方案 v2.0 的服务端任务契约与内存参考实现；`http-handler.js` 是不监听端口的 Node HTTP 请求处理边界；`supabase-session-adapter.js` 净化湖岸 Supabase Bearer token；`gotrue-verifier.js` 用有界请求向固定 GoTrue 用户端点验证 token；`fetch-adapter.js` 把标准 Fetch 请求接入 handler；`client/` 是首个未部署的 Web 工作台。它们共同形成可测试的纵向边界，但仍不是已上线的生产上传服务。
 
 当前边界：
 
@@ -13,17 +13,20 @@
 - `deleteAt` 作为对象存储生命周期兜底契约传给存储适配器；
 - 任务结果不会自动生成或发送 SyncRecord，长期账号记录仍须走独立的显式同步流程。
 
-alpha.23/alpha.24 固定：
+alpha.23—alpha.25 固定：
 
 - API 前缀 `/manuscript/api/v1/jobs`，提供创建、状态、输入上传、结果下载、取消和删除路由；不暴露 worker 开始/完成路由；
 - 只接受 HTTPS。部署在受信反向代理后时，必须由适配器用不可伪造的代理信息实现 `isSecureRequest`，不能直接信任客户端 `X-Forwarded-Proto`；
 - 状态变更要求精确同源 `Origin` 和合法 `Sec-Fetch-Site`（如存在）。trusted session 显式为 Bearer 或 Cookie；Cookie 模式强制 CSRF，Bearer 模式依赖显式 Authorization、服务端 token 验证和无 CORS；
 - Supabase 适配器拒绝缺失、短、带空白/逗号、重复或合并的 Authorization；注入 verifier 只能返回 exact `{subject_id}`，适配器输出不含 token、角色、邮箱或完整 user；
+- GoTrue verifier 只接受规范 HTTPS origin，固定 GET `/auth/v1/user`，不发送 Cookie、不跟随重定向、默认 5 秒超时、响应上限 64 KiB；400/401/403 映射为未认证，限流/5xx/网络/超时/媒体/JSON/subject 异常使用稳定非反射错误；
+- Fetch adapter 流式传递请求体，保留 handler 的读取前门禁并拒绝已消费 Request 或未完整结束的响应；不在适配对象上保留原始 Fetch Request；
+- `client/` 读取网站 `window.oblAuth` 会话，显式 `credentials:"omit"` 发送 Bearer；创建负载由 exact client contract 生成且不含文件名/路径。页面包含登录/注册、默认引用、本次处理同意、创建/上传/轮询/取消/下载；生产同步尚未接通并明确禁用；
 - 上传必须有唯一 `Content-Length`，拒绝 `Transfer-Encoding`、文件名、`Content-Disposition` 和内容摘要头；大小/MIME/并发预留在读取稿件字节前完成；
 - HTTP 错误与安全审计分别受 `web-http-error-v1`、`web-http-audit-v1` exact schema 约束。审计不记录主体、任务 ID、URL、请求头或稿件元数据；
 - handler 不设置 CORS，响应固定 `no-store` / `nosniff` / CSP / `no-referrer`。错误文案固定且不反射异常、路径、账号或稿件内容。
 
-生产实现仍须补齐：真实 GoTrue/Supabase verifier、HTTPS 服务器/反向代理部署、隔离对象存储、容器任务队列、恶意 ZIP/病毒检查、限额与计费、短时下载凭证、实际生命周期策略和网站联调。
+生产实现仍须补齐：部署 GoTrue/Supabase 环境配置与真实账号 E2E、HTTPS 反向代理、隔离对象存储、容器任务队列、恶意 ZIP/病毒检查、限额与计费、短时下载凭证、实际生命周期策略、结果同步和网站联调。
 
 ## 参考调用顺序
 
@@ -31,8 +34,14 @@ alpha.23/alpha.24 固定：
 const { WebJobService } = require("./job-contract");
 const { createWebJobHttpHandler } = require("./http-handler");
 const { createSupabaseSessionResolver } = require("./supabase-session-adapter");
+const { createGoTrueAccessTokenVerifier } = require("./gotrue-verifier");
+const { createFetchHandlerAdapter } = require("./fetch-adapter");
 
 const jobs = new WebJobService({ storage: productionEphemeralStorage });
+const productionGoTrueVerifier = createGoTrueAccessTokenVerifier({
+  supabaseOrigin: process.env.SUPABASE_URL,
+  apiKey: process.env.SUPABASE_API_KEY,
+});
 const trustedSessionAdapter = createSupabaseSessionResolver({
   verifyAccessToken: productionGoTrueVerifier,
 });
@@ -42,12 +51,13 @@ const handler = createWebJobHttpHandler({
   resolveSession: trustedSessionAdapter,
   securityEventSink: contentFreeAuditSink,
 });
+const handleFetchRequest = createFetchHandlerAdapter({ nodeHandler: handler });
 
-// 由官网同源 HTTPS 服务把 Node IncomingMessage/ServerResponse 交给 handler。
+// 由官网同源 HTTPS 平台把标准 Request 交给 handleFetchRequest。
 // Worker 只通过私有队列调用 beginProcessing / completeJob，不经过公开 HTTP。
 ```
 
-生产 Bearer verifier 必须向可信 GoTrue/Supabase 验证 token，只返回 exact `{subject_id}`；不得只解码未验签 JWT，也不得把请求正文、普通代理头或 user metadata 角色映射为 principal。若改用 HttpOnly Cookie，session resolver 必须返回 `auth_mode:"cookie"` 与服务器绑定 CSRF。`storage` 必须实现五个临时内容方法并把 `deleteAt` 落成真实对象生命周期策略；后台还必须走私有队列并定时 `sweepExpired()`。
+部署配置应使用服务端可用、权限最小的 Supabase API key，不得把 service-role key 送进浏览器。不得只解码未验签 JWT，也不得把请求正文、普通代理头或 user metadata 角色映射为 principal。若改用 HttpOnly Cookie，session resolver 必须返回 `auth_mode:"cookie"` 与服务器绑定 CSRF。`storage` 必须实现五个临时内容方法并把 `deleteAt` 落成真实对象生命周期策略；后台还必须走私有队列并定时 `sweepExpired()`。
 
 ## 稳定错误码
 

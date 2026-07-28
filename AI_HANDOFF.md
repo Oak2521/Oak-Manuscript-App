@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.24`
+> 当前版本：`0.1.0-alpha.25`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.24`（源码与测试检查点；最新未签名 Windows 制品仍是 alpha.23）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.25`（源码、测试与隔离静态渲染检查点；最新未签名 Windows 制品仍是 alpha.23）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,16 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.25 GoTrue 验证、Fetch 桥与 Web 工作台检查点
+
+- 新增 `web/gotrue-verifier.js`。部署配置只能给出规范 HTTPS Supabase origin 与安全有界 API key；验证器固定 GET `/auth/v1/user`、不带 Cookie、不跟随重定向、默认 5 秒超时、响应上限 64 KiB，只输出冻结的 exact `{subject_id}`；无效/过期 token 返回未认证，上游限流/5xx/网络/超时/畸形响应使用不反射秘密的稳定错误；
+- 新增 `web/fetch-adapter.js`，将标准 Fetch `Request/Response` 转为既有 Node handler 边界，流式上传继续通过读取前的 HTTPS、同源、会话、长度/MIME 与预留门禁。端到端测试覆盖 Fetch → GoTrue → Supabase resolver → handler → job；
+- 新增 `web/client/`：同一页面保留官网登录、注册和账户入口；支持 DOCX/EPUB/Markdown/TXT、论文/纸质书/电子书、快速/完整检查与六种引用选择，其中“默认”由检查类型和本地结构自动解析；每个任务必须勾选临时处理同意，随后可创建、上传、轮询、取消和下载；创建 JSON 不含文件名/路径；
+- Web 工作台明确写出生产处理、订阅和结果同步尚未接通；同步区仍禁用，未把登录等同于同意同步。桌面 1440px 和真实 390px 窄屏均用拦截全部网络请求的无界面 Chrome 渲染复核；
+- Web 定向 61/61 PASS。最终 `npm test` 111.2 秒：Node 431 total / 424 pass / 0 fail / 7 skip（3.566 秒），Python 351 total / 0 failures / 0 errors / 3 skipped（102.909 秒）；
+- 资源清单仍为 78 文件 / 2,124,858 字节，manifest SHA-256 `5df48f104e75b11f149be9ea1749738fc3d859bfd8f8bad66d17bf5a3a68e1dc`，锚点 SHA-256 `944ec0b152eaf08ccc385769d660396fbe63bff9a73d69a199d8e6e9dee40371`；
+- 本轮没有联网、没有修改官网、没有部署 Netlify Function、对象存储、隔离 worker、计费或长期结果同步，也没有重新打包。GoTrue 请求只在注入 fetch 的自动测试中模拟；最新真实 Windows 制品、packaged smoke 与安装只读预检仍属于 alpha.23。
 
 ### 已完成：0.1.0-alpha.24 Supabase Bearer 会话适配检查点
 
@@ -407,7 +417,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - 打包版 Ace：alpha.23 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
 - Windows：alpha.23 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
-- Web：exact 作业 schema、内存参考存储/状态机、主体隔离、限额、TTL、删除失败模型和同源 HTTPS handler 边界已实现；真实监听器/反向代理、生产会话、对象存储/生命周期、隔离执行、恶意文件门禁、计费、短时下载和官网嵌入尚未实现；
+- Web：exact 作业 schema、内存参考存储/状态机、同源 HTTPS handler、有界 GoTrue verifier、Fetch 平台桥与首个工作台已实现；生产环境/真实账号 E2E、对象存储/生命周期、隔离执行、恶意文件门禁、计费、短时下载、结果同步和官网嵌入尚未实现；
 - 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览、按账户隔离的 OS 加密队列和重启恢复已实现；生产 Supabase、登录凭据存储、签名授权、支付、网络 transport 和网站后台未连接；
 - 标准库：治理结构和引用解析政策已完成，13 项标准、35 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
 - 标准升级：本地验证、签名包导入/回滚骨架、项目固定与显式升级已编码；生产 trust pin、在线获取/下载、签名撤回分发与联网自动更新未实现；
@@ -442,7 +452,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
 5. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
 6. 在现有 Auth / License / Sync 离线契约和 OS 加密持久队列上实现生产登录凭据与独立网络 transport，再经授权连接 Supabase、支付和网站后台；
-7. 在 alpha.24 Bearer 净化边界上实现生产 GoTrue verifier 与受信反向代理适配，再接隔离对象存储/执行、恶意文件门禁、短时下载与三路零留存证据；经授权后完成官网嵌入、Free/Pro、支付、隐私、内测和正式发布门禁。
+7. alpha.25 已完成 GoTrue verifier、Fetch 适配与未部署工作台；下一步实现隔离对象存储/私有任务执行、恶意文件门禁、短时下载与三路零留存证据，再经授权完成真实 Supabase/Netlify E2E、官网嵌入、结果同步、Free/Pro、支付、隐私、内测和正式发布门禁。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。
 
