@@ -34,6 +34,7 @@ const {
   verifyAceStageLock,
 } = require("./stage_ace");
 const { verifyStandardAssets } = require("./standard_assets");
+const { verifyReleaseIdentity } = require("./release_identity");
 const {
   ANCHOR_RELATIVE: RESOURCE_TRUST_ANCHOR_RELATIVE,
   verifySourceResourceTrust,
@@ -170,6 +171,27 @@ function verifyCore(root, errors, checks) {
     });
   } catch (error) {
     errors.push(`标准与规则包固定清单门禁失败：${error.message}`);
+  }
+}
+
+function verifyReleasePublisherIdentity(identityRoot, packageRoot, platform, errors, checks) {
+  try {
+    const result = verifyReleaseIdentity({ identityRoot, packageRoot, platform });
+    checks.push({
+      type: "release-publisher-identity",
+      identity_path: result.identity_path,
+      schema_path: result.schema_path,
+      platform: result.platform,
+      product_name: result.product_name,
+      app_id: result.app_id,
+      publisher_brand: result.publisher_brand,
+      official_website: result.official_website,
+      human_review_status: result.human_review_status,
+      complete: result.complete,
+      missing_fields: result.missing_fields,
+    });
+  } catch (error) {
+    errors.push(`发行商身份门禁失败：${error.message}`);
   }
 }
 
@@ -1628,7 +1650,13 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
   const builderProvenance = checks.find((item) => item.type === "builder-toolchain-provenance" &&
     item.machine_status === "verified" && typeof item.evidence_sha256 === "string" &&
     SHA256_RE.test(item.evidence_sha256));
+  const releaseIdentity = checks.find((item) => item.type === "release-publisher-identity" &&
+    item.platform === platform && item.complete === true);
   const pending = [
+    ...(!releaseIdentity ? [{
+      code: "RELEASE_PUBLISHER_METADATA_PENDING",
+      message: "法定销售主体、官方支持/隐私/条款链接、版权声明、具名复核、package.json 发行商字段与平台签名主体尚未形成完整且一致的可售卖发行身份",
+    }] : []),
     pythonProvenance ? {
       code: "PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED",
       message: "CPython 官方 ZIP/Sigstore/SPDX、33 个原字节文件、1 个受控 _pth 修改和许可证保留已机器复验；正式销售仍需具名人工法律/再分发签核",
@@ -1751,6 +1779,13 @@ function verifyPackagedResources({
     errors.push(`不支持的发布门禁层级：${String(releaseTier)}`);
   }
   verifyCore(projectRoot, errors, checks);
+  verifyReleasePublisherIdentity(
+    projectRoot,
+    electronDistributionRoot,
+    platform,
+    errors,
+    checks,
+  );
   verifyEpubCheck(projectRoot, errors, checks);
   // A packaged resources directory does not contain Electron itself. Re-run the
   // repository-tracked source distribution lock instead of trusting a loose

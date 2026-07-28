@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 70,
-  "total_bytes": 2112042,
+  "file_count": 72,
+  "total_bytes": 2115011,
   "files": [
     {
       "path": "config/app-config.json",
@@ -41,6 +41,11 @@
       "path": "config/provenance/temurin-21.0.11+10-win32-x64.json",
       "size_bytes": 88469,
       "sha256": "dbbf5e4799d88820b7c4475e178e45a7624fbf104b7b5fdc4f78d6650c39d676"
+    },
+    {
+      "path": "config/release-identity.json",
+      "size_bytes": 573,
+      "sha256": "df7ec021def708136597f48ddb8fe8f2f58a832f1310331010290eaff3a1b38e"
     },
     {
       "path": "config/rule-capabilities.json",
@@ -76,6 +81,11 @@
       "path": "config/schemas/jre-provenance-v1.schema.json",
       "size_bytes": 7856,
       "sha256": "f4221688bf7126f95b4c452ad9e763b9492f3c445e5aa82f0f6b2a81ff6af8bb"
+    },
+    {
+      "path": "config/schemas/release-identity-v1.schema.json",
+      "size_bytes": 2396,
+      "sha256": "adbe8151e239d102e71830e7272ff7af77425e6eaf481a0d6c22ef3aeb9e4054"
     },
     {
       "path": "config/schemas/runtime-provenance-v1.schema.json",
@@ -135,7 +145,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "66583a0ba6d0531c93d808d66814e43b689686769c88444993e44c1e21c8f721"
+      "sha256": "6904fe809e1b92438e2a51f3134f7111b54e829e114f0cc45ab3e1dd15f59607"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

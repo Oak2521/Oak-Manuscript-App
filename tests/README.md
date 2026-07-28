@@ -1,6 +1,6 @@
 # tests/ — Node 契约、发布资源与打包验证
 
-`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.18 最终统一结果为 Node **344 total / 337 pass / 0 fail / 7 skip / 3.280 秒**，Python **351 项 / 0 失败 / 0 错误 / 3 跳过 / 104.368 秒**，墙钟 162 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
+`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.19 最终统一结果为 Node **355 total / 348 pass / 0 fail / 7 skip / 3.210 秒**，Python **351 项 / 0 失败 / 0 错误 / 3 跳过 / 103.702 秒**，墙钟 155.2 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
 
 本目录覆盖：
 
@@ -18,7 +18,8 @@
 - JRE/Ace 候选 stage 与锁的事务提交、故障注入回滚、普通 staging 不准改锁，以及 locale-independent UTF-16 清单顺序；
 - Windows builder 受控下载器固定官方 URL/HTTPS 主机/文件名/SHA-256，要求显式联网开关并覆盖零授权零写入、重定向/容量/哈希、事务提交/碰撞回滚及仓库路径边界；安全导入器继续拒绝 UNC、未知归档、路径穿越、链接/reparse、备用流、加密条目、名称冲突和解压膨胀，只有显式 `--update-lock` 才可建立/更新独立 tracked lock；三份真实归档、工具树和 tracked lock 已按用户授权建立并复验，注入响应与测试夹具仍不能冒充发布资产；
 - Windows 发布证据只接受 package/lock 当前版本的精确 NSIS/ZIP；覆盖 PE/ZIP 结构、旧制品/版本漂移、稳定文件身份、SHA256SUMS 与 canonical manifest 交叉绑定、两文件提交回滚、clear 全预检，以及真实缺制品 fail-closed；
-- Windows 安装生命周期验收默认只读，精确绑定当前 alpha.18 与归档 alpha.12；覆盖 SemVer 预发布排序、NSIS x86 启动器与 x64 主程序、两开关授权门、零授权零启动/零输出、九阶段状态机、HKCU/快捷方式探针、持久化 sentinel、降级成功时 fail-closed 与清理、路径穿越和 canonical 证据篡改；
+- 发行商身份门禁覆盖当前显式待定状态、完整 Windows/macOS 身份、重复键、unknown/reordered 字段、固定 schema/canonical 字节、占位文本、官方 URL、package 漂移和只读 CLI；
+- Windows 安装生命周期验收默认只读，精确绑定当前 alpha.19 与归档 alpha.12；覆盖 SemVer 预发布排序、NSIS x86 启动器与 x64 主程序、两开关授权门、零授权零启动/零输出、九阶段状态机、HKCU/快捷方式探针、持久化 sentinel、降级成功时 fail-closed 与清理、路径穿越和 canonical 证据篡改；
 - 许可证字段/文件为空的拒绝路径，以及“有许可证文件仍不能替代全部 236 包人工审计”的 sale blocker 契约；
 - 资源门禁两阶段顺序：静态全量检查有任一错误时不执行 Python/Java，静态全绿后才运行探针；非原生 host/arch fail-closed，纯静态必须显式 `--no-runtime-probe`；
 - Electron 桥与资源探针共享 `-I -B -S -X utf8` bootstrap、显式受控 core 目录及隔离环境；`-B` 在 `-I` 忽略环境变量时仍禁止污染受信资源；
@@ -30,6 +31,6 @@
 
 Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零污染创建、锁内单 FD 输入、OneDrive/reparse 来源、精确失败清理和安全原子导出覆盖在 `python/tests/test_project_validation.py` 与 `python/tests/test_project_write_lock.py`。
 
-真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。alpha.18 packaged smoke 强制通过受控链路运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言；缺失或陈旧 EXE 不得复用。
+真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。alpha.19 packaged smoke 强制通过受控链路运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言；缺失或陈旧 EXE 不得复用。
 
-alpha.18 最终隐藏 packaged smoke 为 **PASS**，运行根为 `out/packaged-smoke/runs/ms4vbk2z-11762cedd25847f4/projects/`；DOCX/EPUB 均先确认引用计划，各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，且 EPUB 外部工具确实运行。实际安装生命周期仍未运行。
+alpha.19 最终隐藏 packaged smoke 为 **PASS**，运行根为 `out/packaged-smoke/runs/ms4wb5l6-92a65d90b8504698/projects/`；DOCX/EPUB 均先确认引用计划，各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，且 EPUB 外部工具确实运行。实际安装生命周期仍未运行。

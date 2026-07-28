@@ -4,6 +4,16 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.19（ChatGPT 发行商身份 fail-closed 门禁检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.19`。已生成未签名 Windows x64 NSIS 与 ZIP；法定销售主体、正式链接、版权、具名复核和签名主体未确认，不是可售卖正式版。
+
+- 新增 canonical `config/release-identity.json`、固定摘要 v1 schema 与只读验证器；已知产品/品牌/appId/官网固定，未知法定身份字段保持 `null` / `pending`；
+- 验证器拒绝重复键、字段/顺序/schema/字节漂移、占位文本、非官方域 URL、平台签名字段格式和 `package.json` product/appId 漂移，并交叉检查 author/homepage/copyright 完备性；
+- 新增 `RELEASE_PUBLISHER_METADATA_PENDING`：alpha 如实报告，sale fail-closed；源码/packaged blocker 由 16/11 增为 17/12。72 个应用资源及身份契约已由 ASAR 资源锚固定；
+- 全量回归：Node 355 total / 348 pass / 0 fail / 7 skip；Python 351 total / 0 failures / 0 errors / 3 skipped；外层隐藏 Windows build 190.9 秒退出 0，真实 source/packaged 资源、9 fuse、运行时探针、EpubCheck/Ace smoke 与发布证据通过；
+- 最终 NSIS：189,985,848 字节，SHA-256 `9fc35cbfa320419117ca064abd205d049b61e85b3c7442b0f5d74d98b71c9561`；ZIP：233,802,099 字节，SHA-256 `1641678bea38788439e7e538e6f1289076a412d54a19567bc834e1f0a6ad3d99`；安装生命周期只读预检通过，实际安装器未运行。
+
 ### 2026-07-28 — 0.1.0-alpha.18（ChatGPT Electron 与 Windows builder 来源机器证据检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.18`。已生成未签名 Windows x64 NSIS 与 ZIP；五类运行/构建资源的人工许可/再分发签核、实际系统安装与其余正式发布门禁未完成，不是可售卖正式版。

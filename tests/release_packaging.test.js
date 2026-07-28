@@ -61,6 +61,10 @@ const {
   ANCHOR_RELATIVE: RESOURCE_TRUST_ANCHOR_RELATIVE,
   writeSourceResourceTrust,
 } = require("../scripts/resource_trust_manifest");
+const {
+  IDENTITY_RELATIVE: RELEASE_IDENTITY_RELATIVE,
+  SCHEMA_RELATIVE: RELEASE_IDENTITY_SCHEMA_RELATIVE,
+} = require("../scripts/release_identity");
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 const PATCH_BEFORE = "681b52d047d5f6eebbfc62a925b7dc22b82589ab63b36a9ea602297f8cd86ea6";
@@ -442,6 +446,8 @@ function createResourceFixture(t, { builderToolchain = false } = {}) {
   for (const relative of [
     "config/standards.json",
     "config/rule-capabilities.json",
+    RELEASE_IDENTITY_RELATIVE,
+    RELEASE_IDENTITY_SCHEMA_RELATIVE,
     STANDARD_RULEPACK_RELATIVE,
     STANDARD_MANIFEST_RELATIVE,
   ]) {
@@ -450,6 +456,7 @@ function createResourceFixture(t, { builderToolchain = false } = {}) {
     fs.mkdirSync(path.dirname(destination), { recursive: true });
     fs.copyFileSync(source, destination);
   }
+  fs.copyFileSync(path.join(REPO_ROOT, "package.json"), path.join(root, "package.json"));
   write(root, "tools/epubcheck-5.3.0/epubcheck.jar");
   write(root, "tools/epubcheck-5.3.0/LICENSE.txt");
   write(root, "tools/epubcheck-5.3.0/lib/dependency.jar");
@@ -563,12 +570,12 @@ function createToolchainFixture(t, existingRoot = null) {
   return { root, toolchain };
 }
 
-test("electron-builder config is valid and pins alpha.18 Windows installer policy", async () => {
+test("electron-builder config is valid and pins alpha.19 Windows installer policy", async () => {
   const packageJson = require("../package.json");
   const packageLock = require("../package-lock.json");
   await validateConfiguration(packageJson.build, { isEnabled: false, add() {} });
 
-  assert.equal(packageJson.version, "0.1.0-alpha.18");
+  assert.equal(packageJson.version, "0.1.0-alpha.19");
   assert.equal(packageLock.version, packageJson.version);
   assert.equal(packageLock.packages[""].version, packageJson.version);
   const pythonInit = fs.readFileSync(
@@ -943,7 +950,7 @@ test("beforePack forwards the builder project root and target platform", () => {
   const calls = [];
   beforePack(
     {
-      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.18" } },
+      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.19" } },
       electronPlatformName: "darwin",
       arch: 1,
     },
@@ -1155,6 +1162,7 @@ test("Windows resource gate accepts a complete offline fixture", (t) => {
   assert.equal(report.checks.some((item) => item.type === "jre-runtime"), true);
   assert.equal(report.checks.some((item) => item.type === "ace-stage"), true);
   assert.deepEqual(new Set(report.blockers.map((item) => item.code)), new Set([
+    "RELEASE_PUBLISHER_METADATA_PENDING",
     "PYTHON_RUNTIME_PROVENANCE_AUDIT_REQUIRED",
     "FORMAL_LICENSE_AUDIT_REQUIRED",
     "EPUBCHECK_PROVENANCE_AUDIT_REQUIRED",
@@ -1167,7 +1175,7 @@ test("Windows resource gate accepts a complete offline fixture", (t) => {
     "ACE_OS_NETWORK_ISOLATION_PENDING",
     "WINDOWS_CODE_SIGNING_PENDING",
   ]));
-  assert.equal(report.blockers.length, 11);
+  assert.equal(report.blockers.length, 12);
   const trustEvidence = report.checks.find((item) => item.type === "resource-trust-anchor");
   assert.equal(trustEvidence?.evidence_scope, "packaged-app-asar");
   assert.equal(trustEvidence?.protected_by_app_asar, true);
@@ -1207,7 +1215,7 @@ test("packaged resource gate reads the trust anchor from the real app.asar", asy
   const evidence = report.checks.find((item) => item.type === "resource-trust-anchor");
   assert.equal(evidence?.evidence_scope, "packaged-app-asar");
   assert.equal(evidence?.protected_by_app_asar, true);
-  assert.equal(report.blockers.length, 12);
+  assert.equal(report.blockers.length, 13);
 
   fs.rmSync(path.join(root, "app.asar"));
   assert.throws(
@@ -1262,6 +1270,7 @@ test("sale resource tier rejects generated license notices that alpha reports as
     (error) => error instanceof ResourceGateError &&
       error.errors.some((item) => item.includes("sale 门禁失败")) &&
       [
+        "RELEASE_PUBLISHER_METADATA_PENDING",
         "PYTHON_RUNTIME_PROVENANCE_AUDIT_REQUIRED",
         "FORMAL_LICENSE_AUDIT_REQUIRED",
         "EPUBCHECK_PROVENANCE_AUDIT_REQUIRED",

@@ -1,6 +1,6 @@
 # ELECTRON_FUSE_POLICY — Electron 打包硬化合同
 
-> 当前实现：`0.1.0-alpha.18`。本文件描述源码配置、打包后强制写入与回读、ASAR 资源锚点及受限应用协议合同；真实未签名 Windows alpha 二进制证据已取得。
+> 当前实现：`0.1.0-alpha.19`。本文件描述源码配置、打包后强制写入与回读、ASAR 资源锚点及受限应用协议合同；真实未签名 Windows alpha 二进制证据已取得。
 
 ## 固定策略
 
@@ -30,7 +30,7 @@ alpha.18 继续把 `electron/resource-trust-anchor.json` 打入 `app.asar`，pac
 
 验证器只接受仓库内、安全父链下、非链接、单链接、非空的常规文件。macOS 除应用入口外还解析并单独验证实际承载 wire 的 `Electron Framework` 文件；读取前后核对该实际文件身份。全部已知 fuse 必须逐项精确一致。
 
-当前 Electron 43.1.0 的 wire v1 暴露索引 0—8。alpha.18 Windows x64 EXE 实测 9 项全部匹配，`unknown_fuses=[]`、`blockers=[]`、`fully_known=true`；归档 alpha.12—alpha.17 的真实 EXE 也已用同一策略验证。未来若出现索引 9 或更高项：
+当前 Electron 43.1.0 的 wire v1 暴露索引 0—8。alpha.19 Windows x64 EXE 实测 9 项全部匹配，`unknown_fuses=[]`、`blockers=[]`、`fully_known=true`；归档 alpha.12—alpha.18 的真实 EXE 也已用同一策略验证。未来若出现索引 9 或更高项：
 
 - alpha 可返回机器可读 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING`，但不得称为正式安全验收；
 - sale 必须失败关闭；

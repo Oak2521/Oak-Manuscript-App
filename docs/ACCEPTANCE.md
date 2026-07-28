@@ -2,7 +2,18 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.18 Electron 与 Windows builder 来源机器证据验收（2026-07-28）
+## 0.1.0-alpha.19 发行商身份 fail-closed 门禁验收（2026-07-28）
+
+- [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.19`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] canonical 发行身份文件和固定摘要 v1 schema 记录产品名、appId、品牌与官网；未知法定销售主体、正式链接、版权、签名主体和具名复核保持显式待定；
+- [x] 只读验证器拒绝重复键、unknown/reordered 字段、非 canonical/schema 漂移、占位文本、不受信 URL、身份/package 漂移；无自批准写入入口；
+- [x] `RELEASE_PUBLISHER_METADATA_PENDING` 在 alpha 可见、sale 提升为错误；源码/packaged blocker 如实变为 17/12；72 文件资源清单和真实 `app.asar` 锚点绑定身份契约；
+- [x] 最终全量 Node 355 / Python 351，0 失败；外层隐藏 `npm run build:win` 190.9 秒退出 0；alpha.19 NSIS/ZIP、真实 packaged 资源、9 fuse、运行时探针、EpubCheck/Ace smoke、发布摘要与安装生命周期只读预检通过；
+- [ ] 法定销售主体、官方支持/隐私/条款链接、版权声明、Windows 证书 subject、Apple Team ID 和具名复核已由有权人员确认，并与 `package.json` 完整一致；
+- [ ] 真实 alpha.12 → alpha.19 安装、升级、旧版回装探测、卸载、HKCU/Desktop/Start Menu 清理和 userData 保留已在获准系统环境执行并产生 PASS 证据；
+- [ ] Windows Authenticode、五类 provenance 人工签核、Ace 正式边界、干净机、macOS/Web、生产账号/订阅/同步和全部 sale 门禁完成；因此本节仍不是正式发行验收。
+
+## 0.1.0-alpha.18 Electron 与 Windows builder 来源机器证据验收（历史，2026-07-28）
 
 - [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.18`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] Electron 43.1.0 官方 release API、ZIP、GitHub digest、SHASUMS256 与 npm checksums 由 exact schema/canonical evidence 固定；官方 ZIP 与本地 runtime 均为 75 文件、364,083,658 字节，75/75 原字节一致；
@@ -293,26 +304,27 @@
 - [ ] macOS x64/arm64 Python/JRE 资源及锁、DMG 构建、签名、公证、Gatekeeper 和实机 smoke 已完成；
 - [ ] 正式售卖 `sale` 门禁已通过。
 
-当前源码 Windows sale 门禁为 16 类机器码；真实 alpha.18 packaged ASAR 会关闭其中 5 个 loose 可信根项，保留 11 类：
+当前源码 Windows sale 门禁为 17 类机器码；真实 alpha.19 packaged ASAR 会关闭其中 5 个 loose 可信根项，保留 12 类：
 
-1. `FORMAL_LICENSE_AUDIT_REQUIRED`；
-2. `PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
-3. `EPUBCHECK_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
-4. `JRE_SOURCE_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
-5. `EPUBCHECK_TRUST_ROOT_NOT_HARDENED`；
-6. `JRE_TRUST_ROOT_NOT_HARDENED`；
-7. `PYTHON_RUNTIME_TRUST_ROOT_NOT_HARDENED`；
-8. `APP_RESOURCES_TRUST_ROOT_NOT_HARDENED`；
-9. `ELECTRON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
-10. `BUILDER_TOOLCHAIN_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
-11. `ACE_FULL_LICENSE_AUDIT_REQUIRED`；
-12. `ACE_TRUST_ROOT_NOT_HARDENED`；
-13. `ACE_CONTROLLED_HELPER_PENDING`；
-14. `ACE_BROWSER_RUNTIME_PENDING`；
-15. `ACE_OS_NETWORK_ISOLATION_PENDING`；
-16. `WINDOWS_CODE_SIGNING_PENDING`。
+1. `RELEASE_PUBLISHER_METADATA_PENDING`；
+2. `FORMAL_LICENSE_AUDIT_REQUIRED`；
+3. `PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
+4. `EPUBCHECK_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
+5. `JRE_SOURCE_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
+6. `EPUBCHECK_TRUST_ROOT_NOT_HARDENED`；
+7. `JRE_TRUST_ROOT_NOT_HARDENED`；
+8. `PYTHON_RUNTIME_TRUST_ROOT_NOT_HARDENED`；
+9. `APP_RESOURCES_TRUST_ROOT_NOT_HARDENED`；
+10. `ELECTRON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
+11. `BUILDER_TOOLCHAIN_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
+12. `ACE_FULL_LICENSE_AUDIT_REQUIRED`；
+13. `ACE_TRUST_ROOT_NOT_HARDENED`；
+14. `ACE_CONTROLLED_HELPER_PENDING`；
+15. `ACE_BROWSER_RUNTIME_PENDING`；
+16. `ACE_OS_NETWORK_ISOLATION_PENDING`；
+17. `WINDOWS_CODE_SIGNING_PENDING`。
 
-packaged 门禁会关闭上列第 5、6、7、8、12 项，保留 11 项；这些关闭来自真实 `app.asar`、JRE、Python、EpubCheck 与 Ace 锚点复验，不是人工豁免。
+packaged 门禁会关闭上列第 6、7、8、9、13 项，保留 12 项；这些关闭来自真实 `app.asar`、JRE、Python、EpubCheck 与 Ace 锚点复验，不是人工豁免。`RELEASE_PUBLISHER_METADATA_PENDING` 只能由已确认身份、具名复核与一致 package/signing 元数据关闭。
 
 正式发布前必须以当次 sale 门禁实际输出复核，不能把本清单当作永久豁免列表。`FORMAL_LICENSE_AUDIT_REQUIRED` 记录缺少上游原始许可证文件而使用元数据通知的包；`ACE_FULL_LICENSE_AUDIT_REQUIRED` 独立要求对全部 236 包逐一核对来源、许可证文本、版权声明和再分发义务。
 
