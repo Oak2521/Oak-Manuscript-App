@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.25` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、Web 临时作业状态机、同源 HTTPS handler、Supabase Bearer/GoTrue 验证、Fetch 平台桥与未部署工作台，以及 alpha.23 已验证的 Windows packaged 安全链。生产网络同步、对象存储与隔离执行、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.26` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、Web 状态机、同源 HTTPS、Supabase/GoTrue、Fetch、未部署工作台与 Netlify Blobs 临时内容适配边界，以及 alpha.23 已验证的 Windows packaged 安全链。生产任务数据库/隔离执行、网络同步、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -138,7 +138,11 @@ alpha.23 在 `web/job-contract.js` 的内存参考状态机上增加 `web/http-h
 
 handler 的 trusted session 现在显式区分 `bearer` 与 `cookie`。两者都要求 HTTPS，状态变更都要求精确同源 Origin，响应不开放 CORS；Cookie 因浏览器自动携带凭据而继续要求 timing-safe CSRF，Authorization Bearer 不建立额外 CSRF 状态。该选择与官网当前 Supabase access token 模式一致，同时保留未来 HttpOnly Cookie 部署的安全分支。上传前门禁、固定错误和无内容审计边界不变。
 
-`web/client/` 使用网站既有 `window.oblAuth` 读取 Supabase session，并以 `credentials:"omit"` 显式发送 Bearer；创建元数据由 exact client contract 构造，不含文件名/路径。页面包含登录/注册、默认引用、单任务处理同意、上传/轮询/取消/下载；同步区明确保持禁用。生产仍缺受信代理部署、对象存储、容器执行、恶意 ZIP/病毒扫描、计费、短时下载与结果同步。反向代理必须用受信基础设施信号实现 `isSecureRequest`，不得直接相信客户端 `X-Forwarded-Proto`。因此仍不能称为网页版已上线或生产零留存已验证。Web 临时上传与 SyncRecord 长期结果同步继续是两条独立数据流。
+`web/client/` 使用网站既有 `window.oblAuth` 读取 Supabase session，并以 `credentials:"omit"` 显式发送 Bearer；创建元数据由 exact client contract 构造，不含文件名/路径。页面包含登录/注册、默认引用、单任务处理同意、上传/轮询/取消/下载；同步区明确保持禁用。生产仍缺受信代理部署、真实 Blobs/计划清扫联调、持久任务库、容器执行、恶意 ZIP/病毒扫描、计费、短时下载与结果同步。反向代理必须用受信基础设施信号实现 `isSecureRequest`，不得直接相信客户端 `X-Forwarded-Proto`。因此仍不能称为网页版已上线或生产零留存已验证。Web 临时上传与 SyncRecord 长期结果同步继续是两条独立数据流。
+
+alpha.26 新增 `web/netlify-ephemeral-storage.js`。SDK 只存在于独立 `web/` 私有子包，不进入 Electron 根依赖。工厂固定站点级 store 和 `consistency:"strong"`；对象键仅为固定 prefix / job UUID / input|output。`set(...,{onlyIfNew:true})` 禁止覆盖；模糊写失败只在强一致回读的字节与 exact metadata 同时一致时幂等恢复。读取验证对象类型、任务号、规范 `delete_at`、媒体类型和字节数；删除后再 `getMetadata(...,{consistency:"strong"})`，非 null 即失败。
+
+对象 metadata 只提供清扫依据，不是 Netlify 平台自动生命周期规则。`sweepExpiredObjects()` 必须由受控计划任务调用：分页限制在固定 prefix，到期对象删除；规范任务键的 metadata 经成功读取后确认损坏才立即删除；metadata 服务暂时不可用时保留对象并报告 pending，删除未确认同样 pending，未知键不越权处理。任务/所有权/幂等状态仍在 `WebJobService` 进程内，因此多实例生产部署前必须迁入带事务和租约的持久任务库，并由私有队列/worker 驱动处理。当前离线 FakeStore 测试不证明生产 Blobs 行为或零留存。
 
 `AuthProvider` 当前固定未来生产形态为系统浏览器 PKCE，但未配置服务时只返回 `configuration_required` 且不打开页面；登录/过期/撤销仅能由测试专用实例模拟。`LicenseProvider` 已固定 Free/Pro 能力矩阵、有效期和离线宽限语义；签名订阅凭证、服务端设备管理与计费尚未实现。当前 `safeStorage` 只保护待发送队列，不等于生产 token 凭据层。生产 transport 上线时必须保持默认 Electron session 离线，使用独立最小权限网络通道，并在不改变 SyncRecord v1 最小字段边界的前提下另行威胁建模。
 

@@ -2,7 +2,18 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.25 GoTrue、Fetch 与 Web 工作台验收（2026-07-28）
+## 0.1.0-alpha.26 Netlify 临时对象存储验收（2026-07-28）
+
+- [x] APP、Python core、桌面 lockfile 与 Web 私有子包统一为 `0.1.0-alpha.26`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 站点级 store 配置强一致读取；对象键由固定 prefix、规范任务 UUID 和 input/output 构造，写入使用 `onlyIfNew`，不一致既有对象不得覆盖；
+- [x] metadata exact 固定对象身份、到期时间、媒体类型与字节数；读取重新校验 metadata/长度；删除必须经强一致缺失复验才成功；
+- [x] 模糊写失败只在现有字节和 metadata 完全一致时幂等恢复；损坏 metadata、内容漂移、非法 ID/前缀/时间/媒体类型及不完整 SDK 响应 fail-closed；
+- [x] 独立到期清扫器分页扫描固定 prefix；到期对象和已确认 metadata 损坏的已知任务对象删除；metadata 暂时不可读时保留，未确认删除返回 pending，未知键不越权删除；
+- [x] SDK 隔离在 Web 子包并精确锁定无当前已知漏洞的 10.1.0；桌面根依赖无新增；Web 69/69、Node 439、Python 351 全量零失败；
+- [x] 文档明确 Netlify Blobs 没有替本项目提供原生 TTL，metadata/清扫器不等于生产零留存；本轮没有真实 store、部署或 Windows build；
+- [ ] 持久任务/幂等数据库、私有队列/隔离 worker、恶意文件门禁、真实计划清扫、短时下载、区域/并发/故障演练和三路零留存证据已完成；因此本节不是生产上线或销售验收。
+
+## 0.1.0-alpha.25 GoTrue、Fetch 与 Web 工作台验收（历史，2026-07-28）
 
 - [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.25`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] GoTrue verifier 只接受规范 HTTPS Supabase origin，固定 `/auth/v1/user`，不带 Cookie、不跟随重定向；token/API key/超时/响应大小/媒体/JSON/subject 全部有界，身份失败与上游失败分流且错误不反射秘密；

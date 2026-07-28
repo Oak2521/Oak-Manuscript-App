@@ -1,6 +1,6 @@
 # tests/ — Node 契约、发布资源与打包验证
 
-`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.25 最终统一结果为 Node **431 total / 424 pass / 0 fail / 7 skip / 3.566 秒**，Python **351 项 / 0 失败 / 0 错误 / 3 跳过 / 102.909 秒**，墙钟 111.2 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
+`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.26 最终统一结果为 Node **439 total / 432 pass / 0 fail / 7 skip / 3.522 秒**，Python **351 项 / 0 失败 / 0 错误 / 3 跳过 / 102.559 秒**，墙钟 110.7 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
 
 本目录覆盖：
 
@@ -19,8 +19,8 @@
 - Windows builder 受控下载器固定官方 URL/HTTPS 主机/文件名/SHA-256，要求显式联网开关并覆盖零授权零写入、重定向/容量/哈希、事务提交/碰撞回滚及仓库路径边界；安全导入器继续拒绝 UNC、未知归档、路径穿越、链接/reparse、备用流、加密条目、名称冲突和解压膨胀，只有显式 `--update-lock` 才可建立/更新独立 tracked lock；三份真实归档、工具树和 tracked lock 已按用户授权建立并复验，注入响应与测试夹具仍不能冒充发布资产；
 - Windows 发布证据只接受 package/lock 当前版本的精确 NSIS/ZIP；覆盖 PE/ZIP 结构、旧制品/版本漂移、稳定文件身份、SHA256SUMS 与 canonical manifest 交叉绑定、两文件提交回滚、clear 全预检，以及真实缺制品 fail-closed；
 - 发行商身份门禁覆盖当前显式待定状态、完整 Windows/macOS 身份、源码 `build.appId`、ASAR production `oakReleaseIdentity`、重复键、unknown/reordered 字段、固定 schema/canonical 字节、占位文本、官方 URL、package 漂移和只读 CLI；
-- Windows 安装生命周期验收默认只读并精确绑定源码当前版本；专项测试覆盖 alpha.23/alpha.12 成功夹具、SemVer、NSIS x86 启动器与 x64 主程序、两开关授权门、零授权零启动/零输出、九阶段状态机、HKCU/快捷方式探针、持久化 sentinel、降级成功时 fail-closed 与 canonical 证据篡改。alpha.25 未打包，当前真实预检不会借用旧制品；
-- Web 作业、HTTP、Supabase、GoTrue、Fetch 与客户端测试位于六个 `web_*.test.js`：61 项覆盖五份 exact schema、可信主体、单任务同意、HTTPS/同源、Bearer/Cookie 分流、固定 GoTrue 路径/超时/响应上限、无 Cookie 验证、Fetch 流式桥、畸形/重复 Authorization、无效 token、身份夹带、无文件名创建、默认引用、上传前门禁、六动作、主体隔离、幂等、TTL、删除失败、固定错误与无内容审计；网络为注入替身，不冒充生产账号、部署或零留存测试；
+- Windows 安装生命周期验收默认只读并精确绑定源码当前版本；专项测试覆盖 alpha.23/alpha.12 成功夹具、SemVer、NSIS x86 启动器与 x64 主程序、两开关授权门、零授权零启动/零输出、九阶段状态机、HKCU/快捷方式探针、持久化 sentinel、降级成功时 fail-closed 与 canonical 证据篡改。alpha.26 未打包，当前真实预检不会借用旧制品；
+- Web 作业、HTTP、Supabase、GoTrue、Fetch、客户端与 Netlify 存储测试位于七个 `web_*.test.js`：69 项；新增覆盖强一致 store 配置、条件创建、模糊失败同内容幂等、不一致覆盖拒绝、metadata/长度篡改、删除后复验、到期/损坏对象清扫、未确认删除 pending、非法键/时间/媒体以及 WebJobService 全流程。network/store 均为注入仿真，不冒充生产账号、部署或零留存测试；
 - 许可证字段/文件为空的拒绝路径，以及“有许可证文件仍不能替代全部 236 包人工审计”的 sale blocker 契约；
 - 资源门禁两阶段顺序：静态全量检查有任一错误时不执行 Python/Java，静态全绿后才运行探针；非原生 host/arch fail-closed，纯静态必须显式 `--no-runtime-probe`；
 - Electron 桥与资源探针共享 `-I -B -S -X utf8` bootstrap、显式受控 core 目录及隔离环境；`-B` 在 `-I` 忽略环境变量时仍禁止污染受信资源；

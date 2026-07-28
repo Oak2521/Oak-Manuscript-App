@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.25`
+> 当前版本：`0.1.0-alpha.26`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.25`（源码、测试与隔离静态渲染检查点；最新未签名 Windows 制品仍是 alpha.23）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.26`（源码、离线仿真与依赖审计检查点；最新未签名 Windows 制品仍是 alpha.23）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,16 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.26 Netlify 临时对象存储检查点
+
+- 新增 `web/netlify-ephemeral-storage.js`。站点级 store 强制 `consistency:"strong"`；对象键只允许固定 prefix + 规范 `webjob-UUID` + `input|output`；写入用 `onlyIfNew:true`，metadata exact 固定对象类型、任务号、到期时间、媒体类型与字节数；
+- 模糊网络失败与重复写只有在强一致回读的字节及 metadata 完全一致时才视为幂等恢复；不一致对象绝不覆盖。输出读取重新校验 metadata 与长度，删除后再以强一致 metadata 读取确认不存在；
+- 独立 `sweepExpiredObjects()` 分页扫描固定 prefix，删除已到 `delete_at` 的对象。规范任务键的 metadata 确认损坏则优先删除；metadata 暂时不可读时保留对象并进入 content-free pending，删除无法确认同样 pending；未知键只计数。Netlify Blobs 没有替本项目提供原生 TTL，生产必须调度清扫器；
+- SDK 位于独立 `web/` 私有子包，不进入 Electron 根依赖。精确锁定 `@netlify/blobs 10.1.0`；候选 10.7.10 因 `@opentelemetry/core 2.7.1` 的 W3C Baggage 无界内存分配中危告警被撤回。10.1.0 本地类型仍覆盖条件创建、强一致读和分页，最终 `npm audit --prefix web --omit=dev` 为 0 个已知漏洞；
+- Netlify 专项 8/8、全部 Web 69/69 PASS。最终 `npm test` 110.7 秒：Node 439 total / 432 pass / 0 fail / 7 skip（3.522 秒），Python 351 total / 0 failures / 0 errors / 3 skipped（102.559 秒）；
+- 资源清单仍为 78 文件 / 2,124,858 字节，manifest SHA-256 `9eab5d23bf54218746def9ea4f9be5c71380bf02af71df0204b4b592f4a1c150`，锚点 SHA-256 `80dd736236b81f77a94309842631f93bcd7b9e125f39fc8ac296bd7a9a909881`；
+- 本轮仅 npm 下载/审计获授权并发生；没有连接 Netlify store、真实 Supabase token、官网或用户稿件，没有部署、修改网站或重新打包。持久任务数据库、私有队列/worker、恶意文件门禁、短时下载和生产三路零留存仍未完成。
 
 ### 已完成：0.1.0-alpha.25 GoTrue 验证、Fetch 桥与 Web 工作台检查点
 
@@ -417,7 +427,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - 打包版 Ace：alpha.23 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
 - Windows：alpha.23 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
-- Web：exact 作业 schema、内存参考存储/状态机、同源 HTTPS handler、有界 GoTrue verifier、Fetch 平台桥与首个工作台已实现；生产环境/真实账号 E2E、对象存储/生命周期、隔离执行、恶意文件门禁、计费、短时下载、结果同步和官网嵌入尚未实现；
+- Web：exact 作业 schema、内存任务状态机、同源 HTTPS、GoTrue、Fetch、工作台及 Netlify Blobs 内容适配/清扫已实现；生产环境/真实账号与 Blobs E2E、持久任务数据库、私有队列/隔离 worker、恶意文件门禁、计费、短时下载、结果同步和官网嵌入尚未实现；
 - 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览、按账户隔离的 OS 加密队列和重启恢复已实现；生产 Supabase、登录凭据存储、签名授权、支付、网络 transport 和网站后台未连接；
 - 标准库：治理结构和引用解析政策已完成，13 项标准、35 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
 - 标准升级：本地验证、签名包导入/回滚骨架、项目固定与显式升级已编码；生产 trust pin、在线获取/下载、签名撤回分发与联网自动更新未实现；
@@ -452,7 +462,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
 5. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
 6. 在现有 Auth / License / Sync 离线契约和 OS 加密持久队列上实现生产登录凭据与独立网络 transport，再经授权连接 Supabase、支付和网站后台；
-7. alpha.25 已完成 GoTrue verifier、Fetch 适配与未部署工作台；下一步实现隔离对象存储/私有任务执行、恶意文件门禁、短时下载与三路零留存证据，再经授权完成真实 Supabase/Netlify E2E、官网嵌入、结果同步、Free/Pro、支付、隐私、内测和正式发布门禁。
+7. alpha.26 已完成 Netlify Blobs 内容适配与清扫边界；下一步把任务/所有权/幂等状态迁入持久事务库并实现私有租约队列/隔离 worker，再接恶意文件门禁、短时下载与三路零留存证据；经授权后完成真实 Supabase/Netlify E2E、官网嵌入、结果同步、Free/Pro、支付、隐私、内测和正式发布门禁。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。
 

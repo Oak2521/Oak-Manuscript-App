@@ -2,7 +2,23 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.25 GoTrue、Fetch 与 Web 工作台检查点
+## 最新验证结论：0.1.0-alpha.26 Netlify 临时对象存储检查点
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。经用户授权，仅执行 npm SDK 下载与审计；没有连接 Netlify store、真实 Supabase、官网或用户稿件，没有启动 Electron/安装器，也未生成 alpha.26 安装包。
+
+| 验证 | 结果 | 证据 |
+|---|---|---|
+| Netlify 临时存储专项 | **PASS** | 8/8：强一致 site store、`onlyIfNew`、exact metadata、模糊失败同内容幂等、覆盖拒绝、读取篡改、删除复验、到期/损坏对象清扫、metadata 服务故障保留、清扫 pending 与 WebJobService 全流程 |
+| 全部 Web 定向 | **PASS** | 69/69，含状态机、HTTP、Supabase/GoTrue、Fetch、client 与 Netlify 存储 |
+| `npm test` | **PASS** | 退出码 0，墙钟 110.7 秒；Node 439 total / 432 pass / 0 fail / 7 skip（3.522 秒）；Python 351 total / 0 failures / 0 errors / 3 skipped（102.559 秒） |
+| Web 依赖锁与生产审计 | **PASS（当前 registry 快照）** | `npm ci --prefix web --ignore-scripts` 干净重装 33 个生产依赖节点；`@netlify/blobs 10.1.0` 精确锁定；`npm audit --prefix web --omit=dev --json` 为 0 个已知漏洞。10.7.10 因 OpenTelemetry Baggage 中危拒绝服务告警未采用 |
+| 桌面依赖隔离 | **PASS** | 根 `npm ls @netlify/blobs --depth=0` 为空；SDK 只在 `web/package.json` / `web/package-lock.json`，Electron `build.files` 不含 `web/` |
+| 资源信任锁更新/复验 | **PASS** | 78 文件 / 2,124,858 字节；manifest SHA-256 `9eab5d23bf54218746def9ea4f9be5c71380bf02af71df0204b4b592f4a1c150`；anchor SHA-256 `80dd736236b81f77a94309842631f93bcd7b9e125f39fc8ac296bd7a9a909881` |
+| alpha.26 Windows build / smoke / 安装生命周期 | **未运行** | 本检查点不重复打包；不得沿用 alpha.23 证据声称 alpha.26 制品通过 |
+
+证据边界：SDK API 与适配器逻辑已验证，但 store 操作全部使用离线 FakeStore；未证明 Netlify 凭据、真实强一致行为、计划任务、并发实例、区域故障或删除后台副本。Blobs metadata 不会自动执行 TTL，生产必须调度清扫并监控 pending。任务/幂等状态仍在内存；持久任务数据库、私有队列/worker、恶意文件门禁、短时下载与三路零留存证据均未完成。最新可复验 Windows 制品仍为 alpha.23。
+
+## 历史验证结论：0.1.0-alpha.25 GoTrue、Fetch 与 Web 工作台检查点
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。未联网、未修改官网、未启动 Electron/安装器，也未生成 alpha.25 安装包。GoTrue 请求只由注入的测试 fetch 模拟；UI 截图由完全拦截非本地请求的无界面 Chrome 生成。
 

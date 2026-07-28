@@ -1,6 +1,6 @@
 # ELECTRON_FUSE_POLICY — Electron 打包硬化合同
 
-> 当前源码实现：`0.1.0-alpha.25`；最新真实打包二进制证据仍为 alpha.23。本文件描述源码配置、打包后强制写入与回读、ASAR 资源/production package 身份及受限应用协议合同；不得用 alpha.23 二进制证据证明未构建的 alpha.25。
+> 当前源码实现：`0.1.0-alpha.26`；最新真实打包二进制证据仍为 alpha.23。本文件描述源码配置、打包后强制写入与回读、ASAR 资源/production package 身份及受限应用协议合同；不得用 alpha.23 二进制证据证明未构建的 alpha.26。Web SDK 位于 `web/` 私有子包且不在 Electron `build.files` 中。
 
 ## 固定策略
 

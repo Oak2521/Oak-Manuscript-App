@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.26（ChatGPT Netlify 临时对象存储检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.26`。本轮是源码、离线仿真与依赖审计检查点，没有连接 Netlify、部署网站或重新生成安装包；最新真实 Windows 制品仍为 alpha.23。
+
+- 新增 `web/netlify-ephemeral-storage.js`：站点级强一致 Netlify Blobs store、固定任务对象键、`onlyIfNew` 条件创建、exact metadata、50/100 MiB 边界、强一致读取及删除后缺失复验；
+- 模糊写入失败或重复调用只在现有字节与 metadata 完全一致时视为幂等成功；任何不一致拒绝覆盖。metadata/内容长度夹带、非法任务 ID/前缀/时间/媒体类型均 fail-closed；
+- 新增独立 `sweepExpiredObjects()`：按 metadata `delete_at` 清理到期对象；已知任务对象 metadata 确认损坏时优先删除，metadata 暂时不可读时保留对象并返回 pending，删除未确认同样 pending，未知键只计数且不越权处理。Netlify Blobs 不提供本项目原生 TTL，计划任务仍为生产必需；
+- SDK 隔离在 `web/package.json` 私有子包，精确锁定 `@netlify/blobs 10.1.0`。10.7.10 因 OpenTelemetry Baggage 无界内存分配审计告警被拒绝；10.1.0 保留所需条件写/强一致/分页 API，`npm audit --prefix web --omit=dev` 为 0 个已知漏洞；桌面根依赖无新增；
+- Netlify 适配器专项 8/8、全部 Web 69/69；最终完整回归 Node 439 total / 432 pass / 0 fail / 7 skip，Python 351 total / 0 failures / 0 errors / 3 skipped，墙钟 110.7 秒；
+- 资源清单仍为 78 文件 / 2,124,858 字节，manifest SHA-256 `9eab5d23bf54218746def9ea4f9be5c71380bf02af71df0204b4b592f4a1c150`，锚点 SHA-256 `80dd736236b81f77a94309842631f93bcd7b9e125f39fc8ac296bd7a9a909881`。
+
 ### 2026-07-28 — 0.1.0-alpha.25（ChatGPT GoTrue 验证、Fetch 桥与 Web 工作台检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.25`。本轮是源码、契约测试与隔离静态渲染检查点，没有部署网站或重新生成安装包；最新真实 Windows 制品仍为 alpha.23。

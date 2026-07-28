@@ -198,9 +198,9 @@
 
 未登录状态不询问、不发送；登录不等于授权。Renderer 不可构造负载；主进程从 Python `sync-source` 取得只读来源并构造 exact-schema 记录。发送前必须逐字段展示同一份缓存负载并由用户选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。alpha.21 起使用按账户隔离的 OS 加密 `pending_transport` 队列并支持重启恢复，但没有网络上传；入队不等于同步成功。Web 端用户主动发起的临时稿件处理属于独立作业协议，不得混入结果同步 schema 或长期账号历史。
 
-## 9. Web 临时作业模型（alpha.25 契约、HTTP、GoTrue 与客户端边界）
+## 9. Web 临时作业模型（alpha.26 契约、HTTP、GoTrue、客户端与内容存储边界）
 
-五份机器可读 schema 分别定义创建请求、公开状态、删除回执、HTTP 错误和无内容安全审计：`web-job-create-v1`、`web-job-status-v1`、`web-job-deletion-v1`、`web-http-error-v1`、`web-http-audit-v1`。参考状态机位于 `web/job-contract.js`，不监听端口的 HTTP handler 位于 `web/http-handler.js`，Supabase Bearer 净化边界位于 `web/supabase-session-adapter.js`，有界 GoTrue 请求位于 `web/gotrue-verifier.js`，标准 Fetch 桥位于 `web/fetch-adapter.js`，浏览器 exact create contract 位于 `web/client/client-contract.js`。
+五份机器可读 schema 分别定义创建请求、公开状态、删除回执、HTTP 错误和无内容安全审计：`web-job-create-v1`、`web-job-status-v1`、`web-job-deletion-v1`、`web-http-error-v1`、`web-http-audit-v1`。参考状态机位于 `web/job-contract.js`，HTTP handler 位于 `web/http-handler.js`，Supabase/GoTrue/Fetch/客户端边界分别位于对应模块。`web/netlify-ephemeral-storage.js` 只持久化 input/output 内容对象及 exact 生命周期 metadata，不持久化账号、token、公开状态或幂等记录；后四类状态必须由后续独立任务数据库承担，不能塞进 Blobs metadata。
 
 创建请求 exact 字段：
 
@@ -212,4 +212,4 @@
 
 上传 Buffer 与结果 Buffer 不进入上述 JSON 模型、观察事件或长期同步记录，只交给带 `deleteAt` 的临时存储适配器。handler 的公开路由仅为创建、状态、上传、下载、取消和删除；worker 状态转换没有公开 HTTP 路由。状态变更要求 HTTPS 与同源 Origin/Fetch Metadata；Bearer 必须经服务端 verifier 且不开放 CORS，Cookie 模式附加 CSRF。上传要求唯一 Content-Length，并在读入前完成大小/MIME/并发预留。HTTP 审计只允许请求 ID、时间、方法、路由模板、状态与错误码。
 
-内存参考实现、handler 和 Bearer 适配器都不是生产服务：真实 verifier、监听器/反向代理、对象存储、容器执行、恶意文件门禁、短时下载和零留存审计仍待实现。
+状态机、handler、Bearer/GoTrue/Fetch 和 Netlify Blobs 适配器都不是已部署生产服务：真实环境联调、持久任务数据库、私有队列/隔离 worker、恶意文件门禁、短时下载和零留存审计仍待实现。

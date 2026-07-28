@@ -2,9 +2,9 @@
 
 > 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.25）
+## Provider 一览（当前 alpha.26）
 
-alpha.25 在既有加密本地队列和 Web handler 上新增有界 GoTrue verifier、标准 Fetch 适配器与首个未部署工作台。只读核对确认网站浏览器通过 Supabase JS 持有 access token，并显式用 Authorization 调用 Netlify Functions；服务端现有共享函数调用 GoTrue `/auth/v1/user` 验证 token。商业仓库没有复制 service role key、没有修改网站，也没有部署签名权益/计费、同步 transport、对象存储/worker 或网站后台。
+alpha.26 在既有 GoTrue/Fetch/工作台上新增 Netlify Blobs 临时内容适配器和独立到期清扫器。SDK 隔离于 `web/` 私有子包，固定强一致站点 store、条件创建、exact metadata 与删除复验；本轮只用 FakeStore，没有连接 Netlify。商业仓库没有复制 service role key、没有修改网站，也没有部署任务数据库/worker、签名权益/计费、同步 transport 或网站后台。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
@@ -27,7 +27,7 @@ alpha.25 在既有加密本地队列和 Web handler 上新增有界 GoTrue verif
 - “同步结果”与 Web 版“用户主动提交临时处理任务”是两条不同数据流。Web 作业可以在明确操作后上传待处理文件，但必须使用隔离临时存储、TTL 删除和零留存审计，不能进入用户同步历史；
 - Windows、macOS 和 Web 共用同一湖岸官网账号与权益判定，不另建 APP 独立账号库。
 
-## Web 作业契约 v1、HTTP/GoTrue/Fetch 与账号适配（alpha.25）
+## Web 作业契约 v1、HTTP/GoTrue/Fetch/Blobs 与账号适配（alpha.26）
 
 源码入口为 `web/job-contract.js` 与 `web/http-handler.js`，机器可读契约为：
 
@@ -58,7 +58,7 @@ alpha.25 在既有加密本地队列和 Web handler 上新增有界 GoTrue verif
 | `POST` | `/manuscript/api/v1/jobs/:job_id/cancel` | 明确取消并触发删除 | 200 |
 | `DELETE` | `/manuscript/api/v1/jobs/:job_id` | 删除任务内容并取得回执 | 200 |
 
-部署必须用环境配置注入 Supabase origin 和最小所需 API key；不得把 service-role key 暴露给浏览器。不能本地无验签解码 JWT，也不能把请求正文、普通代理头或浏览器自报角色映射为 principal。Cookie 部署则返回带 `csrf_token` 的 cookie session。反向代理只能从受信基础设施信息判断 HTTPS，不能直接信任客户端 `X-Forwarded-Proto`。`web/client/` 已有登录/注册、默认引用、单任务同意、创建/上传/轮询/取消/下载 UI，但当前代码仍没有生产部署、隔离对象存储/容器、任务队列、恶意文件门禁、订阅计费、短时签名下载、真实生命周期策略或结果同步。
+部署必须用环境配置注入 Supabase origin 和最小所需 API key；不得把 service-role key 暴露给浏览器。不能本地无验签解码 JWT，也不能把请求正文、普通代理头或浏览器自报角色映射为 principal。Cookie 部署则返回带 `csrf_token` 的 cookie session。反向代理只能从受信基础设施信息判断 HTTPS，不能直接信任客户端 `X-Forwarded-Proto`。Blobs store 必须为站点级强一致配置，并由计划任务运行 `sweepExpiredObjects()`；metadata 本身不是自动 TTL。`web/client/` 已有登录/注册、默认引用、单任务同意、创建/上传/轮询/取消/下载 UI，但当前代码仍没有生产部署、持久任务数据库、隔离 worker、恶意文件门禁、订阅计费、短时签名下载、真实生命周期证明或结果同步。
 
 ## 网站侧待建页面
 
