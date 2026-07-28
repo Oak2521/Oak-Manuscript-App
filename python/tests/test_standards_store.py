@@ -63,14 +63,27 @@ class StandardStoreFixture:
         self.store = root / "store"
         (self.config / "rule-packs").mkdir(parents=True)
         (self.config / "standard-packs").mkdir()
-        shutil.copy2(REPO / "config" / "standards.json", self.config / "standards.json")
+        standards_src = REPO / "config" / "standards.json"
         shutil.copy2(REPO / "config" / "rule-capabilities.json", self.config / "rule-capabilities.json")
         shutil.copy2(
             REPO / "config" / "rule-packs" / "oak-rules-1.0.0.json",
             self.config / "rule-packs" / "oak-rules-1.0.0.json",
         )
+        manifest_src = (
+            REPO / "config" / "standard-packs" / "oak-standards-1.0.0.manifest.json"
+        )
+        if not manifest_src.is_file():
+            manifest_src = (
+                REPO / "tests" / "fixtures" / "standards-v1" / "oak-standards-1.0.0.manifest.json"
+            )
+            standards_src = (
+                REPO / "tests" / "fixtures" / "standards-v1" / "standards.json"
+            )
+        if not standards_src.is_file():
+            raise FileNotFoundError(f"standards fixture 不存在: {standards_src}")
+        shutil.copy2(standards_src, self.config / "standards.json")
         shutil.copy2(
-            REPO / "config" / "standard-packs" / "oak-standards-1.0.0.manifest.json",
+            manifest_src,
             self.config / "standard-packs" / "oak-standards-1.0.0.manifest.json",
         )
         (self.store / "packages").mkdir(parents=True)
@@ -578,6 +591,14 @@ class StandardsStoreTest(unittest.TestCase):
             "pinned": True,
         }
         project.save()
+        manifest, manifest_sha, _package = self.fx.cache_current_bundled()
+        self.fx.activate(
+            bundle_id=manifest["bundle_id"],
+            release_sequence=manifest["release_sequence"],
+            version=manifest["version"],
+            manifest_sha256=manifest_sha,
+            source="bundled",
+        )
         before = {
             path.relative_to(project.root).as_posix(): path.read_bytes()
             for path in project.root.rglob("*")
@@ -586,7 +607,7 @@ class StandardsStoreTest(unittest.TestCase):
         env = dict(os.environ)
         env["PYTHONIOENCODING"] = "utf-8"
         env.pop(EXPECTED_IDENTITY_ENV, None)
-        env.pop("OAK_STANDARDS_STORE", None)
+        env["OAK_STANDARDS_STORE"] = str(self.fx.store)
         completed = subprocess.run(
             [
                 sys.executable,

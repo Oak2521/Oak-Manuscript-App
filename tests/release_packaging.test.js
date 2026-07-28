@@ -50,7 +50,11 @@ const { pythonExecutableFor } = require("../electron/path-policy");
 const { createPythonEnvironment } = require("../electron/python-bridge");
 const { CORE_BOOTSTRAP, pythonCoreInvocation } = require("../electron/python-invocation");
 const { compareUtf16 } = require("../scripts/deterministic_compare");
-const { verifyStandardAssets } = require("../scripts/standard_assets");
+const {
+  MANIFEST_RELATIVE: STANDARD_MANIFEST_RELATIVE,
+  RULEPACK_RELATIVE: STANDARD_RULEPACK_RELATIVE,
+  verifyStandardAssets,
+} = require("../scripts/standard_assets");
 const { BUNDLED_STANDARD_RELEASE } = require("../electron/standards-provider");
 
 const REPO_ROOT = path.resolve(__dirname, "..");
@@ -425,8 +429,8 @@ function createResourceFixture(t) {
   for (const relative of [
     "config/standards.json",
     "config/rule-capabilities.json",
-    "config/rule-packs/oak-rules-1.0.0.json",
-    "config/standard-packs/oak-standards-1.0.0.manifest.json",
+    STANDARD_RULEPACK_RELATIVE,
+    STANDARD_MANIFEST_RELATIVE,
   ]) {
     const source = path.join(REPO_ROOT, ...relative.split("/"));
     const destination = path.join(root, ...relative.split("/"));
@@ -542,12 +546,12 @@ function createToolchainFixture(t) {
   return { root, toolchain };
 }
 
-test("electron-builder config is valid and pins alpha.4 Windows installer policy", async () => {
+test("electron-builder config is valid and pins alpha.5 Windows installer policy", async () => {
   const packageJson = require("../package.json");
   const packageLock = require("../package-lock.json");
   await validateConfiguration(packageJson.build, { isEnabled: false, add() {} });
 
-  assert.equal(packageJson.version, "0.1.0-alpha.4");
+  assert.equal(packageJson.version, "0.1.0-alpha.5");
   assert.equal(packageLock.version, packageJson.version);
   assert.equal(packageLock.packages[""].version, packageJson.version);
   const pythonInit = fs.readFileSync(
@@ -830,7 +834,7 @@ test("beforePack forwards the builder project root and target platform", () => {
   const calls = [];
   beforePack(
     {
-      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.4" } },
+      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.5" } },
       electronPlatformName: "darwin",
       arch: 1,
     },
@@ -843,7 +847,7 @@ test("beforePack forwards the builder project root and target platform", () => {
     source: true,
     releaseTier: "alpha",
   }]);
-  assert.equal(releaseTierForVersion("0.1.0-alpha.4"), "alpha");
+  assert.equal(releaseTierForVersion("0.1.0-alpha.5"), "alpha");
   assert.equal(releaseTierForVersion("1.0.0"), "sale");
   assert.equal(parseResourceGateArgs(["--release-tier", "auto"]).releaseTier, "alpha");
   assert.equal(parseResourceGateArgs(["--no-runtime-probe"]).executeRuntimes, false);

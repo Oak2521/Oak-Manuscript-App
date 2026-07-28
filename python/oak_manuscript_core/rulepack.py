@@ -49,8 +49,21 @@ _RULEPACK_TOP_FIELDS = {
 }
 _RULE_FIELDS = set(_REQUIRED_RULE_FIELDS)
 _APPLIES_TO_FIELDS = {"formats", "manuscript_types", "languages", "citation_styles"}
-_CITATION_MAPPING_FIELDS = {"version", "standard_ref", "map"}
+_CITATION_MAPPING_FIELDS_V1 = {"version", "standard_ref", "map"}
+_CITATION_MAPPING_FIELDS_V2 = {
+    "version", "standard_ref", "map", "resolver",
+}
 _CITATION_MAP_ENTRY_FIELDS = {"manuscript_type", "languages", "citation_style"}
+_CITATION_RESOLVER_FIELDS = {
+    "id", "version", "signal_extractor_version", "thresholds",
+    "style_capability_rules",
+}
+_CITATION_THRESHOLD_FIELDS = {
+    "strong_min_unique",
+    "moderate_min_unique",
+    "strong_min_coverage_percent",
+    "moderate_min_coverage_percent",
+}
 _STANDARDS_TOP_FIELDS = {"schema_version", "registry_version", "updated_at", "standards"}
 _CHANGE_HISTORY_FIELDS = {"changed_at", "change_type", "summary"}
 RULEPACK_IDENTITY_FIELDS = (
@@ -352,7 +365,7 @@ def load_rulepack_bytes(raw: bytes, *, label: str = "rulepack.json") -> LoadedRu
             "languages": {"*", "zh", "en", "mixed"},
             "citation_styles": {
                 "*", "gbt7714-2025", "apa-7", "chicago-18-nb",
-                "chicago-18-ad", "none",
+                "chicago-18-ad", "none", "structure-only",
             },
         }
         for field in ("formats", "manuscript_types", "languages", "citation_styles"):
@@ -385,7 +398,10 @@ def load_rulepack_bytes(raw: bytes, *, label: str = "rulepack.json") -> LoadedRu
     mapping = data["citation_default_mapping"]
     if (
         not isinstance(mapping, dict)
-        or set(mapping) != _CITATION_MAPPING_FIELDS
+        or frozenset(mapping) not in {
+            frozenset(_CITATION_MAPPING_FIELDS_V1),
+            frozenset(_CITATION_MAPPING_FIELDS_V2),
+        }
         or not _is_strict_semver(mapping.get("version"))
     ):
         raise OakError("规则包 citation_default_mapping 非法")
@@ -433,6 +449,52 @@ def load_rulepack_bytes(raw: bytes, *, label: str = "rulepack.json") -> LoadedRu
     }
     if covered != expected_coverage:
         raise OakError("规则包默认体例映射未完整覆盖稿件类型与语言")
+
+    resolver = mapping.get("resolver")
+    if resolver is not None:
+        if not isinstance(resolver, dict) or set(resolver) != _CITATION_RESOLVER_FIELDS:
+            raise OakError("规则包默认体例 resolver schema 非法")
+        if (
+            not isinstance(resolver.get("id"), str)
+            or not _SAFE_PACK_ID_RE.fullmatch(resolver["id"])
+            or not _is_strict_semver(resolver.get("version"))
+            or not _is_strict_semver(resolver.get("signal_extractor_version"))
+        ):
+            raise OakError("规则包默认体例 resolver 身份非法")
+        thresholds = resolver.get("thresholds")
+        if not isinstance(thresholds, dict) or set(thresholds) != _CITATION_THRESHOLD_FIELDS:
+            raise OakError("规则包默认体例 resolver thresholds schema 非法")
+        if any(
+            isinstance(value, bool) or not isinstance(value, int)
+            for value in thresholds.values()
+        ):
+            raise OakError("规则包默认体例 resolver thresholds 必须是整数")
+        if not (
+            1 <= thresholds["moderate_min_unique"]
+            <= thresholds["strong_min_unique"] <= 1000
+            and 1 <= thresholds["moderate_min_coverage_percent"]
+            <= thresholds["strong_min_coverage_percent"] <= 100
+        ):
+            raise OakError("规则包默认体例 resolver thresholds 次序或范围非法")
+
+        capability_rules = resolver.get("style_capability_rules")
+        expected_styles = mapping_styles - {"none"}
+        if not isinstance(capability_rules, dict) or set(capability_rules) != expected_styles:
+            raise OakError("规则包默认体例 resolver style_capability_rules schema 非法")
+        rule_defs = {rule["rule_id"]: rule for rule in data["rules"]}
+        for style, rule_ids in capability_rules.items():
+            if (
+                not isinstance(rule_ids, list)
+                or not rule_ids
+                or len(rule_ids) != len(set(rule_ids))
+                or any(not isinstance(rule_id, str) or rule_id not in seen for rule_id in rule_ids)
+            ):
+                raise OakError(f"默认体例 {style} 的能力规则列表非法")
+            if any(
+                style not in rule_defs[rule_id]["applies_to"]["citation_styles"]
+                for rule_id in rule_ids
+            ):
+                raise OakError(f"默认体例 {style} 的能力规则未声明该体例")
 
     loaded = LoadedRulepack(data)
     loaded._oak_raw_sha256 = hashlib.sha256(raw).hexdigest()

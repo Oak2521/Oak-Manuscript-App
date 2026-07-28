@@ -14,7 +14,7 @@ from oak_manuscript_core.rulepack import load_rulepack
 from oak_manuscript_core.util import sha256_file
 
 REPO = Path(__file__).resolve().parents[2]
-PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-1.0.0.json")
+PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-2.0.0.json")
 SAMPLES = REPO / "samples"
 
 
@@ -41,9 +41,10 @@ class OpsFlowTest(unittest.TestCase):
         self.assertGreater(len(issues), 0)
         s = self.proj.data["settings"]
         self.assertEqual(s["language_detected"], "zh")
-        self.assertEqual(s["citation_style_resolved"], "gbt7714-2025")
-        self.assertEqual(s["citation_resolved_by"], "default_mapping")
-        self.assertEqual(self.proj.data["rulepack"]["version"], "1.0.0")
+        self.assertIsNone(s["citation_style_resolved"])
+        self.assertEqual(s["citation_resolved_by"], "default_resolver")
+        self.assertEqual(s["citation_resolution"]["mode"], "structure_only")
+        self.assertEqual(self.proj.data["rulepack"]["version"], "2.0.0")
         self.assertEqual(record["issue_counts"]["error"], 1)  # REF-002
 
     def test_fix_creates_checkpoint_marks_resolved_and_is_idempotent(self):
@@ -152,9 +153,9 @@ class ReportRenderTest(unittest.TestCase):
             "建议处理",
             "已自动订正",
             "外部验证",
-            "oak-rules 1.0.0",
-            "gbt7714-2025",
-            "由默认规则",
+            "oak-rules 2.0.0",
+            "仅引用结构与一致性检查",
+            "默认（default）",
             "不评价学术质量",
             "湖岸橡树出版评估",
             "未运行",

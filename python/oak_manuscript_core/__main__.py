@@ -69,7 +69,13 @@ def _cmd_create(args) -> int:
 def _cmd_check(args, kind: str) -> int:
     proj = Project.open(Path(args.project))
     pack = _project_rulepack(proj, args.rulepack)
-    record, outcome = ops.run_check(proj, pack, kind=kind)
+    record, outcome = ops.run_check(
+        proj,
+        pack,
+        kind=kind,
+        citation_style=args.citation,
+        citation_plan_id=args.citation_plan_id,
+    )
     from .engine import manuscript_status_level
 
     _emit({
@@ -80,6 +86,9 @@ def _cmd_check(args, kind: str) -> int:
         "issue_counts": record["issue_counts"],
         "rulepack": copy.deepcopy(record["rulepack"]),
         "citation_note": ops._citation_note(proj.data["settings"]),
+        "citation_resolution": copy.deepcopy(
+            proj.data["settings"].get("citation_resolution")
+        ),
         "issues": outcome.issues,
         "skipped_rule_groups": outcome.skipped_rule_groups,
     })
@@ -129,6 +138,19 @@ def _cmd_plan_fixes(args) -> int:
         "尚未修改 working、问题状态或项目记录。",
         file=sys.stderr,
     )
+    return 0
+
+
+def _cmd_plan_citation(args) -> int:
+    proj = Project.open(Path(args.project))
+    pack = _project_rulepack(proj, args.rulepack)
+    plan = ops.plan_citation_resolution(
+        proj,
+        pack,
+        citation_style=args.citation,
+    )
+    _emit({"ok": True, **plan})
+    print("已生成引用体例确认预览；尚未修改项目或运行检查。", file=sys.stderr)
     return 0
 
 
@@ -265,6 +287,21 @@ def build_parser() -> argparse.ArgumentParser:
         p = sub.add_parser(name, help=help_text)
         p.add_argument("--project", required=True)
         p.add_argument("--rulepack")
+        p.add_argument(
+            "--citation",
+            choices=["default", "gbt7714-2025", "apa-7",
+                     "chicago-18-nb", "chicago-18-ad", "none"],
+        )
+        p.add_argument("--citation-plan-id")
+
+    p = sub.add_parser("plan-citation", help="生成引用体例解析与确认预览（严格只读）")
+    p.add_argument("--project", required=True)
+    p.add_argument("--rulepack")
+    p.add_argument(
+        "--citation",
+        choices=["default", "gbt7714-2025", "apa-7",
+                 "chicago-18-nb", "chicago-18-ad", "none"],
+    )
 
     p = sub.add_parser("plan-fixes", help="生成批量机械修复集中预览（严格只读）")
     p.add_argument("--project", required=True)
@@ -336,6 +373,7 @@ def main(argv: list[str] | None = None) -> int:
         "create": _cmd_create,
         "check": lambda a: _cmd_check(a, "check"),
         "recheck": lambda a: _cmd_check(a, "recheck"),
+        "plan-citation": _cmd_plan_citation,
         "plan-fixes": _cmd_plan_fixes,
         "plan-rulepack-upgrade": _cmd_plan_rulepack_upgrade,
         "project-standard-status": _cmd_project_standard_status,

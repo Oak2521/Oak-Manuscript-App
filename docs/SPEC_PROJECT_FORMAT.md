@@ -1,6 +1,6 @@
 # SPEC_PROJECT_FORMAT — 项目文件格式（v1.0，冻结）
 
-> 冻结日期：2026-07-11；`0.1.0-alpha.1` 加入向后兼容的检查点可选字段，`alpha.2` 加强路径/锁/导出安全，`0.1.0-alpha.3` 把规则包 pin 扩为完整七字段并增加向后兼容的升级历史与强制重检状态。`0.1.0-alpha.4` 只加固 Electron 与 builder 发布资源可信链，不改变项目字段、`format_version` 或标准内容。旧 `1.0` 项目由受控 legacy 迁移补齐身份。破坏性字段变更须升版本号并提供兼容读取。商业跨端、账号与同步仍待实现，不得提前改变本格式。
+> 冻结日期：2026-07-11；`0.1.0-alpha.1` 加入向后兼容的检查点可选字段，`alpha.2` 加强路径/锁/导出安全，`alpha.3` 把规则包 pin 扩为七字段并增加升级历史与强制重检，`alpha.4` 加固发布资源可信链。`0.1.0-alpha.5` 在不提升 `format_version` 的前提下增加向后兼容的 `settings.citation_resolution`；旧 `1.0` 项目可缺失并在读取时补为 `null`。破坏性字段变更须升版本号并提供兼容读取。商业跨端、账号与同步仍待实现，不得提前改变本格式。
 
 ## 1. 项目目录结构
 
@@ -21,7 +21,7 @@ project-root/
 ```json
 {
   "format_version": "1.0",
-  "app_version": "0.1.0-alpha.4",
+  "app_version": "0.1.0-alpha.5",
   "project_id": "8 字节十六进制随机 ID",
   "created_at": "ISO8601 本地时间",
   "updated_at": "ISO8601",
@@ -39,19 +39,20 @@ project-root/
     "language_detected": "zh | en | mixed | null",
     "citation_style": "default | gbt7714-2025 | apa-7 | chicago-18-nb | chicago-18-ad | none",
     "citation_style_resolved": "同上枚举（不含 default）| null",
-    "citation_resolved_by": "default_mapping | user | null",
-    "citation_mapping_version": "映射表版本，如 1.0.0 | null",
+    "citation_resolved_by": "default_mapping | default_resolver | user | null",
+    "citation_mapping_version": "政策版本，如 2.0.0 | null",
+    "citation_resolution": null,
     "check_depth": "quick | full",
     "epub_preview": false
   },
 
   "rulepack": {
     "name": "oak-rules",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "pinned": true,
     "sha256": "规则包原始字节 SHA-256",
     "bundle_id": "oak-standards",
-    "release_sequence": 1,
+    "release_sequence": 2,
     "manifest_sha256": "canonical release manifest SHA-256"
   },
 
@@ -76,7 +77,7 @@ project-root/
       "kind": "check | recheck",
       "started_at": "ISO8601",
       "finished_at": "ISO8601",
-      "rulepack_version": "1.0.0",
+      "rulepack_version": "2.0.0",
       "rulepack": "完整七字段身份对象",
       "issue_counts": { "error": 0, "warning": 0, "suggestion": 0 },
       "result_file": "reports/check-0001.json"
@@ -130,11 +131,13 @@ project-root/
 
 - 所有路径字段一律为**项目内相对路径**，正斜杠分隔；project.json 中不出现项目外绝对路径（隐私要求）；
 - 所有 JSON 文件 UTF-8 无 BOM，换行 LF；
-- `citation_style_resolved`、`citation_resolved_by`、`citation_mapping_version` 在体例为 `default` 并完成解析后必填——这是「由默认规则选定」可追溯性的载体；
-- `sync.history` 在当前 `0.1.0-alpha.4` 为空数组（SyncProvider 占位不联网）；未来真实账号同步必须保持 schema 版本化和向后兼容。
+- `citation_style_resolved`、`citation_resolved_by`、`citation_mapping_version` 是便于旧消费方读取的投影；`citation_resolution` 是完整真相源，严格 schema 见 `SPEC_MODELS.md` 第 5 节。当它非空时，投影必须与 `requested_style/resolved_style/resolved_by/policy_version` 一致；
+- 默认解析可得到具体体例、`structure_only` 或默认禁用。`structure_only` 时 `citation_style_resolved=null`、`citation_resolved_by=default_resolver`；完整证据只含数量/百分比/枚举，禁止稿件片段和路径；
+- 旧项目可缺失 `citation_resolution`，读取为 `null`。新检查成功后必须写入完整解析，且检查结果、`settings_snapshot` 和项目当前设置必须一致；
+- `sync.history` 在当前 `0.1.0-alpha.5` 为空数组（SyncProvider 占位不联网）；未来真实账号同步必须保持 schema 版本化和向后兼容。
 - `plan-fixes` 产生的未确认计划不落盘；只有成功执行后的 `plan_id` 写入 `fixes[]`，取消预览不会改变 project.json。
 - 旧 `1.0` 项目中的检查点可以缺少新增的大小、问题哈希与状态快照字段；新建检查点必须写全，读取与恢复逻辑保留旧检查点兼容路径。
-- `config/tool-manifests/`、Electron/CPython/JRE/Ace 运行资源锁、builder 独立 tracked lock 和打包 smoke 记录属于应用发布资源，不进入用户项目，也不得被复制进 `project.json`。这些锁按 locale-independent UTF-16 顺序生成；需要更新候选树时通过显式授权的受控事务提交。这属于发布资源身份，alpha.4 的加固不改变用户项目 schema 或标准 release 身份。
+- `config/tool-manifests/`、Electron/CPython/JRE/Ace 运行资源锁、builder 独立 tracked lock 和打包 smoke 记录属于应用发布资源，不进入用户项目，也不得被复制进 `project.json`。这些锁按 locale-independent UTF-16 顺序生成；需要更新候选树时通过显式授权的受控事务提交。这属于发布资源身份，不改变用户项目 schema 或标准 release 身份。
 - `project.json.app_version` 记录项目创建版本；检查报告 `app_version` 记录该次检查所用核心版本，旧项目被新版打开后两者可以不同。`checks[].result_file` 指向的报告必须留在项目内，`check_id` 必须匹配对应检查记录。alpha.3 新记录含完整 `checks[].rulepack`，报告必须与其七字段完全一致；alpha.2 及更早的冻结格式没有该字段，报告只允许精确 `{name, version}`，并以 `version` 对齐 `checks[].rulepack_version`，不得倒填伪造七字段。规则包升级后允许历史检查/报告保留旧身份；最新当前检查/报告才必须与项目现行 pin 一致。`rulepack_version` 对新记录只是兼容显示字段，不能单独证明完整身份。
 - `rulepack_history` 必须从第一项起连续编号，前项 `to_rulepack` 等于后项 `from_rulepack`，末项 `to_rulepack` 等于当前 pin；相同 release sequence 的横向替换禁止。`issues_archive` 只能使用受控文件名并与升级时哈希绑定。
 - `rulepack_check_required=true` 表示 pin 已变化而新规则尚未完成一次检查；此时修复计划、修复、外部验证、出版评估与导出必须拒绝。成功 check/recheck 写入同一七字段身份后才清零。
@@ -143,7 +146,7 @@ project-root/
 
 - `.oak-project-write.lock` 是跨进程写事务的持久诊断载体，内容为带前导协议字节的 UTF-8 JSON，记录 schema/protocol/state、PID、命令、取得时间和随机进程 token；不得包含稿件内容、文件名或本地路径；
 - 真正互斥由内核锁提供：Windows 锁定元数据区之外的固定字节，macOS/POSIX 使用非阻塞 `flock`。进程崩溃后由内核释放，不依据锁文件中的 PID 猜测存活或删除“陈旧锁”；
-- `create/check/recheck/fix/export/verify/restore-checkpoint/external/issue/upgrade-rulepack` 必须取得写锁；`plan-fixes`、`list-checkpoints`、`project-standard-status` 与 `plan-rulepack-upgrade` 保持只读；
+- `create/check/recheck/fix/export/verify/restore-checkpoint/external/issue/upgrade-rulepack` 必须取得写锁；`plan-citation`、`plan-fixes`、`list-checkpoints`、`project-standard-status` 与 `plan-rulepack-upgrade` 保持只读；
 - 同名文件只有完整符合锁协议且是单链接常规文件时才可接管；普通用户文件、链接、硬链接或损坏协议文件一律 fail-closed，原字节不变；
 - 锁争用以结构化 `PROJECT_WRITE_LOCKED` 返回，`retryable=true`，并可带不含路径/正文的 owner 元数据。锁文件存在本身不表示事务仍存活。
 
@@ -156,7 +159,13 @@ project-root/
 - 恢复：暂存并原子换入工作稿、问题与检查结果，恢复项目状态，同时保持 `check_seq` 单调不减以免覆盖较新报告；失败时用恢复前安全检查点回滚；
 - 列表：`list-checkpoints` 返回时间、原因、问题数量、状态版本、`can_restore` 与验证错误，不向 Renderer 暴露内部检查点路径。
 
-## 4. 批量修复、恢复与规则包升级 CLI 契约
+## 4. 引用确认、批量修复、恢复与规则包升级 CLI 契约
+
+引用解析遵循与批量修复同类的“计划—确认—重验”契约：
+
+1. `plan-citation --project <目录> --citation <六选一>` 严格只读，返回完整 `citation_resolution`、实际覆盖规则与绑定当前状态的 `citation-plan-*`；
+2. 用户一次确认后，`check|recheck --citation <选择> --citation-plan-id <ID>` 在写锁内重算计划；项目、working、issues、标准 release 或解析结果变化都使旧 ID 失效；
+3. 成功检查把解析写入 settings、settings snapshot 和 report；取消预览不写入。
 
 1. `plan-fixes --project <目录>` 严格只读，返回全部候选、修改前/后预览和绑定当前项目状态的 `plan_id`；
 2. 用户集中查看全部候选并一次确认后，才可执行 `fix --project <目录> --plan-id <ID>`；working、问题状态或规则包变化都会使旧计划失效；

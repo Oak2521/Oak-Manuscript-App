@@ -4,6 +4,32 @@
 
 ## [未发布]
 
+### 2026-07-27 — 0.1.0-alpha.5（ChatGPT 默认引用解析与标准包 2.0.0 检查点）
+
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.5`。该标签只表示经本地验证的源码状态，不表示已经生成安装包或正式发行。
+
+**默认引用体例解析**
+
+- APP、Python 核心和 lockfile 统一到 `0.1.0-alpha.5`；内置标准 release 升级为 `oak-standards 2.0.0` / `oak-rules 2.0.0`（sequence 2），35 条规则和 6 个机械 fixer 的能力范围不变；
+- 新增纯本地、确定性的引用结构信号解析器，根据编号引用、作者—年份、注释—书目和语言证据选择 GB/T 7714—2025、APA 7、Chicago 18 注释—书目或作者—日期；强/中阈值固定为 3/2 个唯一信号与 80%/50% 覆盖率；
+- 结构冲突、证据不足或 EPUB 只能部分提取时不强行套用体例，退回 `structure_only`；报告记录模式、原因、置信度、解析器版本和纯数量证据，不保存稿件片段、姓名、引用原文或本地路径；
+- 新增严格只读的 `plan-citation`、绑定项目/工作稿/规则包/解析结果的 `citation-plan-*` 计划，以及 `check --citation-plan-id`。Renderer 会在检查前集中展示解析体例、理由、置信度和实际规则范围，用户一次确认后才检查；
+- 六个用户选项保持为 `default | gbt7714-2025 | apa-7 | chicago-18-nb | chicago-18-ad | none`；显式选择原样保留，默认解析在标准包升级后重算。
+
+**标准身份、迁移与界面上下文**
+
+- 2.0.0 canonical manifest SHA-256 为 `0aff75eb181a62869147e9af27330c717bc808bdd23865197534fc9868568427`，规则包为 `098b382e33c06ccddf154940fbbd51db384d8025cf235ed7f7e10e83d34897a4`，能力集为 `af67d0aaf2ece431ec1b617934bdfa3627b6be1b1301a92fcf3b2b2f29ca232e`；rollback target 精确指向 1.0.0 manifest `d33534f0…d7af`；
+- 旧项目迁移依赖本地 CAS 中仍保留且通过验证的历史 release；如旧 release 缺失则 fail-closed，不把最新包冒充历史身份；
+- `citation_resolution` 作为向后兼容字段写入项目设置、检查快照、机器报告和导出摘要；旧 1.0 项目可缺失该字段，但新检查结果必须相互一致；
+- 切换稿件或项目目录时清空上一项目的会话、引用计划与结果状态，修复第二份稿件误复用前一项目的真实 UI 缺陷。
+
+**验证与界限**
+
+- Node 分项回归：250 项、244 通过、0 失败、6 条件跳过、2.650 秒；Python：344 项、0 失败、0 错误、3 条件跳过、80.191 秒；
+- `verify:standards`、`verify:electron-runtime` 与 Windows alpha 资源门禁 PASS；Windows sale 门禁仍以 17 项 blocker 失败，macOS 静态门禁仍因双架构 Electron/Python/JRE 资源缺失失败；
+- 隐藏 Electron 源码 smoke PASS，运行根 `out/source-smoke/runs/ms44nzhb-8186d1b3c5148eba/projects/`；DOCX/EPUB 均完成引用计划确认、4 次检查、原稿哈希复验、批量修复/恢复/导出/PDF 闭环；PDF 分别为 251,646 / 177,416 字节；
+- 本轮未联网，未生成 alpha.5 NSIS、ZIP 或 macOS 制品，未运行 packaged smoke、干净系统、签名、公证或可售卖验收。
+
 ### 2026-07-27 — 0.1.0-alpha.4（ChatGPT Electron 与 builder 构建输入可信链检查点）
 
 > 源码检查点标签：`chatgpt-v0.1.0-alpha.4`。该标签只表示经测试的源码状态，不表示已经生成安装包或正式发行。

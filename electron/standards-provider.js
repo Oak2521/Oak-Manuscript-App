@@ -24,16 +24,18 @@ const {
 // the tracked manifest. Formal releases must additionally sign the application.
 const BUNDLED_STANDARD_RELEASE = Object.freeze({
   bundleId: "oak-standards",
-  releaseSequence: 1,
-  version: "1.0.0",
-  manifestSha256: "d33534f081b2122a90652ee03304a0e71177a7fd0d3130fffe77b0fea807d7af",
-  manifestRelative: "standard-packs/oak-standards-1.0.0.manifest.json",
+  releaseSequence: 2,
+  version: "2.0.0",
+  manifestSha256: "0aff75eb181a62869147e9af27330c717bc808bdd23865197534fc9868568427",
+  manifestRelative: "standard-packs/oak-standards-2.0.0.manifest.json",
   standardsRelative: "standards.json",
-  rulepackRelative: "rule-packs/oak-rules-1.0.0.json",
+  rulepackRelative: "rule-packs/oak-rules-2.0.0.json",
   capabilitiesRelative: "rule-capabilities.json",
   trustRelative: "standard-trust.json",
   trustSha256: null,
-  historicalManifestSha256s: Object.freeze([]),
+  historicalManifestSha256s: Object.freeze([
+    "d33534f081b2122a90652ee03304a0e71177a7fd0d3130fffe77b0fea807d7af",
+  ]),
 });
 
 const SHA256_RE = /^[0-9a-f]{64}$/;

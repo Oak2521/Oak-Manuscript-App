@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.4` 源码检查点架构；本轮尚未生成 alpha.4 Windows 安装器或 ZIP。本地标准验证、项目固定版本、显式升级与回滚已实现；alpha.4 只加固发布资源可信链，不改变项目格式或标准内容。联网标准获取、生产信任根、macOS、Web、统一账号、订阅与同步仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.5` 源码检查点架构；本轮尚未生成 alpha.5 Windows 安装器或 ZIP。本地标准验证、项目固定版本、显式升级与回滚已实现；alpha.5 新增标准包 2.0.0、确定性默认引用解析与检查前显式确认。联网标准获取、生产信任根、macOS、Web、统一账号、订阅与同步仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -15,6 +15,7 @@ Electron Main
   ├─ StandardsProvider：内置 release 验证 / 本地签名包预览与安装 / 全局回滚
   ├─ StandardsStore：严格 payload / 签名 / CAS / 高水位 / 撤回 / 事务恢复
   ├─ standard-bound-core：项目 release 预检 + 七字段 Python 绑定
+  ├─ core-ipc：引用计划 / 检查参数的固定白名单
   ├─ 统一 Python bootstrap：-I -S -X utf8 + 受控 core 目录
   ├─ P0 修复：planFixes / applyFixPlan（必须带 plan_id）
   ├─ 标准 IPC：项目状态 / 完整差异计划 / 一次确认升级
@@ -23,6 +24,7 @@ Electron Main
 Python Core（oak_manuscript_core）
   ├─ 读取器：DOCX（M1）/ Markdown、TXT（M2）/ EPUB（M3）
   ├─ 规则引擎（确定性）与规则包加载
+  ├─ citation：本地结构信号 → 体例/安全退回 → 可解释解析记录
   ├─ standards_store：manifest/payload/CAS 重验与项目 release 解析
   ├─ rulepack_upgrade：只读差异计划 → 检查点/归档 → 原子 pin → 强制重检
   ├─ plan-fixes 只读计划 → plan_id 确认 → fix 原子批量修复
@@ -103,6 +105,14 @@ PDF 使用无 `persist:` 前缀且禁缓存的专用 session，禁 JavaScript、
 
 升级把 `project.json` 的原子换入作为提交点：提交前故障恢复原清单并清理本事务创建物；提交后即使进程被强杀，项目仍可打开且旧 live issues 最多成为未引用冗余。检查点目录、issues 归档和 live issues 删除不是单一文件系统事务，可能留下可安全识别的孤儿，但不能留下清单引用缺失文件或静默混合两套规则。此保证与通用导出的逐文件原子性不同，不得笼统宣传为任意多文件 ACID。
 
+### AD-012 默认引用体例必须“确定性解析—显式确认—按能力调度”（2026-07-27，冻结）
+
+`默认` 不是隐式替用用户选择，也不是 AI 猜测。`citation.py` 只从本地文档模型提取可丢弃的结构信号：语言统计、参考文献节/条目数、编号引用覆盖、作者—年份覆盖和注释—书目覆盖。持久化结果只允许这些数量/百分比、枚举、原因码、置信度和版本，禁止引用串、姓名、书目文字、文件名、本地路径和内容哈希。
+
+强证据要求至少 3 个唯一信号且覆盖率至少 80%，中等证据要求 2 个且至少 50%。只有唯一信号家族达标、稿件类型/语言匹配，且当前规则包对该格式/类型/语言/体例确有启用规则时，才可返回具体体例。信号冲突、不足、语言不足或提取只有部分覆盖时返回 `structure_only`；用户显式选择始终优先。
+
+Renderer 必须先调用严格只读的 `plan-citation`，展示体例/模式、理由、置信度、证据数量和实际规则范围；用户确认后 `check` 携带绑定全状态的 `citation_plan_id` 并在写锁内重算。规则包升级时用户显式体例保留，默认解析结果清空以便在新策略下重算。
+
 ## 3. Python 核心模块地图（随实现更新）
 
 | 模块 | 职责 |
@@ -116,7 +126,8 @@ PDF 使用无 `persist:` 前缀且禁缓存的专用 session，禁 JavaScript、
 | `oak_manuscript_core/readers/epub_reader.py` | （M3）EPUB 容器 / OPF / nav / 内容文档结构解析 |
 | `oak_manuscript_core/epub_writer.py` | （M3）基础 EPUB 导出（自检零问题） |
 | `oak_manuscript_core/model.py` | 文档模型、问题（Issue）、检查结果的数据类 |
-| `oak_manuscript_core/rulepack.py` | 规则包严格加载、七字段身份绑定、标准注册表校验与「默认」体例映射 |
+| `oak_manuscript_core/citation.py` | 语言/引用结构信号、版本化阈值、体例能力门禁、`structure_only` 退回与隐私安全解析 schema |
+| `oak_manuscript_core/rulepack.py` | 规则包严格加载、七字段身份绑定、标准注册表校验与版本化引用解析策略 |
 | `oak_manuscript_core/standards_store.py` | 内置/用户标准 CAS、manifest/payload 哈希重验、active 与历史 release 解析、期望身份绑定 |
 | `oak_manuscript_core/rulepack_upgrade.py` | 项目标准状态、确定性差异计划、检查点/issues 归档、pin 升降级和崩溃一致提交 |
 | `oak_manuscript_core/engine.py` | 规则调度（按稿件类型 / 语言 / 体例启用），确定性保证 |
@@ -126,7 +137,7 @@ PDF 使用无 `persist:` 前缀且禁缓存的专用 session，禁 JavaScript、
 | `oak_manuscript_core/ops.py` | 检查编排、计划验证、批量修复事务与回滚、安全自选目录与逐文件原子导出 |
 | `oak_manuscript_core/reports.py` | JSON / Markdown / HTML 报告渲染 |
 | `oak_manuscript_core/exporter.py` | 修订稿 DOCX 导出、导出目录校验 |
-| `oak_manuscript_core/__main__.py` | CLI（含修复/检查点，以及 project-standard-status / plan-rulepack-upgrade / upgrade-rulepack） |
+| `oak_manuscript_core/__main__.py` | CLI（含 plan-citation / check 确认、修复/检查点、project-standard-status / plan-rulepack-upgrade / upgrade-rulepack） |
 
 ## 4. 安全基线
 
@@ -140,7 +151,7 @@ PDF 使用无 `persist:` 前缀且禁缓存的专用 session，禁 JavaScript、
 - Python 退出码 1 是有效业务结果，退出码 2 是运行错误；结构化 `code/message/retryable/details` 贯通到 IPC；
 - 统一测试入口为 `npm test`（Node 契约与 UI 结构测试 + Python 核心测试）；分项为 `npm run test:node`、`npm run test:python`。
 
-## 5. 发布资源可信链（0.1.0-alpha.4）
+## 5. 发布资源可信链（0.1.0-alpha.4 起，alpha.5 继承）
 
 Windows alpha 资源不是靠“目录存在”通过门禁，而是由五组全量清单固定：
 
@@ -183,5 +194,5 @@ Windows electron-builder 工具链使用独立的受控导入契约，不由普�
 - 源码 smoke 与打包 smoke 都通过 `app:info` 核对 Electron 版本和 freshly verified `standardIdentity`；随后读取本次真实生成的 `project.json`、检查记录和导出 `report.json`，核对 Python core 版本、check ID 及四方七字段身份一致。打包 smoke 还强制证明 `app.isPackaged=true`，防止把旧版、陈旧 core 或错误规则包误记为新打包版。
 - 源码 smoke 每次生成独立 `out/source-smoke/runs/<run-id>/`，项目、标准 store、缓存、临时目录、用户数据、HOME/APPDATA/XDG 与 crash dumps 不复用；打包 smoke 同样按运行 ID 隔离并受仓库 `out/` 边界控制。Windows EXE 还须先通过 x64 PE32+ 校验。
 - macOS 构建拆为 `build:mac:x64` 与 `build:mac:arm64`；聚合入口 `build:mac` 只选择当前原生 host 架构，不在一个进程伪造双架构探针。`verify:resources:mac` 只是带 `--no-runtime-probe` 的跨架构静态聚合，不能替代两个原生 runner 的执行证据。
-- alpha.4 隐藏源码 smoke 已 PASS：`out/source-smoke/runs/ms37h0mu-201a90896825d190/projects/` 中 DOCX/EPUB 各有 4 次检查、`source_hash_ok=true`，PDF 分别为 258,404 / 161,836 字节。最终 `npm test` 为 Node 239 total / 233 pass / 0 fail / 6 skip（2.606 秒），Python 312 / 0 failures / 0 errors / 3 skipped（Python 段 80.125 秒）；真实 Ace 沙箱外隐藏 Chrome 为 312 / 0 / 0 / 1（44.807 秒）。Electron runtime 锁专项为 37 / 36 / 0 / 1，hardlink 与 junction 本机实测通过，文件 symlink 因 Windows `EPERM` 条件跳过。
-- 当前 alpha.4 具备源码、标准本地可信链、Windows 本地资源门禁、Electron 运行时全树锁和 builder 安全导入契约；真实离线 builder 归档/工具树/tracked lock、Windows 签名和实际 alpha.4 制品尚缺。Windows sale 门禁仍有 17 项阻断。macOS 分架构配置已存在，但运行资源、原生构建、签名、公证、Gatekeeper 与实机 smoke 均未完成。
+- alpha.5 隐藏源码 smoke 已 PASS：`out/source-smoke/runs/ms44nzhb-8186d1b3c5148eba/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、`source_hash_ok=true`，PDF 分别为 251,646 / 177,416 字节。分项回归为 Node 250 / 244 / 0 / 6（2.650 秒）与 Python 344 / 0 failures / 0 errors / 3 skipped（80.191 秒）；最终统一 `npm test` 退出码 0，Node 段 2.675 秒、Python 段 88.790 秒、墙钟 160.5 秒。Electron runtime 锁专项仍为 37 / 36 / 0 / 1。
+- 当前 alpha.5 具备源码、默认引用解析、标准 2.0.0 本地可信链、Windows 本地资源门禁、Electron 运行时全树锁和 builder 安全导入契约；真实离线 builder 归档/工具树/tracked lock、Windows 签名和实际 alpha.5 制品尚缺。Windows sale 门禁仍有 17 项阻断。macOS 分架构配置已存在，但运行资源、原生构建、签名、公证、Gatekeeper 与实机 smoke 均未完成。

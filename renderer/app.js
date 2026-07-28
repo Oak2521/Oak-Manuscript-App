@@ -12,6 +12,11 @@ const state = {
   filter: "pending",
   exportFiles: [],
   pdfPath: null,
+  citationResolution: null,
+  citationPlan: null,
+  citationPlanning: false,
+  citationApplying: false,
+  pendingCitationKind: null,
   fixPlan: null,
   fixPlanning: false,
   fixApplying: false,
@@ -26,6 +31,208 @@ const state = {
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 const P0 = window.OakP0Ui;
+
+const CITATION_VALUES = new Set([
+  "default", "gbt7714-2025", "apa-7", "chicago-18-nb", "chicago-18-ad", "none",
+]);
+const RESOLVED_CITATION_VALUES = new Set([
+  "gbt7714-2025", "apa-7", "chicago-18-nb", "chicago-18-ad", "none",
+]);
+const CITATION_STYLE_LABELS = Object.freeze({
+  "gbt7714-2025": "GB/T 7714—2025",
+  "apa-7": "APA 7",
+  "chicago-18-nb": "Chicago 18 注释—书目",
+  "chicago-18-ad": "Chicago 18 作者—日期",
+  none: "暂不检查引用格式",
+});
+const CITATION_CONFIDENCE_LABELS = Object.freeze({
+  high: "高",
+  medium: "中",
+  low: "低",
+  not_applicable: "不适用（用户指定）",
+});
+const CITATION_REASON_LABELS = Object.freeze({
+  user_selected: "由用户明确指定引用体例。",
+  user_disabled: "由用户明确选择暂不检查引用格式。",
+  paper_zh_numeric_reference_structure: "论文以中文为主，且引用结构与顺序编码制特征一致。",
+  paper_en_author_date_structure: "论文以英文为主，且引用结构与作者—日期制特征一致。",
+  print_book_note_bibliography_structure: "书稿的注释与书目结构更符合注释—书目制。",
+  low_confidence: "现有引用结构信号不足，解析器不强行套用具体体例。",
+  conflicting_signals: "稿件中的引用结构信号互相冲突，解析器不强行套用具体体例。",
+  insufficient_structure_signals: "没有足够引用结构信号支持可靠的具体体例判断。",
+  legacy_default_mapping: "由固定的稿件类型与语言映射选定。",
+});
+
+function plainObject(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : null;
+}
+
+function nonemptyString(value) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function normalizeCitationMode(value, resolvedStyle) {
+  const aliases = {
+    style: "style_specific",
+    style_specific: "style_specific",
+    specific_style: "style_specific",
+    structure_only: "structure_only",
+    structure: "structure_only",
+    generic: "structure_only",
+    disabled: "disabled",
+    none: "disabled",
+  };
+  if (value !== undefined && value !== null && !Object.hasOwn(aliases, value)) {
+    throw new Error("引用体例解析结果的检查模式非法");
+  }
+  return value === undefined || value === null
+    ? (resolvedStyle === "none" ? "disabled" : "style_specific")
+    : aliases[value];
+}
+
+function normalizeCitationResolution(value, requestedFallback = null) {
+  const input = plainObject(value);
+  if (!input) throw new Error("引用体例解析结果缺失或格式非法");
+  const rawRequested = input.requested_style !== undefined
+    ? input.requested_style
+    : input.citation_style_requested !== undefined
+      ? input.citation_style_requested
+      : requestedFallback;
+  const requestedStyle = nonemptyString(rawRequested);
+  if (!CITATION_VALUES.has(requestedStyle)) throw new Error("引用体例解析结果的请求值非法");
+  if (requestedFallback && requestedStyle !== requestedFallback) {
+    throw new Error("引用体例解析结果与用户本次选择不一致");
+  }
+
+  const rawResolved = input.resolved_style !== undefined
+    ? input.resolved_style
+    : input.citation_style_resolved;
+  const resolvedStyle = rawResolved === null || rawResolved === undefined
+    ? null
+    : nonemptyString(rawResolved);
+  if (rawResolved !== null && rawResolved !== undefined && !resolvedStyle) {
+    throw new Error("引用体例解析结果的最终体例非法");
+  }
+  if (resolvedStyle !== null && !RESOLVED_CITATION_VALUES.has(resolvedStyle)) {
+    throw new Error("引用体例解析结果的最终体例非法");
+  }
+  const rawMode = input.mode !== undefined ? input.mode : input.check_mode;
+  const mode = normalizeCitationMode(rawMode, resolvedStyle);
+  if (mode === "style_specific" && (!resolvedStyle || resolvedStyle === "none")) {
+    throw new Error("具体体例检查模式缺少可用的最终体例");
+  }
+  if (mode === "disabled" && resolvedStyle !== "none") {
+    throw new Error("停用引用检查模式与最终体例不一致");
+  }
+
+  const rawConfidence = input.confidence;
+  const confidence = rawConfidence === null || rawConfidence === undefined
+    ? null
+    : nonemptyString(rawConfidence);
+  if (rawConfidence !== null && rawConfidence !== undefined && !confidence) {
+    throw new Error("引用体例解析结果的置信度非法");
+  }
+  if (confidence !== null && !Object.hasOwn(CITATION_CONFIDENCE_LABELS, confidence)) {
+    throw new Error("引用体例解析结果的置信度非法");
+  }
+  const resolver = plainObject(input.resolver);
+  if (input.resolver !== undefined && !resolver) {
+    throw new Error("引用体例解析器信息缺失或格式非法");
+  }
+  const resolverVersion = resolver
+    ? nonemptyString(resolver.version)
+    : nonemptyString(input.resolver_version) || nonemptyString(input.citation_resolver_version);
+  if (resolver && !resolverVersion) throw new Error("引用体例解析器版本缺失或格式非法");
+  const reasonCode = nonemptyString(input.reason_code) || "unspecified";
+  const reason = nonemptyString(input.reason);
+  const resolvedBy = nonemptyString(input.resolved_by) || "default_resolver";
+  return Object.freeze({
+    requestedStyle,
+    resolvedStyle,
+    mode,
+    confidence,
+    resolverVersion,
+    reasonCode,
+    reason,
+    resolvedBy,
+  });
+}
+
+function citationResolutionReason(resolution) {
+  if (resolution.reason) return resolution.reason;
+  if (Object.hasOwn(CITATION_REASON_LABELS, resolution.reasonCode)) {
+    return CITATION_REASON_LABELS[resolution.reasonCode];
+  }
+  if (resolution.resolvedBy === "user") return "由用户明确指定引用检查设置。";
+  if (resolution.mode === "structure_only") {
+    return "引用结构信号不足或互相冲突，解析器不强行套用具体体例。";
+  }
+  return "解析器根据检查类型、主要语言和引用结构信号作出确定性选择。";
+}
+
+function citationResolutionStyle(resolution) {
+  if (resolution.mode === "structure_only") return "仅做结构与一致性检查";
+  if (resolution.mode === "disabled") return "暂不检查引用格式";
+  return `${CITATION_STYLE_LABELS[resolution.resolvedStyle]}（按具体体例检查）`;
+}
+
+function renderCitationResolutionFields(prefix, resolution) {
+  $(`#${prefix}-style`).textContent = citationResolutionStyle(resolution);
+  $(`#${prefix}-reason`).textContent = citationResolutionReason(resolution);
+  $(`#${prefix}-confidence`).textContent = resolution.confidence === null
+    ? "不适用（用户指定或无需判定）"
+    : CITATION_CONFIDENCE_LABELS[resolution.confidence];
+  $(`#${prefix}-version`).textContent = resolution.resolverVersion || "不适用（用户指定）";
+}
+
+function normalizeCitationPlan(value, citation, kind) {
+  const input = plainObject(value);
+  const planId = nonemptyString(input && input.plan_id);
+  if (!planId || !input.resolution) throw new Error("引用体例解析计划缺失或格式非法");
+  if (!new Set(["check", "recheck"]).has(kind)) throw new Error("引用体例解析计划的检查类型非法");
+  return Object.freeze({
+    planId,
+    citation,
+    kind,
+    resolution: normalizeCitationResolution(input.resolution, citation),
+  });
+}
+
+function sameCitationResolution(left, right) {
+  return [
+    "requestedStyle", "resolvedStyle", "mode", "resolvedBy",
+    "reasonCode", "reason", "confidence", "resolverVersion",
+  ].every((key) => left[key] === right[key]);
+}
+
+function adoptCitationResolution(value, requestedFallback = null) {
+  const resolution = normalizeCitationResolution(value, requestedFallback);
+  state.citationResolution = resolution;
+  state.settings.citation = resolution.requestedStyle;
+  $("#citation-select").value = resolution.requestedStyle;
+  $("#citation-resolution-select").value = resolution.requestedStyle;
+  return resolution;
+}
+
+function renderCitationPlan(plan) {
+  renderCitationResolutionFields("citation-resolution", plan.resolution);
+  $("#citation-resolution-select").value = plan.citation;
+  const limitedCheck = plan.resolution.confidence === "low" ||
+    plan.resolution.mode === "structure_only";
+  $("#citation-resolution-low-confidence").classList.toggle("hidden", !limitedCheck);
+  $("#btn-confirm-citation-resolution").textContent =
+    plan.kind === "recheck" ? "确认并重新检查" : "确认并开始检查";
+}
+
+function renderCitationResult() {
+  const card = $("#citation-result-card");
+  if (!state.citationResolution) {
+    card.classList.add("hidden");
+    return;
+  }
+  renderCitationResolutionFields("citation-result", state.citationResolution);
+  card.classList.remove("hidden");
+}
 
 function toast(msg, ms = 2600) {
   const el = $("#toast");
@@ -93,6 +300,10 @@ function renderIssues() {
   $("#status-level").textContent =
     `${check.status_level}（仅代表技术与规范准备程度，不评价学术质量、文学价值或出版可行性）`;
   $("#citation-note").textContent = check.citation_note || "";
+  state.citationResolution = check.citation_resolution
+    ? adoptCitationResolution(check.citation_resolution)
+    : null;
+  renderCitationResult();
   const c = pendingCounts(check.issues);
   $("#issues-title").textContent =
     `检查结果：必须处理 ${c.error} ｜ 建议处理 ${c.warning} ｜ 可选改进 ${c.suggestion}`;
@@ -242,6 +453,25 @@ function renderCheckpointList() {
   }
 }
 
+function resetCurrentProject({ clearProjectDir = false } = {}) {
+  state.project = null;
+  state.lastCheck = null;
+  state.selectedIssue = null;
+  state.exportFiles = [];
+  state.pdfPath = null;
+  state.citationResolution = null;
+  state.citationPlan = null;
+  state.pendingCitationKind = null;
+  state.fixPlan = null;
+  state.checkpoints = [];
+  state.selectedCheckpointId = null;
+  state.rulepackUpgradePlan = null;
+  if (clearProjectDir) {
+    state.projectDir = null;
+    $("#chosen-dir").textContent = "未选择（需要空目录）";
+  }
+}
+
 // ---------- actions（UI 与冒烟共用） ----------
 
 const actions = {
@@ -251,6 +481,7 @@ const actions = {
   },
 
   chooseFilePath(file) {
+    if (state.file !== file) resetCurrentProject({ clearProjectDir: true });
     state.file = file;
     $("#chosen-file").textContent = file;
     enableStep("project");
@@ -285,6 +516,7 @@ const actions = {
   },
 
   setProjectDir(dir) {
+    if (state.projectDir !== dir && state.project !== null) resetCurrentProject();
     state.projectDir = dir;
     $("#chosen-dir").textContent = dir;
     updateCreateButton();
@@ -312,6 +544,7 @@ const actions = {
     const radio = document.querySelector(`input[name="mtype"][value="${state.settings.type}"]`);
     if (radio) radio.checked = true;
     $("#citation-select").value = state.settings.citation;
+    $("#citation-resolution-select").value = state.settings.citation;
     $("#language-select").value = state.settings.language;
     $("#epub-preview-check").checked = !!state.settings.epubPreview;
   },
@@ -323,31 +556,134 @@ const actions = {
     state.settings.epubPreview = $("#epub-preview-check").checked;
   },
 
+  async prepareCitationPlan(kind, citation = state.settings.citation) {
+    if (!state.project) throw new Error("请先创建或打开项目");
+    if (!new Set(["check", "recheck"]).has(kind)) throw new Error("检查类型非法");
+    if (!CITATION_VALUES.has(citation)) throw new Error("引用体例选择非法");
+    if (state.citationPlanning || state.citationApplying) {
+      throw new Error("引用体例确认正在处理");
+    }
+
+    state.citationPlanning = true;
+    $("#citation-resolution-select").disabled = true;
+    $("#btn-cancel-citation-resolution").disabled = true;
+    $("#btn-confirm-citation-resolution").disabled = true;
+    try {
+      const response = unwrap(await window.oak.planCitation(state.project, citation));
+      const plan = normalizeCitationPlan(response.result, citation, kind);
+      state.citationPlan = plan;
+      state.pendingCitationKind = kind;
+      state.settings.citation = citation;
+      $("#citation-select").value = citation;
+      renderCitationPlan(plan);
+      const dialog = $("#citation-resolution-dialog");
+      if (!dialog.open) dialog.showModal();
+      return {
+        awaitingCitationConfirmation: true,
+        planId: plan.planId,
+        citationResolution: plan.resolution,
+        page: state.page,
+      };
+    } finally {
+      state.citationPlanning = false;
+      $("#citation-resolution-select").disabled = false;
+      $("#btn-cancel-citation-resolution").disabled = false;
+      $("#btn-confirm-citation-resolution").disabled = false;
+    }
+  },
+
+  async changeCitationSelection(citation) {
+    const previous = state.citationPlan ? state.citationPlan.citation : state.settings.citation;
+    try {
+      return await this.prepareCitationPlan(state.pendingCitationKind || "check", citation);
+    } catch (error) {
+      $("#citation-resolution-select").value = previous;
+      throw error;
+    }
+  },
+
+  cancelCitationResolution() {
+    if (state.citationPlanning || state.citationApplying) return false;
+    state.citationPlan = null;
+    state.pendingCitationKind = null;
+    const dialog = $("#citation-resolution-dialog");
+    if (dialog.open) dialog.close("cancel");
+    showPage(state.lastCheck ? "issues" : "target");
+    return true;
+  },
+
+  async confirmCitationResolution() {
+    const plan = state.citationPlan;
+    if (!plan) throw new Error("没有待确认的引用体例解析计划");
+    if (state.citationPlanning || state.citationApplying) {
+      throw new Error("引用体例确认正在处理");
+    }
+    const fallbackPage = plan.kind === "recheck" && state.lastCheck ? "issues" : "target";
+    state.citationApplying = true;
+    $("#citation-resolution-select").disabled = true;
+    $("#btn-cancel-citation-resolution").disabled = true;
+    $("#btn-confirm-citation-resolution").disabled = true;
+    const dialog = $("#citation-resolution-dialog");
+    if (dialog.open) dialog.close("confirmed");
+    showPage("progress");
+    renderStages(2);
+    try {
+      const checked = unwrap(await window.oak.check(state.project, plan.kind, {
+        citation: plan.citation,
+        citationPlanId: plan.planId,
+      }));
+      const resolution = normalizeCitationResolution(
+        checked.result && checked.result.citation_resolution,
+        plan.citation,
+      );
+      if (!sameCitationResolution(plan.resolution, resolution)) {
+        throw new Error("检查结果与用户确认的引用体例解析计划不一致");
+      }
+
+      state.citationResolution = resolution;
+      state.lastCheck = checked.result;
+      state.citationPlan = null;
+      state.pendingCitationKind = null;
+      renderStages(STAGES.length);
+      enableStep("issues"); enableStep("export");
+      showPage("issues");
+      state.filter = "pending"; state.selectedIssue = null;
+      renderIssues(); renderDetail(null);
+      return {
+        statusLevel: checked.result.status_level,
+        issueCount: checked.result.issues.length,
+        rulepack: checked.result.rulepack,
+        page: state.page,
+        citationResolution: resolution,
+      };
+    } catch (error) {
+      state.citationPlan = null;
+      state.pendingCitationKind = null;
+      showPage(fallbackPage);
+      throw error;
+    } finally {
+      state.citationApplying = false;
+      $("#citation-resolution-select").disabled = false;
+      $("#btn-cancel-citation-resolution").disabled = false;
+      $("#btn-confirm-citation-resolution").disabled = false;
+    }
+  },
+
   async startCheck() {
     if (!state.file || !state.projectDir) throw new Error("请先选择稿件与项目目录");
     enableStep("progress");
     showPage("progress");
     renderStages(0);
-    const created = unwrap(await window.oak.createProject({
-      input: state.file, projectDir: state.projectDir,
-      type: state.settings.type, language: state.settings.language,
-      citation: state.settings.citation, epubPreview: state.settings.epubPreview,
-    }));
-    state.project = created.result.project;
+    if (!state.project) {
+      const created = unwrap(await window.oak.createProject({
+        input: state.file, projectDir: state.projectDir,
+        type: state.settings.type, language: state.settings.language,
+        citation: state.settings.citation, epubPreview: state.settings.epubPreview,
+      }));
+      state.project = created.result.project;
+    }
     renderStages(2);
-    const chk = unwrap(await window.oak.check(state.project, "check"));
-    state.lastCheck = chk.result;
-    renderStages(STAGES.length);
-    enableStep("issues"); enableStep("export");
-    showPage("issues");
-    state.filter = "pending"; state.selectedIssue = null;
-    renderIssues(); renderDetail(null);
-    return {
-      statusLevel: chk.result.status_level,
-      issueCount: chk.result.issues.length,
-      rulepack: chk.result.rulepack,
-      page: state.page,
-    };
+    return this.prepareCitationPlan("check", state.settings.citation);
   },
 
   async autoFix() {
@@ -465,7 +801,12 @@ const actions = {
       statusLevel: chk.result.status_level,
       issueCount: chk.result.issues.length,
       rulepack: chk.result.rulepack,
+      citationResolution: state.citationResolution,
     };
+  },
+
+  async requestCitationRecheck() {
+    return this.prepareCitationPlan("recheck", state.settings.citation);
   },
 
   async issueAction(issueId, status) {
@@ -603,6 +944,9 @@ const actions = {
       issues: state.lastCheck ? state.lastCheck.issues.length : 0,
       statusLevel: state.lastCheck ? state.lastCheck.status_level : null,
       exports: state.exportFiles.length,
+      awaitingCitationConfirmation: !!state.citationPlan,
+      citationPlan: state.citationPlan ? state.citationPlan.planId : null,
+      citationResolution: state.citationResolution,
       fixPlanCount: state.fixPlan ? state.fixPlan.count : 0,
       checkpoints: state.checkpoints.length,
       rulepackUpgradePlan: state.rulepackUpgradePlan ? state.rulepackUpgradePlan.plan_id : null,
@@ -831,6 +1175,17 @@ document.addEventListener("DOMContentLoaded", () => {
     actions.readSettingsFromUi();
     try { await actions.startCheck(); } catch (err) { toast(String(err.message || err), 5000); showPage("target"); }
   });
+  $("#citation-resolution-select").addEventListener("change", (event) =>
+    actions.changeCitationSelection(event.target.value)
+      .catch((error) => toast(String(error.message || error), 5000)));
+  $("#btn-cancel-citation-resolution").addEventListener("click", () =>
+    actions.cancelCitationResolution());
+  $("#btn-confirm-citation-resolution").addEventListener("click", () =>
+    actions.confirmCitationResolution().catch((error) => toast(String(error.message || error), 5000)));
+  $("#citation-resolution-dialog").addEventListener("cancel", (event) => {
+    event.preventDefault();
+    if (!state.citationPlanning && !state.citationApplying) actions.cancelCitationResolution();
+  });
   $("#btn-autofix").addEventListener("click", () => actions.autoFix().catch((e) => toast(String(e.message || e), 5000)));
   $("#btn-checkpoints").addEventListener("click", () => actions.openCheckpoints().catch((e) => toast(String(e.message || e), 5000)));
   $("#btn-cancel-fix-plan").addEventListener("click", () => actions.cancelFixPlan());
@@ -853,7 +1208,8 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#checkpoint-dialog").addEventListener("close", () => {
     if (!state.restoringCheckpoint) state.selectedCheckpointId = null;
   });
-  $("#btn-recheck").addEventListener("click", () => actions.recheck().catch((e) => toast(String(e.message || e))));
+  $("#btn-recheck").addEventListener("click", () =>
+    actions.requestCitationRecheck().catch((e) => toast(String(e.message || e), 5000)));
   $("#btn-external").addEventListener("click", async () => {
     toast("正在运行外部验证（EpubCheck / Ace），可能需要数十秒…", 4000);
     const r = await window.oak.runExternal(state.project);

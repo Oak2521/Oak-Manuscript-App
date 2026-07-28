@@ -13,7 +13,14 @@ const api = {
 
   // 核心闭环
   createProject: (opts) => ipcRenderer.invoke("core:create", opts),
-  check: (project, kind) => ipcRenderer.invoke("core:check", { project, kind }),
+  planCitation: (project, citation) =>
+    ipcRenderer.invoke("core:plan-citation", { project, citation }),
+  check: (project, kind, options = {}) => ipcRenderer.invoke("core:check", {
+    project,
+    kind,
+    citation: options && options.citation,
+    citationPlanId: options && options.citationPlanId,
+  }),
   planFixes: (project) => ipcRenderer.invoke("core:plan-fixes", { project }),
   applyFixPlan: (project, planId) =>
     ipcRenderer.invoke("core:apply-fix-plan", { project, planId }),

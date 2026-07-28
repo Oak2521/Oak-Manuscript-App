@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-27
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.4`
+> 当前版本：`0.1.0-alpha.5`
 > 当前分支：`chatgpt/commercial-v1`
-> 源码检查点标签：`chatgpt-v0.1.0-alpha.4`（只标记源码与本地验证状态，不代表安装包或正式发行）
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.5`（只标记源码与本地验证状态，不代表安装包或正式发行）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,25 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.5 默认引用解析、显式确认与标准包 2.0.0
+
+- APP、Python 核心和 lockfile 已统一到 `0.1.0-alpha.5`；内置标准为 `oak-standards 2.0.0` / `oak-rules 2.0.0`，release sequence 2，仍是 35 条规则和 6 个白名单机械 fixer；
+- 默认解析器纯本地、确定性运行：只根据编号引用、作者—年份、注释—书目、语言和提取能力作决定；强/中阈值固定为 3/2 个唯一信号与 80%/50% 覆盖率；结果不含稿件文字、姓名、引用串、路径或哈希；
+- 确有当前格式/类型/语言规则能力时才选定 `gbt7714-2025 | apa-7 | chicago-18-nb | chicago-18-ad`；冲突、证据不足或 EPUB 仅部分可提取时退回 `structure_only`，而非猜测具体体例；
+- 新增只读 `plan-citation`、绑定项目全状态的 `citation-plan-*` 和 `check --citation-plan-id`；UI 在实际检查前集中显示体例/模式、理由、置信度、数量证据与实际覆盖规则，用户一次确认后才运行；
+- `citation_resolution` 写入项目设置、检查快照、机器报告、Markdown/HTML 报告和导出摘要；旧 1.0 项目容许缺失该字段。标准升级时保留用户显式体例，但清空旧默认解析并按新包重算；
+- 2.0.0 manifest/规则包/能力集 SHA-256 分别为 `0aff75eb…8427` / `098b382e…97a4` / `af67d0aa•320e`；rollback target 为 1.0.0 manifest `d33534f0…d7af`。旧项目仅能使用本地 CAS 内仍存在且已验证的历史 release 迁移，缺失时 fail-closed，不用最新包冒充；
+- 切换稿件或项目目录时 Renderer 清空上一项目会话，修复连续处理 DOCX/EPUB 时复用旧项目的真实 smoke 缺陷。
+
+### 现场验证（2026-07-27，alpha.5）
+
+- `npm run test:node`：**PASS**，250 项、244 通过、0 失败、6 条件跳过，2.650 秒；
+- `npm run test:python`：**PASS**，344 项、0 失败、0 错误、3 条件跳过，80.191 秒；最终统一 `npm test`：**PASS，退出码 0，墙钟 160.5 秒**，Node 段 250/244/0/6（2.675 秒），Python 段 344/0/0/3（88.790 秒）；
+- `npm run verify:standards`、`npm run verify:electron-runtime`、`npm run verify:resources:win`：**PASS**；Windows sale 门禁仍按设计以 17 项 blocker 退出 1；
+- `npm run verify:resources:mac:static`：按预期退出 1，仍缺 darwin-x64/arm64 Electron dist、两架构 Python runtime manifest 和 JRE；
+- 沙箱外独立隐藏 Electron `npm run smoke`：`SMOKE-RESULT: PASS`。输出根 `out/source-smoke/runs/ms44nzhb-8186d1b3c5148eba/projects/`；DOCX/EPUB 均先确认引用计划、各 4 次检查且 `source_hash_ok=true`；两者分别因 `conflicting_structures` / `extractor_coverage_insufficient` 安全退回 `structure_only`；PDF 分别为 251,646 / 177,416 字节；
+- 本轮未联网，未下载 builder 归档，未生成 alpha.5 制品，未运行 packaged smoke、干净系统或签名验收。
 
 ### 已完成：0.1.0-alpha.4 Electron 与 Windows builder 构建输入可信链
 
@@ -122,12 +141,12 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.4 继承了可复制、可执行、由 tracked full lock 固定的生产闭包，并通过 Windows alpha 资源门禁与沙箱外隐藏 Chrome 真实条件测试。正式版仍缺最小权限受控 helper、自带且校验过的浏览器运行时、OS 级默认拒绝网络、可信根加固、18 个生成元数据通知包的原始许可证审计，以及全部 236 包的来源/许可证/版权/再分发义务人工审计；
-- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.4 尚无安装器或 ZIP，未做打包版 smoke、干净系统安装/升级/卸载或签名。安全 builder 导入器已实现，但三份固定归档、真实工具树和独立 tracked lock 尚缺；
+- 打包版 Ace：alpha.5 继承了可复制、可执行、由 tracked full lock 固定的生产闭包，并通过 Windows alpha 资源门禁；正式版仍缺最小权限受控 helper、自带且校验过的浏览器运行时、OS 级默认拒绝网络、可信根加固和正式人工许可审计；
+- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.5 尚无安装器或 ZIP，未做打包版 smoke、干净系统安装/升级/卸载或签名。安全 builder 导入器已实现，但三份固定归档、真实工具树和独立 tracked lock 尚缺；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：服务端任务 API、隔离执行、限额、零留存和官网嵌入尚未实现；
 - 账号/订阅/同步：UI 入口和 Provider 仍是离线占位，未连接生产 Supabase、支付或网站后台；
-- 标准库：治理结构已完成，13 项标准、35 条规则和 6 个 fixer 映射一致，旧占位摘要已删除；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，GB/T 来源、APA/Chicago/EPUB 深度、TXT/Markdown/纸质出版/可访问性覆盖和真实人工签核仍不完整；
+- 标准库：治理结构和引用解析政策已完成，13 项标准、35 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
 - 标准升级：本地验证、签名包导入/回滚骨架、项目固定与显式升级已编码；生产 trust pin、在线获取/下载、签名撤回分发与联网自动更新未实现；
 - 正式发布仍缺隐私/条款最终文本、证书、生产密钥、人工内测、macOS 硬件和网站联调。
 
@@ -158,13 +177,12 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 不要重新做宽泛规划，按 v2.0 方案继续：
 
 1. 经用户联网授权后只下载三份已固定名称/哈希的 builder 归档，离线复核后运行 `node scripts/import_windows_builder_toolchain.js --archive-dir <目录> --update-lock`，提交并复核真实独立 lock；
-2. 生成 alpha.4 NSIS 安装器与 ZIP，逐项运行打包资源门禁、应用身份断言、打包版 smoke、SHA-256 和干净环境检查；
+2. 生成 alpha.5 NSIS 安装器与 ZIP，逐项运行打包资源门禁、应用身份断言、打包版 smoke、SHA-256 和干净环境检查；
 3. 完成 Windows 代码签名，并逐项关闭 provenance、许可证、可信根、Ace helper/browser 等 sale blocker；
 4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
-5. 补齐默认引用选择的结构信号、原因/置信度与低置信度退回，不把现有稿件类型映射误写成完整商业方案能力；
-6. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
-7. 实现 Auth / License / Sync 的离线契约和生产适配边界，再经授权连接网站；
-8. 实现服务端统一处理的 Web 作业 API、零留存和官网嵌入；完成 Free/Pro、支付、隐私、内测和正式发布门禁。
+5. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
+6. 实现 Auth / License / Sync 的离线契约和生产适配边界，再经授权连接网站；
+7. 实现服务端统一处理的 Web 作业 API、零留存和官网嵌入；完成 Free/Pro、支付、隐私、内测和正式发布门禁。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。
 
@@ -187,6 +205,8 @@ CLI 的 P0 新契约：
 ```powershell
 python -m oak_manuscript_core plan-fixes --project <项目目录>
 python -m oak_manuscript_core fix --project <项目目录> --plan-id <计划ID>
+python -m oak_manuscript_core plan-citation --project <项目目录> --citation default
+python -m oak_manuscript_core check --project <项目目录> --citation default --citation-plan-id <引用计划ID>
 python -m oak_manuscript_core list-checkpoints --project <项目目录>
 python -m oak_manuscript_core restore-checkpoint --project <项目目录> --checkpoint-id <检查点ID>
 python -m oak_manuscript_core project-standard-status --project <项目目录>

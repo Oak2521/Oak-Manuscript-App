@@ -2,6 +2,26 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.5 默认引用解析与标准包 2.0.0 验收（2026-07-27）
+
+> 本节只验收 alpha.5 源码、本地标准 release 和引用确认闭环，不代表安装包、在线标准更新或可售卖正式版。
+
+- [x] APP、Python 核心和 lockfile 统一为 `0.1.0-alpha.5`；内置 release 为 `oak-standards 2.0.0` / `oak-rules 2.0.0`（sequence 2），保持 35 条规则和 6 个白名单 fixer；
+- [x] 六个用户选项为 `default | gbt7714-2025 | apa-7 | chicago-18-nb | chicago-18-ad | none`；显式选择不被默认解析器覆盖；
+- [x] 默认解析仅使用本地结构信号，决策阈值、原因码、置信度和体例能力映射版本化；结果不保存稿件片段、姓名、文件名、路径或哈希；
+- [x] 结构冲突、证据不足、语言不足或 EPUB 部分提取时 fail-safe 退回 `structure_only`；不将低置信度判断冒充为具体体例；
+- [x] `plan-citation` 严格只读，`citation_plan_id` 绑定项目、工作稿、问题、规则包与解析结果；状态变化使旧计划失效；
+- [x] Renderer 在检查前一次性展示模式/体例、理由、置信度、结构数量和实际覆盖规则；取消不运行检查，确认后才携带 plan ID；
+- [x] `citation_resolution` 在项目设置、检查快照、报告与出版摘要中一致；旧 1.0 项目可缺失该字段；
+- [x] 规则包升级保留用户显式体例，清空默认解析以便在新包重算；旧项目必须能在本地 CAS 重验原 release，缺失时 fail-closed；
+- [x] 2.0.0 manifest/规则包/能力集 SHA-256 为 `0aff75eb…8427` / `098b382e…97a4` / `af67d0aa•320e`，rollback target 精确指向 sequence 1 manifest `d33534f0…d7af`；
+- [x] Node 分项 **250/244/0/6（2.650 秒）**、Python 分项 **344/0/0/3（80.191 秒）**、`verify:standards`、`verify:electron-runtime` 和 Windows alpha 资源门禁均通过；最终统一 `npm test` 退出码 0，Node 250/244/0/6（2.675 秒）、Python 344/0/0/3（88.790 秒），墙钟 160.5 秒；
+- [x] alpha.5 隐藏 Electron 源码 smoke PASS；运行根 `out/source-smoke/runs/ms44nzhb-8186d1b3c5148eba/projects/`，DOCX/EPUB 均先确认引用计划、各 4 次检查且原稿哈希不变，PDF 分别 251,646 / 177,416 字节；
+- [x] 切换稿件/项目目录会清空前一项目会话；该真实 UI 缺陷已有 Node 回归与双样本 smoke 证据；
+- [ ] alpha.5 Windows NSIS / ZIP 已生成并通过 packaged 资源门禁、packaged smoke、SHA-256、干净系统和签名验收；
+- [ ] 生产标准 trust pin、在线获取/下载、签名撤回分发与官方来源内容审核完成；
+- [ ] macOS、Web、统一账号、订阅、结果同步与正式售卖全量门禁通过。
+
 ## 0.1.0-alpha.4 Electron 与 builder 构建输入可信链验收（2026-07-27）
 
 > 本节只验收 alpha.4 源码、构建输入锁与本机 alpha 门禁，不代表安装包、代码签名或可售卖正式版。
@@ -180,7 +200,7 @@
 
 > 完成标准（方案 §18）：匿名 DOCX 与 EPUB 均能在 UI 中完成完整闭环。
 > 证据：`npm run smoke` 冒烟驱动真实 UI 代码路径（与按钮同一 actions + 真实 IPC + 真实核心），
-> DOCX 与 EPUB 双闭环 PASS；旧 `0.0.1` 打包版历史结果同样 PASS，不能替代当前 alpha.4 打包验收。
+> DOCX 与 EPUB 双闭环 PASS；旧 `0.0.1` 打包版历史结果同样 PASS，不能替代当前 alpha.5 打包验收。
 
 - [x] Electron 壳安全基线：contextIsolation / sandbox / nodeIntegration=false / IPC 固定通道 + 输入验证 / 子进程 shell=false / CSP / 导航与新窗口拦截 / 外链仅 HTTPS 白名单域名；
 - [x] 七个主页面（中文 UI）：欢迎隐私 / 创建项目 / 检查目标 / 进度（阶段式，无虚假百分比）/ 问题双栏（接受·拒绝·暂不处理）/ 导出中心 / 标准资源与设置；
@@ -222,5 +242,5 @@
 - [x] 未登录状态下全部核心流程可完成，且不出现同步询问（冒烟断言）
 - [ ] 任何结果同步只在登录用户逐字段确认后发生；负载不含稿件、正文/预览、标题、文件名、路径、参考文献原文或哈希（真实同步上线时验收；当前占位不联网）
 - [ ] 网站后台可查看并删除已同步记录（阶段 4 验收）
-- [ ] 正式发布包候选的 Python 单元/集成 + CLI 端到端 + UI 冒烟 E2E 全部通过（alpha.4 源码基线、真实 Ace 与隐藏源码 smoke 已通过；因尚无 alpha.4 安装包或 ZIP，打包版 E2E 仍未运行）
+- [ ] 正式发布包候选的 Python 单元/集成 + CLI 端到端 + UI 冒烟 E2E 全部通过（alpha.5 源码分项基线与隐藏源码 smoke 已通过；因尚无 alpha.5 安装包或 ZIP，打包版 E2E 仍未运行）
 - [ ] 当前正式发布包有版本、说明、校验值和已知限制（`RELEASE_NOTES_0.0.1.md` 仅是历史资料）

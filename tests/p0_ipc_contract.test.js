@@ -40,6 +40,11 @@ test("sandboxed preload maps approved P0 and project-standard IPC payloads", asy
 
   await api.planFixes("C:\\projects\\oak");
   await api.applyFixPlan("C:\\projects\\oak", "plan-0001");
+  await api.planCitation("C:\\projects\\oak", "default");
+  await api.check("C:\\projects\\oak", "check", {
+    citation: "default",
+    citationPlanId: "citation-plan-0001",
+  });
   await api.listCheckpoints("C:\\projects\\oak");
   await api.restoreCheckpoint("C:\\projects\\oak", "cp-0001");
   await api.projectStandardStatus("C:\\projects\\oak");
@@ -51,6 +56,19 @@ test("sandboxed preload maps approved P0 and project-standard IPC payloads", asy
     {
       channel: "core:apply-fix-plan",
       payload: { project: "C:\\projects\\oak", planId: "plan-0001" },
+    },
+    {
+      channel: "core:plan-citation",
+      payload: { project: "C:\\projects\\oak", citation: "default" },
+    },
+    {
+      channel: "core:check",
+      payload: {
+        project: "C:\\projects\\oak",
+        kind: "check",
+        citation: "default",
+        citationPlanId: "citation-plan-0001",
+      },
     },
     { channel: "core:list-checkpoints", payload: { project: "C:\\projects\\oak" } },
     {

@@ -24,7 +24,7 @@ const {
   verifyStandardAssets,
 } = require("../scripts/standard_assets");
 
-const APP_VERSION = "0.1.0-alpha.2";
+const APP_VERSION = require("../package.json").version;
 const REPO_ROOT = path.resolve(__dirname, "..");
 const NOW = new Date("2026-07-28T00:00:00.000Z");
 const CAPABILITY_SET_SHA256 = sha256(Buffer.from(
@@ -362,7 +362,7 @@ test("the repository's real bundled assets seed the digest-anchored store", asyn
   });
   assert.equal(state.active.manifest_sha256, gate.manifestSha256);
   assert.equal(state.active.source, "bundled");
-  assert.equal((await store.verifyActive()).verified.manifest.version, "1.0.0");
+  assert.equal((await store.verifyActive()).verified.manifest.version, gate.manifest.version);
 });
 
 test("digest-anchored bundled assets bootstrap without a release trust root", async (t) => {

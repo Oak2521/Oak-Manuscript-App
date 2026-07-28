@@ -9,6 +9,7 @@
 | `python-bridge.js` | 以参数数组、`shell=false` 和清理后的环境调用 Python JSON CLI |
 | `python-invocation.js` | 桥与资源门禁共用的 `-I -S -X utf8` bootstrap；显式插入受控 core 绝对目录 |
 | `core-result.js` | 区分退出码 1 业务结果与退出码 2 错误，并保留 Python 结构化错误字段 |
+| `core-ipc.js` | `plan-citation` / `check` 的项目路径、六种体例和 opaque citation plan ID 白名单；注册固定 IPC |
 | `offline-policy.js` | 默认 Chromium 离线 switches 与 `http/https/ws/wss/ftp` 请求阻断 |
 | `path-policy.js` | 区分源码/打包资源根、选择平台 Python、约束项目/样本/PDF 路径并提供身份校验原子 writer |
 | `pdf-preview.js` | 在非持久隔离 session 中禁 JS/导航/网络生成 PDF，并安全写入 `exports/` |
@@ -26,6 +27,6 @@ PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专�
 
 `python-invocation.js` 不依赖 `PYTHONPATH`、site-packages 或工作目录：固定 bootstrap 把路径策略给出的 core 目录放到 `sys.path[0]`，再以 `runpy` 启动模块；桥与 Python runtime 探针使用同一参数字节序列和隔离环境。
 
-`app:info` 返回 `appVersion`、经当前存储重新验证的七字段 `standardIdentity` 和 `packaged=app.isPackaged`。smoke 随后读取本次创建的 `project.json` 及其引用报告，核对 Python core 版本、check ID，以及 APP/项目/检查/报告的完整标准身份；打包 smoke 还强制 `packaged=true`，避免误验旧 EXE、陈旧 core 或错误规则包。打包态 Python、JRE 或 Ace stage 失配时必须失败关闭，不得回退用户环境中的同名代码资源；Ace 还须通过受版本控制 full lock 的 Python 侧复核。Electron 43.1.0 `win32-x64` 自身也必须在 `electronDist` 返回前通过受版本控制的全树锁：2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95`。tracked manifest 使用严格 JSON、exact schema 和 canonical UTF-8/LF 字节；显式 `--update-lock` 会验证安全父链、拒绝目标 symlink/hardlink，以独占候选、`fsync`、原子替换、换入后复验和失败回滚安全更新，回滚失败会保留事务证据。当前 Ace 浏览器运行时仍明确依赖用户系统 Chrome，不能把上述资源约束误写成已捆绑受控浏览器。
+`app:info` 返回 `appVersion`、经当前存储重新验证的七字段 `standardIdentity` 和 `packaged=app.isPackaged`。smoke 必须先通过 Renderer 规划并确认引用解析，再读取本次创建的 `project.json` 及其引用报告，核对 Python core 版本、check ID、`citation_resolution`，以及 APP/项目/检查/报告的完整标准身份；打包 smoke 还强制 `packaged=true`。打包态 Python、JRE 或 Ace stage 失配时必须失败关闭，不得回退用户环境中的同名代码资源；Electron 43.1.0 `win32-x64` 自身仍由受版本控制的全树锁固定：2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95`。当前 Ace 浏览器运行时仍依赖用户系统 Chrome。
 
-当前 `0.1.0-alpha.4` 最新源码 smoke 已在沙箱外隐藏 Electron 中 PASS；运行根为 `out/source-smoke/runs/ms37h0mu-201a90896825d190/projects/`，DOCX/EPUB 两个项目均记录 `app_version=0.1.0-alpha.4`、`integrity.source_hash_ok=true`、4 次检查记录，且 APP/项目/当前检查/报告七字段标准身份完全一致；本轮 PDF 分别为 258,404 与 161,836 字节。`release/` 尚无对应 alpha.4 EXE，因此不能声称打包 smoke 已通过。alpha.3 的 258,400 / 161,845 字节历史 smoke 结果不应被机械改名为 alpha.4。
+当前 `0.1.0-alpha.5` 最新源码 smoke 已在沙箱外隐藏 Electron 中 PASS；运行根为 `out/source-smoke/runs/ms44nzhb-8186d1b3c5148eba/projects/`，DOCX/EPUB 两个项目均先确认默认引用解析、各记录 4 次检查、`integrity.source_hash_ok=true`，PDF 分别为 251,646 / 177,416 字节。`release/` 尚无对应 alpha.5 EXE，因此不能声称打包 smoke 已通过。

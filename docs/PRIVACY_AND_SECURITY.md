@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.4` 源码检查点已实现的桌面隐私与安全边界。当前没有 alpha.4 安装包或 ZIP；alpha.4 不改变项目格式或标准内容。商业方案中的 Web 上传、统一账号、订阅与同步尚未实现，必须在各自阶段另行完成威胁建模和验收。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.5` 源码检查点已实现的桌面隐私与安全边界。当前没有 alpha.5 安装包或 ZIP；本轮新增的默认引用解析完全本地运行，不增加网络传输。商业方案中的 Web 上传、统一账号、订阅与同步尚未实现，必须在各自阶段另行完成威胁建模和验收。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -32,10 +32,16 @@
 
 上述“数据不出本机”描述当前桌面 alpha。未来 Web 端按商业方案采用用户主动发起的任务上传；在对应实现、隐私文案和零留存验收完成前，不得宣称 Web 能力已上线。
 
+### 4.1 引用解析的最小持久化边界
+
+- 解析器可以在内存中读取引用和书目结构，但返回值只允许保留：语言/类型/格式枚举、参考节和条目数、三种信号家族的唯一数/匹配数/覆盖率、模式、体例、原因码、置信度和解析器/政策版本；
+- 解析计划、项目、报告、日志和未来同步摘要均禁止保存引用文字、书目条目、作者姓名、标题、脚注文字、文件名、本地路径或内容哈希；
+- `plan-citation` 严格只读；用户取消确认不写项目。`check` 在项目写锁内重算 plan ID，防止确认后稿件或标准身份变化。
+
 ## 5. 文件与压缩包安全
 
 - `Project.open()` 在任何业务写入前验证项目根、六个固定子目录、project.json、source/working、报告、问题与检查点的 schema、ID、序号、精确相对路径、常规文件身份、独立性、大小和 SHA-256；拒绝绝对路径、`..`、链接/联接/reparse、硬链接和同一文件身份；
-- `create/check/recheck/fix/export/verify/restore-checkpoint/external/issue` 共用单项目非阻塞跨进程内核写锁；争用立即返回可重试的 `PROJECT_WRITE_LOCKED`，失败方不覆盖锁或项目。锁文件只作持久诊断，崩溃后由内核释放互斥，不依据陈旧 PID 猜测并删除锁；
+- `create/check/recheck/fix/export/verify/restore-checkpoint/external/issue/upgrade-rulepack` 共用单项目非阻塞跨进程内核写锁；`plan-citation`、`plan-fixes`、`list-checkpoints`、`project-standard-status` 与 `plan-rulepack-upgrade` 保持只读。写锁争用立即返回可重试的 `PROJECT_WRITE_LOCKED`，失败方不覆盖锁或项目。锁文件只作持久诊断，崩溃后由内核释放互斥，不依据陈旧 PID 猜测并删除锁；
 - 自选导出目录逐级拒绝链接、联接和非常规目录；若位于项目内，只允许 `exports/`。修订稿、报告、摘要与可选 EPUB 的全部目标先统一预检，已有链接/硬链接目标拒绝；每个文件在目标同目录完整暂存、`fsync` 后原子换入；
 - DOCX/EPUB 解包上限：成员数 ≤ 10,000，单成员解压 ≤ 200 MB，总解压 ≤ 1 GB，拒绝路径穿越成员；
 - 超大输入提前提示，不静默挂起。
@@ -84,6 +90,7 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - 同一标准根进程内串行，跨进程使用原子 pending 目录、PID 与随机 process token。活 owner 返回 `STORE_BUSY`；只为确定死亡的 owner 按严格 intent 恢复。PID 复用/token 不符或未知变更 fail-closed，必要时人工恢复；
 - 七字段项目身份为 `name/version/pinned/sha256/bundle_id/release_sequence/manifest_sha256`。新项目直接绑定已验证 active identity；已有项目先在已验证全局存储的前提下运行一次未绑定、只读的 `project-standard-status` 来发现 pin，再精确验证项目 CAS。此后的业务/变更命令用 canonical 环境绑定 Python；Python 重验 manifest、payload、能力映射与期望身份，避免跨信任边界只比较名称/版本；
 - 全局 active 更新只影响新项目。已有项目必须先生成绑定完整状态的只读差异计划，经用户一次确认，建立检查点并归档旧 issues 后原子提交新 pin；升级后强制重检，陈旧问题、修复、外部验证和导出不能继续使用；
+- 当前内置 2.0.0 以 1.0.0 manifest `d33534f0…d7af` 为精确 rollback target。旧项目的原 release 必须仍存在于本地 CAS 并通过同一严格验证；缺失时拒绝迁移，禁止用 active release 冒充历史身份。
 - 迁移源可在显式迁移路径中放宽“已撤回/已过期/APP 不兼容”三项，以便把项目救出旧 release；签名、代码锚、payload、能力映射、路径、未来发布时间和七字段身份始终不能放宽；
 - 标准包联网检查、下载、断网重试和生产撤回分发尚未实现。未来 transport 必须与上述本地验证分层，并继续遵循用户主动触发、最小网络权限和不传稿件原则。
 

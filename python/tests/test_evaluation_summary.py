@@ -11,12 +11,12 @@ from oak_manuscript_core.project import Project
 from oak_manuscript_core.rulepack import load_rulepack
 
 REPO = Path(__file__).resolve().parents[2]
-PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-1.0.0.json")
+PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-2.0.0.json")
 SAMPLES = REPO / "samples"
 
 ALLOWED_KEYS = {
     "schema_version", "manuscript_type", "language", "word_count_range",
-    "issue_counts", "citation_style_resolved", "rulepack_version",
+    "issue_counts", "citation_style_resolved", "citation_resolution", "rulepack_version",
     "generated_at", "intent",
 }
 
@@ -32,7 +32,15 @@ class EvaluationSummaryTest(unittest.TestCase):
         summary = ops.build_evaluation_summary(self.proj)
         self.assertEqual(set(summary.keys()), ALLOWED_KEYS)
         self.assertEqual(summary["manuscript_type"], "paper")
-        self.assertEqual(summary["citation_style_resolved"], "gbt7714-2025")
+        self.assertIsNone(summary["citation_style_resolved"])
+        self.assertEqual(summary["citation_resolution"]["mode"], "structure_only")
+        self.assertEqual(
+            set(summary["citation_resolution"]),
+            {
+                "requested_style", "resolved_style", "mode", "confidence",
+                "reason_code", "resolver_version",
+            },
+        )
         self.assertIn("error", summary["issue_counts"])
 
     def test_no_identity_or_content_leaks(self):

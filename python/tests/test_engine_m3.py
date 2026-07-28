@@ -14,7 +14,7 @@ from oak_manuscript_core.readers.epub_reader import read_epub
 from oak_manuscript_core.rulepack import load_rulepack
 
 REPO = Path(__file__).resolve().parents[2]
-PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-1.0.0.json")
+PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-2.0.0.json")
 SAMPLES = REPO / "samples"
 
 EBOOK_SETTINGS = {
@@ -53,8 +53,9 @@ class EngineM3SamplesTest(unittest.TestCase):
             [i["rule_id"] for i in result.issues], [],
             f"EPUB 绿色基线误报：{[(i['rule_id'], i['preview']) for i in result.issues]}",
         )
-        self.assertEqual(result.resolved["citation_style_resolved"], "none")
-        self.assertEqual(result.resolved["citation_resolved_by"], "default_mapping")
+        self.assertIsNone(result.resolved["citation_style_resolved"])
+        self.assertEqual(result.resolved["citation_resolved_by"], "default_resolver")
+        self.assertEqual(result.resolved["citation_resolution"]["mode"], "structure_only")
 
     def test_epub_needs_review_triggers_all_six_rules(self):
         book = read_epub(SAMPLES / "epub_needs_review.epub")

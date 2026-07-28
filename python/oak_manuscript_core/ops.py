@@ -6,16 +6,23 @@ CLI（__main__）与未来的 Electron 桥都只调用本层，不直接碰引�
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import os
+import re
 import shutil
 import stat
 import tempfile
 from pathlib import Path
 
 from . import __version__
-from .engine import check_document, manuscript_status_level
-from .errors import OakError, ProjectValidationError
+from .citation import REQUESTED_STYLES, resolve_citation, validate_citation_resolution
+from .engine import (
+    check_document,
+    citation_rule_ids_for_resolution,
+    manuscript_status_level,
+)
+from .errors import OakError, ProjectValidationError, StructuredOakError
 from .fix_plans import build_fix_plan
 from .fixes import WHITELIST, apply_fixes
 from .project import MAX_CHECKPOINTS, Project
@@ -35,6 +42,7 @@ DISCLAIMER = (
 )
 
 _STATUS_VALUES = {"open", "accepted", "rejected", "resolved"}
+_CITATION_PLAN_ID_RE = re.compile(r"^citation-plan-[0-9a-f]{64}$")
 
 
 def _bind_or_assert_rulepack(project: Project, pack: dict) -> dict:
@@ -217,6 +225,97 @@ def _read_document(project: Project):
     return read_epub(project.working_path)
 
 
+def _read_stable_document(project: Project):
+    """读取一份可证明在解析期间未变化的工作稿。"""
+    before = sha256_file(project.working_path)
+    document = _read_document(project)
+    after = sha256_file(project.working_path)
+    if after != before:
+        raise OakError("工作稿在引用体例解析期间发生变化；请重新生成确认预览。")
+    return document, after
+
+
+def _citation_settings(project: Project, citation_style: str | None) -> dict:
+    settings = copy.deepcopy(project.data["settings"])
+    if citation_style is not None:
+        if citation_style not in REQUESTED_STYLES:
+            raise OakError(f"不支持的引用体例请求：{citation_style}")
+        settings["citation_style"] = citation_style
+    return settings
+
+
+def _build_citation_plan(
+    project: Project,
+    pack: dict,
+    *,
+    identity: dict,
+    document,
+    working_sha256: str,
+    settings: dict,
+) -> dict:
+    resolution = resolve_citation(
+        document,
+        settings,
+        pack,
+        doc_format=project.source_format,
+    )
+    resolution["coverage"]["rule_ids"] = citation_rule_ids_for_resolution(
+        pack,
+        settings,
+        resolution,
+        doc_format=project.source_format,
+    )
+    validate_citation_resolution(resolution)
+    binding = {
+        "schema_version": "1.0",
+        "project_id": project.data["project_id"],
+        "working_sha256": working_sha256,
+        "rulepack": copy.deepcopy(identity),
+        "settings": {
+            "manuscript_type": settings["manuscript_type"],
+            "language": settings["language"],
+            "citation_style": settings["citation_style"],
+        },
+        "resolution": resolution,
+    }
+    encoded = json.dumps(
+        binding,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return {
+        "schema_version": "1.0",
+        "kind": "citation-resolution-plan",
+        "plan_id": f"citation-plan-{hashlib.sha256(encoded).hexdigest()}",
+        "requested_style": settings["citation_style"],
+        "resolution": resolution,
+    }
+
+
+def plan_citation_resolution(
+    project: Project,
+    pack: dict,
+    *,
+    citation_style: str | None = None,
+) -> dict:
+    """生成绑定工作稿、设置和完整规则包身份的只读引用体例计划。"""
+    # ``_bind_or_assert_rulepack`` 要兼容极早期的空/两字段 pin，因而可能补齐
+    # 传入对象。计划接口在影子项目上完成该兼容，确保真实项目内存与磁盘均不变。
+    shadow = Project(project.root, copy.deepcopy(project.data))
+    identity = _bind_or_assert_rulepack(shadow, pack)
+    settings = _citation_settings(project, citation_style)
+    document, working_sha256 = _read_stable_document(project)
+    return _build_citation_plan(
+        project,
+        pack,
+        identity=identity,
+        document=document,
+        working_sha256=working_sha256,
+        settings=settings,
+    )
+
+
 def _issue_key(issue: dict) -> tuple:
     # 不含段落号：修复（如删除空段）会使后续段落序号整体前移，
     # 预览文本 + 规则 + 部位 + 注号足以稳定定位同一问题。
@@ -259,27 +358,71 @@ def set_issue_status(project: Project, issue_id: str, status: str) -> dict:
 
 
 def _citation_note(settings: dict) -> str:
-    style = settings["citation_style_resolved"]
-    if settings["citation_resolved_by"] == "default_mapping":
-        origin = f"（由默认规则 v{settings['citation_mapping_version']} 按稿件类型与语言选定）"
-    else:
-        origin = "（由用户指定）"
-    if style == "none":
-        return f"本次未检查引用格式{origin}"
-    return f"本次按 {style} 体例检查{origin}"
+    resolution = settings.get("citation_resolution")
+    if resolution is None:
+        # alpha.4 及更早项目/报告的可复现说明。
+        style = settings["citation_style_resolved"]
+        if settings["citation_resolved_by"] == "default_mapping":
+            origin = f"（由默认规则 v{settings['citation_mapping_version']} 按稿件类型与语言选定）"
+        else:
+            origin = "（由用户指定）"
+        if style == "none":
+            return f"本次未检查引用格式{origin}"
+        return f"本次按 {style} 体例检查{origin}"
+
+    validate_citation_resolution(resolution)
+    mode = resolution["mode"]
+    resolver_version = resolution["resolver"]["version"]
+    confidence = resolution["confidence"] or "不适用"
+    audit = f"解析器 v{resolver_version}；置信度：{confidence}；{resolution['reason']}"
+    if mode == "structure_only":
+        return f"未可靠确定具体体例，本次仅执行引用结构与一致性检查（{audit}）"
+    if mode == "disabled":
+        return f"本次未运行引用格式检查（{audit}）"
+    return f"本次按 {resolution['resolved_style']} 体例检查（{audit}）"
 
 
-def run_check(project: Project, pack: dict, *, kind: str = "check"):
+def run_check(
+    project: Project,
+    pack: dict,
+    *,
+    kind: str = "check",
+    citation_style: str | None = None,
+    citation_plan_id: str | None = None,
+):
     """执行检查（或复检），持久化结果。返回 (check 记录, CheckOutcome)。"""
     identity = _bind_or_assert_rulepack(project, pack)
-    doc = _read_document(project)
-    project.data["check_seq"] = project.data.get("check_seq", 0) + 1
-    check_id = f"check-{project.data['check_seq']:04d}"
+    if citation_plan_id is not None and (
+        not isinstance(citation_plan_id, str)
+        or not _CITATION_PLAN_ID_RE.fullmatch(citation_plan_id)
+    ):
+        raise OakError("引用体例确认计划 ID 非法；请重新生成确认预览。")
+    settings_for_check = _citation_settings(project, citation_style)
+    doc, working_sha256 = _read_stable_document(project)
+    current_plan = _build_citation_plan(
+        project,
+        pack,
+        identity=identity,
+        document=doc,
+        working_sha256=working_sha256,
+        settings=settings_for_check,
+    )
+    if citation_plan_id is not None and current_plan["plan_id"] != citation_plan_id:
+        raise StructuredOakError(
+            "引用体例确认预览已过期：工作稿、项目设置或标准版本已变化。请重新预览并确认。",
+            code="CITATION_PLAN_STALE",
+            retryable=True,
+        )
+
+    next_check_seq = project.data.get("check_seq", 0) + 1
+    check_id = f"check-{next_check_seq:04d}"
     started = now_iso()
     outcome = check_document(
-        doc, project.data["settings"], pack,
+        doc, settings_for_check, pack,
         doc_format=project.source_format, check_id=check_id,
     )
+    if outcome.resolved.get("citation_resolution") != current_plan["resolution"]:
+        raise OakError("引用体例解析结果与已确认计划不一致；未保存本次检查。")
     finished = now_iso()
 
     # 已拒绝的问题在复检后保持拒绝状态（多重集合匹配：一次拒绝只携带到一条新问题）
@@ -294,7 +437,11 @@ def run_check(project: Project, pack: dict, *, kind: str = "check"):
             issue["status"] = "rejected"
             rejected_keys[key] -= 1
 
+    # 只有检查成功且与确认计划一致，才持久化用户覆盖与解析结果。
+    project.data["check_seq"] = next_check_seq
     settings = project.data["settings"]
+    if citation_style is not None:
+        settings["citation_style"] = citation_style
     settings.update(outcome.resolved)
     project.data["rulepack_check_required"] = False
     counts = {"error": 0, "warning": 0, "suggestion": 0}
@@ -319,7 +466,8 @@ def run_check(project: Project, pack: dict, *, kind: str = "check"):
         "finished_at": finished,
         "app_version": __version__,
         "rulepack": copy.deepcopy(identity),
-        "settings_snapshot": dict(settings),
+        "settings_snapshot": copy.deepcopy(settings),
+        "citation_resolution": copy.deepcopy(settings["citation_resolution"]),
         "citation_note": _citation_note(settings),
         "issues": outcome.issues,
         "skipped_rule_groups": outcome.skipped_rule_groups,
@@ -678,6 +826,18 @@ def build_evaluation_summary(project: Project) -> dict:
             counts[issue["severity"]][slot] += 1
 
     settings = project.data["settings"]
+    citation_resolution = settings.get("citation_resolution")
+    citation_summary = None
+    if citation_resolution is not None:
+        validate_citation_resolution(citation_resolution)
+        citation_summary = {
+            "requested_style": citation_resolution["requested_style"],
+            "resolved_style": citation_resolution["resolved_style"],
+            "mode": citation_resolution["mode"],
+            "confidence": citation_resolution["confidence"],
+            "reason_code": citation_resolution["reason_code"],
+            "resolver_version": citation_resolution["resolver"]["version"],
+        }
     return {
         "schema_version": "1.0",
         "manuscript_type": settings["manuscript_type"],
@@ -685,6 +845,7 @@ def build_evaluation_summary(project: Project) -> dict:
         "word_count_range": bucket,
         "issue_counts": counts,
         "citation_style_resolved": settings["citation_style_resolved"],
+        "citation_resolution": citation_summary,
         "rulepack_version": project.data["rulepack"]["version"],
         "generated_at": now_iso(),
         "intent": "unspecified",
@@ -715,6 +876,15 @@ def build_report_data(project: Project, pack: dict) -> dict:
             applied[entry["rule_id"]] = applied.get(entry["rule_id"], 0) + 1
 
     titles = {r["rule_id"]: r["title"] for r in pack["rules"]}
+    result_resolution = result.get("citation_resolution")
+    settings_resolution = project.data["settings"].get("citation_resolution")
+    if result_resolution is not None:
+        validate_citation_resolution(result_resolution)
+        if result_resolution != settings_resolution:
+            raise OakError(
+                "鎸囧畾鎶ュ憡妫€鏌ョ偣涓婁紶鐨勮繕鐞?缁撴灉涓嶄繚鐣欓紱璇烽噸鏂扮敓鎴?淇璁″垝銆?"
+            )
+
     return {
         "generated_at": now_iso(),
         "app_version": __version__,
@@ -723,6 +893,7 @@ def build_report_data(project: Project, pack: dict) -> dict:
         "check": last,
         "rulepack": copy.deepcopy(identity),
         "citation_note": result["citation_note"],
+        "citation_resolution": copy.deepcopy(result_resolution),
         "status_level": manuscript_status_level(issues),
         "pending_counts": pending,
         "issues": issues,

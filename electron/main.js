@@ -10,6 +10,7 @@ const pathPolicy = require("./path-policy");
 const bridge = require("./python-bridge");
 const providers = require("./providers");
 const { registerP0Ipc } = require("./p0-ipc");
+const { registerCoreIpc } = require("./core-ipc");
 const { registerStandardsIpc } = require("./standards-ipc");
 const { StandardsProvider } = require("./standards-provider");
 const { createStandardBoundCore } = require("./standard-bound-core");
@@ -110,36 +111,9 @@ ipcMain.handle("dialog:pick-export-dir", async () => {
 
 // ---------- IPC：核心闭环 ----------
 
-ipcMain.handle("core:create", async (_e, opts) => {
-  try {
-    const input = assertString(opts.input, "input");
-    const projectDir = assertString(opts.projectDir, "projectDir");
-    const type = ["paper", "print_book", "ebook"].includes(opts.type) ? opts.type : "paper";
-    const language = ["auto", "zh", "en", "mixed"].includes(opts.language) ? opts.language : "auto";
-    const citations = ["default", "gbt7714-2025", "apa-7", "chicago-18-nb", "chicago-18-ad", "none"];
-    const citation = citations.includes(opts.citation) ? opts.citation : "default";
-    const args = [
-      "create", "--input", input, "--project", projectDir,
-      "--type", type, "--language", language, "--citation", citation,
-    ];
-    if (opts.epubPreview) args.push("--epub-preview");
-    const { data } = await core(args);
-    return ok({ result: data });
-  } catch (err) {
-    return fail(err);
-  }
-});
-
-ipcMain.handle("core:check", async (_e, { project, kind }) => {
-  try {
-    assertProjectDir(project);
-    const cmd = kind === "recheck" ? "recheck" : "check";
-    const { data } = await core([cmd, "--project", project]);
-    return ok({ result: data });
-  } catch (err) {
-    return fail(err);
-  }
-});
+// 所有参数在独立模块中按固定白名单收窄；core() 会让 plan-citation/check
+// 与其他已有项目命令一样，先验签项目固定的标准包，再启动 Python。
+registerCoreIpc({ ipcMain, runCore: core, pathPolicy });
 
 // P0：预览计划、一次确认后应用、检查点列表与恢复。
 // 未保留无 planId 的 core:fix 通道，避免渲染端绕过集中确认。

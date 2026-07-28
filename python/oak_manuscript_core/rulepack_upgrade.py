@@ -528,6 +528,8 @@ def apply_rulepack_upgrade(
         project.data["issues_file"] = None
         project.data["rulepack_check_required"] = True
         settings = project.data["settings"]
+        # 结构化解析绑定旧规则包身份与能力覆盖；升级或回退后必须重算。
+        settings["citation_resolution"] = None
         if settings.get("citation_style") == "default":
             for field in (
                 "citation_style_resolved",

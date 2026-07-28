@@ -1,6 +1,6 @@
 {
   "schema_version": "2.0",
-  "registry_version": "2.0.0",
+  "registry_version": "1.0.0",
   "updated_at": "2026-07-27",
   "standards": [
     {
@@ -61,13 +61,10 @@
       "copyright_use": "metadata_only",
       "supersedes": [],
       "superseded_by": null,
-      "rule_ids": ["REF-APA-001", "REF-CHI-001"],
+      "rule_ids": ["REF-CHI-001"],
       "source_verified_at": null,
       "source_verification_status": "pending",
-      "change_history": [
-        {"changed_at": "2026-07-27", "change_type": "schema_migration", "summary": "补充治理元数据；未联网复核当前官方入口。"},
-        {"changed_at": "2026-07-27", "change_type": "rule_scope", "summary": "作者—年份基础对应规则同时登记为 Chicago 18 作者—日期制的结构能力；不扩展为著录细节断言。"}
-      ]
+      "change_history": [{"changed_at": "2026-07-27", "change_type": "schema_migration", "summary": "补充治理元数据；未联网复核当前官方入口。"}]
     },
     {
       "standard_id": "EPUB-33",
@@ -180,10 +177,10 @@
       "source_type": "oak_interpretation",
       "official_source_url": "",
       "oak_resource_slug": "paper/citation-reference-match",
-      "version": "2.0.0",
-      "updated_at": "2026-07-27",
-      "scope": "编号引用、作者—年份括注、注释与书目部分的基础结构和对应关系",
-      "summary": "只检查可确定识别的结构信号、重复条目与基础对应关系；不判断来源真实性，也不把结构相似直接宣称为某一体例已经正确。",
+      "version": "1.0.0",
+      "updated_at": "2026-07-11",
+      "scope": "顺序编码制下 [n] 引用与文献表的对应、重复与断号",
+      "summary": "引用编号指向不存在的条目是审稿常见退回原因；重复条目与未被引用条目需要作者人工裁决。",
       "status": "active",
       "publisher": "Oak by Lake / 湖岸橡树",
       "reviewed_by": ["Oak Editorial（待指定人员复核）"],
@@ -193,10 +190,7 @@
       "rule_ids": ["REF-001", "REF-002", "REF-003", "REF-004", "REF-APA-001", "REF-CHI-001"],
       "source_verified_at": null,
       "source_verification_status": "pending",
-      "change_history": [
-        {"changed_at": "2026-07-27", "change_type": "schema_migration", "summary": "补充治理元数据。"},
-        {"changed_at": "2026-07-27", "change_type": "scope_expansion", "summary": "为默认体例解析与 structure-only 退回明确编号、作者—年份和注释—书目三类基础结构检查边界。"}
-      ]
+      "change_history": [{"changed_at": "2026-07-27", "change_type": "schema_migration", "summary": "补充治理元数据。"}]
     },
     {
       "standard_id": "OAK-PUNCT-001",
@@ -225,10 +219,10 @@
       "source_type": "oak_interpretation",
       "official_source_url": "",
       "oak_resource_slug": "citation/default-mapping",
-      "version": "2.0.0",
-      "updated_at": "2026-07-27",
-      "scope": "检查类型、主要语言和版本化引用结构信号的确定性本地解析",
-      "summary": "默认模式只在证据达到固定阈值且无冲突时选择体例；理由、置信度和解析器版本写入项目与报告。证据不足时仅做结构与一致性检查，不把低置信度冒充为关闭检查。",
+      "version": "1.0.0",
+      "updated_at": "2026-07-11",
+      "scope": "稿件类型 × 语言 → 体例的确定性映射（方案 §6.2）",
+      "summary": "帮助不了解体例的作者直接开始检查。映射公开、确定、可随规则包版本更新；实际采用体例写入项目文件与报告。",
       "status": "active",
       "publisher": "Oak by Lake / 湖岸橡树",
       "reviewed_by": ["Oak Editorial（待指定人员复核）"],
@@ -238,10 +232,7 @@
       "rule_ids": [],
       "source_verified_at": null,
       "source_verification_status": "pending",
-      "change_history": [
-        {"changed_at": "2026-07-27", "change_type": "schema_migration", "summary": "补充治理元数据；映射仍由规则包单独固定。"},
-        {"changed_at": "2026-07-27", "change_type": "resolver_policy", "summary": "增加结构信号、固定阈值、理由、置信度、解析器版本与低置信度 structure-only 退回合同。"}
-      ]
+      "change_history": [{"changed_at": "2026-07-27", "change_type": "schema_migration", "summary": "补充治理元数据；映射仍由规则包单独固定。"}]
     },
     {
       "standard_id": "OAK-BOOK-PREP-001",

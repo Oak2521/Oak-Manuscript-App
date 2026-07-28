@@ -71,6 +71,11 @@ class RulepackUpgradeTest(unittest.TestCase):
         self.addCleanup(_rmtree_force, self.tmp)
         self.fx = StandardStoreFixture(self.tmp / "fixture")
         self.bundled = resolve_active_release(resources_root=self.fx.resources)
+        # alpha.5 no longer ships the v1 manifest as the active bundled file.
+        # Existing projects can migrate only when their previously verified
+        # bundled release is still present in the standards CAS, as it is in a
+        # real upgraded profile.
+        self.fx.cache_current_bundled()
         self.project = Project.create(
             SAMPLE,
             self.tmp / "project",
@@ -320,6 +325,7 @@ class RulepackUpgradeTest(unittest.TestCase):
                 "citation_style_resolved": "apa-7",
                 "citation_resolved_by": "user",
                 "citation_mapping_version": None,
+                "citation_resolution": None,
             }
         )
         self.project.save()

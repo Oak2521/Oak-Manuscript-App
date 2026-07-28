@@ -1,10 +1,11 @@
 # tests/ — Node 契约、发布资源与打包验证
 
-`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。当前原生/沙箱外 Node 精确结果为 **239 total / 233 pass / 0 fail / 6 skip / 2.606 秒**；跳过项均有平台、权限或打包制品前置条件，不计作通过。普通受限沙箱可能额外跳过 isolated Python 子进程，不能把该结果当作发布基线。Python 默认结果为 **312 项 / 0 失败 / 0 错误 / 3 跳过 / 80.125 秒**（最终统一回归的 Python 段）；准确命令输出仍以 `docs/TEST_REPORT.md` 为准。
+`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.5 当前分项结果为 **250 total / 244 pass / 0 fail / 6 skip / 2.650 秒**，Python 为 **344 项 / 0 失败 / 0 错误 / 3 跳过 / 80.191 秒**；跳过项不计作通过。准确统一入口与环境证据以 `docs/TEST_REPORT.md` 为准。
 
 本目录覆盖：
 
 - sandboxed preload、固定 IPC、Renderer 批量计划/确认和检查点 UI 契约；
+- 默认引用解析 IPC/UI 的计划—确认顺序、六种体例参数白名单、packaged smoke 同契约，以及切换稿件/项目时清空旧 session；
 - Electron 默认 session 离线 switches/网络请求拦截、Renderer CSP、源码 smoke 的 `out/source-smoke/` 路径边界；
 - PDF 非持久隔离 session、禁 JavaScript/导航/网络、报告身份快照、项目/`exports` 父链校验、链接/硬链接/目录换入拒绝和原子 writer；
 - CLI 退出码 1 业务结果、退出码 2 错误，以及 `code/message/retryable/details` 结构化错误的 IPC 透传；
@@ -23,6 +24,6 @@
 
 Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零污染创建、锁内单 FD 输入、OneDrive/reparse 来源、精确失败清理和安全原子导出覆盖在 `python/tests/test_project_validation.py` 与 `python/tests/test_project_write_lock.py`。
 
-真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。最新沙箱外隐藏 Chrome 结果为 **312 项 / 0 失败 / 0 错误 / 1 跳过 / 44.807 秒**；受限沙箱中的 Chrome 若超时或不能生成安全报告，核心按设计标为 `not_run`，不记作工具通过，也不等同于代码失败。缺少 alpha.4 EXE 时，`smoke:packaged:win` 应失败而不是复用 alpha.3 或更早历史制品。
+真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。最新真实 Chrome 条件套件证据来自 alpha.4（**312 / 0 / 0 / 1 / 44.807 秒**）；alpha.5 本轮没有重跑该条件套件，不将旧结果冒充为新运行。缺少 alpha.5 EXE 时，`smoke:packaged:win` 应失败而不是复用旧制品。
 
-alpha.4 最新隐藏源码 smoke 为 **PASS**，运行根为 `out/source-smoke/runs/ms37h0mu-201a90896825d190/projects/`；DOCX/EPUB 各有 4 次检查、`source_hash_ok=true`，PDF 分别为 258,404 / 161,836 字节。这是源码 UI 闭环证据，不是打包版或安装器证据。
+alpha.5 最新隐藏源码 smoke 为 **PASS**，运行根为 `out/source-smoke/runs/ms44nzhb-8186d1b3c5148eba/projects/`；DOCX/EPUB 均先确认引用计划、各有 4 次检查、`source_hash_ok=true`，PDF 分别为 251,646 / 177,416 字节。这是源码 UI 闭环证据，不是打包版或安装器证据。

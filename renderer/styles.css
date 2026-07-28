@@ -97,6 +97,20 @@ select { font: inherit; padding: 7px 10px; border: 1px solid var(--line); border
   display: inline-block; margin: 6px 0; padding: 4px 12px; border-radius: 14px;
   background: #eef5f0; color: var(--oak-dark); font-weight: 600;
 }
+.citation-resolution-card,
+.citation-resolution-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(220px, 1fr)); gap: 10px;
+}
+.citation-resolution-card { margin-top: 10px; max-width: 720px; }
+.citation-resolution-card > div,
+.citation-resolution-grid > div {
+  min-width: 0; padding: 10px 12px; border: 1px solid var(--line);
+  border-radius: 7px; background: #fff;
+}
+.citation-resolution-card dt,
+.citation-resolution-grid dt { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+.citation-resolution-card dd,
+.citation-resolution-grid dd { font-weight: 600; overflow-wrap: anywhere; }
 .two-pane { display: flex; gap: 16px; margin-top: 14px; min-height: 420px; }
 .pane-left { width: 46%; min-width: 320px; }
 .pane-right {
@@ -161,6 +175,19 @@ dialog.modal::backdrop { background: rgba(20, 29, 25, .58); }
 .modal-head { padding: 20px 22px 8px; }
 .modal-head h2 { color: var(--oak-dark); font-size: 20px; margin-bottom: 7px; }
 .modal > .callout { margin: 6px 22px 12px; }
+.citation-resolution-modal { width: min(760px, calc(100vw - 48px)); }
+.citation-resolution-grid { margin: 6px 22px 12px; }
+.citation-resolution-warning {
+  margin: 0 22px 12px; padding: 10px 12px; border-left: 4px solid var(--warning);
+  border-radius: 0 6px 6px 0; background: #fff8e8; color: #704b00; line-height: 1.6;
+}
+.citation-resolution-choice {
+  margin: 0 22px; padding: 12px; border: 1px solid var(--line);
+  border-radius: 7px; background: #fff;
+}
+.citation-resolution-choice > label { display: block; font-weight: 600; margin-bottom: 7px; }
+.citation-resolution-choice select { width: 100%; min-width: 0; }
+.citation-resolution-choice .muted { margin: 7px 0 0; }
 .batch-columns {
   display: grid; grid-template-columns: minmax(180px, .8fr) 1fr 1fr; gap: 10px;
   margin: 0 22px; padding: 0 12px 7px; color: var(--muted); font-size: 12px; font-weight: 600;
@@ -227,6 +254,8 @@ dialog.modal::backdrop { background: rgba(20, 29, 25, .58); }
 .upgrade-mapping-column.after { background: #edf6f0; }
 
 @media (max-width: 760px) {
+  .citation-resolution-card,
+  .citation-resolution-grid { grid-template-columns: 1fr; }
   .batch-columns { display: none; }
   .batch-list li { grid-template-columns: 1fr; }
   .batch-preview::before { display: block; color: var(--muted); font-family: system-ui, sans-serif; font-size: 11px; }

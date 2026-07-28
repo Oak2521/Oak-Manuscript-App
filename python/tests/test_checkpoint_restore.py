@@ -33,7 +33,9 @@ class CheckpointRestoreTest(unittest.TestCase):
         self.addCleanup(rmtree_force, self.tmp)
         source = self.tmp / "manuscript.txt"
         source.write_text("source text\n", encoding="utf-8")
-        self.project = Project.create(source, self.tmp / "project", manuscript_type="book")
+        self.project = Project.create(
+            source, self.tmp / "project", manuscript_type="print_book"
+        )
         self.source_hash = hashlib.sha256(self.project.source_path.read_bytes()).hexdigest()
 
     def _set_active_state(
@@ -90,7 +92,9 @@ class CheckpointRestoreTest(unittest.TestCase):
     def _make_five_checkpoint_project(self, name: str) -> tuple[Project, dict]:
         source = self.tmp / f"{name}.txt"
         source.write_text("transaction source", encoding="utf-8")
-        project = Project.create(source, self.tmp / name, manuscript_type="book")
+        project = Project.create(
+            source, self.tmp / name, manuscript_type="print_book"
+        )
         checkpoints = []
         for number in range(1, MAX_CHECKPOINTS + 1):
             project.working_path.write_text(f"checkpoint {number}", encoding="utf-8")

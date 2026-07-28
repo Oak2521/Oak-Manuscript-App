@@ -11,11 +11,12 @@ const path = require("path");
 const REPO_ROOT = path.resolve(__dirname, "..");
 const CAPABILITIES_RELATIVE = "config/rule-capabilities.json";
 const STANDARDS_RELATIVE = "config/standards.json";
-const RULEPACK_RELATIVE = "config/rule-packs/oak-rules-1.0.0.json";
-const MANIFEST_RELATIVE = "config/standard-packs/oak-standards-1.0.0.manifest.json";
+const RULEPACK_RELATIVE = "config/rule-packs/oak-rules-2.0.0.json";
+const MANIFEST_RELATIVE = "config/standard-packs/oak-standards-2.0.0.manifest.json";
 const BUNDLE_ID = "oak-standards";
-const RELEASE_SEQUENCE = 1;
-const RELEASE_VERSION = "1.0.0";
+const RELEASE_SEQUENCE = 2;
+const RELEASE_VERSION = "2.0.0";
+const PREVIOUS_MANIFEST_SHA256 = "d33534f081b2122a90652ee03304a0e71177a7fd0d3130fffe77b0fea807d7af";
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?$/;
 
@@ -154,6 +155,50 @@ function validateRulepack(rulepack) {
       throw new Error(`Rule metadata is incomplete: ${id}`);
     }
   }
+  const mapping = rulepack.citation_default_mapping;
+  exactKeys(mapping, ["version", "standard_ref", "map", "resolver"],
+    "Bundled citation resolver mapping");
+  if (mapping.version !== RELEASE_VERSION || !Array.isArray(mapping.map) ||
+      mapping.map.length === 0) {
+    throw new Error("Bundled citation mapping version or entries are invalid");
+  }
+  exactKeys(mapping.resolver, [
+    "id", "version", "signal_extractor_version", "thresholds", "style_capability_rules",
+  ], "Bundled citation resolver");
+  if (mapping.resolver.id !== "oak-citation-structure-resolver" ||
+      !SEMVER_PATTERN.test(mapping.resolver.version) ||
+      !SEMVER_PATTERN.test(mapping.resolver.signal_extractor_version)) {
+    throw new Error("Bundled citation resolver identity is invalid");
+  }
+  exactKeys(mapping.resolver.thresholds, [
+    "strong_min_unique", "moderate_min_unique",
+    "strong_min_coverage_percent", "moderate_min_coverage_percent",
+  ], "Bundled citation resolver thresholds");
+  const thresholds = mapping.resolver.thresholds;
+  if (!(Number.isSafeInteger(thresholds.moderate_min_unique) &&
+        Number.isSafeInteger(thresholds.strong_min_unique) &&
+        Number.isSafeInteger(thresholds.moderate_min_coverage_percent) &&
+        Number.isSafeInteger(thresholds.strong_min_coverage_percent) &&
+        thresholds.moderate_min_unique >= 1 &&
+        thresholds.moderate_min_unique <= thresholds.strong_min_unique &&
+        thresholds.strong_min_unique <= 1000 &&
+        thresholds.moderate_min_coverage_percent >= 1 &&
+        thresholds.moderate_min_coverage_percent <= thresholds.strong_min_coverage_percent &&
+        thresholds.strong_min_coverage_percent <= 100)) {
+    throw new Error("Bundled citation resolver thresholds are invalid");
+  }
+  const styleRules = mapping.resolver.style_capability_rules;
+  const styles = ["gbt7714-2025", "apa-7", "chicago-18-nb", "chicago-18-ad"];
+  exactKeys(styleRules, styles, "Bundled citation resolver capabilities");
+  const byId = new Map(rulepack.rules.map((rule) => [rule.rule_id, rule]));
+  for (const style of styles) {
+    if (!Array.isArray(styleRules[style]) || styleRules[style].length === 0 ||
+        new Set(styleRules[style]).size !== styleRules[style].length ||
+        styleRules[style].some((id) => !byId.has(id) ||
+          !byId.get(id).applies_to.citation_styles.includes(style))) {
+      throw new Error(`Bundled citation resolver capability is invalid: ${style}`);
+    }
+  }
   return ids;
 }
 
@@ -277,7 +322,7 @@ function buildManifest(root = REPO_ROOT) {
     channel: "stable",
     released_at: "2026-07-27T00:00:00Z",
     expires_at: null,
-    min_app: "0.1.0-alpha.2",
+    min_app: "0.1.0-alpha.5",
     max_app_exclusive: "0.2.0",
     signing_role: "bundled",
     files: [
@@ -290,10 +335,14 @@ function buildManifest(root = REPO_ROOT) {
       sha256: rulepackSha256,
       capability_set_sha256: capabilitySetSha256,
     },
-    rollback_target: null,
+    rollback_target: {
+      manifest_sha256: PREVIOUS_MANIFEST_SHA256,
+      release_sequence: 1,
+    },
     change_summary: [
-      "建立可验证的标准注册表与规则包基线。",
-      "补齐标准治理元数据并移除书稿、EPUB 标准占位说明。",
+      "新增版本化的默认引用体例结构信号解析器。",
+      "低置信度时仅运行明确声明的结构与一致性检查，不再强行套用具体体例。",
+      "项目与报告记录最终体例、理由、置信度和解析器版本。",
     ],
   };
 }
@@ -369,6 +418,7 @@ module.exports = {
   BUNDLE_ID,
   CAPABILITIES_RELATIVE,
   MANIFEST_RELATIVE,
+  PREVIOUS_MANIFEST_SHA256,
   RELEASE_SEQUENCE,
   RELEASE_VERSION,
   RULEPACK_RELATIVE,

@@ -80,14 +80,27 @@ def manual_page_breaks(doc: Document, ctx: dict) -> list[dict]:
 
 @rule("REF-CHI-001")
 def chicago_notes_bibliography(doc: Document, ctx: dict) -> list[dict]:
-    has_notes = any(n.text.strip() for n in doc.footnotes)
+    # 只有正文实际引用、且对应定义非空的注释才构成 Chicago 注释结构。
+    # 未引用的残留定义与空注释由其它规则处理，不能让本规则误判为“有注释”。
+    nonempty_note_ids = {
+        note.note_id for note in doc.footnotes if note.text.strip()
+    }
+    referenced_nonempty_note_ids = {
+        note_id for note_id in doc.footnote_ref_ids if note_id in nonempty_note_ids
+    }
+    has_notes = bool(referenced_nonempty_note_ids)
     has_biblio = any(is_ref_heading(p.text) for p in doc.paragraphs)
     if has_notes and not has_biblio:
         return [
             finding(paragraph=1,
-                    preview=f"发现 {sum(1 for n in doc.footnotes if n.text.strip())} 条注释，"
+                    preview=f"发现 {len(referenced_nonempty_note_ids)} 条正文实际引用且非空的注释，"
                             "但未找到书目（参考文献）部分")
         ]
     if has_biblio and not has_notes:
-        return [finding(paragraph=1, preview="存在书目部分，但未发现任何脚注 / 尾注")]
+        return [
+            finding(
+                paragraph=1,
+                preview="存在书目部分，但未发现正文实际引用且非空的脚注 / 尾注",
+            )
+        ]
     return []

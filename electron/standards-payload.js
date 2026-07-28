@@ -353,8 +353,15 @@ function validateCapabilities(capabilityBytes) {
   return { document: value, byRule, sha256: sha256(raw) };
 }
 
-function validateMapping(mapping, standardIds) {
-  exactKeys(mapping, ["version", "standard_ref", "map"], "citation_default_mapping");
+function validateMapping(mapping, standardIds, ruleDefinitions) {
+  if (!isObject(mapping)) fail("STANDARD_PAYLOAD_INVALID", "citation_default_mapping 必须是对象");
+  const hasResolver = Object.hasOwn(mapping, "resolver");
+  exactKeys(
+    mapping,
+    hasResolver ? ["version", "standard_ref", "map", "resolver"] :
+      ["version", "standard_ref", "map"],
+    "citation_default_mapping",
+  );
   validateSemver(mapping.version, "citation_default_mapping.version");
   text(mapping.standard_ref, "citation_default_mapping.standard_ref", { pattern: STANDARD_ID_RE });
   if (!standardIds.has(mapping.standard_ref)) {
@@ -391,6 +398,59 @@ function validateMapping(mapping, standardIds) {
       }
     }
   }
+
+  if (!hasResolver) return;
+  const resolver = mapping.resolver;
+  exactKeys(resolver, [
+    "id", "version", "signal_extractor_version", "thresholds", "style_capability_rules",
+  ], "citation_default_mapping.resolver");
+  text(resolver.id, "citation_default_mapping.resolver.id", {
+    max: 128,
+    pattern: /^[a-z0-9][a-z0-9._-]*$/,
+  });
+  validateSemver(resolver.version, "citation_default_mapping.resolver.version");
+  validateSemver(
+    resolver.signal_extractor_version,
+    "citation_default_mapping.resolver.signal_extractor_version",
+  );
+  const thresholds = resolver.thresholds;
+  exactKeys(thresholds, [
+    "strong_min_unique", "moderate_min_unique",
+    "strong_min_coverage_percent", "moderate_min_coverage_percent",
+  ], "citation_default_mapping.resolver.thresholds");
+  for (const [name, value] of Object.entries(thresholds)) {
+    if (!Number.isSafeInteger(value)) {
+      fail("STANDARD_PAYLOAD_INVALID", `citation resolver threshold ${name} 必须是安全整数`);
+    }
+  }
+  if (!(thresholds.moderate_min_unique >= 1 &&
+        thresholds.moderate_min_unique <= thresholds.strong_min_unique &&
+        thresholds.strong_min_unique <= 1000 &&
+        thresholds.moderate_min_coverage_percent >= 1 &&
+        thresholds.moderate_min_coverage_percent <= thresholds.strong_min_coverage_percent &&
+        thresholds.strong_min_coverage_percent <= 100)) {
+    fail("STANDARD_PAYLOAD_INVALID", "citation resolver thresholds 次序或范围非法");
+  }
+  const capabilityRules = resolver.style_capability_rules;
+  const specificStyles = new Set([
+    "gbt7714-2025", "apa-7", "chicago-18-nb", "chicago-18-ad",
+  ]);
+  exactKeys(capabilityRules, [...specificStyles], "citation resolver style_capability_rules");
+  for (const style of specificStyles) {
+    const ids = uniqueStrings(capabilityRules[style], `citation resolver ${style} capability rules`, {
+      max: 32,
+      pattern: RULE_ID_RE,
+    });
+    if (ids.size === 0) {
+      fail("STANDARD_PAYLOAD_INVALID", `citation resolver ${style} 能力规则不能为空`);
+    }
+    for (const ruleId of ids) {
+      const definition = ruleDefinitions.get(ruleId);
+      if (!definition || !definition.applies_to.citation_styles.includes(style)) {
+        fail("STANDARD_PAYLOAD_INVALID", `citation resolver ${style} 能力规则未声明该体例`);
+      }
+    }
+  }
 }
 
 function validateRulepack(rulepack, manifest, capabilities, releaseDate) {
@@ -418,12 +478,15 @@ function validateRulepack(rulepack, manifest, capabilities, releaseDate) {
   const allowedLanguages = new Set(["*", "zh", "en", "mixed"]);
   const allowedCitations = new Set([
     "*", "gbt7714-2025", "apa-7", "chicago-18-nb", "chicago-18-ad", "none",
+    "structure-only",
   ]);
+  const definitionsById = new Map();
   for (const [index, rule] of rulepack.rules.entries()) {
     exactKeys(rule, REQUIRED_RULE_FIELDS, `rules[${index}]`);
     const id = text(rule.rule_id, `rules[${index}].rule_id`, { pattern: RULE_ID_RE });
     if (ids.has(id)) fail("STANDARD_PAYLOAD_INVALID", `rule_id 重复：${id}`);
     ids.add(id);
+    definitionsById.set(id, rule);
     const capability = capabilities.byRule.get(id);
     if (!capability) fail("STANDARD_CAPABILITY_MISMATCH", `规则 ${id} 不在 APP 能力表中`);
     for (const field of ["milestone", "auto_fixable", "fix_id"]) {
@@ -472,10 +535,10 @@ function validateRulepack(rulepack, manifest, capabilities, releaseDate) {
       max: 4, allowed: allowedLanguages, exclusiveWildcard: true,
     });
     uniqueStrings(rule.applies_to.citation_styles, `${id}.citation_styles`, {
-      max: 6, allowed: allowedCitations, exclusiveWildcard: true,
+      max: 7, allowed: allowedCitations, exclusiveWildcard: true,
     });
   }
-  return { ids, standardsByRule };
+  return { ids, standardsByRule, definitionsById };
 }
 
 function validateStandards(standards, manifest, rulepack, rules, releaseDate) {
@@ -602,7 +665,11 @@ function validateStandards(standards, manifest, rulepack, rules, releaseDate) {
       fail("STANDARD_PAYLOAD_INVALID", `${standardId}.rule_ids 与规则反向引用不一致`);
     }
   }
-  validateMapping(rulepack.citation_default_mapping, new Set(byId.keys()));
+  validateMapping(
+    rulepack.citation_default_mapping,
+    new Set(byId.keys()),
+    rules.definitionsById,
+  );
   return byId;
 }
 

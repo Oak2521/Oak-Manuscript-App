@@ -16,6 +16,7 @@ import shutil
 import stat
 from pathlib import Path, PurePosixPath, PureWindowsPath
 
+from .citation import REQUESTED_STYLES, SUPPORTED_STYLES, validate_citation_resolution
 from .errors import OakError, ProjectValidationError
 from .project_lock import PROJECT_LOCK_FILENAME, validate_existing_lock_file
 from .rulepack import validate_rulepack_identity
@@ -33,6 +34,10 @@ _FIX_ID_RE = re.compile(r"^fix-[0-9]{4,}$")
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _RULEPACK_CHANGE_ID_RE = re.compile(r"^rulepack-change-[0-9]{4,}$")
 _RULEPACK_PLAN_ID_RE = re.compile(r"^rulepack-plan-[0-9a-f]{64}$")
+_SEMVER_RE = re.compile(
+    r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
+    r"(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$"
+)
 _RULEPACK_ISSUES_ARCHIVE_RE = re.compile(
     r"^reports/issues\.before-rulepack-cp-[0-9]{4,}\.json$"
 )
@@ -65,9 +70,14 @@ _DEFAULT_SETTINGS = {
     "citation_style_resolved": None,
     "citation_resolved_by": None,
     "citation_mapping_version": None,
+    "citation_resolution": None,
     "check_depth": "full",
     "epub_preview": False,
 }
+_SETTINGS_FIELDS = set(_DEFAULT_SETTINGS)
+_MANUSCRIPT_TYPES = {"paper", "print_book", "ebook"}
+_LANGUAGES = {"auto", "zh", "en", "mixed"}
+_CHECK_DEPTHS = {"quick", "full"}
 
 
 class Project:
@@ -222,6 +232,94 @@ class Project:
     def _nonnegative_int(value: object) -> bool:
         return isinstance(value, int) and not isinstance(value, bool) and value >= 0
 
+    @classmethod
+    def _validate_settings(
+        cls,
+        settings: object,
+        *,
+        allow_legacy_missing_resolution: bool = True,
+    ) -> dict:
+        """验证项目/检查点设置，并只补齐 alpha.4 缺少的新可空字段。"""
+        if not isinstance(settings, dict):
+            raise ProjectValidationError("项目 settings 字段必须是对象。")
+        if "citation_resolution" not in settings and allow_legacy_missing_resolution:
+            settings["citation_resolution"] = None
+        if set(settings) != _SETTINGS_FIELDS:
+            raise ProjectValidationError("项目 settings 字段集合非法。")
+        if settings["manuscript_type"] not in _MANUSCRIPT_TYPES:
+            raise ProjectValidationError("项目 manuscript_type 设置非法。")
+        if settings["language"] not in _LANGUAGES:
+            raise ProjectValidationError("项目 language 设置非法。")
+        if settings["citation_style"] not in REQUESTED_STYLES:
+            raise ProjectValidationError("项目 citation_style 设置非法。")
+        if settings["check_depth"] not in _CHECK_DEPTHS:
+            raise ProjectValidationError("项目 check_depth 设置非法。")
+        if not isinstance(settings["epub_preview"], bool):
+            raise ProjectValidationError("项目 epub_preview 设置必须是布尔值。")
+
+        detected = settings["language_detected"]
+        if detected not in {None, "zh", "en", "mixed"}:
+            raise ProjectValidationError("项目 language_detected 设置非法。")
+        resolved_style = settings["citation_style_resolved"]
+        if resolved_style not in {None, "none", *SUPPORTED_STYLES}:
+            raise ProjectValidationError("项目 citation_style_resolved 设置非法。")
+        resolved_by = settings["citation_resolved_by"]
+        if resolved_by not in {None, "user", "default_mapping", "default_resolver"}:
+            raise ProjectValidationError("项目 citation_resolved_by 设置非法。")
+        mapping_version = settings["citation_mapping_version"]
+        if mapping_version is not None and (
+            not isinstance(mapping_version, str) or not _SEMVER_RE.fullmatch(mapping_version)
+        ):
+            raise ProjectValidationError("项目 citation_mapping_version 设置非法。")
+
+        resolution = settings["citation_resolution"]
+        if resolution is None:
+            if resolved_style is None:
+                if resolved_by is not None or mapping_version is not None:
+                    raise ProjectValidationError("项目未检查引用状态的兼容字段不一致。")
+                return settings
+            if resolved_by is None:
+                raise ProjectValidationError("项目已解析引用体例但缺少解析来源。")
+            if resolved_by == "default_resolver":
+                raise ProjectValidationError("项目缺少结构化引用解析记录。")
+            if resolved_by == "default_mapping":
+                if settings["citation_style"] != "default" or mapping_version is None:
+                    raise ProjectValidationError("旧项目默认体例映射状态不一致。")
+            elif mapping_version is not None:
+                raise ProjectValidationError("用户指定体例不应保存默认映射版本。")
+            if (
+                settings["citation_style"] in set(SUPPORTED_STYLES) | {"none"}
+                and resolved_style != settings["citation_style"]
+            ):
+                raise ProjectValidationError("旧项目用户请求与已解析体例不一致。")
+            return settings
+
+        try:
+            validate_citation_resolution(resolution)
+        except OakError as exc:
+            raise ProjectValidationError(f"项目 citation_resolution 非法：{exc.message}") from exc
+        if resolution["requested_style"] != settings["citation_style"]:
+            raise ProjectValidationError("项目引用请求与结构化解析记录不一致。")
+        if resolution["resolved_style"] != resolved_style:
+            raise ProjectValidationError("项目最终引用体例与结构化解析记录不一致。")
+        projected_by = (
+            "default_mapping"
+            if resolution["resolved_by"] == "legacy_mapping"
+            else resolution["resolved_by"]
+        )
+        if projected_by != resolved_by:
+            raise ProjectValidationError("项目引用解析来源与兼容字段不一致。")
+        expected_mapping = (
+            resolution["resolver"]["policy_version"]
+            if resolution["requested_style"] == "default"
+            else None
+        )
+        if mapping_version != expected_mapping:
+            raise ProjectValidationError("项目引用解析策略版本与兼容字段不一致。")
+        if detected != resolution["evidence"]["language"]:
+            raise ProjectValidationError("项目语言解析与引用解析证据不一致。")
+        return settings
+
     # ---- 便捷属性 ----
 
     @property
@@ -358,6 +456,22 @@ class Project:
     ) -> "Project":
         input_path = Path(input_path)
         project_dir = Path(project_dir)
+        # 所有用户设置先于目录创建、文件复制和清单写入严格验证。Python API
+        # 与 Electron/CLI 使用同一门禁，不能靠 argparse 或前端白名单兜底。
+        requested_settings = dict(_DEFAULT_SETTINGS)
+        requested_settings.update(
+            {
+                "manuscript_type": manuscript_type,
+                "language": language,
+                "citation_style": citation_style,
+                "check_depth": check_depth,
+                "epub_preview": epub_preview,
+            }
+        )
+        cls._validate_settings(
+            requested_settings,
+            allow_legacy_missing_resolution=False,
+        )
         if rulepack_identity is None:
             # ``Project.create`` is also a public Python entrypoint used outside
             # the CLI.  A newly-created project must never start life with the
@@ -478,16 +592,7 @@ class Project:
                 working_target.flush()
                 os.fsync(working_target.fileno())
 
-            settings = dict(_DEFAULT_SETTINGS)
-            settings.update(
-                {
-                    "manuscript_type": manuscript_type,
-                    "language": language,
-                    "citation_style": citation_style,
-                    "check_depth": check_depth,
-                    "epub_preview": epub_preview,
-                }
-            )
+            settings = requested_settings
             now = now_iso()
             data = {
                 "format_version": FORMAT_VERSION,
@@ -579,6 +684,7 @@ class Project:
         for field in ("settings", "rulepack", "sync", "integrity"):
             if not isinstance(data.get(field), dict):
                 raise ProjectValidationError(f"项目清单 {field} 字段必须是对象。")
+        self._validate_settings(data["settings"])
         try:
             validate_rulepack_identity(
                 data["rulepack"],
@@ -840,6 +946,10 @@ class Project:
                 raise OakError(f"检查点状态缺少字段 {field}：{checkpoint_id}")
         if not isinstance(state["settings"], dict) or not isinstance(state["rulepack"], dict):
             raise OakError(f"检查点设置状态损坏：{checkpoint_id}")
+        try:
+            self._validate_settings(state["settings"])
+        except ProjectValidationError as exc:
+            raise OakError(f"检查点设置状态损坏：{checkpoint_id}：{exc.message}") from exc
         if not isinstance(state["checks"], list) or not isinstance(state["fixes"], list):
             raise OakError(f"检查点历史状态损坏：{checkpoint_id}")
         if not isinstance(state["check_seq"], int) or state["check_seq"] < 0:
@@ -1360,6 +1470,34 @@ class Project:
                 problems.append(f"检查结果 schema_version 非法：{relative}")
             if result.get("check_id") != check_id:
                 problems.append(f"检查结果 check_id 与检查记录不一致：{relative}")
+
+            settings_snapshot = result.get("settings_snapshot")
+            if settings_snapshot is not None and not isinstance(settings_snapshot, dict):
+                problems.append(f"检查结果 settings_snapshot 非法：{relative}")
+            elif isinstance(settings_snapshot, dict):
+                try:
+                    self._validate_settings(copy.deepcopy(settings_snapshot))
+                except ProjectValidationError:
+                    problems.append(f"检查结果 settings_snapshot 非法：{relative}")
+            if "citation_resolution" in result:
+                citation_resolution = result.get("citation_resolution")
+                try:
+                    validate_citation_resolution(citation_resolution)
+                except OakError:
+                    problems.append(f"检查结果 citation_resolution 非法：{relative}")
+                else:
+                    if (
+                        not isinstance(settings_snapshot, dict)
+                        or settings_snapshot.get("citation_resolution") != citation_resolution
+                    ):
+                        problems.append(
+                            f"检查结果 citation_resolution 与设置快照不一致：{relative}"
+                        )
+            elif (
+                isinstance(settings_snapshot, dict)
+                and settings_snapshot.get("citation_resolution") is not None
+            ):
+                problems.append(f"检查结果缺少 citation_resolution：{relative}")
 
             if "rulepack" in check:
                 check_identity = check["rulepack"]

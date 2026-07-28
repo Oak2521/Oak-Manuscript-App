@@ -18,7 +18,7 @@ from oak_manuscript_core.util import sha256_file
 from tests.docx_factory import DocxBuilder
 
 REPO = Path(__file__).resolve().parents[2]
-PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-1.0.0.json")
+PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-2.0.0.json")
 SAMPLES = REPO / "samples"
 
 

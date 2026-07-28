@@ -69,7 +69,7 @@
       </div>
       <div class="form-row"><label>目标引用格式</label>
         <select id="citation-select">
-          <option value="default" selected>默认（推荐，由 APP 按类型与语言自动选定）</option>
+          <option value="default" selected>默认（推荐，由 APP 按稿件类型、语言与引用结构自动解析）</option>
           <option value="gbt7714-2025">GB/T 7714—2025</option>
           <option value="apa-7">APA 7</option>
           <option value="chicago-18-nb">Chicago 18 注释—书目</option>
@@ -88,7 +88,7 @@
       <div class="form-row"><label>其他</label>
         <label class="check"><input type="checkbox" id="epub-preview-check"> 导出时生成基础 EPUB 预览</label>
       </div>
-      <p class="muted" id="citation-hint">选择「默认」时，检查开始前会明确显示本次采用的体例，并写入项目与报告。</p>
+      <p class="muted" id="citation-hint">选择「默认」时，APP 会根据稿件类型、主要语言与引用结构生成确定性计划；检查开始前会明确显示本次采用的体例或受限模式。</p>
       <div class="actions"><button id="btn-start-check" class="primary">开始检查</button></div>
     </section>
 
@@ -106,6 +106,12 @@
           <h1 id="issues-title">检查结果</h1>
           <div id="status-level" class="status-badge"></div>
           <div id="citation-note" class="muted"></div>
+          <dl id="citation-result-card" class="citation-resolution-card hidden" aria-label="本次引用体例解析结果">
+            <div><dt>最终体例 / 模式</dt><dd id="citation-result-style"></dd></div>
+            <div><dt>选择理由</dt><dd id="citation-result-reason"></dd></div>
+            <div><dt>置信度</dt><dd id="citation-result-confidence"></dd></div>
+            <div><dt>解析器版本</dt><dd id="citation-result-version"></dd></div>
+          </dl>
         </div>
         <div class="issues-toolbar">
           <button id="btn-autofix" class="primary">预览批量自动修复</button>
@@ -186,6 +192,40 @@
       <div id="rulepack-info" class="muted"></div>
     </section>
   </main>
+
+  <dialog id="citation-resolution-dialog" class="modal citation-resolution-modal" aria-labelledby="citation-resolution-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="citation-resolution-title">确认本次引用体例</h2>
+        <p class="muted">APP 已在本机完成确定性解析。确认后才会运行检查；取消不会写入任何检查结果。</p>
+      </div>
+    </div>
+    <dl class="citation-resolution-grid" aria-live="polite">
+      <div><dt>最终体例 / 模式</dt><dd id="citation-resolution-style"></dd></div>
+      <div><dt>选择理由</dt><dd id="citation-resolution-reason"></dd></div>
+      <div><dt>置信度</dt><dd id="citation-resolution-confidence"></dd></div>
+      <div><dt>解析器版本</dt><dd id="citation-resolution-version"></dd></div>
+    </dl>
+    <p id="citation-resolution-low-confidence" class="citation-resolution-warning hidden">
+      当前证据置信度较低，本次仅做结构与一致性检查，不强行套用具体引用体例。
+    </p>
+    <div class="citation-resolution-choice">
+      <label for="citation-resolution-select">用户选择</label>
+      <select id="citation-resolution-select">
+        <option value="default">默认（由 APP 自动解析）</option>
+        <option value="gbt7714-2025">GB/T 7714—2025</option>
+        <option value="apa-7">APA 7</option>
+        <option value="chicago-18-nb">Chicago 18 注释—书目</option>
+        <option value="chicago-18-ad">Chicago 18 作者—日期</option>
+        <option value="none">暂不检查引用格式</option>
+      </select>
+      <p class="muted">修改选择后，APP 会重新生成解析计划；不会沿用上一次计划。</p>
+    </div>
+    <div class="modal-actions">
+      <button id="btn-cancel-citation-resolution">取消（不运行检查）</button>
+      <button id="btn-confirm-citation-resolution" class="primary">确认并开始检查</button>
+    </div>
+  </dialog>
 
   <dialog id="fix-plan-dialog" class="modal" aria-labelledby="fix-plan-title">
     <div class="modal-head">

@@ -6,6 +6,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const { canonicalJson } = require("../electron/standards-store");
+const {
+  MANIFEST_RELATIVE,
+  RULEPACK_RELATIVE,
+} = require("../scripts/standard_assets");
 
 const {
   createStandardsPayloadValidator,
@@ -16,11 +20,11 @@ const {
 const ROOT = path.resolve(__dirname, "..");
 const capabilityBytes = fs.readFileSync(path.join(ROOT, "config", "rule-capabilities.json"));
 const manifest = JSON.parse(fs.readFileSync(
-  path.join(ROOT, "config", "standard-packs", "oak-standards-1.0.0.manifest.json"), "utf8",
+  path.join(ROOT, ...MANIFEST_RELATIVE.split("/")), "utf8",
 ));
 const standardsBytes = fs.readFileSync(path.join(ROOT, "config", "standards.json"));
 const rulepackBytes = fs.readFileSync(
-  path.join(ROOT, "config", "rule-packs", "oak-rules-1.0.0.json"),
+  path.join(ROOT, ...RULEPACK_RELATIVE.split("/")),
 );
 const capabilities = validateCapabilities(capabilityBytes);
 const validate = createStandardsPayloadValidator({ capabilityBytes });
@@ -48,10 +52,83 @@ test("runtime payload validator accepts the authenticated bundled payload", asyn
   assert.deepEqual(result, {
     ok: true,
     pack_name: "oak-rules",
-    pack_version: "1.0.0",
+    pack_version: "2.0.0",
     rule_count: 35,
     standard_count: 13,
   });
+});
+
+test("runtime payload validator accepts both legacy and resolver-backed citation mapping schemas", async () => {
+  const legacyShape = strictJson(rulepackBytes, "fixture rulepack");
+  delete legacyShape.citation_default_mapping.resolver;
+  legacyShape.citation_default_mapping.version = "1.0.0";
+  const legacyResult = await validate(args({ rulepackBytes: bytes(legacyShape) }));
+  assert.equal(legacyResult.ok, true);
+
+  const current = strictJson(rulepackBytes, "fixture rulepack");
+  assert.equal(current.citation_default_mapping.version, "2.0.0");
+  assert.equal(current.citation_default_mapping.resolver.version, "1.0.0");
+  const currentResult = await validate(args({ rulepackBytes: bytes(current) }));
+  assert.equal(currentResult.ok, true);
+});
+
+test("resolver-backed citation mapping rejects unsafe threshold values and ordering", async () => {
+  const cases = [
+    ["moderate unique count below one", { moderate_min_unique: 0 }],
+    ["moderate unique count above strong", {
+      moderate_min_unique: 4,
+      strong_min_unique: 3,
+    }],
+    ["strong unique count above bound", { strong_min_unique: 1001 }],
+    ["moderate coverage below one", { moderate_min_coverage_percent: 0 }],
+    ["moderate coverage above strong", {
+      moderate_min_coverage_percent: 90,
+      strong_min_coverage_percent: 80,
+    }],
+    ["strong coverage above 100", { strong_min_coverage_percent: 101 }],
+    ["non-integer threshold", { strong_min_unique: 2.5 }],
+  ];
+  for (const [label, changes] of cases) {
+    const pack = strictJson(rulepackBytes, `fixture rulepack: ${label}`);
+    Object.assign(pack.citation_default_mapping.resolver.thresholds, changes);
+    await assert.rejects(
+      validate(args({ rulepackBytes: bytes(pack) })),
+      /citation resolver threshold|thresholds 次序或范围非法/,
+      label,
+    );
+  }
+});
+
+test("resolver style capability declarations must be nonempty, known, and style-applicable", async () => {
+  const empty = strictJson(rulepackBytes, "fixture rulepack");
+  empty.citation_default_mapping.resolver.style_capability_rules["gbt7714-2025"] = [];
+  await assert.rejects(
+    validate(args({ rulepackBytes: bytes(empty) })),
+    /capability rules 数量非法|能力规则不能为空/,
+  );
+
+  const unknown = strictJson(rulepackBytes, "fixture rulepack");
+  unknown.citation_default_mapping.resolver.style_capability_rules["gbt7714-2025"] =
+    ["REF-UNKNOWN-999"];
+  await assert.rejects(
+    validate(args({ rulepackBytes: bytes(unknown) })),
+    /能力规则未声明该体例/,
+  );
+
+  const wrongStyle = strictJson(rulepackBytes, "fixture rulepack");
+  wrongStyle.citation_default_mapping.resolver.style_capability_rules["gbt7714-2025"] =
+    ["REF-APA-001"];
+  await assert.rejects(
+    validate(args({ rulepackBytes: bytes(wrongStyle) })),
+    /能力规则未声明该体例/,
+  );
+
+  const extraStyle = strictJson(rulepackBytes, "fixture rulepack");
+  extraStyle.citation_default_mapping.resolver.style_capability_rules.none = ["REF-001"];
+  await assert.rejects(
+    validate(args({ rulepackBytes: bytes(extraStyle) })),
+    /style_capability_rules 字段(?:集合非法|不符合 schema)/,
+  );
 });
 
 test("runtime payload validator accepts a signed subset of implemented rules", async () => {

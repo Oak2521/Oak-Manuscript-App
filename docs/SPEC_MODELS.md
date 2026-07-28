@@ -1,6 +1,6 @@
 # SPEC_MODELS — 问题 / 规则 / 标准模型
 
-> 问题与规则模型仍为 v1.0；标准注册表于 2026-07-27 升级为治理 schema 2.0。同步负载于 2026-07-26 按商业方案 v2.0 改为“结果与元数据白名单”，废止旧文件级同步占位。`0.1.0-alpha.4` 只加固应用发布资源可信链，不改变本文件定义的项目模型、问题/规则模型或标准内容。机器可读定义以 `config/` 下 JSON 为准，本文件为语义规范。
+> 问题与规则模型仍为 v1.0；标准注册表为治理 schema 2.0。同步负载于 2026-07-26 按商业方案 v2.0 改为“结果与元数据白名单”，废止旧文件级同步占位。`0.1.0-alpha.5` 引入规则包 2.0.0 与向后兼容的 `citation_resolution` 模型；机器可读定义以 `config/` 下 JSON 和核心严格校验器为准，本文件为语义规范。
 
 ## 1. 问题模型（Issue，方案 §6.3）
 
@@ -104,19 +104,25 @@
 - `verified` 必须有真实核验日期；空外部 URL 只允许非湖岸解释项同时为 `under_review + unavailable`；`superseded` 必须指向替代项；
 - schema 字段完整不代表内容已审校。当前 13 项中外部来源核验为 0，reviewed_by 仍含角色占位，不能用结构通过替代事实审核。
 
-## 5. 「默认」引用体例映射（v1.0.0，随规则包发布，方案 §6.2）
+## 5. 引用体例请求与默认解析（v2.0.0，方案 §6.2）
 
-| 稿件类型 | 语言（解析后） | 自动选定体例 |
-|---|---|---|
-| paper | zh / mixed | gbt7714-2025 |
-| paper | en | apa-7 |
-| print_book | 任意 | chicago-18-nb |
-| ebook | 任意 | none（用户可显式开启） |
+用户请求枚举固定为：`default | gbt7714-2025 | apa-7 | chicago-18-nb | chicago-18-ad | none`。显式体例直接产生 `style_specific + user`；`none` 产生 `disabled + user`。只有 `default` 进入解析器。
 
-**语言自动识别（确定性算法，冻结）**：统计正文 CJK 字符数 `c` 与 ASCII 字母数 `a`。`c ≥ 4a` → zh；`a ≥ 4c` → en；否则 mixed。若 `c + a < 200`（文本过短，置信度不足）→ 按 mixed 处理。
-解析结果与映射版本写入 `project.json` 与全部报告（「本次按 ×× 体例检查，由默认规则 v1.0.0 选定」）。
+**语言信号**：统计正文 CJK 字符数 `c` 与 ASCII 字母数 `a`。`c ≥ 4a` → zh；`a ≥ 4c` → en；否则 mixed。`c + a < 200` 时标记语言证据不足，不再像 1.0.0 那样把 mixed 直接映射为具体体例。
 
-当前 v1.0.0 只按稿件类型和确定性语言分类映射。商业方案要求的结构信号、选择原因、置信度和低置信度退回尚未实现；因此“默认”入口已可用，但不得宣传为完整的智能体例判定。
+**结构信号家族**：
+
+- numeric：编号引用的唯一号码、编号条目和两者覆盖率；
+- author_year：作者—年份引用、能匹配条目的引用/条目数和覆盖率；
+- notes_bibliography：注释引用、非空注释、匹配数和覆盖率。
+
+强证据要求主/伴信号各至少 3 个且覆盖率至少 80%；中等证据各至少 2 个且覆盖率至少 50%。只有唯一家族达标、与稿件类型/语言相容，且 `style_capability_rules` 中至少一条规则对当前格式/类型/语言/体例启用时，才返回具体体例。中等对应 `confidence=medium`，强对应 `high`。
+
+以下情况返回 `structure_only`，`resolved_style=null`：格式提取只部分可用、语言证据不足、多个参考文献节、多信号家族冲突、证据不足或信号与 profile 不匹配。此模式只运行在规则包中明确允许的引用结构/一致性规则，不得把具体格式结论写入报告。无引用信号的 ebook 可返回 `disabled + default_resolver`。
+
+`citation_resolution` schema 的顶层字段严格为：`schema_version`、`requested_style`、`mode`、`resolved_style`、`resolved_by`、`resolver`、`reason_code`、`reason`、`confidence`、`evidence`、`coverage`。`resolved_by` 只允许 `user | default_resolver | legacy_mapping`；`resolver` 记录 ID/version/policy version/signal extractor version；`coverage` 记录实际调度的 rule IDs。`evidence` 只允许数量、百分比和枚举，禁止原文、姓名、文件名、路径和内容哈希。
+
+1.0.0 旧规则包的类型/语言映射仅作 `legacy_mapping` 兼容路径；新项目和升级后的默认检查使用 2.0.0 解析器。
 
 ## 6. 检查结果文件（reports/check-NNNN.json）
 
@@ -126,18 +132,31 @@
   "check_id": "check-0001",
   "kind": "check | recheck",
   "started_at": "…", "finished_at": "…",
-  "app_version": "0.1.0-alpha.4",
+  "app_version": "0.1.0-alpha.5",
   "rulepack": {
     "name": "oak-rules",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "pinned": true,
     "sha256": "规则包原始字节 SHA-256",
     "bundle_id": "oak-standards",
-    "release_sequence": 1,
+    "release_sequence": 2,
     "manifest_sha256": "canonical manifest SHA-256"
   },
   "settings_snapshot": { "…": "创建检查时 project.settings 的完整快照" },
-  "citation_note": "本次按 gbt7714-2025 体例检查（由默认规则 v1.0.0 选定）",
+  "citation_resolution": {
+    "schema_version": "1.0",
+    "requested_style": "default",
+    "mode": "structure_only",
+    "resolved_style": null,
+    "resolved_by": "default_resolver",
+    "resolver": { "id": "oak-citation-structure-resolver", "version": "1.0.0", "policy_version": "2.0.0", "signal_extractor_version": "1.0.0" },
+    "reason_code": "conflicting_structures",
+    "reason": "检测到多个达到中等阈值的引用结构家族，无法可靠选择单一体例。",
+    "confidence": "low",
+    "evidence": { "…": "仅数量、百分比和枚举" },
+    "coverage": { "signal_availability": "full", "rule_ids": ["实际调度的引用结构规则"] }
+  },
+  "citation_note": "本次仅执行引用结构与一致性检查（未选定具体体例）",
   "issues": [ "Issue 对象数组，见第 1 节" ],
   "skipped_rule_groups": [ { "milestone": "M2", "reason": "本版本未实现" } ],
   "external_tools": { "epubcheck": "not_run", "ace": "not_run" },
@@ -147,7 +166,7 @@
 
 检查结果一致性约束：每份报告的 `check_id` 必须对应自己的项目 `checks[]` 记录。alpha.3 新记录含完整七字段 `checks[].rulepack`，报告必须与其完全一致；alpha.2 及更早的旧记录没有该字段，只允许报告保存精确 `{name, version}`，并由 `version` 对齐 `checks[].rulepack_version`，这种 legacy 证据不能冒充七字段身份。规则包升级后，历史检查和历史报告保留旧身份是正常现象；只有最新的当前检查/报告必须与项目现行 pin 一致，后续修复、外部验证和导出据此放行。`project.json.app_version` 记录项目创建版本，报告 `app_version` 记录本次检查所用核心版本，二者在旧项目升级后不要求永久相等。源码/打包 smoke 使用当次新建项目，会读取真实项目、最新检查与导出报告核对 APP/项目/检查/报告四方身份；不能仅凭 Renderer 或 `app:info` 自报。
 
-## 7. 外部验证状态模型（当前 0.1.0-alpha.4；语义自 alpha.3 保持不变）
+## 7. 外部验证状态模型（当前 0.1.0-alpha.5；语义自 alpha.3 保持不变）
 
 `external_tools` 的每个工具状态只允许 `not_run | passed | failed`，且必须以**本次进程**生成、结构合法的报告为依据：
 

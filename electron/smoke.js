@@ -1,5 +1,5 @@
 // UI 闭环冒烟（阶段 2 完成标准）：匿名 DOCX 与 EPUB 均在真实 UI 逻辑中
-// 走完 创建 → 检查 → 自动修复 → 复检 → 导出 → PDF 样张 → 完整性验证。
+// 走完 创建 → 引用体例集中确认 → 检查 → 自动修复 → 复检 → 导出 → PDF 样张 → 完整性验证。
 // 通过 executeJavaScript 调用渲染端 actions —— 与用户点击按钮完全相同的代码路径与 IPC。
 
 "use strict";
@@ -12,7 +12,7 @@ const { serializeStandardIdentity } = require("./python-invocation");
 const PACKAGED_OUTPUT_ENV = "OAK_SMOKE_OUTPUT_ROOT";
 const EXPECTED_VERSION_ENV = "OAK_EXPECTED_APP_VERSION";
 const EXPECT_PACKAGED_ENV = "OAK_EXPECT_PACKAGED";
-const DEFAULT_EXPECTED_APP_VERSION = "0.1.0-alpha.4";
+const DEFAULT_EXPECTED_APP_VERSION = "0.1.0-alpha.5";
 
 const SCENARIOS = [
   {
@@ -292,7 +292,31 @@ async function runSmoke(win, pathPolicy) {
     await js(`__oakActions.setProjectDir(${JSON.stringify(projectDir)})`);
     await js(`__oakActions.configure({ type: ${JSON.stringify(sc.type)} })`);
 
-    const check = await js("__oakActions.startCheck()");
+    const citationPlan = await js("__oakActions.startCheck()");
+    assert(
+      citationPlan.awaitingCitationConfirmation === true
+        && typeof citationPlan.planId === "string"
+        && citationPlan.planId.startsWith("citation-plan-"),
+      `${sc.name}：首次检查前必须生成待确认的引用体例计划`,
+    );
+    assert(
+      citationPlan.citationResolution
+        && citationPlan.citationResolution.requestedStyle === "default",
+      `${sc.name}：默认引用体例计划必须显示完整解析结果`,
+    );
+    const pendingCitation = await js("__oakActions.getState()");
+    assert(
+      pendingCitation.awaitingCitationConfirmation === true
+        && pendingCitation.citationPlan === citationPlan.planId,
+      `${sc.name}：引用体例确认前不得提前运行检查`,
+    );
+    const check = await js("__oakActions.confirmCitationResolution()");
+    const confirmedCitation = await js("__oakActions.getState()");
+    assert(
+      confirmedCitation.awaitingCitationConfirmation === false
+        && confirmedCitation.citationPlan === null,
+      `${sc.name}：确认后必须清除待处理引用计划`,
+    );
     assert(check.issueCount > 0, `${sc.name}：应检出问题`);
     assert(check.page === "issues", `${sc.name}：应停在问题页`);
     assertSameStandardIdentity(

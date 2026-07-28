@@ -15,6 +15,25 @@ _SEVERITY_SECTIONS = (
     ("suggestion", "可选改进"),
 )
 
+_CITATION_STYLE_LABELS = {
+    "default": "默认",
+    "gbt7714-2025": "GB/T 7714—2025",
+    "apa-7": "APA 7",
+    "chicago-18-nb": "Chicago 18 注释—书目",
+    "chicago-18-ad": "Chicago 18 作者—日期",
+    "none": "暂不检查引用格式",
+}
+_CITATION_MODE_LABELS = {
+    "style_specific": "体例专项检查",
+    "structure_only": "仅引用结构与一致性检查",
+    "disabled": "未运行引用格式检查",
+}
+_CITATION_CONFIDENCE_LABELS = {
+    "high": "高",
+    "medium": "中",
+    "low": "低",
+}
+
 _EVALUATION_BLOCK = (
     "想进一步判断稿件是否适合出版？湖岸橡树可在您主动提交后，"
     "结合稿件类型、篇幅和本次检查摘要提供出版评估。APP 不会自动上传您的稿件。"
@@ -36,6 +55,61 @@ def _pending(issues: list[dict], severity: str) -> list[dict]:
     return [i for i in issues if i["severity"] == severity and i["status"] in ("open", "accepted")]
 
 
+def _label_with_code(value: object, labels: dict[str, str], *, missing: str) -> str:
+    """Render a stable machine value together with its Chinese label."""
+    if value is None:
+        return missing
+    code = str(value)
+    label = labels.get(code)
+    return f"{label}（{code}）" if label else code
+
+
+def _citation_resolution_rows(report: dict) -> list[tuple[str, str]]:
+    """Return display-only rows for new reports; old reports remain unchanged."""
+    resolution = report.get("citation_resolution")
+    if not isinstance(resolution, dict):
+        return []
+    resolver = resolution.get("resolver")
+    resolver_version = resolver.get("version") if isinstance(resolver, dict) else None
+    reason = resolution.get("reason")
+    return [
+        (
+            "请求体例",
+            _label_with_code(
+                resolution.get("requested_style"),
+                _CITATION_STYLE_LABELS,
+                missing="未记录",
+            ),
+        ),
+        (
+            "最终体例",
+            _label_with_code(
+                resolution.get("resolved_style"),
+                _CITATION_STYLE_LABELS,
+                missing="未确定具体体例",
+            ),
+        ),
+        (
+            "检查模式",
+            _label_with_code(
+                resolution.get("mode"),
+                _CITATION_MODE_LABELS,
+                missing="未记录",
+            ),
+        ),
+        ("选择理由", str(reason) if reason is not None else "未记录"),
+        (
+            "置信度",
+            _label_with_code(
+                resolution.get("confidence"),
+                _CITATION_CONFIDENCE_LABELS,
+                missing="不适用",
+            ),
+        ),
+        ("解析器版本", str(resolver_version) if resolver_version is not None else "未记录"),
+    ]
+
+
 def render_markdown(report: dict) -> str:
     lines: list[str] = []
     lines.append("# 湖岸稿件检查报告")
@@ -45,6 +119,13 @@ def render_markdown(report: dict) -> str:
     lines.append(f"- 检查时间：{report['check']['finished_at']}（{report['check']['kind']}）")
     lines.append(f"- 规则包：{report['rulepack']['name']} {report['rulepack']['version']}")
     lines.append(f"- 引用体例：{report['citation_note']}")
+    citation_rows = _citation_resolution_rows(report)
+    if citation_rows:
+        lines.append("")
+        lines.append("## 引用体例解析")
+        lines.append("")
+        for label, value in citation_rows:
+            lines.append(f"- {label}：{value}")
     lines.append("")
     lines.append("## 结论摘要")
     lines.append("")
@@ -158,6 +239,12 @@ def render_html(report: dict) -> str:
         f"引用体例：{e(report['citation_note'])}"
     )
     parts.append("</p>")
+    citation_rows = _citation_resolution_rows(report)
+    if citation_rows:
+        parts.append("<h2>引用体例解析</h2><dl>")
+        for label, value in citation_rows:
+            parts.append(f"<dt><strong>{e(label)}</strong></dt><dd>{e(value)}</dd>")
+        parts.append("</dl>")
     p = report["pending_counts"]
     parts.append("<h2>结论摘要</h2>")
     parts.append(f"<p><strong>{e(report['status_level'])}</strong></p>")
