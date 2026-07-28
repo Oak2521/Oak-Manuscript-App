@@ -5,7 +5,7 @@
 | 文件 | 职责 |
 |---|---|
 | `main.js` | 创建沙箱窗口、注册固定 IPC、安装默认离线门禁、外链白名单、Provider 与 `app:info` |
-| `resource-trust.js` | 从真实 `app.asar` 读取固定锚点，复核应用 loose 清单及 Python/EpubCheck/JRE/Ace 完整树 |
+| `resource-trust.js` | 从真实 `app.asar` raw header 精确读取锚点/production package，复核应用 loose 清单及 Python/EpubCheck/JRE/Ace 完整树 |
 | `preload.js` | 在 sandboxed preload 中暴露最小 `window.oak` API；不提供任意命令或直接 `fix` 通道 |
 | `python-bridge.js` | 以参数数组、`shell=false` 和清理后的环境调用 Python JSON CLI |
 | `python-invocation.js` | 桥与资源门禁共用的 `-I -B -S -X utf8` bootstrap；禁止 pyc 并显式插入受控 core 绝对目录 |
@@ -32,7 +32,7 @@
 
 打包安全另由 `scripts/electron_fuse_policy.js` 固定：必须启用 ASAR 与 embedded integrity、用顶层 `@electron/fuses 2.1.3` 显式设置 Electron 43 全部 9 项，并在 electron-builder 后从真实应用二进制读回。索引 8 已定义为 `WasmTrapHandlers`；未来未知 wire 项仍 fail-closed。alpha.10 已把 Ace 迁移到 `utilityProcess` 并固定 `RunAsNode=false`。详见 `docs/ELECTRON_FUSE_POLICY.md`。
 
-alpha.19 的 `resource-trust-anchor.json` 随代码进入 ASAR，绑定 72 个应用 loose 文件（含发行身份契约/schema）的 canonical 清单和目标平台四类运行锁；Windows Python/EpubCheck/JRE/Electron/builder 锁再分别绑定五类官方来源证据摘要。packaged 启动在标准存储/窗口前验证全部树，且门禁只接受从真实 `app.asar` 读取的锚点。
+alpha.20 的 `resource-trust-anchor.json` 随代码进入 ASAR，绑定 72 个应用 loose 文件（含发行身份契约/schema）的 canonical 清单和目标平台四类运行锁；Windows Python/EpubCheck/JRE/Electron/builder 锁再分别绑定五类官方来源证据摘要。packaged 门禁从同一真实 ASAR 读取 production `package.json` 与 `oakReleaseIdentity`；读取使用当前 raw header 和精确循环，不依赖路径缓存或单次短读。启动在标准存储/窗口前验证全部树。
 
 PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专用 CSP 只允许自包含 HTML 所需的内联样式和 `data:` 图片。加载报告前后核对文件身份，拒绝项目根/`exports`/报告/目标的 symlink、junction/reparse、硬链接和目录身份换入，最后同目录原子写入。
 
@@ -42,4 +42,4 @@ PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专�
 
 账号与同步 IPC 不接受 Renderer 自带的负载、token、URL 或 transport；主进程通过固定 `sync-source` 命令取值并重建 SyncRecord v1。当前 Auth 登录为未配置的系统浏览器 PKCE 契约，License 为未签名本地能力矩阵，Sync 队列仅存在于当前进程且不联网。详见 `docs/SYNC_RECORD_V1.md`。
 
-当前 `0.1.0-alpha.19` 全量 Node/Python 回归、真实 packaged 全 9 fuse/ASAR/资源、发行身份结构、CPython/EpubCheck/Temurin-JRE/Electron/builder provenance、强制外部验证 smoke 与发布证据均通过。最终运行根 `out/packaged-smoke/runs/ms4wb5l6-92a65d90b8504698/projects/`；DOCX/EPUB 各 4 次检查、1 个修复批次、3 个检查点且原稿哈希不变，EPUB 实得 EpubCheck 5 error 与 Ace 8 项失败断言。完整发行身份、五类运行/构建资源人工签署、未签名和其余 packaged sale blocker 仍有效。
+当前 `0.1.0-alpha.20` 全量 Node/Python 回归、source/packaged smoke、真实 packaged 全 9 fuse/ASAR/资源/production package identity、CPython/EpubCheck/Temurin-JRE/Electron/builder provenance 与发布证据均通过。DOCX/EPUB 均完成 4 次检查、1 个修复批次、3 个检查点且原稿哈希不变，EPUB 实得 EpubCheck 5 error 与 Ace 8 项失败断言；本次运行根和制品哈希以 `docs/TEST_REPORT.md` 的仓库证据为准，不在打包文件中固化动态路径。完整发行身份、五类运行/构建资源人工签署、未签名和其余 packaged sale blocker 仍有效。

@@ -2,7 +2,20 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.19 发行商身份 fail-closed 门禁验收（2026-07-28）
+## 0.1.0-alpha.20 打包发行身份与真实 ASAR 元数据绑定验收（2026-07-28）
+
+- [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.20`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] packaged 门禁从真实 `app.asar/package.json` 读取生产身份，报告 `package_evidence_scope=packaged-app-asar`；修改源码 package 不能伪造 packaged 证据；
+- [x] production `oakReleaseIdentity` exact marker 与源码 `build.appId`、发行身份文件交叉一致；ASAR 内 marker appId 漂移、重复字段和缺字段均 fail-closed；
+- [x] ASAR 文件读取使用当前 raw header 和精确读取循环，拒绝缓存陈旧、短读、目录/link/unpacked/非法偏移、同路径重建残留及读取期间归档身份变化；
+- [x] 过程中的旧 `extractFile` 非法 JSON、production package 裁剪、仅 `uncache()` 不充分和测试 ASAR 未完全刷盘均有失败记录；测试辅助器等待完整归档而生产读取器继续严格拒绝短读，最终完整 Node 回归连续三轮通过；
+- [x] 最终全量 Node 359 / Python 351，0 失败；source smoke 与 packaged smoke PASS；最终隐藏 `npm run build:win` 204.1 秒退出 0；NSIS/ZIP、真实 ASAR 身份、资源、9 fuse、EpubCheck/Ace 与发行证据通过；
+- [x] alpha.12 → alpha.20 安装生命周期只读预检通过，`authorized=false`，未启动安装器；
+- [ ] 法定销售主体、正式链接、版权、平台签名主体和具名复核已确认，`RELEASE_PUBLISHER_METADATA_PENDING` 已关闭；
+- [ ] 真实 alpha.12 → alpha.20 安装、升级、旧版回装探测、卸载、HKCU/Desktop/Start Menu 清理和 userData 保留已在获准系统环境执行并产生 PASS 证据；
+- [ ] Windows Authenticode、五类 provenance 人工签核、Ace 正式边界、干净机、macOS/Web、生产账号/订阅/同步和全部 sale 门禁完成；因此本节仍不是正式发行验收。
+
+## 0.1.0-alpha.19 发行商身份 fail-closed 门禁验收（历史，2026-07-28）
 
 - [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.19`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] canonical 发行身份文件和固定摘要 v1 schema 记录产品名、appId、品牌与官网；未知法定销售主体、正式链接、版权、签名主体和具名复核保持显式待定；
@@ -304,7 +317,7 @@
 - [ ] macOS x64/arm64 Python/JRE 资源及锁、DMG 构建、签名、公证、Gatekeeper 和实机 smoke 已完成；
 - [ ] 正式售卖 `sale` 门禁已通过。
 
-当前源码 Windows sale 门禁为 17 类机器码；真实 alpha.19 packaged ASAR 会关闭其中 5 个 loose 可信根项，保留 12 类：
+当前源码 Windows sale 门禁为 17 类机器码；真实 alpha.20 packaged ASAR 会关闭其中 5 个 loose 可信根项，保留 12 类：
 
 1. `RELEASE_PUBLISHER_METADATA_PENDING`；
 2. `FORMAL_LICENSE_AUDIT_REQUIRED`；

@@ -26,6 +26,11 @@ const EXPECTED_KEYS = Object.freeze([
 ]);
 const EXPECTED_SIGNING_KEYS = Object.freeze(["windows_certificate_subject", "apple_team_id"]);
 const EXPECTED_REVIEW_KEYS = Object.freeze(["status", "reviewed_by", "reviewed_at"]);
+const EXPECTED_PACKAGE_IDENTITY_KEYS = Object.freeze([
+  "schema_version",
+  "app_id",
+  "copyright_notice",
+]);
 const PLACEHOLDER_RE = /(?:\btbd\b|\btodo\b|\bpending\b|待定|未确定|示例|example\.com)/iu;
 
 function canonicalBytes(value) {
@@ -90,6 +95,13 @@ function readStrictJson(root, relative, label) {
   };
 }
 
+function readStrictJsonBytes(bytes, label) {
+  if (!Buffer.isBuffer(bytes) || bytes.length === 0) {
+    throw new Error(`${label} 必须是非空 Buffer`);
+  }
+  return parseJsonStrict(bytes.toString("utf8"), label);
+}
+
 function readSchema(identityRoot) {
   const schema = readCanonicalJson(identityRoot, SCHEMA_RELATIVE, "发行商身份 schema");
   if (crypto.createHash("sha256").update(schema.bytes).digest("hex") !== SCHEMA_SHA256) {
@@ -121,6 +133,8 @@ function packageAuthorName(author) {
 function verifyReleaseIdentity({
   identityRoot = REPO_ROOT,
   packageRoot = identityRoot,
+  packageBytes = null,
+  packageEvidenceScope = "source-package-json",
   platform = process.platform,
 } = {}) {
   if (platform !== "win32" && platform !== "darwin") {
@@ -166,10 +180,28 @@ function verifyReleaseIdentity({
     throw new Error("human_review.reviewed_at 必须是 UTC 秒精度 RFC 3339 时间");
   }
 
-  const packageRecord = readStrictJson(resolvedPackageRoot, "package.json", "package.json");
-  const packageJson = packageRecord.value;
-  if (packageJson.productName !== identity.product_name) throw new Error("package.json productName 与身份文件不一致");
-  if (packageJson.build?.appId !== identity.app_id) throw new Error("package.json build.appId 与身份文件不一致");
+  const packageJson = packageBytes === null
+    ? readStrictJson(resolvedPackageRoot, "package.json", "package.json").value
+    : readStrictJsonBytes(packageBytes, "app.asar package.json");
+  const packageLabel = packageBytes === null ? "package.json" : "app.asar package.json";
+  if (packageJson.productName !== identity.product_name) {
+    throw new Error(`${packageLabel} productName 与身份文件不一致`);
+  }
+  if (packageBytes === null && packageJson.build?.appId !== identity.app_id) {
+    throw new Error("package.json build.appId 与身份文件不一致");
+  }
+  const packagedIdentity = packageBytes === null
+    ? packageJson.build?.extraMetadata?.oakReleaseIdentity
+    : packageJson.oakReleaseIdentity;
+  assertExactKeys(packagedIdentity, EXPECTED_PACKAGE_IDENTITY_KEYS, `${packageLabel} oakReleaseIdentity`);
+  requireFixed(packagedIdentity, "schema_version", "1.0");
+  if (packagedIdentity.app_id !== identity.app_id) {
+    throw new Error(`${packageLabel} oakReleaseIdentity.app_id 与身份文件不一致`);
+  }
+  validateNullableText(packagedIdentity, "copyright_notice");
+  if (packagedIdentity.copyright_notice !== identity.copyright_notice) {
+    throw new Error(`${packageLabel} oakReleaseIdentity.copyright_notice 与身份文件不一致`);
+  }
 
   const missing = [];
   for (const field of [
@@ -193,8 +225,10 @@ function verifyReleaseIdentity({
     missing.push("package.json.author");
   }
   if (packageJson.homepage !== identity.official_website) missing.push("package.json.homepage");
-  if (identity.copyright_notice === null ||
-      packageJson.build?.copyright !== identity.copyright_notice) {
+  const packageCopyright = packageBytes === null
+    ? packageJson.build?.copyright
+    : packagedIdentity.copyright_notice;
+  if (identity.copyright_notice === null || packageCopyright !== identity.copyright_notice) {
     missing.push("package.json.build.copyright");
   }
 
@@ -202,6 +236,7 @@ function verifyReleaseIdentity({
     ok: true,
     complete: missing.length === 0,
     platform,
+    package_evidence_scope: packageEvidenceScope,
     identity_path: IDENTITY_RELATIVE,
     schema_path: SCHEMA_RELATIVE,
     product_name: identity.product_name,

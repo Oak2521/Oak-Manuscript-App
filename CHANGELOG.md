@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.20（ChatGPT 打包发行身份与真实 ASAR 元数据绑定检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.20`。已生成未签名 Windows x64 NSIS 与 ZIP；实际安装、签名、法定身份补全和其余 sale 门禁仍未完成，不是可售卖正式版。
+
+- packaged 资源门禁改为读取实际 `app.asar/package.json`，报告 `package_evidence_scope=packaged-app-asar`；不再把源码 package 当作制品身份；
+- 通过 electron-builder `extraMetadata` 注入 exact `oakReleaseIdentity` production marker。源码同时核对 `build.appId` 与 marker，制品核对 ASAR 内产品名、marker appId 和发行身份；Electron Builder 裁剪 `build` 字段的真实行为已有回归；
+- 发行证据读取器改为解析当前 ASAR raw header 并循环读取到精确字节数，拒绝缓存陈旧、短读、link/unpacked、非法偏移、同路径替换和读取期间身份漂移；
+- 中途一次全量测试暴露旧 `extractFile` 非法 JSON，第一次 build 暴露生产 package 裁剪，随后全量测试再次证明 `uncache()` 不充分；严格读取器还正确拒绝过未完全刷盘的测试 ASAR。测试辅助器现等待 raw header 声明的完整归档字节，生产读取器仍 fail-closed；最终完整 Node 回归连续三轮通过；
+- 最终全量：Node 359 total / 352 pass / 0 fail / 7 skip，Python 351 total / 0 failures / 0 errors / 3 skipped；source 与 packaged 隐藏 smoke 均 PASS；最终 Windows build 204.1 秒退出 0；
+- 最终 NSIS：189,986,523 字节，SHA-256 `25f180927553039cf7b2c5f45168af28681b7d133fd8ed29da826ecf9a61fcbd`；ZIP：233,802,826 字节，SHA-256 `8e2fe8291fea1f2b566dd67680d0a75ac3484a133c5725e6a5d39b1cd8e1a6b0`；只读安装生命周期预检通过，实际安装器未运行。
+
 ### 2026-07-28 — 0.1.0-alpha.19（ChatGPT 发行商身份 fail-closed 门禁检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.19`。已生成未签名 Windows x64 NSIS 与 ZIP；法定销售主体、正式链接、版权、具名复核和签名主体未确认，不是可售卖正式版。

@@ -41,6 +41,7 @@ const {
 } = require("./resource_trust_manifest");
 const {
   readAnchorBytesFromAsar,
+  readFileBytesFromAsar,
   verifyPackagedResourceTrust,
 } = require("../electron/resource-trust");
 const { LOCK_RELATIVE: BUILDER_LOCK_RELATIVE } = require("./builder_toolchain_contract");
@@ -174,14 +175,36 @@ function verifyCore(root, errors, checks) {
   }
 }
 
-function verifyReleasePublisherIdentity(identityRoot, packageRoot, platform, errors, checks) {
+function verifyReleasePublisherIdentity(
+  identityRoot,
+  packageRoot,
+  platform,
+  source,
+  errors,
+  checks,
+  { readPackagedPackage = null } = {},
+) {
   try {
-    const result = verifyReleaseIdentity({ identityRoot, packageRoot, platform });
+    const packageBytes = source
+      ? null
+      : (readPackagedPackage || (() => readFileBytesFromAsar(
+        path.join(identityRoot, "app.asar"),
+        "package.json",
+        "package.json",
+      )))();
+    const result = verifyReleaseIdentity({
+      identityRoot,
+      packageRoot,
+      packageBytes,
+      packageEvidenceScope: source ? "source-package-json" : "packaged-app-asar",
+      platform,
+    });
     checks.push({
       type: "release-publisher-identity",
       identity_path: result.identity_path,
       schema_path: result.schema_path,
       platform: result.platform,
+      package_evidence_scope: result.package_evidence_scope,
       product_name: result.product_name,
       app_id: result.app_id,
       publisher_brand: result.publisher_brand,
@@ -1767,6 +1790,7 @@ function verifyPackagedResources({
   hostPlatform = process.platform,
   hostArch = process.arch,
   readPackagedAnchor = null,
+  readPackagedPackage = null,
 } = {}) {
   const projectRoot = path.resolve(root || path.join(__dirname, ".."));
   const errors = [];
@@ -1783,8 +1807,10 @@ function verifyPackagedResources({
     projectRoot,
     electronDistributionRoot,
     platform,
+    source,
     errors,
     checks,
+    { readPackagedPackage },
   );
   verifyEpubCheck(projectRoot, errors, checks);
   // A packaged resources directory does not contain Electron itself. Re-run the

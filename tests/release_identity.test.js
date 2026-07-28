@@ -64,6 +64,13 @@ function makeFixture(t) {
     build: {
       appId: identity.app_id,
       copyright: identity.copyright_notice,
+      extraMetadata: {
+        oakReleaseIdentity: {
+          schema_version: "1.0",
+          app_id: identity.app_id,
+          copyright_notice: identity.copyright_notice,
+        },
+      },
     },
   });
   return { root, identity };
@@ -105,6 +112,40 @@ test("complete reviewed identity agrees with package metadata on both platforms"
   }).complete, true);
 });
 
+test("identity verifier accepts explicit packaged bytes and rejects duplicate packaged keys", (t) => {
+  const { root, identity } = makeFixture(t);
+  const sourcePackage = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+  const packageBytes = Buffer.from(`${JSON.stringify({
+    name: sourcePackage.name,
+    productName: sourcePackage.productName,
+    version: sourcePackage.version,
+    author: sourcePackage.author,
+    homepage: sourcePackage.homepage,
+    oakReleaseIdentity: sourcePackage.build.extraMetadata.oakReleaseIdentity,
+  }, null, 2)}\n`);
+  const result = verifyReleaseIdentity({
+    identityRoot: root,
+    packageRoot: path.join(root, "unused-package-root"),
+    packageBytes,
+    packageEvidenceScope: "packaged-app-asar",
+    platform: "win32",
+  });
+  assert.equal(result.complete, true);
+  assert.equal(result.package_evidence_scope, "packaged-app-asar");
+  assert.equal(result.app_id, identity.app_id);
+
+  const duplicate = Buffer.from(packageBytes.toString("utf8").replace(
+    '  "name": "fixture",',
+    '  "name": "fixture",\n  "name": "duplicate",',
+  ));
+  assert.throws(() => verifyReleaseIdentity({
+    identityRoot: root,
+    packageBytes: duplicate,
+    packageEvidenceScope: "packaged-app-asar",
+    platform: "win32",
+  }), /app\.asar package\.json.*重复字段 name/u);
+});
+
 test("identity verifier rejects duplicate keys, unknown fields, placeholders and package drift", async (t) => {
   await t.test("duplicate key", (child) => {
     const { root } = makeFixture(child);
@@ -142,6 +183,16 @@ test("identity verifier rejects duplicate keys, unknown fields, placeholders and
     fs.writeFileSync(packageTarget, `${JSON.stringify(packageJson, null, 2)}\n`);
     assert.throws(() => verifyReleaseIdentity({ identityRoot: root, packageRoot: root, platform: "win32" }),
       /build\.appId 与身份文件不一致/u);
+  });
+
+  await t.test("packaged identity marker drift", (child) => {
+    const { root } = makeFixture(child);
+    const packageTarget = path.join(root, "package.json");
+    const packageJson = JSON.parse(fs.readFileSync(packageTarget, "utf8"));
+    packageJson.build.extraMetadata.oakReleaseIdentity.app_id = "com.example.changed";
+    fs.writeFileSync(packageTarget, `${JSON.stringify(packageJson, null, 2)}\n`);
+    assert.throws(() => verifyReleaseIdentity({ identityRoot: root, packageRoot: root, platform: "win32" }),
+      /oakReleaseIdentity\.app_id 与身份文件不一致/u);
   });
 });
 

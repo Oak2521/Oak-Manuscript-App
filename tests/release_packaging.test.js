@@ -6,7 +6,7 @@ const crypto = require("node:crypto");
 const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
-const { createPackage } = require("@electron/asar");
+const { createStablePackage } = require("./asar_test_helper");
 
 const { validateConfiguration } = require("app-builder-lib/out/util/config/config");
 const beforePack = require("../scripts/before_pack");
@@ -70,6 +70,22 @@ const REPO_ROOT = path.resolve(__dirname, "..");
 const PATCH_BEFORE = "681b52d047d5f6eebbfc62a925b7dc22b82589ab63b36a9ea602297f8cd86ea6";
 const PATCH_AFTER = "6c7da7364d05548355fb1ab90c3d6d77366e2fd01b6f67551b648c5fb8285614";
 
+function packagedPackageBytes(sourcePath) {
+  const source = JSON.parse(fs.readFileSync(sourcePath, "utf8"));
+  const packaged = {
+    name: source.name,
+    productName: source.productName,
+    version: source.version,
+    private: source.private,
+    description: source.description,
+    main: source.main,
+    oakReleaseIdentity: source.build?.extraMetadata?.oakReleaseIdentity,
+  };
+  if (source.author !== undefined) packaged.author = source.author;
+  if (source.homepage !== undefined) packaged.homepage = source.homepage;
+  return Buffer.from(`${JSON.stringify(packaged, null, 2)}\n`, "utf8");
+}
+
 function verifyPackagedResources(options) {
   if (options?.source === false) {
     const normalized = { ...options };
@@ -79,6 +95,9 @@ function verifyPackagedResources(options) {
         options.root,
         ...RESOURCE_TRUST_ANCHOR_RELATIVE.split("/"),
       ));
+    }
+    if (normalized.readPackagedPackage === undefined) {
+      normalized.readPackagedPackage = () => packagedPackageBytes(path.join(options.root, "package.json"));
     }
     return verifyPackagedResourcesRaw(normalized);
   }
@@ -570,14 +589,19 @@ function createToolchainFixture(t, existingRoot = null) {
   return { root, toolchain };
 }
 
-test("electron-builder config is valid and pins alpha.19 Windows installer policy", async () => {
+test("electron-builder config is valid and pins alpha.20 Windows installer policy", async () => {
   const packageJson = require("../package.json");
   const packageLock = require("../package-lock.json");
   await validateConfiguration(packageJson.build, { isEnabled: false, add() {} });
 
-  assert.equal(packageJson.version, "0.1.0-alpha.19");
+  assert.equal(packageJson.version, "0.1.0-alpha.20");
   assert.equal(packageLock.version, packageJson.version);
   assert.equal(packageLock.packages[""].version, packageJson.version);
+  assert.deepEqual(packageJson.build.extraMetadata.oakReleaseIdentity, {
+    schema_version: "1.0",
+    app_id: packageJson.build.appId,
+    copyright_notice: null,
+  });
   const pythonInit = fs.readFileSync(
     path.join(REPO_ROOT, "python", "oak_manuscript_core", "__init__.py"),
     "utf8",
@@ -950,7 +974,7 @@ test("beforePack forwards the builder project root and target platform", () => {
   const calls = [];
   beforePack(
     {
-      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.19" } },
+      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.20" } },
       electronPlatformName: "darwin",
       arch: 1,
     },
@@ -1201,7 +1225,11 @@ test("packaged resource gate reads the trust anchor from the real app.asar", asy
   const anchorTarget = path.join(asarSource, ...RESOURCE_TRUST_ANCHOR_RELATIVE.split("/"));
   fs.mkdirSync(path.dirname(anchorTarget), { recursive: true });
   fs.copyFileSync(anchorSource, anchorTarget);
-  await createPackage(asarSource, path.join(root, "app.asar"));
+  write(asarSource, "package.json", packagedPackageBytes(path.join(root, "package.json")));
+  await createStablePackage(asarSource, path.join(root, "app.asar"));
+  const sourcePackage = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+  sourcePackage.productName = "源码伪造名称不应成为 packaged 证据";
+  writeJson(root, "package.json", sourcePackage);
 
   const report = verifyPackagedResourcesRaw({
     root,
@@ -1215,6 +1243,9 @@ test("packaged resource gate reads the trust anchor from the real app.asar", asy
   const evidence = report.checks.find((item) => item.type === "resource-trust-anchor");
   assert.equal(evidence?.evidence_scope, "packaged-app-asar");
   assert.equal(evidence?.protected_by_app_asar, true);
+  const identityEvidence = report.checks.find((item) => item.type === "release-publisher-identity");
+  assert.equal(identityEvidence?.package_evidence_scope, "packaged-app-asar");
+  assert.equal(identityEvidence?.product_name, "湖岸稿件 Oak Manuscript");
   assert.equal(report.blockers.length, 13);
 
   fs.rmSync(path.join(root, "app.asar"));
@@ -1230,6 +1261,35 @@ test("packaged resource gate reads the trust anchor from the real app.asar", asy
     }),
     (error) => error instanceof ResourceGateError &&
       error.errors.some((item) => item.includes("真实 app.asar 资源信任锚读取失败")),
+  );
+});
+
+test("packaged resource gate rejects package identity drift inside the real app.asar", async (t) => {
+  const root = createResourceFixture(t);
+  const asarSource = path.join(root, "asar-source-drift");
+  const anchorTarget = path.join(asarSource, ...RESOURCE_TRUST_ANCHOR_RELATIVE.split("/"));
+  fs.mkdirSync(path.dirname(anchorTarget), { recursive: true });
+  fs.copyFileSync(
+    path.join(root, ...RESOURCE_TRUST_ANCHOR_RELATIVE.split("/")),
+    anchorTarget,
+  );
+  const packageJson = JSON.parse(packagedPackageBytes(path.join(root, "package.json")).toString("utf8"));
+  packageJson.oakReleaseIdentity.app_id = "com.example.packaged-drift";
+  writeJson(asarSource, "package.json", packageJson);
+  await createStablePackage(asarSource, path.join(root, "app.asar"));
+
+  assert.throws(
+    () => verifyPackagedResourcesRaw({
+      root,
+      electronSourceRoot: root,
+      platform: "win32",
+      arch: "x64",
+      source: false,
+      releaseTier: "alpha",
+      executeRuntimes: false,
+    }),
+    (error) => error instanceof ResourceGateError &&
+      error.errors.some((item) => item.includes("app.asar") && item.includes("oakReleaseIdentity.app_id")),
   );
 });
 

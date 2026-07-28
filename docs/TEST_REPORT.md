@@ -2,7 +2,49 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.19 发行商身份 fail-closed 门禁检查点
+## 最新验证结论：0.1.0-alpha.20 打包发行身份与真实 ASAR 元数据绑定检查点
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网；所有 Electron/packaged 进程隐藏执行，实际安装器未运行。
+
+| 命令 / 检查 | 结果 | 关键事实 |
+|---|---|---|
+| ASAR/发行身份相关回归 | **PASS** | 最终 52 total / 51 pass / 0 fail / 1 skip；修复测试 ASAR 完整落盘等待后，完整 Node 359 项连续执行三轮，均为 352 pass / 0 fail / 7 skip；覆盖生产 marker、同路径重建、源码伪造、ASAR 身份漂移、raw header 与精确读取 |
+| 最终 `npm test` | **PASS** | 墙钟 157.1 秒；Node 359 total / 352 pass / 0 fail / 7 skip（3.414 秒）；Python 351 total / 0 failures / 0 errors / 3 skipped（106.320 秒） |
+| 最终外层隐藏 `npm run build:win` | **PASS** | 204.1 秒；真实 ASAR package identity、JRE/Ace staging、源/packaged 资源、9 fuse、NSIS/ZIP、EpubCheck/Ace、隐藏 smoke、发布证据同链退出码 0 |
+| `npm run smoke` | **PASS** | 源码隐藏匿名双样本 smoke；输出 `out/source-smoke/runs/ms4xpgl8-b364a26d49d64102/projects/`；原稿哈希不变 |
+| `npm run release:evidence:verify:win` | **PASS** | NSIS/ZIP、SHA256SUMS 与 canonical manifest 全量交叉复验；独立 `Get-FileHash` 同值 |
+| `npm run verify:packaged:win` | **PASS（alpha）** | `package_evidence_scope=packaged-app-asar`；ASAR 内产品、版本与 `oakReleaseIdentity.app_id=com.oakbylake.manuscript` 匹配；源码/packaged sale blocker 为 17/12 |
+| `npm run verify:install-lifecycle:win` | **PASS（只读预检）** | 当前 alpha.20 与归档 alpha.12 字节/manifest/PE 匹配；`authorized=false`、`ready_for_authorized_run=true`；未启动安装器 |
+| 真实安装生命周期 | **未运行** | 会写 HKCU、Desktop 与 Start Menu；仍需单独系统写入授权，不能写成通过 |
+
+最终 packaged smoke 运行根：`out/packaged-smoke/runs/ms4yn5a2-2412f8598c07f65e/projects/`。
+
+| 项目 | APP/core | 检查 | 修复批次 | 应用 issue fixes | 检查点 | 当前问题 | PDF 字节 | 引用模式 | 外部验证 | 原稿 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---|---|
+| `ui-smoke-docx` | 0.1.0-alpha.20 | 4 | 1 | 5 | 3 | 13 | 251,665 | `structure_only` | 不适用 | unchanged |
+| `ui-smoke-epub` | 0.1.0-alpha.20 | 4 | 1 | 2 | 3 | 5 | 178,403 | `structure_only` | EpubCheck failed：0 fatal / 5 error / 0 warning；Ace failed：8 项断言 | unchanged |
+
+最终制品：
+
+| 文件 | 字节 | SHA-256 |
+|---|---:|---|
+| `Oak-Manuscript-0.1.0-alpha.20-Windows-x64.exe` | 189,986,523 | `25f180927553039cf7b2c5f45168af28681b7d133fd8ed29da826ecf9a61fcbd` |
+| `Oak-Manuscript-0.1.0-alpha.20-Windows-x64.zip` | 233,802,826 | `8e2fe8291fea1f2b566dd67680d0a75ac3484a133c5725e6a5d39b1cd8e1a6b0` |
+| `SHA256SUMS.txt` | 224 | `a59fbae6d08e0dd74c0e7974936337c2f5eca10024513adf3579ee2974c20c8d` |
+
+上述六项发行文件（含 blockmap、manifest 与 builder debug 记录）已复制到 `release/archive/0.1.0-alpha.20-final/`；归档 EXE、ZIP 与 `SHA256SUMS.txt` 的独立 SHA-256 和上表一致。
+
+首次失败与修复记录：
+
+- 初始完整 Node 回归在真实 `app.asar` 集成测试中一次得到非法 JSON；单测立即通过。检查 `@electron/asar` 后确认其 header 按路径缓存，payload 读取只调用一次 `readSync` 且不检查短读，不能作为发行证据读取器；
+- 第一次 alpha.20 build 在 packaged 身份门禁按设计停止：Electron Builder 生产 package 会裁剪整个 `build` 字段，故 `build.appId` 不存在。修复为由 `build.extraMetadata` 注入 production `oakReleaseIdentity`，源码门禁同时核对它与 `build.appId`，packaged 门禁只核对实际 ASAR 标记；失败构建未生成 SHA256SUMS/manifest；
+- 加入 marker 后的下一次全量回归再次复现一次非法 JSON，证明仅调用 `uncache()` 不充分。最终读取器改为解析当前 raw header，拒绝 link/unpacked/非法节点，并循环读取到精确字节数；
+- 严格读取器上线后的首次完整 Node 回归按设计以 `package.json 读取不完整` 拒绝了测试夹具尚未完全刷入磁盘的 ASAR。根因是 `@electron/asar` 4.0.1 的 `createPackage()` Promise 在输出流完全结束前即可返回；新增 `createStablePackage` 测试辅助器，按 raw header 声明的归档终点等待文件达到精确大小。没有放宽生产读取器；此后完整 Node 回归连续三轮、最终全量和最终 build 均通过；
+- 中途一版 alpha.20 制品在最终读取器变更后被重建，最终 manifest 只绑定上表字节。没有把中途哈希作为交付证据。
+
+证据边界：`alpha.20` 加强的是“制品中的发行身份确实来自本次 ASAR”以及读取确定性，没有补全未知法定身份。`RELEASE_PUBLISHER_METADATA_PENDING`、五类人工签核、Ace 正式边界、Windows 签名、真实安装、干净机、macOS/Web 和生产服务仍未验收。alpha.19 已归档。
+
+## 历史验证结论：0.1.0-alpha.19 发行商身份 fail-closed 门禁检查点
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。未联网；所有 GUI/packaged 进程隐藏执行，实际安装器未运行。
 
@@ -566,7 +608,7 @@ alpha.11 隐藏 smoke 运行根：`out/source-smoke/runs/ms4eowx9-64e0aab5311e2a
 
 ### Windows sale 门禁
 
-alpha 门禁实际执行运行时探针并通过；当前源码 sale 门禁以以下 17 项机器可读 blocker 按设计失败，真实 alpha.19 packaged ASAR 关闭其中 5 个 loose 可信根项后保留 12 项：
+alpha 门禁实际执行运行时探针并通过；当前源码 sale 门禁以以下 17 项机器可读 blocker 按设计失败，真实 alpha.20 packaged ASAR 关闭其中 5 个 loose 可信根项后保留 12 项：
 
 1. `RELEASE_PUBLISHER_METADATA_PENDING`：完整发行身份、具名复核与 package/signing 元数据待确认；
 2. `FORMAL_LICENSE_AUDIT_REQUIRED`：Ace 18 个依赖包仍需正式人工许可证审计；

@@ -219,26 +219,63 @@ function verifyPackagedResourceTrust({ root, platform = process.platform, arch =
   };
 }
 
-function readAnchorBytesFromAsar(asarPath) {
+function readFileBytesFromAsar(asarPath, relative, label = "ASAR 文件") {
   // This parser is used by the external post-package gate. Keep it lazy so the
   // packaged application does not depend on electron-builder's development tree.
-  const { extractFile } = require("@electron/asar");
+  const { getRawHeader } = require("@electron/asar");
   const absolute = path.resolve(asarPath);
+  const packagedRelative = safeRelative(relative, label);
   const before = safeFile(path.dirname(absolute), path.basename(absolute), "app.asar");
   const beforeReal = fs.realpathSync.native(absolute);
   let bytes;
   try {
-    bytes = extractFile(absolute, ANCHOR_RELATIVE);
+    // Do not use extractFile here. @electron/asar caches archive headers by path
+    // and its payload reader performs only one readSync call without checking
+    // for a short read. Release evidence must instead use the current raw header
+    // and an exact-read loop against the stable archive.
+    const raw = getRawHeader(absolute);
+    let node = raw.header;
+    for (const part of packagedRelative.split("/")) {
+      if (!node || typeof node !== "object" || !node.files ||
+          !Object.prototype.hasOwnProperty.call(node.files, part)) {
+        fail(`app.asar 中缺少 ${label}：${packagedRelative}`);
+      }
+      node = node.files[part];
+    }
+    if (!node || typeof node !== "object" || "files" in node || "link" in node || node.unpacked === true ||
+        !Number.isSafeInteger(node.size) || node.size < 0 || !/^\d+$/u.test(node.offset)) {
+      fail(`app.asar 中的 ${label} 不是安全的已打包常规文件`);
+    }
+    const positionBig = 8n + BigInt(raw.headerSize) + BigInt(node.offset);
+    if (positionBig > BigInt(Number.MAX_SAFE_INTEGER)) fail(`${label} 在 app.asar 中的偏移过大`);
+    const position = Number(positionBig);
+    bytes = Buffer.alloc(node.size);
+    const handle = fs.openSync(absolute, "r");
+    try {
+      let total = 0;
+      while (total < bytes.length) {
+        const count = fs.readSync(handle, bytes, total, bytes.length - total, position + total);
+        if (count <= 0) fail(`app.asar 中的 ${label} 读取不完整`);
+        total += count;
+      }
+    } finally {
+      fs.closeSync(handle);
+    }
   } catch (error) {
-    fail(`无法从 app.asar 读取 trust anchor：${error.message}`);
+    if (String(error.message).startsWith("打包资源信任根错误：")) throw error;
+    fail(`无法从 app.asar 读取 ${label}：${error.message}`);
   }
   const after = safeFile(path.dirname(absolute), path.basename(absolute), "app.asar");
   const afterReal = fs.realpathSync.native(absolute);
   if (beforeReal !== afterReal || before.stat.dev !== after.stat.dev || before.stat.ino !== after.stat.ino ||
       before.stat.size !== after.stat.size || before.stat.mtimeMs !== after.stat.mtimeMs) {
-    fail("app.asar 在读取 trust anchor 期间发生变化");
+    fail(`app.asar 在读取 ${label} 期间发生变化`);
   }
   return Buffer.from(bytes);
+}
+
+function readAnchorBytesFromAsar(asarPath) {
+  return readFileBytesFromAsar(asarPath, ANCHOR_RELATIVE, "trust anchor");
 }
 
 function readAnchorFromAsar(asarPath) {
@@ -256,6 +293,7 @@ module.exports = {
   APP_MANIFEST_RELATIVE,
   readAnchorBytesFromAsar,
   readAnchorFromAsar,
+  readFileBytesFromAsar,
   verifyPackagedResourceTrust,
   verifyPackagedResourceTrustFromAsar,
 };

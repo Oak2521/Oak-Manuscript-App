@@ -1,12 +1,12 @@
 # 湖岸稿件（Oak Manuscript）
 
-本地优先的稿件检查与修订产品。当前开发版本为 `0.1.0-alpha.19`，已有 Electron 桌面端、Python 检查核心、经真实 packaged 门禁和隐藏烟测验证的 Windows x64 NSIS/ZIP alpha 制品，以及离线标准包验证、项目版本固定、显式升级和回滚链路；商业正式版目标为 Windows、macOS 与 Web。按论文、纸质出版物、电子书三类目标检查稿件，提供可追溯标准依据的问题解释、集中确认的白名单机械订正、检查点恢复、修订稿与检查报告导出。
+本地优先的稿件检查与修订产品。当前开发版本为 `0.1.0-alpha.20`，已有 Electron 桌面端、Python 检查核心、经真实 packaged 门禁和隐藏烟测验证的 Windows x64 NSIS/ZIP alpha 制品，以及离线标准包验证、项目版本固定、显式升级和回滚链路；商业正式版目标为 Windows、macOS 与 Web。按论文、纸质出版物、电子书三类目标检查稿件，提供可追溯标准依据的问题解释、集中确认的白名单机械订正、检查点恢复、修订稿与检查报告导出。
 
 **当前桌面核心承诺**：稿件默认只在本机处理；永不原地修改原稿（SHA-256 全程校验）；不强制注册；报告与导出不设营销门槛。
 
-`0.1.0-alpha.19` 的本地检查点标签为 `chatgpt-v0.1.0-alpha.19`。Windows CPython 3.13.14、EpubCheck 5.3.0、Temurin 21.0.11/JRE、Electron 43.1.0 与 Windows builder 工具链均已有官方制品、完整文件树和下游锁的机器来源证据；五类资源的具名法律/再分发签署仍待办。发行商身份契约已固定已知产品/品牌/appId/官网，但法定销售主体、支持/隐私/条款链接、版权、平台签名主体和具名复核仍显式待定；正式销售门禁会失败，仓库没有伪造这些信息。顶层精确锁定 `@electron/fuses 2.1.3` 并回读 Electron 43 全部 9 项。真实安装器只有在另行授权并同时提供 `--run --allow-system-mutation` 后才可启动；当前尚未执行。生产 Supabase、凭据存储、网络 transport、持久队列与网站后台仍未接入；真实运行默认未登录且不联网。
+`0.1.0-alpha.20` 的本地检查点标签为 `chatgpt-v0.1.0-alpha.20`。Windows CPython 3.13.14、EpubCheck 5.3.0、Temurin 21.0.11/JRE、Electron 43.1.0 与 Windows builder 工具链均已有官方制品、完整文件树和下游锁的机器来源证据；五类资源的具名法律/再分发签署仍待办。发行商身份契约已固定已知产品/品牌/appId/官网，packaged 门禁会从实际 `app.asar/package.json` 读取 production `oakReleaseIdentity`；但法定销售主体、支持/隐私/条款链接、版权、平台签名主体和具名复核仍显式待定，正式销售门禁会失败。顶层精确锁定 `@electron/fuses 2.1.3` 并回读 Electron 43 全部 9 项。真实安装器只有在另行授权并同时提供 `--run --allow-system-mutation` 后才可启动；当前尚未执行。生产 Supabase、凭据存储、网络 transport、持久队列与网站后台仍未接入；真实运行默认未登录且不联网。
 
-最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.19 全量回归为 Node 355 total / 348 pass / 0 fail / 7 skip、Python 351 total / 0 failures / 0 errors / 3 skipped。真实 packaged smoke 在保持 Electron sandbox 的外层隐藏进程中运行 EpubCheck/Ace 后 PASS，原稿哈希不变；NSIS 为 189,985,848 字节（SHA-256 `9fc35cbf…9561`），ZIP 为 233,802,099 字节（`1641678b…3d99`）。安装生命周期代码/预检通过不等于真实安装通过；制品仍未签名，发行身份契约 `complete=false`，packaged 资源门禁保留 12 项 sale blocker。
+最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.20 全量回归为 Node 359 total / 352 pass / 0 fail / 7 skip、Python 351 total / 0 failures / 0 errors / 3 skipped。source 与 packaged 隐藏 smoke 均 PASS，原稿哈希不变；NSIS 为 189,986,523 字节（SHA-256 `25f18092…fcbd`），ZIP 为 233,802,826 字节（`8e2fe829…a6b0`）。安装生命周期代码/预检通过不等于真实安装通过；制品仍未签名，发行身份契约 `complete=false`，packaged 资源门禁保留 12 项 sale blocker。
 
 当前桌面安全边界包括：默认 Electron session 离线与固定 CSP；PDF 使用禁 JavaScript/导航/网络的非持久隔离 session；项目 schema/路径完整校验与跨进程内核写锁；创建项目在锁内以单一输入文件描述符复制到 `source`，再生成 `working`；自选导出目录逐级验证、全部目标预检和逐文件原子换入；标准包以 canonical manifest、内容寻址存储、高水位和精确回滚目标 fail-closed。已有项目不会因全局标准更新而静默换规则，必须先查看差异并显式确认，升级后强制重检。
 

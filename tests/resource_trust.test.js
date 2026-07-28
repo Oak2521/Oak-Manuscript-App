@@ -5,7 +5,7 @@ const assert = require("node:assert/strict");
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
-const { createPackage } = require("@electron/asar");
+const { createStablePackage } = require("./asar_test_helper");
 
 const {
   APP_MANIFEST_RELATIVE,
@@ -15,6 +15,7 @@ const {
 } = require("../scripts/resource_trust_manifest");
 const {
   readAnchorFromAsar,
+  readFileBytesFromAsar,
   verifyPackagedResourceTrust,
 } = require("../electron/resource-trust");
 
@@ -199,10 +200,43 @@ test("packaged anchor is read from the real app.asar rather than loose resources
   const source = path.join(root, "asar-source");
   const anchor = { schema_version: "1.0", anchor_type: "fixture", value: "inside-asar" };
   writeJson(source, ANCHOR_RELATIVE, anchor);
+  writeJson(source, "package.json", { name: "asar-package" });
   const asar = path.join(root, "app.asar");
-  await createPackage(source, asar);
+  await createStablePackage(source, asar);
   writeJson(root, ANCHOR_RELATIVE, { ...anchor, value: "loose-tamper" });
   assert.deepEqual(readAnchorFromAsar(asar), anchor);
+  assert.deepEqual(
+    JSON.parse(readFileBytesFromAsar(asar, "package.json", "package.json").toString("utf8")),
+    { name: "asar-package" },
+  );
+  assert.throws(() => readFileBytesFromAsar(asar, "../package.json", "package.json"), /路径非法/u);
+});
+
+test("packaged ASAR reads invalidate cached headers when an archive path is rebuilt", async (t) => {
+  const root = makeRoot(t);
+  const firstSource = path.join(root, "first-source");
+  const secondSource = path.join(root, "second-source");
+  const asar = path.join(root, "app.asar");
+  const replacement = path.join(root, "replacement.asar");
+  writeJson(firstSource, "package.json", { name: "first", padding: "short" });
+  writeJson(secondSource, "package.json", {
+    name: "second",
+    padding: "a deliberately different header and payload size",
+  });
+
+  await createStablePackage(firstSource, asar);
+  assert.equal(
+    JSON.parse(readFileBytesFromAsar(asar, "package.json", "package.json").toString("utf8")).name,
+    "first",
+  );
+
+  await createStablePackage(secondSource, replacement);
+  fs.rmSync(asar, { force: true });
+  fs.renameSync(replacement, asar);
+  assert.equal(
+    JSON.parse(readFileBytesFromAsar(asar, "package.json", "package.json").toString("utf8")).name,
+    "second",
+  );
 });
 
 test("packaged startup verifies the ASAR anchor before standards or window creation", () => {
