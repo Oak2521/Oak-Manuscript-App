@@ -251,6 +251,14 @@ def _cmd_list_checkpoints(args) -> int:
     return 0
 
 
+def _cmd_sync_source(args) -> int:
+    proj = Project.open(Path(args.project))
+    _project_rulepack(proj, None)
+    _emit({"ok": True, **ops.build_sync_source(proj, event=args.event)})
+    print("已在本机生成同步白名单来源；未发送、未入队。", file=sys.stderr)
+    return 0
+
+
 def _cmd_restore_checkpoint(args) -> int:
     proj = Project.open(Path(args.project))
     result = proj.restore_checkpoint(args.checkpoint_id)
@@ -347,6 +355,10 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("list-checkpoints", help="列出可恢复的项目检查点")
     p.add_argument("--project", required=True)
 
+    p = sub.add_parser("sync-source", help="生成结果同步白名单来源（严格只读，不发送）")
+    p.add_argument("--project", required=True)
+    p.add_argument("--event", required=True, choices=["check", "export"])
+
     p = sub.add_parser("restore-checkpoint", help="安全恢复检查点（恢复前自动创建安全检查点）")
     p.add_argument("--project", required=True)
     p.add_argument("--checkpoint-id", required=True)
@@ -382,6 +394,7 @@ def main(argv: list[str] | None = None) -> int:
         "export": _cmd_export,
         "verify": _cmd_verify,
         "list-checkpoints": _cmd_list_checkpoints,
+        "sync-source": _cmd_sync_source,
         "restore-checkpoint": _cmd_restore_checkpoint,
         "external": _cmd_external,
         "issue": _cmd_issue,

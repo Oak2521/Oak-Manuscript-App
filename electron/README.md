@@ -10,6 +10,8 @@
 | `python-invocation.js` | 桥与资源门禁共用的 `-I -S -X utf8` bootstrap；显式插入受控 core 绝对目录 |
 | `core-result.js` | 区分退出码 1 业务结果与退出码 2 错误，并保留 Python 结构化错误字段 |
 | `core-ipc.js` | `plan-citation` / `check` 的项目路径、六种体例和 opaque citation plan ID 白名单；注册固定 IPC |
+| `providers/index.js` | Auth/License 离线状态机、Free/Pro 权益矩阵、SyncRecord v1 exact 构造/校验与当前进程队列 |
+| `account-sync-ipc.js` | 只从可信 Python 来源构造同步预览，缓存负载，并接收 opaque 幂等 ID 与四种固定选择 |
 | `offline-policy.js` | 默认 Chromium 离线 switches 与 `http/https/ws/wss/ftp` 请求阻断 |
 | `path-policy.js` | 区分源码/打包资源根、选择平台 Python、约束项目/样本/PDF 路径并提供身份校验原子 writer |
 | `pdf-preview.js` | 在非持久隔离 session 中禁 JS/导航/网络生成 PDF，并安全写入 `exports/` |
@@ -29,4 +31,6 @@ PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专�
 
 `app:info` 返回 `appVersion`、经当前存储重新验证的七字段 `standardIdentity` 和 `packaged=app.isPackaged`。smoke 必须先通过 Renderer 规划并确认引用解析，再读取本次创建的 `project.json` 及其引用报告，核对 Python core 版本、check ID、`citation_resolution`，以及 APP/项目/检查/报告的完整标准身份；打包 smoke 还强制 `packaged=true`。打包态 Python、JRE 或 Ace stage 失配时必须失败关闭，不得回退用户环境中的同名代码资源；Electron 43.1.0 `win32-x64` 自身仍由受版本控制的全树锁固定：2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95`。当前 Ace 浏览器运行时仍依赖用户系统 Chrome。
 
-当前 `0.1.0-alpha.7` 最新源码 smoke 已在独立隐藏 Electron 中 PASS；运行根为 `out/source-smoke/runs/ms47c3l8-9b6bf78452308a33/projects/`，DOCX/EPUB 两个项目均先确认默认引用解析，各记录 4 次检查、1 次批量修复、3 个检查点且 `integrity.source_hash_ok=true`，PDF 分别为 251,656 / 177,263 字节。`release/` 尚无对应 alpha.7 EXE，因此不能声称打包 smoke 或发布证据已通过。
+账号与同步 IPC 不接受 Renderer 自带的负载、token、URL 或 transport；主进程通过固定 `sync-source` 命令取值并重建 SyncRecord v1。当前 Auth 登录为未配置的系统浏览器 PKCE 契约，License 为未签名本地能力矩阵，Sync 队列仅存在于当前进程且不联网。详见 `docs/SYNC_RECORD_V1.md`。
+
+当前 `0.1.0-alpha.8` 最新源码 smoke 已在独立隐藏 Electron 中 PASS；运行根为 `out/source-smoke/runs/ms48q9hr-05f6b99b193cf33d/projects/`，DOCX/EPUB 两个项目均先确认默认引用解析，各记录 4 次检查、1 次批量修复、3 个检查点且 `integrity.source_hash_ok=true`，PDF 分别为 251,660 / 177,267 字节；另断言默认未登录、Free 与空队列。`release/` 尚无对应 alpha.8 EXE，因此不能声称打包 smoke 或发布证据已通过。

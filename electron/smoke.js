@@ -12,7 +12,7 @@ const { serializeStandardIdentity } = require("./python-invocation");
 const PACKAGED_OUTPUT_ENV = "OAK_SMOKE_OUTPUT_ROOT";
 const EXPECTED_VERSION_ENV = "OAK_EXPECTED_APP_VERSION";
 const EXPECT_PACKAGED_ENV = "OAK_EXPECT_PACKAGED";
-const DEFAULT_EXPECTED_APP_VERSION = "0.1.0-alpha.7";
+const DEFAULT_EXPECTED_APP_VERSION = "0.1.0-alpha.8";
 
 const SCENARIOS = [
   {
@@ -401,12 +401,23 @@ async function runSmoke(win, pathPolicy) {
     console.log(`[smoke]   export ${exp.files.length} 文件 + PDF 样张；verify 通过`);
   }
 
-  // 占位纪律抽查：登录状态为「即将开放」，同步偏好默认 never_asked
+  // 离线账号/订阅/同步纪律：生产未配置、未登录、默认不询问且队列为空。
   const auth = await js("window.oak.authStatus()");
-  assert(auth.state === "coming_soon" && auth.loggedIn === false, "AuthProvider 应为占位状态");
+  assert(
+    auth.state === "signed_out" && auth.loggedIn === false &&
+      auth.productionConfigured === false && auth.authMode === "system_browser_pkce",
+    "AuthProvider 应为未配置的系统浏览器 PKCE 离线状态",
+  );
+  const license = await js("window.oak.licenseStatus()");
+  assert(
+    license.tier === "free" && license.localProjectsLocked === false,
+    "LicenseProvider 默认应为不锁本地文件的 Free 状态",
+  );
   const sync = await js("window.oak.syncPreference()");
   assert(sync.preference === "never_asked", "SyncProvider 默认偏好应为 never_asked");
-  console.log("[smoke] Provider 占位纪律检查通过");
+  const queue = await js("window.oak.syncQueue()");
+  assert(Array.isArray(queue.items) && queue.items.length === 0, "未登录状态同步队列必须为空");
+  console.log("[smoke] 离线账号、Free 权益与未授权同步纪律检查通过");
 }
 
 module.exports = {

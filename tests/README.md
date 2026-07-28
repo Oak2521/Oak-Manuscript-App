@@ -1,11 +1,12 @@
 # tests/ — Node 契约、发布资源与打包验证
 
-`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.7 最终统一结果为 Node **267 total / 260 pass / 0 fail / 7 skip / 2.487 秒**，Python **344 项 / 0 失败 / 0 错误 / 3 跳过 / 80.833 秒**，墙钟 88.1 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
+`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.8 最终统一结果为 Node **278 total / 271 pass / 0 fail / 7 skip / 2.389 秒**，Python **348 项 / 0 失败 / 0 错误 / 3 跳过 / 86.468 秒**，墙钟 93.7 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
 
 本目录覆盖：
 
 - sandboxed preload、固定 IPC、Renderer 批量计划/确认和检查点 UI 契约；
 - 默认引用解析 IPC/UI 的计划—确认顺序、六种体例参数白名单、packaged smoke 同契约，以及切换稿件/项目时清空旧 session；
+- Auth 登录/退出/过期/撤销状态、Free/Pro/宽限/过期权益、SyncRecord v1 exact schema 和反内容泄露、可信来源 IPC、伪造 Renderer 负载拒绝、四选一授权、幂等队列与安全 UI 渲染；
 - Electron 默认 session 离线 switches/网络请求拦截、Renderer CSP、源码 smoke 的 `out/source-smoke/` 路径边界；
 - PDF 非持久隔离 session、禁 JavaScript/导航/网络、报告身份快照、项目/`exports` 父链校验、链接/硬链接/目录换入拒绝和原子 writer；
 - CLI 退出码 1 业务结果、退出码 2 错误，以及 `code/message/retryable/details` 结构化错误的 IPC 透传；
@@ -25,6 +26,6 @@
 
 Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零污染创建、锁内单 FD 输入、OneDrive/reparse 来源、精确失败清理和安全原子导出覆盖在 `python/tests/test_project_validation.py` 与 `python/tests/test_project_write_lock.py`。
 
-真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。最新真实 Chrome 条件套件证据来自 alpha.4（**312 / 0 / 0 / 1 / 44.807 秒**）；alpha.7 本轮没有重跑该条件套件，不将旧结果冒充为新运行。缺少 alpha.7 EXE 时，`smoke:packaged:win` 和 `release:evidence:verify:win` 都应失败而不是复用旧制品。
+真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。最新真实 Chrome 条件套件证据来自 alpha.4（**312 / 0 / 0 / 1 / 44.807 秒**）；alpha.8 本轮没有重跑该条件套件，不将旧结果冒充为新运行。缺少 alpha.8 EXE 时，`smoke:packaged:win` 和 `release:evidence:verify:win` 都应失败而不是复用旧制品。
 
-alpha.7 最新隐藏源码 smoke 为 **PASS**，运行根为 `out/source-smoke/runs/ms47c3l8-9b6bf78452308a33/projects/`；DOCX/EPUB 均先确认引用计划，各有 4 次检查、1 次批量修复、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,656 / 177,263 字节。这是源码 UI 闭环证据，不是打包版、安装器或发布 SHA 证据。
+alpha.8 最新隐藏源码 smoke 为 **PASS**，运行根为 `out/source-smoke/runs/ms48q9hr-05f6b99b193cf33d/projects/`；DOCX/EPUB 均先确认引用计划，各有 4 次检查、1 次批量修复、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,660 / 177,267 字节，并断言默认未登录、Free 与空同步队列。这是源码 UI 闭环证据，不是打包版、安装器或发布 SHA 证据。

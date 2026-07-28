@@ -163,3 +163,26 @@ test("selecting a new manuscript or project directory cannot reuse the previous 
   const setDir = app.slice(app.indexOf("setProjectDir(dir)"), app.indexOf("async openExistingDialog()"));
   assert.match(setDir, /state\.projectDir !== dir[\s\S]*resetCurrentProject\(\)/);
 });
+
+test("account entries and sync preview expose explicit, non-blocking choices with safe rendering", () => {
+  for (const id of [
+    "btn-login",
+    "btn-login2",
+    "auth-status-text",
+    "license-status-text",
+    "sync-preview-dialog",
+    "sync-preview-fields",
+    "btn-sync-once",
+    "btn-sync-ask-each-time",
+    "btn-sync-not-now",
+    "btn-sync-never-project",
+  ]) {
+    assert.match(html, new RegExp(`id=["']${id}["']`));
+  }
+  assert.match(html, /登录不等于同意同步/);
+  assert.match(html, /稿件、正文、标题、摘要、文件名、路径和哈希/);
+  assert.match(app, /window\.oak\.syncPreview\(state\.project, "export", false\)/);
+  assert.match(app, /sync-preview-fields[\s\S]*replaceChildren/);
+  assert.doesNotMatch(app, /sync-preview[^\n]*innerHTML/);
+  assert.match(app, /window\.oak\.syncConfirm\(preview\.record\.idempotency_id, choice\)/);
+});

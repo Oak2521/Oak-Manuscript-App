@@ -48,9 +48,19 @@ const api = {
   exportPdf: (project) => ipcRenderer.invoke("report:pdf", { project }),
   openExports: (project) => ipcRenderer.invoke("app:open-exports", { project }),
 
-  // Provider 占位
+  // 统一账号、权益与同步（固定 IPC，不暴露令牌、transport 或任意 payload）
   authStatus: () => ipcRenderer.invoke("provider:auth-status"),
+  beginLogin: () => ipcRenderer.invoke("provider:auth-begin"),
+  logout: () => ipcRenderer.invoke("provider:auth-logout"),
   syncPreference: (value) => ipcRenderer.invoke("provider:sync-preference", { value }),
+  syncPreview: (project, event, includeIssues = false) =>
+    ipcRenderer.invoke("provider:sync-preview", { project, event, includeIssues }),
+  syncConfirm: (idempotencyId, choice) =>
+    ipcRenderer.invoke("provider:sync-confirm", { idempotencyId, choice }),
+  syncQueue: () => ipcRenderer.invoke("provider:sync-queue"),
+  syncCancel: (queueId) => ipcRenderer.invoke("provider:sync-cancel", { queueId }),
+  syncRetry: (queueId) => ipcRenderer.invoke("provider:sync-retry", { queueId }),
+  syncDelete: (queueId) => ipcRenderer.invoke("provider:sync-delete", { queueId }),
   licenseStatus: () => ipcRenderer.invoke("provider:license-status"),
   openEvaluation: () => ipcRenderer.invoke("provider:open-evaluation"),
   appInfo: () => ipcRenderer.invoke("app:info"),

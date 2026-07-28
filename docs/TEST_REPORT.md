@@ -2,6 +2,50 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
+## 最新验证结论：0.1.0-alpha.8 统一账号、权益与 SyncRecord v1 离线契约
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网，未调用生产账号/支付/同步服务，未下载 builder 归档，未生成安装器、ZIP 或发布证据。
+
+| 命令 / 检查 | 结果 | 关键事实 |
+|---|---|---|
+| 账号/同步定向 Node 测试 | **PASS** | Auth 登录/退出/过期/撤销状态、Free/Pro/宽限、SyncRecord allowlist/禁止字段、JSON Schema 一致性、登录/确认门禁、幂等/取消/重试/删除、可信 IPC/preload 与安全 UI |
+| `python -m unittest python.tests.test_sync_source` | **4/4 PASS** | `sync-source` exact allowlist、结构问题记录、内容/路径/文件名/哈希反泄露、无检查/非法事件 fail-closed |
+| `npm test` | **PASS，退出码 0；墙钟 93.7 秒** | Node 278/271/0/7（2.389 秒）；Python 348/0 failures/0 errors/3 skipped（86.468 秒） |
+| `npm run verify:standards` | **PASS** | `oak-standards 2.0.0` sequence 2；manifest `0aff75eb…8427` |
+| `npm run verify:electron-runtime` | **PASS** | Electron 43.1.0 win32-x64：2 目录、75 文件、364,083,658 字节 |
+| `npm run verify:resources:win` | **PASS（alpha）** | Python core 探针返回 `0.1.0-alpha.8`；JRE/EpubCheck 好坏样本矩阵通过；17 项 sale blocker 仍作为 blocker 报告 |
+| Windows `sale` 资源门禁 | **按设计退出 1** | 17 项 blocker 未关闭；账号/同步离线契约不减少来源、许可、可信根、Ace 隔离或签名阻断 |
+| `npm run verify:resources:mac:static` | **按设计退出 1** | 缺 darwin x64/arm64 Electron dist、两架构 Python runtime manifest 与 JRE |
+| `npm run release:evidence:verify:win` | **按设计退出 1** | 缺 `Oak-Manuscript-0.1.0-alpha.8-Windows-x64.exe`；没有生成伪证据 |
+| 沙箱外隐藏 `npm run smoke` | **SMOKE-RESULT PASS** | `out/source-smoke/runs/ms48q9hr-05f6b99b193cf33d/projects/`；DOCX/EPUB 全闭环，另断言未登录、Free 权益、空同步队列 |
+
+### 同步安全证据
+
+- Python `sync-source` 由项目路径与标准身份门禁保护，只返回随机项目 ID、检查 ID、文件格式/类型/配置/语言/长度枚举、引用枚举、版本、结构化问题五字段、外部验证和导出状态；不返回标题、解释、位置、预览、文件名、项目路径、用户名、引用原文或哈希；
+- 主进程再用 `buildSyncRecordV1` 精确取字段并调用 `validateSyncRecordV1`；tracked `config/schemas/sync-record-v1.schema.json` 的根属性和 required 集与运行时样本有一致性测试；
+- 未知字段、`filename`、`path`、`title`、`preview`、`sha256`、`content_fingerprint` 注入均被 validator 拒绝；构造器面对带内容的原始 issue 也只输出 `rule_id/severity/dimension/status/fixable`；
+- Renderer 的 preload 没有“发送任意 payload”接口。预览 IPC 只接收可信项目路径、`check|export` 与布尔选项，确认 IPC 只接收已缓存预览的幂等 ID 和四种固定选择；伪造 record 被忽略；
+- 未登录时预览失败且队列保持空；只打开预览不入队；`not_now` 与 `never_for_project` 不入队；同一幂等 ID 重复确认只有一个队列项；取消、重试、删除状态有测试；
+- 未登录请求在调用 Python `sync-source` 前即拒绝；缓存预览绑定当时账号，退出会清空全部预览，切换账号后旧预览失效；
+- UI 使用 `textContent` 与 `replaceChildren` 逐字段显示，不用同步数据拼 `innerHTML`。导出完成后异步询问失败只更新提示，不改变已完成的本地导出。
+
+### 当前实现边界（不得省略）
+
+- 生产 Auth 未配置，真实 `beginLogin` 返回 `configuration_required`，不开网页、不联网；测试模拟登录不是生产登录；
+- 模拟 License 没有签名证据，`signatureVerified=false`；生产签名授权缓存、设备服务和支付不存在；
+- 同步队列只存在于当前 Electron 进程，`pending_transport` 不是上传成功；没有加密持久队列、网络 transport、Supabase 表、网站用户后台或云端查看/导出/删除；
+- `project.json.sync` 继续保持既有 `never_asked` / 空历史格式；alpha.8 没有把当前进程模拟队列伪写为云端同步历史；
+- 默认 Electron session 继续拒绝网络。未来生产 Provider 必须使用独立最小权限传输，不能修改这条基线。
+
+### 真实 smoke 证据
+
+| 项目 | 格式 | APP | 检查 | 修复记录 | 检查点 | 当前问题 | applied fixes | PDF 字节 | 源稿哈希 |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---|
+| `ui-smoke-docx` | DOCX | 0.1.0-alpha.8 | 4 | 1 | 3 | 13 | 5 | 251,660 | unchanged |
+| `ui-smoke-epub` | EPUB | 0.1.0-alpha.8 | 4 | 1 | 3 | 5 | 2 | 177,267 | unchanged |
+
+首次在普通沙箱内启动 GUI smoke 时，Electron GPU 子进程因沙箱环境退出，业务步骤尚未开始、项目目录为空；临时 GPU 绕行导致 Renderer 不进入业务流程，已全部撤回。随后按用户已授权的隐藏窗口方式在沙箱外运行原始 smoke 配置并通过。只有后者计作本轮业务证据；没有残留 Electron 进程。
+
 ## 最新验证结论：0.1.0-alpha.7 Windows 发布制品证据链
 
 环境：Windows 11；Python 3.14.6；Node 24.16.0；npm 11.13.0；Electron 43.1.0；Java 21.0.11。

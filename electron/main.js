@@ -9,6 +9,7 @@ const { app, BrowserWindow, dialog, ipcMain, shell, session } = require("electro
 const pathPolicy = require("./path-policy");
 const bridge = require("./python-bridge");
 const providers = require("./providers");
+const { registerAccountSyncIpc } = require("./account-sync-ipc");
 const { registerP0Ipc } = require("./p0-ipc");
 const { registerCoreIpc } = require("./core-ipc");
 const { registerStandardsIpc } = require("./standards-ipc");
@@ -141,6 +142,22 @@ const standardBoundP0Bridge = Object.freeze({
 });
 registerP0Ipc({ ipcMain, bridge: standardBoundP0Bridge, pathPolicy });
 
+registerAccountSyncIpc({
+  ipcMain,
+  pathPolicy,
+  authProvider: providers.authProvider,
+  licenseProvider: providers.licenseProvider,
+  syncProvider: providers.syncProvider,
+  syncRecordSource: async (project, event, includeIssues) => {
+    const { data } = await core(["sync-source", "--project", project, "--event", event]);
+    const platform = process.platform === "win32" || process.platform === "darwin"
+      ? process.platform
+      : null;
+    if (platform === null) throw new Error("当前平台尚未进入同步契约支持范围");
+    return providers.buildSyncRecordV1({ ...data, platform }, { includeIssues });
+  },
+});
+
 ipcMain.handle("core:export", async (_e, { project, outDir }) => {
   try {
     assertProjectDir(project);
@@ -255,14 +272,7 @@ ipcMain.handle("app:info", async () => {
   }
 });
 
-// ---------- IPC：Provider 占位 ----------
-
-ipcMain.handle("provider:auth-status", () => ok(providers.AuthProvider.status()));
-ipcMain.handle("provider:license-status", () => ok(providers.LicenseProvider.status()));
-ipcMain.handle("provider:sync-preference", (_e, { value }) => {
-  if (value !== undefined) providers.SyncProvider.setPreference(value);
-  return ok({ preference: providers.SyncProvider.getPreference() });
-});
+// ---------- IPC：用户主动打开出版评估页 ----------
 ipcMain.handle("provider:open-evaluation", () => {
   const url = providers.EvaluationProvider.evaluationUrl();
   const host = new URL(url).hostname;

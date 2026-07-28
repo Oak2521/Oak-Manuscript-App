@@ -233,6 +233,21 @@ dialog.modal::backdrop { background: rgba(20, 29, 25, .58); }
 .checkpoint-meta { grid-column: 2; color: var(--muted); font-size: 12px; }
 .checkpoint-empty { padding: 18px; color: var(--muted); text-align: center; }
 .rulepack-upgrade-modal { width: min(980px, calc(100vw - 48px)); }
+.sync-preview-modal { width: min(940px, calc(100vw - 48px)); }
+.sync-offer-card { margin-top: 18px; }
+.sync-transport-warning { background: #fff8e8; border-left-color: var(--warning); }
+.sync-preview-fields {
+  margin: 0 22px 12px; padding: 0; list-style: none; max-height: 48vh; overflow-y: auto;
+  border: 1px solid var(--line); border-radius: 7px; background: #fafbfa;
+}
+.sync-preview-fields li {
+  display: grid; grid-template-columns: minmax(210px, 36%) minmax(0, 1fr); gap: 12px;
+  padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 12px;
+}
+.sync-preview-fields li:last-child { border-bottom: none; }
+.sync-field-path { font-family: Consolas, monospace; color: var(--oak-dark); overflow-wrap: anywhere; }
+.sync-field-value { font-family: Consolas, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.sync-choice-actions { flex-wrap: wrap; }
 .upgrade-diff-section { margin: 0 22px 16px; }
 .upgrade-diff-section h3 { margin: 0 0 7px; color: var(--oak-dark); font-size: 15px; }
 .upgrade-diff-list {
@@ -263,4 +278,5 @@ dialog.modal::backdrop { background: rgba(20, 29, 25, .58); }
   .batch-preview.after::before { content: "修改后"; }
   .modal-actions { flex-wrap: wrap; }
   .upgrade-mapping-diff { grid-template-columns: 1fr; }
+  .sync-preview-fields li { grid-template-columns: 1fr; gap: 4px; }
 }

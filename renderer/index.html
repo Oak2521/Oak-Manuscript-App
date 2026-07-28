@@ -150,6 +150,11 @@
       </div>
       <ul id="export-files"></ul>
       <div id="verify-result" class="muted"></div>
+      <div class="callout sync-offer-card">
+        <h3>湖岸账号结果同步</h3>
+        <p id="sync-offer-status">未登录时不询问、不发送。登录不等于同意同步；每次发送前都会展示全部字段。</p>
+        <button id="btn-login-export" class="ghost">注册 / 登录湖岸账号</button>
+      </div>
       <div class="soft-cta">
         <h3>想进一步判断稿件是否适合出版？</h3>
         <p>湖岸橡树可在您主动提交后，结合稿件类型、篇幅和本次检查摘要提供出版评估。APP 不会自动上传您的稿件。</p>
@@ -183,8 +188,9 @@
       </thead><tbody></tbody></table>
       <h3>账号与同步</h3>
       <div class="callout">
-        <p id="auth-status-text">湖岸账号即将开放。登录永不强制：未登录时全部核心功能完整可用。</p>
-        <p>检查结果与必要元数据同步：<strong>默认关闭</strong>。开放后每次均按您的选择执行；稿件、正文、摘录、文件名、路径和文件哈希永不进入账号同步。</p>
+        <p id="auth-status-text">正在读取湖岸账号状态…</p>
+        <p id="license-status-text">正在读取 Free / Pro 权益状态…</p>
+        <p>登录不等于同意同步。检查结果与必要元数据同步<strong>默认关闭</strong>，每次发送前逐字段预览；稿件、正文、标题、摘要、文件名、路径和哈希永不进入账号同步。</p>
         <button id="btn-login2" class="ghost">注册 / 登录湖岸账号</button>
       </div>
       <h3>隐私</h3>
@@ -287,6 +293,25 @@
     <div class="modal-actions">
       <button id="btn-cancel-rulepack-upgrade">取消（不改变项目）</button>
       <button id="btn-confirm-rulepack-upgrade" class="primary">确认切换并重新检查</button>
+    </div>
+  </dialog>
+
+  <dialog id="sync-preview-dialog" class="modal sync-preview-modal" aria-labelledby="sync-preview-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="sync-preview-title">确认结果与元数据同步</h2>
+        <p class="muted">下面逐字段列出本次完整负载。这里只包含检查结果与必要元数据；不含稿件、正文、标题、摘要、文件名、路径和哈希。</p>
+      </div>
+    </div>
+    <div class="callout sync-transport-warning">
+      当前仅实现本地预览与待发送队列契约；生产网站同步尚未配置，确认后也不会声称已经上传。
+    </div>
+    <ol id="sync-preview-fields" class="sync-preview-fields" aria-live="polite"></ol>
+    <div class="modal-actions sync-choice-actions">
+      <button id="btn-sync-not-now">暂不同步</button>
+      <button id="btn-sync-never-project">不再询问此项目</button>
+      <button id="btn-sync-ask-each-time">同步本次，以后仍询问</button>
+      <button id="btn-sync-once" class="primary">仅同步本次</button>
     </div>
   </dialog>
 

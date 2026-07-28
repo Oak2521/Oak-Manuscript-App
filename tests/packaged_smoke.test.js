@@ -113,7 +113,7 @@ test("smoke identity rejects a stale app version and a non-packaged binary", () 
       expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
       requirePackaged: true,
     }),
-    /应用版本应为 0\.1\.0-alpha\.7，实际为 0\.1\.0-alpha\.1/,
+    /应用版本应为 0\.1\.0-alpha\.8，实际为 0\.1\.0-alpha\.1/,
   );
   assert.throws(
     () => assertSmokeIdentity(testAppInfo(), {
@@ -188,7 +188,7 @@ test("smoke reads the actual create/check artifacts and proves Python core plus 
       expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
       expectedStandardIdentity: TEST_STANDARD_IDENTITY,
     }),
-    /Python core 创建项目的版本应为 0\.1\.0-alpha\.7，实际为 0\.1\.0-alpha\.1/,
+    /Python core 创建项目的版本应为 0\.1\.0-alpha\.8，实际为 0\.1\.0-alpha\.1/,
   );
 
   manifest.app_version = DEFAULT_EXPECTED_APP_VERSION;
@@ -211,7 +211,7 @@ test("smoke reads the actual create/check artifacts and proves Python core plus 
       expectedVersion: DEFAULT_EXPECTED_APP_VERSION,
       expectedStandardIdentity: TEST_STANDARD_IDENTITY,
     }),
-    /Python core 检查报告的版本应为 0\.1\.0-alpha\.7，实际为 0\.1\.0-alpha\.1/,
+    /Python core 检查报告的版本应为 0\.1\.0-alpha\.8，实际为 0\.1\.0-alpha\.1/,
   );
 
   report.app_version = DEFAULT_EXPECTED_APP_VERSION;

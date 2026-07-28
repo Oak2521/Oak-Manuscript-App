@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.7` 源码检查点架构；本轮尚未生成 alpha.7 Windows 安装器或 ZIP。本地标准验证、项目固定版本、显式升级与回滚、确定性默认引用解析、Windows builder 受控归档下载/安全导入，以及构建后制品 SHA-256/canonical manifest 证据链已实现。真实 builder 资产、联网标准获取、生产信任根、macOS、Web、统一账号、订阅与同步仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.8` 源码检查点架构；本轮尚未生成 alpha.8 Windows 安装器或 ZIP。本地标准验证、项目固定版本、显式升级与回滚、确定性默认引用解析、Windows 构建/制品证据契约，以及统一账号、Free/Pro 和结果同步的严格离线契约已实现。真实 builder 资产、生产认证/订阅/同步服务、联网标准获取、生产信任根、macOS 和 Web 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -16,6 +16,8 @@ Electron Main
   ├─ StandardsStore：严格 payload / 签名 / CAS / 高水位 / 撤回 / 事务恢复
   ├─ standard-bound-core：项目 release 预检 + 七字段 Python 绑定
   ├─ core-ipc：引用计划 / 检查参数的固定白名单
+  ├─ AuthProvider / LicenseProvider：离线状态机、PKCE 固定契约与 Free/Pro 权益矩阵
+  ├─ account-sync-ipc / SyncProvider：可信来源负载、逐字段预览、四选一授权与进程内队列
   ├─ 统一 Python bootstrap：-I -S -X utf8 + 受控 core 目录
   ├─ P0 修复：planFixes / applyFixPlan（必须带 plan_id）
   ├─ 标准 IPC：项目状态 / 完整差异计划 / 一次确认升级
@@ -25,6 +27,7 @@ Python Core（oak_manuscript_core）
   ├─ 读取器：DOCX（M1）/ Markdown、TXT（M2）/ EPUB（M3）
   ├─ 规则引擎（确定性）与规则包加载
   ├─ citation：本地结构信号 → 体例/安全退回 → 可解释解析记录
+  ├─ sync-source：严格只读的结果同步白名单来源，不含稿件内容或本地标识
   ├─ standards_store：manifest/payload/CAS 重验与项目 release 解析
   ├─ rulepack_upgrade：只读差异计划 → 检查点/归档 → 原子 pin → 强制重检
   ├─ plan-fixes 只读计划 → plan_id 确认 → fix 原子批量修复
@@ -113,6 +116,14 @@ PDF 使用无 `persist:` 前缀且禁缓存的专用 session，禁 JavaScript、
 
 Renderer 必须先调用严格只读的 `plan-citation`，展示体例/模式、理由、置信度、证据数量和实际规则范围；用户确认后 `check` 携带绑定全状态的 `citation_plan_id` 并在写锁内重算。规则包升级时用户显式体例保留，默认解析结果清空以便在新策略下重算。
 
+### AD-013 账号与结果同步必须“可信来源—完整预览—显式授权”（2026-07-28，冻结）
+
+Renderer 不能构造同步负载，也不能提供 token、任意 URL 或 transport。主进程只接受受路径门禁保护的项目和固定 `check|export` 事件，调用 Python `sync-source` 取得只读结构来源，再由 `buildSyncRecordV1` 生成并以 exact validator 校验负载。字段权威定义为 `config/schemas/sync-record-v1.schema.json`；标题、正文、解释、位置、预览、文件名、路径、用户名、引用原文和任何内容哈希都没有可用字段，未知字段一律拒绝。
+
+只有已登录状态才可生成预览；预览本身不入队、不发送。界面必须逐字段展示同一份缓存负载，用户随后明确选择 `sync_once`、`ask_each_time`、`not_now` 或 `never_for_project`。确认只提交 opaque `idempotency_id` 和固定选择，过期或替换后的预览拒绝。alpha.8 的队列仅存在于当前进程并固定为 `pending_transport`，没有持久化、重启恢复、后台重试或网络上传；因此“已入队”绝不等于“已同步到网站”。
+
+`AuthProvider` 当前固定未来生产形态为系统浏览器 PKCE，但未配置服务时只返回 `configuration_required` 且不打开页面；登录/过期/撤销仅能由测试专用实例模拟。`LicenseProvider` 已固定 Free/Pro 能力矩阵、有效期和离线宽限语义；签名订阅凭证、服务端设备管理与计费尚未实现。生产 transport 上线时必须保持默认 Electron session 离线，并把凭证存入系统安全存储、队列存入加密持久层，在不改变 SyncRecord v1 最小字段边界的前提下另行威胁建模。
+
 ## 3. Python 核心模块地图（随实现更新）
 
 | 模块 | 职责 |
@@ -134,10 +145,10 @@ Renderer 必须先调用严格只读的 `plan-citation`，展示体例/模式、
 | `oak_manuscript_core/rules/` | 各规则判断逻辑（每规则独立、可单测） |
 | `oak_manuscript_core/fixes.py` | 白名单机械修复原语（幂等） |
 | `oak_manuscript_core/fix_plans.py` | 生成绑定项目 / working / issues / 规则包 / 候选的只读批量计划 |
-| `oak_manuscript_core/ops.py` | 检查编排、计划验证、批量修复事务与回滚、安全自选目录与逐文件原子导出 |
+| `oak_manuscript_core/ops.py` | 检查编排、计划验证、批量修复事务与回滚、安全自选目录与逐文件原子导出、只读 `sync-source` 白名单来源 |
 | `oak_manuscript_core/reports.py` | JSON / Markdown / HTML 报告渲染 |
 | `oak_manuscript_core/exporter.py` | 修订稿 DOCX 导出、导出目录校验 |
-| `oak_manuscript_core/__main__.py` | CLI（含 plan-citation / check 确认、修复/检查点、project-standard-status / plan-rulepack-upgrade / upgrade-rulepack） |
+| `oak_manuscript_core/__main__.py` | CLI（含 plan-citation / check 确认、修复/检查点、project-standard-status / plan-rulepack-upgrade / upgrade-rulepack / sync-source） |
 
 ## 4. 安全基线
 
@@ -151,7 +162,7 @@ Renderer 必须先调用严格只读的 `plan-citation`，展示体例/模式、
 - Python 退出码 1 是有效业务结果，退出码 2 是运行错误；结构化 `code/message/retryable/details` 贯通到 IPC；
 - 统一测试入口为 `npm test`（Node 契约与 UI 结构测试 + Python 核心测试）；分项为 `npm run test:node`、`npm run test:python`。
 
-## 5. 发布资源可信链（0.1.0-alpha.4 起，alpha.7 继承并扩展）
+## 5. 发布资源可信链（0.1.0-alpha.4 起，alpha.8 继承）
 
 Windows alpha 资源不是靠“目录存在”通过门禁，而是由五组全量清单固定：
 
@@ -200,5 +211,5 @@ alpha.7 在构建输出端增加独立证据链。`build:win` 首先调用 `rele
 - 源码 smoke 与打包 smoke 都通过 `app:info` 核对 Electron 版本和 freshly verified `standardIdentity`；随后读取本次真实生成的 `project.json`、检查记录和导出 `report.json`，核对 Python core 版本、check ID 及四方七字段身份一致。打包 smoke 还强制证明 `app.isPackaged=true`，防止把旧版、陈旧 core 或错误规则包误记为新打包版。
 - 源码 smoke 每次生成独立 `out/source-smoke/runs/<run-id>/`，项目、标准 store、缓存、临时目录、用户数据、HOME/APPDATA/XDG 与 crash dumps 不复用；打包 smoke 同样按运行 ID 隔离并受仓库 `out/` 边界控制。Windows EXE 还须先通过 x64 PE32+ 校验。
 - macOS 构建拆为 `build:mac:x64` 与 `build:mac:arm64`；聚合入口 `build:mac` 只选择当前原生 host 架构，不在一个进程伪造双架构探针。`verify:resources:mac` 只是带 `--no-runtime-probe` 的跨架构静态聚合，不能替代两个原生 runner 的执行证据。
-- alpha.7 隐藏源码 smoke 已 PASS：`out/source-smoke/runs/ms47c3l8-9b6bf78452308a33/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 次批量修复、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,656 / 177,263 字节。最终统一 `npm test` 退出码 0：Node 267 / 260 / 0 / 7（2.487 秒），Python 344 / 0 failures / 0 errors / 3 skipped（80.833 秒），墙钟 88.1 秒。
-- 当前 alpha.7 具备源码、默认引用解析、标准 2.0.0 本地可信链、Windows 本地资源门禁、Electron 运行时全树锁、builder 受控下载/安全导入契约和发布制品证据生成器；本轮未联网，真实归档/工具树/tracked lock、Windows 签名和实际 alpha.7 制品尚缺，证据验证器在真实空 release 上按预期拒绝缺失 NSIS。Windows sale 门禁仍有 17 项阻断。macOS 分架构配置已存在，但运行资源、原生构建、签名、公证、Gatekeeper 与实机 smoke 均未完成。
+- alpha.8 隐藏源码 smoke 已 PASS：`out/source-smoke/runs/ms48q9hr-05f6b99b193cf33d/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 次批量修复、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,660 / 177,267 字节；smoke 另断言未登录、Free 和空同步队列。最终统一测试数字以 `docs/TEST_REPORT.md` 为准。
+- 当前 alpha.8 另具备账号/权益/同步的离线状态机、SyncRecord v1 exact schema、可信来源 IPC、完整负载预览和四选一确认，但没有生产凭证、持久队列或上传 transport。本轮未联网，真实归档/工具树/tracked lock、Windows 签名和实际 alpha.8 制品尚缺，证据验证器在真实空 release 上按预期拒绝缺失 NSIS。Windows sale 门禁仍有 17 项阻断。macOS 分架构配置已存在，但运行资源、原生构建、签名、公证、Gatekeeper 与实机 smoke 均未完成。

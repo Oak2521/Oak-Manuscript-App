@@ -26,6 +26,10 @@ const state = {
   rulepackUpgradePlan: null,
   rulepackUpgradePlanning: false,
   rulepackUpgradeApplying: false,
+  authStatus: null,
+  licenseStatus: null,
+  syncPreview: null,
+  syncConfirming: false,
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -466,6 +470,7 @@ function resetCurrentProject({ clearProjectDir = false } = {}) {
   state.checkpoints = [];
   state.selectedCheckpointId = null;
   state.rulepackUpgradePlan = null;
+  state.syncPreview = null;
   if (clearProjectDir) {
     state.projectDir = null;
     $("#chosen-dir").textContent = "未选择（需要空目录）";
@@ -828,7 +833,59 @@ const actions = {
     $("#btn-open-folder").disabled = false;
     renderExportSummary();
     toast(`已导出 ${state.exportFiles.length} 个文件。原稿未被修改。`);
+    this.offerSyncAfterExport().catch((error) => {
+      $("#sync-offer-status").textContent = `同步预览未启动：${String(error.message || error)}。导出不受影响。`;
+    });
     return { files: state.exportFiles };
+  },
+
+  async offerSyncAfterExport() {
+    const auth = unwrap(await window.oak.authStatus());
+    state.authStatus = auth;
+    renderAccountStatus();
+    if (!auth.loggedIn || auth.state !== "authenticated") {
+      $("#sync-offer-status").textContent = "未登录，不询问、不发送；本次导出已完整保存在本地。";
+      return { offered: false, reason: "signed_out" };
+    }
+    const response = unwrap(await window.oak.syncPreview(state.project, "export", false));
+    const preview = response.preview;
+    if (!preview || !preview.record || !Array.isArray(preview.choices)) {
+      throw new Error("同步预览返回格式非法");
+    }
+    state.syncPreview = preview;
+    renderSyncPreview(preview.record);
+    $("#sync-preview-dialog").showModal();
+    $("#sync-offer-status").textContent = "同步预览已打开；尚未发送任何数据。";
+    return { offered: true, idempotencyId: preview.record.idempotency_id };
+  },
+
+  async confirmSync(choice) {
+    const preview = state.syncPreview;
+    if (!preview) throw new Error("没有待确认的同步预览");
+    if (state.syncConfirming) throw new Error("同步选择正在处理");
+    state.syncConfirming = true;
+    setSyncChoiceDisabled(true);
+    try {
+      const response = unwrap(await window.oak.syncConfirm(preview.record.idempotency_id, choice));
+      const result = response.result;
+      state.syncPreview = null;
+      $("#sync-preview-dialog").close(choice);
+      if (result.queued) {
+        $("#sync-offer-status").textContent =
+          "本次负载已进入当前进程内的待发送队列；生产同步尚未配置，当前没有上传到网站。";
+        toast("已记录当前进程内待发送项；尚未上传到网站。", 5000);
+      } else if (choice === "never_for_project") {
+        $("#sync-offer-status").textContent = "已记录：不再询问此项目；本地项目和导出不受影响。";
+        toast("已关闭此项目的同步询问");
+      } else {
+        $("#sync-offer-status").textContent = "本次暂不同步；没有发送或入队。";
+        toast("本次没有同步");
+      }
+      return result;
+    } finally {
+      state.syncConfirming = false;
+      setSyncChoiceDisabled(false);
+    }
   },
 
   async makePdf() {
@@ -950,6 +1007,7 @@ const actions = {
       fixPlanCount: state.fixPlan ? state.fixPlan.count : 0,
       checkpoints: state.checkpoints.length,
       rulepackUpgradePlan: state.rulepackUpgradePlan ? state.rulepackUpgradePlan.plan_id : null,
+      syncPreview: state.syncPreview ? state.syncPreview.record.idempotency_id : null,
     };
   },
 };
@@ -1145,9 +1203,81 @@ async function renderStandardsPage() {
   }
 }
 
-async function loginPlaceholder() {
-  const r = unwrap(await window.oak.authStatus());
-  toast(`${r.message}（登录永不强制，未登录不影响任何功能）`, 3200);
+async function toggleAccountAuth() {
+  const status = unwrap(await window.oak.authStatus());
+  if (status.loggedIn) {
+    const signedOut = unwrap(await window.oak.logout());
+    state.authStatus = signedOut;
+    renderAccountStatus();
+    toast("已退出湖岸账号；本地项目和导出仍可使用。", 3600);
+    return signedOut;
+  }
+  const result = unwrap(await window.oak.beginLogin());
+  state.authStatus = unwrap(await window.oak.authStatus());
+  renderAccountStatus();
+  toast(result.message || "账号登录尚未配置", 5000);
+  return result;
+}
+
+function renderAccountStatus() {
+  const auth = state.authStatus;
+  const license = state.licenseStatus;
+  if (auth) {
+    $("#auth-status-text").textContent = auth.loggedIn
+      ? `已登录湖岸统一账号（${auth.accountId}）。登录不等于同意同步。`
+      : `${auth.message} 未登录不影响本地检查、修复和导出。`;
+    const label = auth.loggedIn ? "退出湖岸账号" : "注册 / 登录湖岸账号";
+    for (const selector of ["#btn-login", "#btn-login2", "#btn-login-export"]) {
+      $(selector).textContent = label;
+    }
+  }
+  if (license) {
+    const tier = (license.effectiveTier || license.tier) === "pro" ? "Pro" : "Free";
+    $("#license-status-text").textContent =
+      `${tier} 权益（${license.entitlementState}）；本地项目与已有导出永不因账号或订阅状态锁定。`;
+  }
+}
+
+async function refreshAccountStatus() {
+  const [auth, license] = await Promise.all([
+    window.oak.authStatus(),
+    window.oak.licenseStatus(),
+  ]);
+  state.authStatus = unwrap(auth);
+  state.licenseStatus = unwrap(license);
+  renderAccountStatus();
+  return { auth: state.authStatus, license: state.licenseStatus };
+}
+
+function flattenSyncRecord(value, prefix = "$") {
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) => flattenSyncRecord(item, `${prefix}[${index}]`));
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value).flatMap(([key, child]) => flattenSyncRecord(child, `${prefix}.${key}`));
+  }
+  return [[prefix, value]];
+}
+
+function renderSyncPreview(record) {
+  const items = flattenSyncRecord(record).map(([path, value]) => {
+    const item = document.createElement("li");
+    const field = document.createElement("code");
+    const content = document.createElement("span");
+    field.className = "sync-field-path";
+    content.className = "sync-field-value";
+    field.textContent = path;
+    content.textContent = value === null ? "null（确认时写入授权时间）" : String(value);
+    item.append(field, content);
+    return item;
+  });
+  $("#sync-preview-fields").replaceChildren(...items);
+}
+
+function setSyncChoiceDisabled(disabled) {
+  for (const selector of [
+    "#btn-sync-once", "#btn-sync-ask-each-time", "#btn-sync-not-now", "#btn-sync-never-project",
+  ]) $(selector).disabled = disabled;
 }
 
 // ---------- 绑定 ----------
@@ -1228,9 +1358,25 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   $("#btn-cta-dismiss").addEventListener("click", () => toast("好的，本次不再提示"));
   $("#btn-login").addEventListener("click", () =>
-    loginPlaceholder().catch((error) => toast(String(error.message || error), 5000)));
+    toggleAccountAuth().catch((error) => toast(String(error.message || error), 5000)));
   $("#btn-login2").addEventListener("click", () =>
-    loginPlaceholder().catch((error) => toast(String(error.message || error), 5000)));
+    toggleAccountAuth().catch((error) => toast(String(error.message || error), 5000)));
+  $("#btn-login-export").addEventListener("click", () =>
+    toggleAccountAuth().catch((error) => toast(String(error.message || error), 5000)));
+  $("#btn-sync-once").addEventListener("click", () =>
+    actions.confirmSync("sync_once").catch((error) => toast(String(error.message || error), 5000)));
+  $("#btn-sync-ask-each-time").addEventListener("click", () =>
+    actions.confirmSync("ask_each_time").catch((error) => toast(String(error.message || error), 5000)));
+  $("#btn-sync-not-now").addEventListener("click", () =>
+    actions.confirmSync("not_now").catch((error) => toast(String(error.message || error), 5000)));
+  $("#btn-sync-never-project").addEventListener("click", () =>
+    actions.confirmSync("never_for_project").catch((error) => toast(String(error.message || error), 5000)));
+  $("#sync-preview-dialog").addEventListener("cancel", (event) => {
+    event.preventDefault();
+    if (!state.syncConfirming && state.syncPreview) {
+      actions.confirmSync("not_now").catch((error) => toast(String(error.message || error), 5000));
+    }
+  });
   $("#btn-install-standards").addEventListener("click", async () => {
     const button = $("#btn-install-standards");
     if (button.disabled) return;
@@ -1287,6 +1433,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }));
 
   renderStandardsPage();
+  refreshAccountStatus().catch((error) => toast(String(error.message || error), 5000));
 });
 
 // 冒烟测试入口（与 UI 按钮走完全相同的代码路径）

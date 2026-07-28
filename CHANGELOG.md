@@ -4,6 +4,27 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.8（ChatGPT 统一账号与 SyncRecord v1 离线契约检查点）
+
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.8`。该标签只表示经本地验证的源码状态；生产账号、同步服务、安装包和可售卖发行版均不存在。
+
+**账号、权益与同步边界**
+
+- APP、Python 核心和 lockfile 统一到 `0.1.0-alpha.8`；标准 release、35 条规则和 6 个白名单机械 fixer 未变化；
+- AuthProvider 固定系统浏览器 PKCE 生产模式并实现可测试的登录/退出/过期/撤销状态；生产未配置时不打开页面、不联网；
+- LicenseProvider 固化 Free/Pro 能力矩阵和有效期/宽限期状态计算；模拟授权不冒充签名证据，过期不锁本地项目或既有导出；
+- 新增 Python 只读 `sync-source`、Electron `SyncRecord v1` exact validator 和 tracked JSON Schema；正文、标题、摘要、预览、文件名、路径、参考文献原文、哈希和内容指纹均无允许字段并有反向测试；
+- 新增同步 IPC/preload：Renderer 只能请求可信项目来源并提交固定选择/队列 ID，不能拼装 payload、持有令牌或发起网络；
+- 导出后仅在 authenticated 状态非阻断打开逐字段预览；四种选择为仅本次、同步本次以后仍询问、暂不同步、不再询问此项目；
+- 当前进程内队列支持幂等、取消、重试和删除，状态固定为 `pending_transport`；生产 transport、持久队列、Supabase、支付和网站后台仍未实现。
+
+**验证与边界**
+
+- 账号/同步专项、IPC、UI、Python 核心来源和 JSON Schema 一致性测试通过；最终统一测试计数见 `docs/TEST_REPORT.md`；
+- 标准、Electron runtime 和 Windows alpha 资源门禁通过；Windows sale 门禁仍保留 17 项 blocker，macOS 静态门禁仍拒绝缺失双架构资源；
+- alpha.8 沙箱外隐藏源码 smoke PASS：`out/source-smoke/runs/ms48q9hr-05f6b99b193cf33d/projects/`；DOCX/EPUB 各 4 次检查、1 次修复、3 个检查点且原稿哈希不变，PDF 251,660 / 177,267 字节；
+- 本轮没有联网、没有下载 builder 归档、没有生产账号/同步请求，也没有 alpha.8 NSIS、ZIP、SHA 文件或 release manifest。
+
 ### 2026-07-28 — 0.1.0-alpha.7（ChatGPT Windows 发布制品证据链检查点）
 
 > 源码检查点标签：`chatgpt-v0.1.0-alpha.7`。该标签只表示经本地验证的源码状态；当前没有 alpha.7 安装包、ZIP 或可售卖发行版。

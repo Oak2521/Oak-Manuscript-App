@@ -102,6 +102,22 @@ class CliClosedLoopTest(unittest.TestCase):
         self.assertEqual(project_doc["rulepack"], pinned_identity)
         self.assertEqual(project_doc["checks"][-1]["rulepack"], pinned_identity)
 
+        # 3b. 同步来源只读、白名单化；不含稿件身份、路径、预览或哈希。
+        code, sync_source, err = run_cli(
+            "sync-source", "--project", str(self.pdir), "--event", "check"
+        )
+        self.assertEqual(code, 0, err)
+        self.assertEqual(sync_source["projectId"], project_doc["project_id"])
+        self.assertEqual(sync_source["runId"], "check-0001")
+        self.assertEqual(sync_source["authorizedAt"], None)
+        self.assertGreater(len(sync_source["issues"]), 0)
+        sync_text = json.dumps(sync_source, ensure_ascii=False)
+        self.assertNotIn("paper_needs_review", sync_text)
+        self.assertNotIn(str(self.pdir), sync_text)
+        self.assertNotIn(source_sha, sync_text)
+        self.assertNotIn("preview", sync_text)
+        self.assertNotIn("location", sync_text)
+
         # 4. 集中预览：只读，返回绑定当前状态的 plan_id
         code, plan, err = run_cli("plan-fixes", "--project", str(self.pdir))
         self.assertEqual(code, 0, err)

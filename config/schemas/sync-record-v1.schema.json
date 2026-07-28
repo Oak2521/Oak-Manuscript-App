@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript/sync-record-v1.schema.json",
+  "title": "Oak Manuscript SyncRecord v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "project_id",
+    "run_id",
+    "idempotency_id",
+    "event",
+    "document",
+    "citation",
+    "versions",
+    "counts",
+    "external_validation",
+    "export_state",
+    "created_at",
+    "authorized_at"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "record_type": { "const": "oak_manuscript_result" },
+    "project_id": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+    "run_id": { "type": "string", "pattern": "^check-[0-9]{4,}$" },
+    "idempotency_id": {
+      "type": "string",
+      "pattern": "^sync-v1:[0-9a-f]{16}:check-[0-9]{4,}$"
+    },
+    "event": { "enum": ["check", "export"] },
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "manuscript_type", "check_config", "language_bucket", "length_bucket"],
+      "properties": {
+        "format": { "enum": ["docx", "md", "txt", "epub"] },
+        "manuscript_type": { "enum": ["paper", "print_book", "ebook"] },
+        "check_config": { "enum": ["quick", "full"] },
+        "language_bucket": { "enum": ["zh", "en", "mixed", "undetermined"] },
+        "length_bucket": {
+          "enum": ["5千字以内", "5千—2万字", "2万—5万字", "5万—10万字", "10万字以上"]
+        }
+      }
+    },
+    "citation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requested_style",
+        "resolved_style",
+        "mode",
+        "confidence",
+        "reason_code",
+        "resolver_version"
+      ],
+      "properties": {
+        "requested_style": {
+          "enum": ["default", "gbt7714-2025", "apa-7", "chicago-18-nb", "chicago-18-ad", "none"]
+        },
+        "resolved_style": {
+          "type": ["string", "null"],
+          "enum": ["gbt7714-2025", "apa-7", "chicago-18-nb", "chicago-18-ad", "none", null]
+        },
+        "mode": { "enum": ["style_specific", "structure_only", "disabled"] },
+        "confidence": { "enum": ["high", "medium", "low", "not_applicable"] },
+        "reason_code": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+        "resolver_version": { "type": "string", "pattern": "^[0-9A-Za-z][0-9A-Za-z.+-]{0,63}$" }
+      }
+    },
+    "versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rulepack", "app", "platform"],
+      "properties": {
+        "rulepack": { "type": "string", "pattern": "^[0-9A-Za-z][0-9A-Za-z.+-]{0,63}$" },
+        "app": { "type": "string", "pattern": "^[0-9A-Za-z][0-9A-Za-z.+-]{0,63}$" },
+        "platform": { "enum": ["win32", "darwin", "web"] }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "fixable", "by_severity", "by_dimension", "by_status"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "fixable": { "type": "integer", "minimum": 0 },
+        "by_severity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["error", "warning", "suggestion"],
+          "properties": {
+            "error": { "type": "integer", "minimum": 0 },
+            "warning": { "type": "integer", "minimum": 0 },
+            "suggestion": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "by_dimension": {
+          "type": "object",
+          "propertyNames": { "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "by_status": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "open": { "type": "integer", "minimum": 0 },
+            "accepted": { "type": "integer", "minimum": 0 },
+            "rejected": { "type": "integer", "minimum": 0 },
+            "resolved": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule_id", "severity", "dimension", "status", "fixable"],
+        "properties": {
+          "rule_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+          "severity": { "enum": ["error", "warning", "suggestion"] },
+          "dimension": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+          "status": { "enum": ["open", "accepted", "rejected", "resolved"] },
+          "fixable": { "type": "boolean" }
+        }
+      }
+    },
+    "external_validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["epubcheck", "ace"],
+      "properties": {
+        "epubcheck": { "enum": ["not_run", "not_applicable", "passed", "failed", "unavailable"] },
+        "ace": { "enum": ["not_run", "not_applicable", "passed", "failed", "unavailable"] }
+      }
+    },
+    "export_state": { "enum": ["not_exported", "completed"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "authorized_at": { "type": ["string", "null"], "format": "date-time" }
+  }
+}

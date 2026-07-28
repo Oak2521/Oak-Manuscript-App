@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.7`
+> 当前版本：`0.1.0-alpha.8`
 > 当前分支：`chatgpt/commercial-v1`
-> 源码检查点标签：`chatgpt-v0.1.0-alpha.7`（只标记源码与本地验证状态，不代表安装包或正式发行）
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.8`（只标记源码与本地验证状态，不代表安装包或正式发行）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,24 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.8 统一账号、权益与同步离线契约
+
+- APP、Python 核心和 lockfile 统一到 `0.1.0-alpha.8`；规则包、标准内容和自动修复白名单未变化；
+- `AuthProvider` 已从“即将开放”占位升级为可测试状态机，固定生产登录方式为系统浏览器 PKCE；正式服务未配置时明确返回 `configuration_required`，不打开页面、不联网；测试模拟覆盖登录、退出、过期和设备撤销，生产 UI 不开放模拟入口；
+- `LicenseProvider` 固化 Free/Pro 能力矩阵及 `validUntil`/`graceUntil` 离线宽限计算；模拟授权明确 `signatureVerified=false`，过期仅降级新权益，`localProjectsLocked=false` 永久成立；
+- Python 新增严格只读 `sync-source`，只返回随机项目 ID、检查 ID、枚举、版本、计数所需的结构化问题记录和状态；不返回标题、解释、位置、预览、文件名、路径或哈希；
+- Electron `buildSyncRecordV1` 和 `validateSyncRecordV1` 使用 exact schema、交叉计数和禁止字段反向门禁；`config/schemas/sync-record-v1.schema.json` 作为未来网站服务端复用的 JSON Schema 2020-12 合同；
+- Renderer 不能提交任意同步 payload，只能提交项目句柄和固定枚举。已登录用户在导出后可看到逐字段安全预览，并选择仅本次、同步本次以后仍询问、暂不同步或不再询问此项目；未登录不询问；失败不影响导出；
+- `SyncProvider` 提供幂等的当前进程内 `pending_transport` 队列以及取消、重试、删除契约。生产 transport 与持久队列未实现，因此当前真实 APP 不会上传，重启后模拟队列不保留；完整边界见 `docs/SYNC_RECORD_V1.md`。
+
+### 现场验证（2026-07-28，alpha.8）
+
+- 最终统一 `npm test`：**PASS，退出码 0，墙钟 93.7 秒**；Node 278/271/0/7（2.389 秒），Python 348/0 failures/0 errors/3 skipped（86.468 秒）；
+- `npm run verify:standards`、`npm run verify:electron-runtime`、`npm run verify:resources:win`：**PASS**；Windows alpha 探针读到 core `0.1.0-alpha.8`，sale 门禁仍有 17 项 blocker；
+- `npm run verify:resources:mac:static`：按预期退出 1，仍精确缺两架构 Electron dist、Python runtime manifest 与 JRE；
+- 沙箱外独立隐藏 `npm run smoke`：**SMOKE-RESULT PASS**，运行根 `out/source-smoke/runs/ms48q9hr-05f6b99b193cf33d/projects/`；DOCX/EPUB 均 4 次检查、1 次修复、3 个检查点、原稿哈希不变，当前问题 13/5、报告 applied fixes 5/2、PDF 251,660/177,267 字节；未登录、Free 权益和空同步队列断言通过；
+- `release:evidence:verify:win` 按预期拒绝缺失的 alpha.8 NSIS；本轮没有联网、没有下载 builder 归档、没有生产账号/同步调用，也没有生成安装器、ZIP 或发布证据。
 
 ### 已完成：0.1.0-alpha.7 Windows 发布制品证据链
 
@@ -176,11 +194,11 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.7 继承了可复制、可执行、由 tracked full lock 固定的生产闭包，并通过 Windows alpha 资源门禁；正式版仍缺最小权限受控 helper、自带且校验过的浏览器运行时、OS 级默认拒绝网络、可信根加固和正式人工许可审计；
-- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.7 尚无安装器或 ZIP，未做打包版 smoke、干净系统安装/升级/卸载或签名。受控下载/导入及构建尾部发布证据链已实现，但本轮未联网，三份固定归档、真实工具树和独立 tracked lock 尚缺；
+- 打包版 Ace：alpha.8 继承了可复制、可执行、由 tracked full lock 固定的生产闭包，并通过 Windows alpha 资源门禁；正式版仍缺最小权限受控 helper、自带且校验过的浏览器运行时、OS 级默认拒绝网络、可信根加固和正式人工许可审计；
+- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.8 尚无安装器或 ZIP，未做打包版 smoke、干净系统安装/升级/卸载或签名。受控下载/导入及构建尾部发布证据链已实现，但本轮未联网，三份固定归档、真实工具树和独立 tracked lock 尚缺；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：服务端任务 API、隔离执行、限额、零留存和官网嵌入尚未实现；
-- 账号/订阅/同步：UI 入口和 Provider 仍是离线占位，未连接生产 Supabase、支付或网站后台；
+- 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览和当前进程队列契约已实现；生产 Supabase、OS 凭据存储、签名授权、支付、持久队列、网络 transport 和网站后台未连接；
 - 标准库：治理结构和引用解析政策已完成，13 项标准、35 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
 - 标准升级：本地验证、签名包导入/回滚骨架、项目固定与显式升级已编码；生产 trust pin、在线获取/下载、签名撤回分发与联网自动更新未实现；
 - 正式发布仍缺隐私/条款最终文本、证书、生产密钥、人工内测、macOS 硬件和网站联调。
@@ -213,11 +231,11 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 1. 经用户联网授权后显式运行 `npm run download:builder:win`，仅从合同固定的 electron-builder 官方 GitHub release URL 下载三份归档到仓库 `out/downloads/windows-builder/`；
 2. 下载器全部验哈希后运行 `node scripts/import_windows_builder_toolchain.js --archive-dir out/downloads/windows-builder --update-lock`，提交并复核真实独立 lock；
-3. 生成 alpha.7 NSIS 安装器与 ZIP；构建链必须依次通过打包资源门禁、应用身份断言、隐藏 packaged smoke，最后生成并复验 `SHA256SUMS.txt` 与 canonical release manifest；
+3. 生成 alpha.8 NSIS 安装器与 ZIP；构建链必须依次通过打包资源门禁、应用身份断言、隐藏 packaged smoke，最后生成并复验 `SHA256SUMS.txt` 与 canonical release manifest；
 4. 完成 Windows 代码签名，并逐项关闭 provenance、许可证、可信根、Ace helper/browser 等 sale blocker；
 5. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
 6. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
-7. 实现 Auth / License / Sync 的离线契约和生产适配边界，再经授权连接网站；
+7. 在现有 Auth / License / Sync 离线契约上实现持久安全凭据/队列与独立网络 transport，再经授权连接 Supabase、支付和网站后台；
 8. 实现服务端统一处理的 Web 作业 API、零留存和官网嵌入；完成 Free/Pro、支付、隐私、内测和正式发布门禁。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。
@@ -250,6 +268,7 @@ python -m oak_manuscript_core restore-checkpoint --project <项目目录> --chec
 python -m oak_manuscript_core project-standard-status --project <项目目录>
 python -m oak_manuscript_core plan-rulepack-upgrade --project <项目目录> --to-manifest-sha256 <摘要>
 python -m oak_manuscript_core upgrade-rulepack --project <项目目录> --to-manifest-sha256 <摘要> --plan-id <计划ID>
+python -m oak_manuscript_core sync-source --project <项目目录> --event export
 ```
 
 ## 7. 交接纪律

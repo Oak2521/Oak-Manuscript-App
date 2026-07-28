@@ -799,6 +799,100 @@ _WORD_BUCKETS = (
 )
 
 
+def _sync_dimension(rule_id: str) -> str:
+    """把规则稳定归入不含内容的同步维度；只依赖规则 ID。"""
+    if rule_id.startswith(("REF-", "NOTE-")):
+        return "citation"
+    if "PUNCT" in rule_id:
+        return "punctuation"
+    if "SPACE" in rule_id:
+        return "typography"
+    if rule_id.startswith("EPUB-"):
+        return "epub"
+    if rule_id.startswith("BOOK-PAGE-"):
+        return "layout"
+    return "structure"
+
+
+def build_sync_source(project: Project, *, event: str) -> dict:
+    """生成 Electron 主进程构造 SyncRecord v1 所需的可信脱敏来源。
+
+    这里故意不返回标题、解释、位置、预览、文件名、路径或任何哈希。
+    Renderer 永远拿不到本对象；主进程会再次按 SyncRecord v1 精确 schema
+    过滤并验证，然后才可展示给已登录用户确认。
+    """
+    if event not in {"check", "export"}:
+        raise OakError("同步事件必须是 check 或 export。")
+    if project.data.get("rulepack_check_required", False):
+        raise OakError("规则包已变更，必须先重新运行 check 才能生成同步预览。")
+    if not project.data.get("checks"):
+        raise OakError("尚未运行检查，无法生成同步预览。")
+    _require_current_check_identity(project)
+
+    last = project.data["checks"][-1]
+    result = read_json(project.report_path(last["result_file"], required=True))
+    if result.get("rulepack") != project.data.get("rulepack"):
+        raise OakError("最近一次检查结果不属于项目当前规则包。")
+    citation = result.get("citation_resolution")
+    validate_citation_resolution(citation)
+
+    doc = _read_document(project)
+    chars = len("".join(doc.body_text.split()))
+    length_bucket = next(
+        (label for limit, label in _WORD_BUCKETS if chars <= limit),
+        "10万字以上",
+    )
+    language = project.data["settings"].get("language_detected")
+    if language not in {"zh", "en", "mixed"}:
+        configured = project.data["settings"].get("language")
+        language = configured if configured in {"zh", "en", "mixed"} else "undetermined"
+
+    issues = [
+        {
+            "rule_id": issue["rule_id"],
+            "severity": issue["severity"],
+            "dimension": _sync_dimension(issue["rule_id"]),
+            "status": issue["status"],
+            "fixable": issue.get("auto_fixable") is True,
+        }
+        for issue in load_issues(project)
+    ]
+    if project.source_format == "epub":
+        external = result.get("external_tools", {})
+        external_validation = {
+            "epubcheck": external.get("epubcheck", "not_run"),
+            "ace": external.get("ace", "not_run"),
+        }
+    else:
+        external_validation = {"epubcheck": "not_applicable", "ace": "not_applicable"}
+
+    return {
+        "projectId": project.data["project_id"],
+        "runId": last["check_id"],
+        "event": event,
+        "format": project.source_format,
+        "manuscriptType": project.data["settings"]["manuscript_type"],
+        "checkConfig": project.data["settings"]["check_depth"],
+        "languageBucket": language,
+        "lengthBucket": length_bucket,
+        "citation": {
+            "requestedStyle": citation["requested_style"],
+            "resolvedStyle": citation["resolved_style"],
+            "mode": citation["mode"],
+            "confidence": citation["confidence"],
+            "reasonCode": citation["reason_code"],
+            "resolverVersion": citation["resolver"]["version"],
+        },
+        "rulepackVersion": project.data["rulepack"]["version"],
+        "appVersion": __version__,
+        "createdAt": last["finished_at"],
+        "authorizedAt": None,
+        "issues": issues,
+        "externalValidation": external_validation,
+        "exportState": "completed" if event == "export" else "not_exported",
+    }
+
+
 def build_evaluation_summary(project: Project) -> dict:
     """脱敏出版评估摘要（§8.4 字段白名单）。
 

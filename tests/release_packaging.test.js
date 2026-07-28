@@ -546,12 +546,12 @@ function createToolchainFixture(t) {
   return { root, toolchain };
 }
 
-test("electron-builder config is valid and pins alpha.7 Windows installer policy", async () => {
+test("electron-builder config is valid and pins alpha.8 Windows installer policy", async () => {
   const packageJson = require("../package.json");
   const packageLock = require("../package-lock.json");
   await validateConfiguration(packageJson.build, { isEnabled: false, add() {} });
 
-  assert.equal(packageJson.version, "0.1.0-alpha.7");
+  assert.equal(packageJson.version, "0.1.0-alpha.8");
   assert.equal(packageLock.version, packageJson.version);
   assert.equal(packageLock.packages[""].version, packageJson.version);
   const pythonInit = fs.readFileSync(
@@ -838,7 +838,7 @@ test("beforePack forwards the builder project root and target platform", () => {
   const calls = [];
   beforePack(
     {
-      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.7" } },
+      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.8" } },
       electronPlatformName: "darwin",
       arch: 1,
     },
@@ -851,7 +851,7 @@ test("beforePack forwards the builder project root and target platform", () => {
     source: true,
     releaseTier: "alpha",
   }]);
-  assert.equal(releaseTierForVersion("0.1.0-alpha.7"), "alpha");
+  assert.equal(releaseTierForVersion("0.1.0-alpha.8"), "alpha");
   assert.equal(releaseTierForVersion("1.0.0"), "sale");
   assert.equal(parseResourceGateArgs(["--release-tier", "auto"]).releaseTier, "alpha");
   assert.equal(parseResourceGateArgs(["--no-runtime-probe"]).executeRuntimes, false);
