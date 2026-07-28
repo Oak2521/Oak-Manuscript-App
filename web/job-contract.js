@@ -241,6 +241,11 @@ class MemoryEphemeralStorage {
     this.outputs.set(jobId, { bytes: Buffer.from(bytes), deleteAt, mediaType });
   }
 
+  async readInput(jobId) {
+    const entry = this.inputs.get(jobId);
+    return entry ? Buffer.from(entry.bytes) : null;
+  }
+
   async readOutput(jobId) {
     const entry = this.outputs.get(jobId);
     return entry ? Buffer.from(entry.bytes) : null;
@@ -279,7 +284,7 @@ class WebJobService {
     maxActiveGlobal = 100,
     auditSink = () => {},
   } = {}) {
-    if (!storage || ["putInput", "putOutput", "readOutput", "deleteInput", "deleteOutput"]
+    if (!storage || ["putInput", "putOutput", "readInput", "readOutput", "deleteInput", "deleteOutput"]
       .some((name) => typeof storage[name] !== "function")) {
       throw new TypeError("storage 未实现完整临时存储接口");
     }

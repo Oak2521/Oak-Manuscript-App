@@ -25,6 +25,7 @@ from .standards_store import resolve_active_release, resolve_project_rulepack
 
 _MUTATING_COMMANDS = {
     "create",
+    "web-check",
     "check",
     "recheck",
     "fix",
@@ -93,6 +94,43 @@ def _cmd_check(args, kind: str) -> int:
         ),
         "issues": outcome.issues,
         "skipped_rule_groups": outcome.skipped_rule_groups,
+    })
+    return 1 if _pending_error_exists(outcome.issues) else 0
+
+
+def _cmd_web_check(args) -> int:
+    """在一个受控临时项目中创建并检查 Web 任务，不输出本地路径或项目身份。"""
+    release = resolve_active_release()
+    proj = Project.create(
+        Path(args.input), Path(args.project),
+        manuscript_type=args.type, language="auto",
+        citation_style=args.citation, check_depth=args.depth,
+        epub_preview=False,
+        rulepack_identity=release.identity,
+    )
+    pack = _project_rulepack(proj, None)
+    record, outcome = ops.run_check(
+        proj,
+        pack,
+        kind="check",
+        citation_style=args.citation,
+    )
+    from .engine import manuscript_status_level
+
+    _emit({
+        "ok": True,
+        "check_id": record["check_id"],
+        "kind": "check",
+        "status_level": manuscript_status_level(outcome.issues),
+        "issue_counts": record["issue_counts"],
+        "rulepack": copy.deepcopy(record["rulepack"]),
+        "citation_note": ops._citation_note(proj.data["settings"]),
+        "citation_resolution": copy.deepcopy(
+            proj.data["settings"].get("citation_resolution")
+        ),
+        "issues": outcome.issues,
+        "skipped_rule_groups": outcome.skipped_rule_groups,
+        "source_hash_ok": True,
     })
     return 1 if _pending_error_exists(outcome.issues) else 0
 
@@ -319,6 +357,15 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--epub-preview", action="store_true",
                    help="导出时附带基础 EPUB 预览（非 EPUB 源稿适用）")
 
+    p = sub.add_parser("web-check", help="在隔离临时项目中创建并检查一次 Web 任务")
+    p.add_argument("--input", required=True)
+    p.add_argument("--project", required=True)
+    p.add_argument("--type", required=True, choices=["paper", "print_book", "ebook"])
+    p.add_argument("--citation", required=True,
+                   choices=["default", "gbt7714-2025", "apa-7",
+                            "chicago-18-nb", "chicago-18-ad", "none"])
+    p.add_argument("--depth", required=True, choices=["quick", "full"])
+
     for name, help_text in (("check", "运行检查"), ("recheck", "复检")):
         p = sub.add_parser(name, help=help_text)
         p.add_argument("--project", required=True)
@@ -423,6 +470,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     handlers = {
         "create": _cmd_create,
+        "web-check": _cmd_web_check,
         "check": lambda a: _cmd_check(a, "check"),
         "recheck": lambda a: _cmd_check(a, "recheck"),
         "plan-citation": _cmd_plan_citation,
@@ -444,7 +492,7 @@ def main(argv: list[str] | None = None) -> int:
     }
     try:
         if args.command in _MUTATING_COMMANDS:
-            if args.command == "create":
+            if args.command in {"create", "web-check"}:
                 Project.preflight_create(Path(args.input), Path(args.project))
             else:
                 # 锁前只读门禁：任意普通目录或受污染项目不得因此创建/覆盖锁文件。
@@ -453,8 +501,8 @@ def main(argv: list[str] | None = None) -> int:
             with ProjectWriteLock(
                 Path(args.project),
                 command=args.command,
-                create_root=args.command == "create",
-                cleanup_on_error=args.command == "create",
+                create_root=args.command in {"create", "web-check"},
+                cleanup_on_error=args.command in {"create", "web-check"},
             ):
                 return handlers[args.command](args)
         return handlers[args.command](args)

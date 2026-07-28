@@ -5,6 +5,7 @@ const assert = require("node:assert/strict");
 
 const { MemoryEphemeralStorage, WebJobError } = require("../web/job-contract");
 const { PersistentWebJobService } = require("../web/persistent-job-service");
+const { PrivateLeaseWorker } = require("../web/private-lease-worker");
 const { validateInternalRecord } = require("../web/supabase-job-repository");
 const { createWebJobHttpHandler } = require("../web/http-handler");
 const { Readable } = require("node:stream");
@@ -157,6 +158,38 @@ class FakePersistentRepository {
     return this._copy(updated);
   }
 
+  async claimNext({ lease_id, lease_seconds }) {
+    const now = new Date(this.now);
+    const current = [...this.jobs.values()]
+      .filter((record) => Date.parse(record.expires_at) > now.getTime() + lease_seconds * 1000 &&
+        record.input_retained && !record.result_available &&
+        (record.state === "queued" ||
+          (record.state === "processing" && Date.parse(record.lease_expires_at) <= now.getTime())))
+      .sort((left, right) => {
+        const leftTime = left.state === "processing" ? left.lease_expires_at : left.created_at;
+        const rightTime = right.state === "processing" ? right.lease_expires_at : right.created_at;
+        return leftTime.localeCompare(rightTime) || left.created_at.localeCompare(right.created_at) ||
+          left.job_id.localeCompare(right.job_id);
+      })[0];
+    if (!current) return null;
+    const updated = {
+      ...current,
+      state: "processing",
+      updated_at: now.toISOString(),
+      upload_reservation_id: null,
+      upload_reservation_expires_at: null,
+      lease_id,
+      lease_expires_at: new Date(Math.min(
+        Date.parse(current.expires_at),
+        now.getTime() + lease_seconds * 1000,
+      )).toISOString(),
+      revision: current.revision + 1,
+    };
+    validateInternalRecord(updated);
+    this.jobs.set(updated.job_id, clone(updated));
+    return this._copy(updated);
+  }
+
   async finalizeDeletion({ owner_key, job_id, expected_revision }) {
     const record = this.jobs.get(job_id);
     if (!record || record.owner_key !== owner_key || record.revision !== expected_revision ||
@@ -249,6 +282,101 @@ test("persistent upload reservation, processing lease, and result survive servic
   assert.equal(ready.state, "result_ready");
   assert.deepEqual(await second.downloadResult(OWNER, created.job_id), Buffer.from("result"));
   assert.equal(storage.inspect(created.job_id).input_present, false);
+});
+
+test("private queue atomically claims work without exposing account or job identity to the processor", async () => {
+  const { service, storage } = serviceHarness();
+  const created = await service.createJob(OWNER, createRequest());
+  await service.acceptUpload(OWNER, created.job_id, {
+    bytes: Buffer.from("secret"), media_type: "text/plain",
+  });
+  let processorRequest = null;
+  const worker = new PrivateLeaseWorker({
+    service,
+    processor: {
+      execution_boundary: "isolated_process",
+      max_execution_ms: 60_000,
+      async execute(request) {
+        processorRequest = request;
+        return { bytes: Buffer.from('{"ok":true}'), media_type: "application/json" };
+      },
+    },
+  });
+
+  assert.deepEqual(await worker.runOnce(), {
+    schema_version: "1.0",
+    outcome_type: "oak_manuscript_private_worker_outcome",
+    claimed: true,
+    outcome: "completed",
+  });
+  assert.deepEqual(Object.keys(processorRequest).sort(),
+    ["bytes", "document", "request_type", "schema_version"].sort());
+  assert.equal(JSON.stringify(processorRequest).includes(OWNER.subject_id), false);
+  assert.equal(JSON.stringify(processorRequest).includes(created.job_id), false);
+  assert.equal(JSON.stringify(processorRequest).includes("lease"), false);
+  assert.deepEqual(processorRequest.bytes, Buffer.from("secret"));
+  assert.equal((await service.getJob(OWNER, created.job_id)).state, "result_ready");
+  assert.equal(storage.inspect(created.job_id).input_present, false);
+  assert.equal((await worker.runOnce()).outcome, "idle");
+});
+
+test("processor failure releases only the in-process claim handle and waits for lease expiry", async () => {
+  const repository = new FakePersistentRepository();
+  const storage = new MemoryEphemeralStorage();
+  const first = serviceHarness({ repository, storage }).service;
+  const created = await first.createJob(OWNER, createRequest());
+  await first.acceptUpload(OWNER, created.job_id, {
+    bytes: Buffer.from("secret"), media_type: "text/plain",
+  });
+  const worker = new PrivateLeaseWorker({
+    service: first,
+    processor: {
+      execution_boundary: "isolated_process",
+      max_execution_ms: 60_000,
+      async execute() { throw new Error("must not be reflected"); },
+    },
+  });
+  assert.equal((await worker.runOnce()).outcome, "retry_after_lease");
+  assert.equal((await first.getJob(OWNER, created.job_id)).state, "processing");
+  assert.equal(storage.inspect(created.job_id).input_present, true);
+
+  const active = serviceHarness({ repository, storage }).service;
+  assert.equal(await active.claimNextProcessing(), null);
+  repository.now = "2026-07-28T12:06:00.000Z";
+  const later = serviceHarness({
+    repository, storage, now: "2026-07-28T12:06:00.000Z",
+  }).service;
+  const reclaimed = await later.claimNextProcessing();
+  assert.notEqual(reclaimed, null);
+  assert.equal(JSON.stringify(reclaimed).includes(OWNER.subject_id), false);
+});
+
+test("private queue does not claim a job that lacks one full processing lease before expiry", async () => {
+  const repository = new FakePersistentRepository();
+  const storage = new MemoryEphemeralStorage();
+  const first = serviceHarness({ repository, storage }).service;
+  const created = await first.createJob(OWNER, createRequest());
+  await first.acceptUpload(OWNER, created.job_id, {
+    bytes: Buffer.from("secret"), media_type: "text/plain",
+  });
+  repository.now = "2026-07-28T12:11:00.000Z";
+  const nearExpiry = serviceHarness({
+    repository, storage, now: "2026-07-28T12:11:00.000Z",
+  }).service;
+  assert.equal(await nearExpiry.claimNextProcessing(), null);
+  assert.equal((await nearExpiry.getJob(OWNER, created.job_id)).state, "queued");
+});
+
+test("private work handles cannot be copied or forged to complete another service lease", async () => {
+  const { service } = serviceHarness();
+  const created = await service.createJob(OWNER, createRequest());
+  await service.acceptUpload(OWNER, created.job_id, {
+    bytes: Buffer.from("secret"), media_type: "text/plain",
+  });
+  const work = await service.claimNextProcessing();
+  await assert.rejects(service.completeClaim({ ...work }, {
+    bytes: Buffer.from("result"), media_type: "application/json",
+  }), expectCode("INVALID_REQUEST"));
 });
 
 test("processing completion is bound to the exact lease and an expired lease can be reclaimed", async () => {

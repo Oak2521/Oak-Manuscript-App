@@ -10,7 +10,7 @@
     "config/tool-manifests/app-resources-v1.json"
   ],
   "file_count": 78,
-  "total_bytes": 2124858,
+  "total_bytes": 2126802,
   "files": [
     {
       "path": "config/app-config.json",
@@ -175,12 +175,12 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "47ea5a1ef16e40cc4a4c166663a1dd9b52008366f5e4aa76c4b6c335f159a7b4"
+      "sha256": "a98fc4de43ce0af323597e73be1359c7c73a59c227a4d1e799e7435e3e992649"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",
-      "size_bytes": 17319,
-      "sha256": "88b71a9eb6dc66a76d2762e049b708915264cdb299437864b5276ed5328721e4"
+      "size_bytes": 19263,
+      "sha256": "b3dab21f0f3f92fd5ea1166ffd75ce3c07a2be2c6238d4e6994499e43c5f8b75"
     },
     {
       "path": "python/oak_manuscript_core/citation.py",

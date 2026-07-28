@@ -2,7 +2,24 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.27 持久任务与幂等数据库检查点
+## 最新验证结论：0.1.0-alpha.28 私有租约队列与隔离核心检查点
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网，没有使用真实 service-role key、执行 Supabase 迁移、连接 Netlify Blobs、修改官网、部署容器、启动 Electron/安装器或生成 alpha.28 安装包。
+
+| 验证 | 结果 | 证据 |
+|---|---|---|
+| 私有队列/处理器/存储/SQL 专项 | **PASS** | 31/31：`FOR UPDATE SKIP LOCKED` 固定 RPC、完整租约窗、processing 必有 lease、输入强一致读取、不可复制服务内句柄、processor 不接收账号/任务/租约、失败等待过期接管、固定 Python 参数/环境/scratch、超时/输出上限、源输入变更拒绝及安全清理 |
+| 全部 Web 定向 | **PASS** | 91/91，含 client、Fetch、GoTrue、HTTP、内存参考状态机、Netlify 内容适配、Postgres repository、持久服务与私有 worker |
+| Python `web-check` CLI | **PASS** | 新增 1 项统一 Python 测试；同一写锁内创建临时项目并调用共享核心，响应不含输入/项目路径、文件名、项目 ID 或源稿哈希，源文件与项目 source SHA-256 一致 |
+| 本机真实 Python worker 烟测 | **PASS（源码环境）** | TXT `Hello\n` 经真实受控子进程得到 `check-0001`、`source_hash_ok=true`、0 issue；处理结束 scratch 条目数为 0 |
+| `npm test` | **PASS** | 退出码 0，墙钟 110.2 秒；Node 462 total / 455 pass / 0 fail / 7 skip（3.528 秒）；Python 352 total / 0 failures / 0 errors / 3 skipped（102.047 秒） |
+| SQL/凭据/公开路由边界 | **PASS（静态/仿真）** | 第七个 claim RPC 仍只授权 `service_role`；迁移无稿件字节/文件名/路径列；公开 HTTP 仍只有创建、状态、上传、下载、取消、删除，不暴露 worker 路由；凭据形态扫描无命中 |
+| 资源信任锁更新/复验 | **PASS** | 78 文件 / 2,126,802 字节；manifest SHA-256 `d11dd1eb46069ce2c06ce506c5e0f3146c02e14223913944236a572ca58696b1`；anchor SHA-256 `85b39f8dd69ec0e9ab6cf8bfbff8420e06d20f110d605d089703680ddceb9212` |
+| alpha.28 Windows build / smoke / 安装生命周期 | **未运行** | Web 私有源码不进入 Electron `build.files`；不得沿用 alpha.23 证据声称 alpha.28 制品通过 |
+
+证据边界：本机已经真实运行共享 Python 核心，但 Postgres/Blobs/GoTrue 仍是静态契约或注入仿真；没有证明真实 Supabase SQL 解析、RLS/授权、多实例竞态、Netlify 强一致性、Cloud Run 类容器、OS 级网络拒绝、恶意 DOCX/EPUB/ZIP 门禁、平台计划任务或生产零留存。环境变量清理与独立进程不是 OS 沙箱。最新可复验 Windows 制品仍为 alpha.23。
+
+## 历史验证结论：0.1.0-alpha.27 持久任务与幂等数据库检查点
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网；官网 Supabase schema 与服务端调用方式仅作只读参考。没有执行真实数据库迁移、配置或读取 service-role key、连接 Supabase/Netlify、修改官网、启动 Electron/安装器，也未生成 alpha.27 安装包。
 

@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.27` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、Web 状态机、同源 HTTPS、Supabase/GoTrue、Fetch、未部署工作台、Netlify Blobs 临时内容和 Supabase/Postgres 持久任务源码边界，以及 alpha.23 已验证的 Windows packaged 安全链。真实数据库迁移/隔离执行、网络同步、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.28` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、Web 状态机、同源 HTTPS、Supabase/GoTrue、Fetch、未部署工作台、Netlify Blobs 临时内容、Supabase/Postgres 持久任务、私有原子领取和固定 Python 子进程共享核心边界，以及 alpha.23 已验证的 Windows packaged 安全链。真实数据库迁移/容器与 OS 无网隔离、网络同步、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -44,7 +44,7 @@ Python Core（oak_manuscript_core）
   └─ 完整性与安全验证（路径 / ZIP / 大文件）
 ```
 
-Python 核心作为桌面 sidecar；CLI 子命令与 JSON 输出由 Electron 直接复用。Web 已有独立浏览器工作台和服务端协议适配，但共享三端处理内核、隔离 worker 与生产部署尚未实现，不能从当前契约测试推断为三端已完成。
+Python 核心作为桌面 sidecar；CLI 子命令与 JSON 输出由 Electron 直接复用。Web 已有独立浏览器工作台、服务端协议适配、私有领取和调用同一 Python 核心的本机固定子进程闭环；生产容器/OS 隔离、部署和三端发布验收尚未实现，不能从当前源码测试推断为三端已完成。
 
 ## 2. 关键决策记录
 
@@ -138,7 +138,7 @@ alpha.23 在 `web/job-contract.js` 的内存参考状态机上增加 `web/http-h
 
 handler 的 trusted session 现在显式区分 `bearer` 与 `cookie`。两者都要求 HTTPS，状态变更都要求精确同源 Origin，响应不开放 CORS；Cookie 因浏览器自动携带凭据而继续要求 timing-safe CSRF，Authorization Bearer 不建立额外 CSRF 状态。该选择与官网当前 Supabase access token 模式一致，同时保留未来 HttpOnly Cookie 部署的安全分支。上传前门禁、固定错误和无内容审计边界不变。
 
-`web/client/` 使用网站既有 `window.oblAuth` 读取 Supabase session，并以 `credentials:"omit"` 显式发送 Bearer；创建元数据由 exact client contract 构造，不含文件名/路径。页面包含登录/注册、默认引用、单任务处理同意、上传/轮询/取消/下载；同步区明确保持禁用。生产仍缺受信代理部署、真实 Blobs/计划清扫联调、持久任务库、容器执行、恶意 ZIP/病毒扫描、计费、短时下载与结果同步。反向代理必须用受信基础设施信号实现 `isSecureRequest`，不得直接相信客户端 `X-Forwarded-Proto`。因此仍不能称为网页版已上线或生产零留存已验证。Web 临时上传与 SyncRecord 长期结果同步继续是两条独立数据流。
+`web/client/` 使用网站既有 `window.oblAuth` 读取 Supabase session，并以 `credentials:"omit"` 显式发送 Bearer；创建元数据由 exact client contract 构造，不含文件名/路径。页面包含登录/注册、默认引用、单任务处理同意、上传/轮询/取消/下载；同步区明确保持禁用。生产仍缺受信代理部署、真实 Blobs/Postgres/计划清扫联调、容器/OS 禁网与资源隔离、恶意 ZIP/病毒扫描、计费、短时下载与结果同步。反向代理必须用受信基础设施信号实现 `isSecureRequest`，不得直接相信客户端 `X-Forwarded-Proto`。因此仍不能称为网页版已上线或生产零留存已验证。Web 临时上传与 SyncRecord 长期结果同步继续是两条独立数据流。
 
 alpha.26 新增 `web/netlify-ephemeral-storage.js`。SDK 只存在于独立 `web/` 私有子包，不进入 Electron 根依赖。工厂固定站点级 store 和 `consistency:"strong"`；对象键仅为固定 prefix / job UUID / input|output。`set(...,{onlyIfNew:true})` 禁止覆盖；模糊写失败只在强一致回读的字节与 exact metadata 同时一致时幂等恢复。读取验证对象类型、任务号、规范 `delete_at`、媒体类型和字节数；删除后再 `getMetadata(...,{consistency:"strong"})`，非 null 即失败。
 
@@ -146,11 +146,19 @@ alpha.26 新增 `web/netlify-ephemeral-storage.js`。SDK 只存在于独立 `web
 
 ### AD-019 Web 持久状态必须“事务幂等—revision CAS—内容分道—service-role only”（2026-07-28，冻结）
 
-alpha.27 新增 `web/supabase/001_web_job_state.sql`、`web/supabase-job-repository.js` 与 `web/persistent-job-service.js`。Postgres 只保存任务状态、最小文档枚举、内容无关请求指纹、上传预留、处理租约和终态幂等墓碑；输入/结果 Buffer 仍只进入短期内容 store。两表 `enable/force row level security`，不给 `anon`/`authenticated` 表或 RPC 权限；六个固定 RPC 仅授予 `service_role`，密钥只能存在于服务端环境。
+alpha.27 新增 `web/supabase/001_web_job_state.sql`、`web/supabase-job-repository.js` 与 `web/persistent-job-service.js`。Postgres 只保存任务状态、最小文档枚举、内容无关请求指纹、上传预留、处理租约和终态幂等墓碑；输入/结果 Buffer 仍只进入短期内容 store。两表 `enable/force row level security`，不给 `anon`/`authenticated` 表或 RPC 权限；alpha.28 后七个固定 RPC 仅授予 `service_role`，密钥只能存在于服务端环境。
 
 创建/重放在全局及账户 advisory transaction lock 内原子检查幂等指纹、终态墓碑、UUID 碰撞和并发上限。后续状态以单调 `revision` CAS 更新；上传预留与处理租约带 UUID 和任务 TTL 内的到期时间。worker 完成任务必须回传取得的 exact lease ID、revision 与到期时间；活动租约拒绝第二 worker，过期后才允许新租约接管。删除先进入 `deletion_pending`，对象删除确认后同一数据库事务把幂等项改为 content-free terminal，再删除活动任务记录。同键不能隐式重建或重复计费。
 
-`PersistentWebJobService` 用上述 repository 驱动 HTTP 异步读写；CAS 丢失时清理已写入的孤立输入，内容删除失败保持可跨重启恢复的 `deletion_pending`。内存 `WebJobService` 继续作为快速参考和单元测试模型，不是生产多实例实现。alpha.27 只通过 FakeRepository/FakeStore 与 SQL 静态契约测试；没有真实 PostgreSQL 解析、RLS、service-role、多实例、连接池、备份恢复或故障注入证据，私有队列/隔离 worker 也尚未实现。因此这项架构决定不能被表述为生产数据库已部署。
+`PersistentWebJobService` 用上述 repository 驱动 HTTP 异步读写；CAS 丢失时清理已写入的孤立输入，内容删除失败保持可跨重启恢复的 `deletion_pending`。内存 `WebJobService` 继续作为快速参考和单元测试模型，不是生产多实例实现。数据库仍只通过 FakeRepository/FakeStore 与 SQL 静态契约测试；没有真实 PostgreSQL 解析、RLS、service-role、多实例、连接池、备份恢复或故障注入证据。因此这项架构决定不能被表述为生产数据库已部署。
+
+### AD-020 Web worker 必须“私有原子领取—身份最小化—固定共享核心—租约内完成”（2026-07-28，冻结）
+
+alpha.28 增加 `oak_manuscript_web_job_claim_next`：service-role-only、`FOR UPDATE SKIP LOCKED`，原子领取 queued 或租约已过期的 processing 任务；候选必须在任务 TTL 前仍有完整租约窗，processing 在数据库、repository 与 schema 三层都必须持有 lease。临时 store 增加经 metadata/长度复核的 `readInput()`。
+
+`PersistentWebJobService` 把 owner 只绑定在当前服务实例的不可复制 WeakMap 句柄中。`PrivateLeaseWorker` 交给 processor 的请求只含格式、稿件类型、检查深度、引用选择、字节数与 Buffer，不含 owner、job ID、lease、幂等键或对象键；processor 超时上限必须至少比 lease 短 5 秒。失败不伪造完成或删除存储输入，任务保持 processing 到租约过期再接管；成功仍由 exact lease/revision/expiry 完成，并在结果可见前删除输入。
+
+`PythonCoreProcessProcessor` 使用固定绝对 Python/core/scratch、`-I -B -S -X utf8`、参数数组、`shell:false`，清除 Python/Oak/Node/Electron/云服务/AI 密钥、代理和动态加载注入环境，且把 HOME/TEMP/PATH 限制到受控位置。单次 `web-check` 在同一 Python 进程/项目写锁中调用桌面共享核心；stdout+stderr、时间、结果字节均有上限，输入文件前后 SHA-256 必须一致，scratch 只在身份仍位于固定根下时递归清理。本机真实 TXT 执行已经通过，但环境清理与独立进程不是容器或 OS 网络沙箱；恶意 ZIP 门禁、资源/内存 cgroup、只读根、seccomp/网络策略和生产容器证据仍是上线阻断项。
 
 `AuthProvider` 当前固定未来生产形态为系统浏览器 PKCE，但未配置服务时只返回 `configuration_required` 且不打开页面；登录/过期/撤销仅能由测试专用实例模拟。`LicenseProvider` 已固定 Free/Pro 能力矩阵、有效期和离线宽限语义；签名订阅凭证、服务端设备管理与计费尚未实现。当前 `safeStorage` 只保护待发送队列，不等于生产 token 凭据层。生产 transport 上线时必须保持默认 Electron session 离线，使用独立最小权限网络通道，并在不改变 SyncRecord v1 最小字段边界的前提下另行威胁建模。
 

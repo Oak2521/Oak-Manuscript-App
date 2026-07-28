@@ -89,6 +89,7 @@ create table if not exists public.oak_manuscript_web_jobs (
   ),
   constraint oak_web_job_lease_pair_ck check (
     (lease_id is null) = (lease_expires_at is null) and
+    ((state = 'processing') = (lease_id is not null)) and
     (lease_id is null or (
       state = 'processing' and lease_expires_at > created_at and lease_expires_at <= expires_at
     ))
@@ -134,6 +135,9 @@ create index if not exists oak_web_jobs_expiry_idx
   on public.oak_manuscript_web_jobs (expires_at, job_id);
 create index if not exists oak_web_jobs_active_owner_idx
   on public.oak_manuscript_web_jobs (owner_key, state);
+create index if not exists oak_web_jobs_claim_idx
+  on public.oak_manuscript_web_jobs (state, lease_expires_at, created_at, job_id)
+  where state in ('queued', 'processing');
 
 alter table public.oak_manuscript_web_jobs enable row level security;
 alter table public.oak_manuscript_web_jobs force row level security;
@@ -408,6 +412,53 @@ begin
 end;
 $$;
 
+create or replace function public.oak_manuscript_web_job_claim_next(
+  p_lease_id uuid,
+  p_lease_seconds integer
+) returns jsonb
+language plpgsql
+volatile
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_now timestamptz := clock_timestamp();
+  v_job public.oak_manuscript_web_jobs%rowtype;
+begin
+  if p_lease_id is null or p_lease_seconds not between 30 and 900 then
+    raise exception using errcode = '22023', message = 'invalid processing lease request';
+  end if;
+
+  select * into v_job
+  from public.oak_manuscript_web_jobs
+  where expires_at > v_now + make_interval(secs => p_lease_seconds) and
+    input_retained and not result_available and (
+    state = 'queued' or
+    (state = 'processing' and lease_id is not null and lease_expires_at <= v_now)
+  )
+  order by
+    case when state = 'processing' then lease_expires_at else created_at end,
+    created_at,
+    job_id
+  for update skip locked
+  limit 1;
+  if not found then return null; end if;
+
+  update public.oak_manuscript_web_jobs set
+    state = 'processing',
+    updated_at = v_now,
+    upload_reservation_id = null,
+    upload_reservation_expires_at = null,
+    lease_id = p_lease_id,
+    lease_expires_at = least(v_job.expires_at, v_now + make_interval(secs => p_lease_seconds)),
+    revision = revision + 1
+  where job_id = v_job.job_id
+  returning * into v_job;
+
+  return public.oak_manuscript_web_job_record(v_job);
+end;
+$$;
+
 create or replace function public.oak_manuscript_web_job_list_expired(
   p_before timestamptz,
   p_limit integer default 100
@@ -441,6 +492,8 @@ revoke all on function public.oak_manuscript_web_job_compare_and_swap(
 ) from public, anon, authenticated;
 revoke all on function public.oak_manuscript_web_job_finalize_deletion(text,text,bigint)
   from public, anon, authenticated;
+revoke all on function public.oak_manuscript_web_job_claim_next(uuid,integer)
+  from public, anon, authenticated;
 revoke all on function public.oak_manuscript_web_job_list_expired(timestamptz,integer)
   from public, anon, authenticated;
 
@@ -453,6 +506,8 @@ grant execute on function public.oak_manuscript_web_job_compare_and_swap(
   text,text,bigint,text[],text,boolean,boolean,text,text,uuid,timestamptz,uuid,timestamptz
 ) to service_role;
 grant execute on function public.oak_manuscript_web_job_finalize_deletion(text,text,bigint)
+  to service_role;
+grant execute on function public.oak_manuscript_web_job_claim_next(uuid,integer)
   to service_role;
 grant execute on function public.oak_manuscript_web_job_list_expired(timestamptz,integer)
   to service_role;

@@ -177,7 +177,7 @@ test("create outcomes preserve replay while conflicts, tombstones, and limits ex
   }), /record/);
 });
 
-test("owned reads, lists, CAS, deletion finalization, and expiry scan use fixed RPC contracts", async () => {
+test("owned reads, lists, CAS, private claim, deletion finalization, and expiry scan use fixed RPC contracts", async () => {
   const calls = [];
   const queued = record({
     state: "queued",
@@ -185,7 +185,16 @@ test("owned reads, lists, CAS, deletion finalization, and expiry scan use fixed 
     input_retained: true,
     revision: 1,
   });
-  const responses = [record(), [record()], queued, true, [queued]];
+  const leaseId = "10000000-0000-4000-8000-000000000002";
+  const processing = record({
+    state: "processing",
+    updated_at: "2026-07-28T12:00:02.000Z",
+    input_retained: true,
+    lease_id: leaseId,
+    lease_expires_at: "2026-07-28T12:05:02.000Z",
+    revision: 2,
+  });
+  const responses = [record(), [record()], queued, processing, true, [queued]];
   const repo = repository(async (url, options) => {
     calls.push({ url, body: JSON.parse(options.body) });
     return jsonResponse(responses.shift());
@@ -211,22 +220,28 @@ test("owned reads, lists, CAS, deletion finalization, and expiry scan use fixed 
     },
   });
   assert.equal(swapped.revision, 1);
+  assert.equal((await repo.claimNext({ lease_id: leaseId, lease_seconds: 300 })).lease_id, leaseId);
   assert.equal(await repo.finalizeDeletion({ owner_key: OWNER, job_id: JOB_ID, expected_revision: 2 }), true);
   assert.equal((await repo.listExpired({ before: "2026-07-28T12:15:00.000Z", limit: 20 })).length, 1);
   assert.deepEqual(calls.map((call) => call.url), [
     RPC_NAMES.get,
     RPC_NAMES.list,
     RPC_NAMES.compareAndSwap,
+    RPC_NAMES.claimNext,
     RPC_NAMES.finalizeDeletion,
     RPC_NAMES.listExpired,
   ].map((name) => `${ORIGIN}/rest/v1/rpc/${name}`));
   assert.deepEqual(calls[2].body.p_expected_states, ["awaiting_upload"]);
   assert.equal(calls[2].body.p_next_state, "queued");
+  assert.deepEqual(calls[3].body, { p_lease_id: leaseId, p_lease_seconds: 300 });
 });
 
 test("internal records and write inputs fail closed on extra fields, content metadata, and inconsistent state", async () => {
   assert.throws(() => validateInternalRecord({ ...record(), filename: "private.txt" }), /字段集合/);
   assert.throws(() => validateInternalRecord(record({ result_available: true })), /跨字段/);
+  assert.throws(() => validateInternalRecord(record({
+    state: "processing", input_retained: true,
+  })), /状态载荷/);
   assert.throws(() => validateInternalRecord(record({
     request_canonical: CANONICAL.replace('"size_bytes":6', '"size_bytes":7'),
   })), /不一致/);
@@ -300,6 +315,9 @@ test("tracked SQL is transactional, service-role only, content-free, and concurr
     "revision = revision + 1",
     "active upload reservation cannot be replaced",
     "active processing lease cannot be replaced",
+    "for update skip locked",
+    "expires_at > v_now + make_interval",
+    "oak_manuscript_web_job_claim_next",
     "oak_manuscript_web_job_create_or_replay",
     "oak_manuscript_web_job_compare_and_swap",
     "oak_manuscript_web_job_finalize_deletion",

@@ -10,6 +10,7 @@ const RPC_NAMES = Object.freeze({
   get: "oak_manuscript_web_job_get",
   list: "oak_manuscript_web_job_list",
   compareAndSwap: "oak_manuscript_web_job_compare_and_swap",
+  claimNext: "oak_manuscript_web_job_claim_next",
   finalizeDeletion: "oak_manuscript_web_job_finalize_deletion",
   listExpired: "oak_manuscript_web_job_list_expired",
 });
@@ -199,7 +200,7 @@ function validateInternalRecord(value) {
     (value.state === "processing" && value.input_retained && !value.result_available) ||
     (value.state === "result_ready" && !value.input_retained && value.result_available);
   if (!statePayloadValid || (value.upload_reservation_id !== null && value.state !== "awaiting_upload") ||
-      (value.lease_id !== null && value.state !== "processing")) {
+      ((value.lease_id !== null) !== (value.state === "processing"))) {
     throw new TypeError("内部任务记录状态载荷非法");
   }
   return Object.freeze({ ...value, document: Object.freeze({ ...value.document }) });
@@ -416,7 +417,7 @@ class SupabaseJobRepository {
         input.next.result_available);
     if (!statePayloadValid ||
         (input.next.upload_reservation_id !== null && input.next.state !== "awaiting_upload") ||
-        (input.next.lease_id !== null && input.next.state !== "processing")) {
+        ((input.next.lease_id !== null) !== (input.next.state === "processing"))) {
       throw new TypeError("CAS next 状态载荷非法");
     }
     const value = await this._rpc(RPC_NAMES.compareAndSwap, {
@@ -435,6 +436,23 @@ class SupabaseJobRepository {
       p_lease_expires_at: input.next.lease_expires_at,
     });
     return value === null ? null : validateInternalRecord(value);
+  }
+
+  async claimNext({ lease_id, lease_seconds } = {}) {
+    safeString(lease_id, UUID_PATTERN, "lease_id", 36);
+    if (!Number.isSafeInteger(lease_seconds) || lease_seconds < 30 || lease_seconds > 900) {
+      throw new TypeError("lease_seconds 非法");
+    }
+    const value = await this._rpc(RPC_NAMES.claimNext, {
+      p_lease_id: lease_id,
+      p_lease_seconds: lease_seconds,
+    });
+    if (value === null) return null;
+    const record = validateInternalRecord(value);
+    if (record.state !== "processing" || record.lease_id !== lease_id) {
+      fail("JOB_DB_INVALID_RESPONSE");
+    }
+    return record;
   }
 
   async finalizeDeletion({ owner_key, job_id, expected_revision } = {}) {

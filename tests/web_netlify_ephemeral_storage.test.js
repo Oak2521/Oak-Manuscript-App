@@ -123,6 +123,7 @@ test("ambiguous and repeated writes are idempotent only for exact same bytes and
     Object.entries(store.entries.get(key).metadata).reverse(),
   );
   await storage.putInput(JOB_ID, Buffer.from("secret"), { deleteAt: EXPIRES });
+  assert.deepEqual(await storage.readInput(JOB_ID), Buffer.from("secret"));
   await assert.rejects(
     storage.putInput(JOB_ID, Buffer.from("other!"), { deleteAt: EXPIRES }),
     expectStorageCode("OBJECT_ALREADY_EXISTS"),

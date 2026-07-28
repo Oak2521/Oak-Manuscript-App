@@ -1,12 +1,12 @@
 # 湖岸稿件（Oak Manuscript）
 
-本地优先的稿件检查与修订产品。当前开发版本为 `0.1.0-alpha.27`，已有 Electron 桌面端、Python 检查核心、经真实 packaged 门禁和隐藏烟测验证的 alpha.23 Windows x64 NSIS/ZIP 制品、离线标准包验证/项目固定/显式升级/回滚链路，以及 Web 临时作业状态机、同源 HTTPS handler、GoTrue 验证、Fetch 适配、首个未部署工作台、Netlify Blobs 临时对象存储和 Supabase/Postgres 持久任务状态源码；商业正式版目标为 Windows、macOS 与 Web。按论文、纸质出版物、电子书三类目标检查稿件，提供可追溯标准依据的问题解释、集中确认的白名单机械订正、检查点恢复、修订稿与检查报告导出。
+本地优先的稿件检查与修订产品。当前开发版本为 `0.1.0-alpha.28`，已有 Electron 桌面端、Python 检查核心、经真实 packaged 门禁和隐藏烟测验证的 alpha.23 Windows x64 NSIS/ZIP 制品、离线标准包验证/项目固定/显式升级/回滚链路，以及 Web 临时作业状态机、同源 HTTPS handler、GoTrue 验证、Fetch 适配、首个未部署工作台、Netlify Blobs 临时对象存储、Supabase/Postgres 持久任务状态、私有原子领取队列和固定 Python 子进程处理源码；商业正式版目标为 Windows、macOS 与 Web。按论文、纸质出版物、电子书三类目标检查稿件，提供可追溯标准依据的问题解释、集中确认的白名单机械订正、检查点恢复、修订稿与检查报告导出。
 
 **当前桌面核心承诺**：稿件默认只在本机处理；永不原地修改原稿（SHA-256 全程校验）；不强制注册；报告与导出不设营销门槛。
 
-`0.1.0-alpha.27` 的本地检查点标签为 `chatgpt-v0.1.0-alpha.27`。新增的 Supabase/Postgres 迁移只建立内容无关的任务表与幂等墓碑，RLS 强制开启且只向 `service_role` 授予固定 RPC；事务化创建/重放使用全局与账户 advisory lock，状态更新使用 revision CAS。`PersistentWebJobService` 将上传预留、处理租约、结果状态、删除待办和 TTL 清扫接到该 repository，并继续把稿件字节隔离在 Netlify Blobs。SQL 尚未在真实 Supabase 执行，service-role key 未配置，私有 worker、生产部署和三路零留存证据仍未完成，不能称为网页版已上线。
+`0.1.0-alpha.28` 的本地检查点标签为 `chatgpt-v0.1.0-alpha.28`。第七个 service-role-only RPC 用 `FOR UPDATE SKIP LOCKED` 原子领取具有完整处理时间窗的排队任务；`PrivateLeaseWorker` 不把账号、任务号或租约交给处理器，`PythonCoreProcessProcessor` 在固定私有 scratch 中以隔离 Python 子进程运行共享核心的单次 `web-check`。本机真实 TXT 烟测已完成并确认输入哈希不变、scratch 清空。SQL 尚未在真实 Supabase 执行，进程边界尚无生产容器/OS 级无网证明，恶意文件门禁、短时下载、部署和三路零留存证据仍未完成，不能称为网页版已上线。
 
-最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.27 全量回归为 Node 455 total / 448 pass / 0 fail / 7 skip、Python 351 total / 0 failures / 0 errors / 3 skipped；Web 定向为 85/85，Web 生产子包沿用 alpha.26 已复验的 0 个已知漏洞锁。本检查点没有联网或重复打包。最新真实 Windows 制品仍是 alpha.23：NSIS 189,995,462 字节（SHA-256 `3ae05010…ad3d`），ZIP 233,814,202 字节（`625b0fea…8d05`）。真实安装生命周期尚未执行；制品仍未签名，发行身份契约 `complete=false`，packaged 资源门禁保留 12 项 sale blocker。
+最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.28 全量回归为 Node 462 total / 455 pass / 0 fail / 7 skip、Python 352 total / 0 failures / 0 errors / 3 skipped；Web 定向为 91/91，私有队列/处理器专项为 31/31，Web 生产子包沿用 alpha.26 已复验的 0 个已知漏洞锁。本检查点没有联网或重复打包。最新真实 Windows 制品仍是 alpha.23：NSIS 189,995,462 字节（SHA-256 `3ae05010…ad3d`），ZIP 233,814,202 字节（`625b0fea…8d05`）。真实安装生命周期尚未执行；制品仍未签名，发行身份契约 `complete=false`，packaged 资源门禁保留 12 项 sale blocker。
 
 当前桌面安全边界包括：默认 Electron session 离线与固定 CSP；PDF 使用禁 JavaScript/导航/网络的非持久隔离 session；项目 schema/路径完整校验与跨进程内核写锁；创建项目在锁内以单一输入文件描述符复制到 `source`，再生成 `working`；自选导出目录逐级验证、全部目标预检和逐文件原子换入；标准包以 canonical manifest、内容寻址存储、高水位和精确回滚目标 fail-closed。已有项目不会因全局标准更新而静默换规则，必须先查看差异并显式确认，升级后强制重检。
 

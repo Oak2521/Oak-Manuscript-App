@@ -29,6 +29,10 @@ const RESERVATION_KEYS = Object.freeze(["job_id", "reservation_id", "revision"])
 const LEASE_KEYS = Object.freeze([
   "schema_version", "lease_type", "job_id", "lease_id", "revision", "expires_at",
 ]);
+const WORK_ITEM_KEYS = Object.freeze([
+  "schema_version", "work_type", "lease", "document", "bytes",
+]);
+const CLAIM_OWNERS = new WeakMap();
 
 function fail(code, message) {
   throw new WebJobError(code, message);
@@ -134,10 +138,11 @@ class PersistentWebJobService {
     auditSink = () => {},
   } = {}) {
     if (!repository || ["createOrReplay", "getOwned", "listOwned", "compareAndSwap",
-      "finalizeDeletion", "listExpired"].some((name) => typeof repository[name] !== "function")) {
+      "claimNext", "finalizeDeletion", "listExpired"]
+      .some((name) => typeof repository[name] !== "function")) {
       throw new TypeError("repository 未实现完整持久任务接口");
     }
-    if (!storage || ["putInput", "putOutput", "readOutput", "deleteInput", "deleteOutput"]
+    if (!storage || ["putInput", "putOutput", "readInput", "readOutput", "deleteInput", "deleteOutput"]
       .some((name) => typeof storage[name] !== "function")) {
       throw new TypeError("storage 未实现完整临时内容接口");
     }
@@ -427,6 +432,103 @@ class PersistentWebJobService {
       try { await this.releaseUploadReservation(principalInput, jobId, reservation); } catch {}
       throw error;
     }
+  }
+
+  async claimNextProcessing() {
+    const leaseId = this._uuid();
+    const record = await this.repository.claimNext({
+      lease_id: leaseId,
+      lease_seconds: Math.floor(this.leaseTtlMs / 1000),
+    });
+    if (record === null) return null;
+    const leaseRemaining = Date.parse(record.lease_expires_at) - this._now().getTime();
+    if (record.state !== "processing" || record.lease_id !== leaseId ||
+        record.lease_expires_at === null || record.input_retained !== true ||
+        record.result_available !== false ||
+        !Number.isFinite(leaseRemaining) || leaseRemaining < this.leaseTtlMs - 5_000) {
+      fail("INVALID_TRANSITION", "私有队列返回了非法处理租约");
+    }
+
+    let bytes;
+    try {
+      bytes = await this.storage.readInput(record.job_id);
+    } catch {
+      this._audit("processing_input_unavailable", record, "temporary_storage_read_failed");
+      fail("RESULT_NOT_AVAILABLE", "临时输入当前不可读取，任务将在租约到期后重试");
+    }
+    if (!Buffer.isBuffer(bytes) || bytes.length !== record.document.size_bytes ||
+        bytes.length < 1 || bytes.length > this.maxUploadBytes) {
+      let retained = true;
+      try {
+        await this.storage.deleteInput(record.job_id);
+        retained = false;
+      } catch {}
+      await this._markProcessingFailure(record, retained);
+      if (retained) fail("ZERO_RETENTION_DELETE_FAILED", "非法临时输入无法确认删除");
+      fail("INVALID_UPLOAD", "临时输入与已确认任务不一致");
+    }
+
+    const lease = Object.freeze({
+      schema_version: "1.0",
+      lease_type: "oak_manuscript_web_job_processing_lease",
+      job_id: record.job_id,
+      lease_id: record.lease_id,
+      revision: record.revision,
+      expires_at: record.lease_expires_at,
+    });
+    const workItem = Object.freeze({
+      schema_version: "1.0",
+      work_type: "oak_manuscript_private_work_item",
+      lease,
+      document: Object.freeze({ ...record.document }),
+      bytes,
+    });
+    CLAIM_OWNERS.set(workItem, Object.freeze({
+      service: this,
+      principal: Object.freeze({
+        kind: record.owner_key.startsWith("account:") ? "account" : "anonymous",
+        subject_id: record.owner_key.slice(record.owner_key.indexOf(":") + 1),
+      }),
+    }));
+    this._audit("processing_started", record);
+    return workItem;
+  }
+
+  async completeClaim(workItem, outputInput) {
+    exactObject(workItem, WORK_ITEM_KEYS, "私有处理工作项");
+    const claim = CLAIM_OWNERS.get(workItem);
+    if (!claim || claim.service !== this || workItem.schema_version !== "1.0" ||
+        workItem.work_type !== "oak_manuscript_private_work_item") {
+      fail("INVALID_REQUEST", "私有处理工作项不是本服务当前租约");
+    }
+    const result = await this.completeJob(
+      claim.principal,
+      workItem.lease.job_id,
+      workItem.lease,
+      outputInput,
+    );
+    CLAIM_OWNERS.delete(workItem);
+    return result;
+  }
+
+  abandonClaim(workItem, reason = "processor_failed") {
+    exactObject(workItem, WORK_ITEM_KEYS, "私有处理工作项");
+    const claim = CLAIM_OWNERS.get(workItem);
+    if (!claim || claim.service !== this ||
+        !new Set(["processor_failed", "processor_output_invalid"]).has(reason)) {
+      fail("INVALID_REQUEST", "私有处理工作项或放弃原因非法");
+    }
+    CLAIM_OWNERS.delete(workItem);
+    try {
+      this.auditSink(Object.freeze({
+        schema_version: "1.0",
+        event_type: "processing_attempt_abandoned",
+        job_id: workItem.lease.job_id,
+        occurred_at: this._now().toISOString(),
+        reason,
+      }));
+    } catch {}
+    return true;
   }
 
   async beginProcessing(principalInput, jobId) {

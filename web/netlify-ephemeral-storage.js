@@ -187,6 +187,11 @@ class NetlifyEphemeralStorage {
     return this._putObject(jobId, "output", bytes, { deleteAt, mediaType });
   }
 
+  async readInput(jobId) {
+    const object = await this._readObject(jobId, "input");
+    return object ? Buffer.from(object.bytes) : null;
+  }
+
   async readOutput(jobId) {
     const object = await this._readObject(jobId, "output");
     return object ? Buffer.from(object.bytes) : null;

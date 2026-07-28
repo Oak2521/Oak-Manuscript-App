@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.28（ChatGPT 私有租约队列与隔离核心检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.28`。本轮实现数据库原子领取、身份最小化 worker 编排和本机固定 Python 子进程检查；没有执行真实 Supabase 迁移、连接 Netlify/Supabase、部署容器、修改官网或重新生成安装包。最新真实 Windows 制品仍为 alpha.23。
+
+- Postgres 迁移新增第七个仅 `service_role` 可调用的 `oak_manuscript_web_job_claim_next` RPC；以 `FOR UPDATE SKIP LOCKED` 原子领取 queued/过期 processing 任务，只领取到期前仍有完整租约时间的任务，并强制 processing 状态必有 exact lease；repository 增加固定 `claimNext()` 契约；
+- 临时存储增加有界 `readInput()`；`PersistentWebJobService.claimNextProcessing()` 强一致读取输入并核对已确认字节数，以 WeakMap 绑定不可复制的服务内工作句柄，处理器看不到 owner、job ID 或 lease，完成仍受 exact lease/revision/expiry 约束；
+- 新增 `PrivateLeaseWorker` 与 `PythonCoreProcessProcessor`。处理器超时必须短于租约；Python 使用绝对可执行文件、`-I -B -S -X utf8`、`shell:false`、固定参数、秘密/代理/注入环境清理、私有 scratch、输出/时间上限、输入前后 SHA-256 和身份复核后的清理。失败不伪造完成，保留输入并等待租约过期重试；
+- Python CLI 新增单写锁 `web-check`：同一子进程创建临时项目并运行与桌面相同的核心，只返回检查结果，不返回文件路径、项目 ID 或源稿哈希。本机真实 `Hello\n` TXT 烟测得到 `check-0001`、`source_hash_ok=true`、scratch 0 残留；这不是容器或 OS 级无网证明；
+- 私有队列/处理器/存储/SQL 专项 31/31、全部 Web 91/91；最终 `npm test` 110.2 秒：Node 462 total / 455 pass / 0 fail / 7 skip（3.528 秒），Python 352 total / 0 failures / 0 errors / 3 skipped（102.047 秒）；
+- 资源清单为 78 文件 / 2,126,802 字节，manifest SHA-256 `d11dd1eb46069ce2c06ce506c5e0f3146c02e14223913944236a572ca58696b1`，锚点 SHA-256 `85b39f8dd69ec0e9ab6cf8bfbff8420e06d20f110d605d089703680ddceb9212`。Web 私有服务端源码仍不进入 Electron 打包资源。
+
 ### 2026-07-28 — 0.1.0-alpha.27（ChatGPT 持久任务与幂等数据库检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.27`。本轮是 Supabase/Postgres 迁移、服务端 repository、持久状态机与离线仿真检查点；没有执行官网数据库迁移、配置 service-role key、连接真实 Supabase/Netlify、部署网站或重新生成安装包。最新真实 Windows 制品仍为 alpha.23。

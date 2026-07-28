@@ -133,6 +133,7 @@ class ProjectWriteLockProcessTest(unittest.TestCase):
             _MUTATING_COMMANDS,
             {
                 "create",
+                "web-check",
                 "check",
                 "recheck",
                 "fix",

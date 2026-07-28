@@ -97,5 +97,22 @@
     },
     "lease_expires_at": { "type": ["string", "null"], "format": "date-time" },
     "revision": { "type": "integer", "minimum": 0 }
-  }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "state": { "const": "processing" } } },
+      "then": {
+        "properties": {
+          "lease_id": { "type": "string" },
+          "lease_expires_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "else": {
+        "properties": {
+          "lease_id": { "const": null },
+          "lease_expires_at": { "const": null }
+        }
+      }
+    }
+  ]
 }
