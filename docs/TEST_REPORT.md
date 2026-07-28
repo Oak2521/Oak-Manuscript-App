@@ -1,8 +1,34 @@
 # TEST_REPORT — 测试报告
 
-> 最近更新：2026-07-27。只记录真实执行结果；未运行项不得写成通过。
+> 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 1. 最新验证结论：0.1.0-alpha.5 引用解析、标准包 2.0.0 与 Windows alpha 资源
+## 最新验证结论：0.1.0-alpha.6 Windows builder 受控下载入口
+
+环境：Windows 11；Python 3.14.6；Node 24.16.0；npm 11.13.0；Electron 43.1.0；Java 21.0.11。
+
+| 命令 | 结果 | 说明 |
+|---|---|---|
+| `node --test tests/builder_archive_download.test.js` | **11/11 PASS** | 固定 URL、显式联网、零授权零写入、受限重定向、容量/哈希、事务提交/回滚、旧文件/未知条目、路径/链接均有正反向覆盖；测试使用注入的内存/本地响应，没有联网 |
+| `npm run test:node` | **261 项：255 通过、0 失败、6 跳过；2.683 秒** | 分项终检；跳过项不计作通过 |
+| `npm run test:python` | **344 项：0 失败、0 错误、3 跳过；95.203 秒** | 分项终检；核心版本已推进到 alpha.6 |
+| 最终 `npm test` | **PASS；退出码 0；墙钟 97.2 秒** | Node 261/255/0/6（2.627 秒）；Python 344/0/0/3（89.446 秒） |
+| `npm run verify:standards` | **PASS** | 标准内容未变化：`oak-standards 2.0.0` sequence 2，manifest `0aff75eb…8427` |
+| `npm run verify:electron-runtime` | **PASS** | Electron 43.1.0 win32-x64：2 目录、75 文件、364,083,658 字节 |
+| `npm run verify:resources:win` | **PASS（alpha）** | 实际执行 Python/JRE/EpubCheck 探针；Python core 报告 `0.1.0-alpha.6`；仍返回 17 项 sale blocker |
+| `npm run verify:resources:mac:static` | **按预期退出 1** | 缺 darwin-x64/arm64 Electron dist、Python runtime manifest 与 JRE；未执行探针 |
+| 独立隐藏窗口 `npm run smoke` | **SMOKE-RESULT PASS** | `out/source-smoke/runs/ms46fhdh-230a41fd46481179/projects/`；DOCX/EPUB 均 4 次检查、1 次批量修复、3 个检查点、原稿哈希不变，PDF 251,661 / 177,434 字节 |
+
+下载器专项证明：
+
+- `SOURCE_ARCHIVES` 同时固定三份 electron-builder 官方 GitHub release URL、文件名和 SHA-256；信任值不从响应或下载内容生成；
+- 无 `--allow-network` 时先于目录创建和请求失败；`build:win`、`dist` 和 test 脚本不引用下载器；
+- 初始 URL 只接受 HTTPS 固定仓库路径；重定向限于明确的 GitHub release asset 主机、最多 5 次，拒绝凭据、非 HTTPS 和 fragment；
+- 默认输出 `out/downloads/windows-builder/`，禁止仓库外路径、链接父链、未知条目和覆盖错误既有文件；
+- 每档限制 128 MiB、30 秒闲置，使用独占候选和 `fsync`；三份全部验 SHA-256 后才提交，并发目标碰撞会回滚本事务已安装文件而保留外来文件。
+
+本轮**没有用户联网授权**，所以没有执行 `npm run download:builder:win`，没有发出网络请求，也没有下载三份真实归档。真实工具树、独立 tracked lock、NSIS、ZIP、packaged smoke、干净系统和签名仍均未完成。源码检查点标签为 `chatgpt-v0.1.0-alpha.6`，不代表二进制发行。
+
+## 1. 上一检查点：0.1.0-alpha.5 引用解析、标准包 2.0.0 与 Windows alpha 资源
 
 环境：Windows 11；Python 3.14.6；Node 24.16.0；npm 11.13.0；Electron 43.1.0；Java 21.0.11。
 

@@ -2,6 +2,22 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.6 Windows builder 受控下载验收（2026-07-28）
+
+> 本节只验收显式联网入口及其本地安全契约；本轮没有联网，没有真实归档、工具树、安装包或正式发行证据。
+
+- [x] APP、Python 核心和 lockfile 统一为 `0.1.0-alpha.6`；标准 release 仍为 `oak-standards 2.0.0` / `oak-rules 2.0.0`；
+- [x] 三份归档的官方 HTTPS URL、文件名和 SHA-256 由仓库合同固定，不从远端响应、node_modules 或已下载文件动态建立信任；
+- [x] CLI 缺少 `--allow-network` 时在创建输出目录或发出请求前失败；普通 test/build/dist 不调用下载器；
+- [x] 初始请求只允许固定 GitHub 仓库 release 路径；重定向只允许 HTTPS、无凭据/fragment及明确的 GitHub release asset 主机，最多 5 次；
+- [x] 输出目录必须在仓库内且父链无链接/逃逸；已有正确归档按哈希复用，已有错误归档、未知条目、链接或多链接文件拒绝且不覆盖；
+- [x] 单档最大 128 MiB、30 秒闲置超时、独占候选、`fsync` 和全量 SHA-256 复核；三份候选全部通过后才提交，提交碰撞会回滚本事务已安装文件；
+- [x] downloader 专项 11 项通过；最终统一 `npm test` 为 Node 261/255/0/6、Python 344/0/0/3，退出码 0；
+- [x] Windows alpha 资源门禁和隐藏 alpha.6 源码 smoke 通过；DOCX/EPUB 原稿哈希不变；
+- [ ] 已取得三份真实上游归档并验证哈希；
+- [ ] 已安全导入真实工具树并提交独立 tracked lock；
+- [ ] alpha.6 NSIS/ZIP、packaged smoke、干净系统、代码签名和 sale 门禁全部通过。
+
 ## 0.1.0-alpha.5 默认引用解析与标准包 2.0.0 验收（2026-07-27）
 
 > 本节只验收 alpha.5 源码、本地标准 release 和引用确认闭环，不代表安装包、在线标准更新或可售卖正式版。

@@ -4,6 +4,25 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.6（ChatGPT Windows builder 受控下载检查点）
+
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.6`。该标签只表示经本地验证的源码状态，不表示已经下载真实构建工具、生成安装包或正式发行。
+
+**受控归档取得**
+
+- APP、Python 核心和 lockfile 统一到 `0.1.0-alpha.6`；标准 release 保持 `oak-standards 2.0.0` / `oak-rules 2.0.0`；
+- 三份 builder 来源合同新增固定 electron-builder 官方 GitHub release URL；只允许 HTTPS、固定仓库路径/文件名及 GitHub release asset 主机重定向；
+- 新增 `npm run download:builder:win` 显式联网入口；CLI 缺少 `--allow-network` 时在创建目录或请求前失败，普通 build/test/dist 不调用下载器；
+- 下载候选限定在仓库内，采用独占创建、容量/超时/重定向上限和 `fsync`；三份候选全部验 SHA-256 后才事务提交，已有正确文件复用，错误文件、未知条目、链接、路径逃逸或并发碰撞均 fail-closed，不覆盖既有文件；
+- 新增 11 项下载器测试，覆盖无授权零写入、URL/redirect 边界、错误哈希零落盘、提交回滚和目录安全。
+
+**验证与边界**
+
+- 最终 `npm test`：PASS；Node 261/255/0/6（2.627 秒），Python 344/0 failures/0 errors/3 skipped（89.446 秒），墙钟 97.2 秒；
+- `verify:standards`、`verify:electron-runtime`、Windows alpha 资源门禁均 PASS；macOS 静态门禁仍按预期失败，Windows sale 门禁仍有 17 项 blocker；
+- 独立隐藏 Electron 源码 smoke PASS：`out/source-smoke/runs/ms46fhdh-230a41fd46481179/projects/`；DOCX/EPUB 均完成 4 次检查、1 次批量修复、3 个检查点并保持原稿哈希，PDF 251,661 / 177,434 字节；
+- 本轮未获联网授权，未发出网络请求、未下载三份真实归档，未生成工具树、tracked lock、NSIS、ZIP 或任何可分发制品。
+
 ### 2026-07-27 — 0.1.0-alpha.5（ChatGPT 默认引用解析与标准包 2.0.0 检查点）
 
 > 源码检查点标签：`chatgpt-v0.1.0-alpha.5`。该标签只表示经本地验证的源码状态，不表示已经生成安装包或正式发行。

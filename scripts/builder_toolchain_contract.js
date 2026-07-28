@@ -8,16 +8,19 @@ const SOURCE_ARCHIVES = Object.freeze([
     id: "nsis",
     name: "nsis-3.0.4.1.7z",
     sha256: "9877df902530f96357d13a7a31ae2b9df67f48b11ffc9a1700a7c961574ec5fa",
+    url: "https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-3.0.4.1/nsis-3.0.4.1.7z",
   }),
   Object.freeze({
     id: "nsisResources",
     name: "nsis-resources-3.4.1.7z",
     sha256: "593a9a92ef958321293ac6a2ee61e64bf1bd543142a5bd6b3d310709cc924103",
+    url: "https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-resources-3.4.1/nsis-resources-3.4.1.7z",
   }),
   Object.freeze({
     id: "winCodeSign",
     name: "winCodeSign-2.6.0.7z",
     sha256: "cdaec7154dda7cc31f88d886e2489379a0625a737d610b5ae7f62a12f16743a4",
+    url: "https://github.com/electron-userland/electron-builder-binaries/releases/download/winCodeSign-2.6.0/winCodeSign-2.6.0.7z",
   }),
 ]);
 

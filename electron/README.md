@@ -29,4 +29,4 @@ PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专�
 
 `app:info` 返回 `appVersion`、经当前存储重新验证的七字段 `standardIdentity` 和 `packaged=app.isPackaged`。smoke 必须先通过 Renderer 规划并确认引用解析，再读取本次创建的 `project.json` 及其引用报告，核对 Python core 版本、check ID、`citation_resolution`，以及 APP/项目/检查/报告的完整标准身份；打包 smoke 还强制 `packaged=true`。打包态 Python、JRE 或 Ace stage 失配时必须失败关闭，不得回退用户环境中的同名代码资源；Electron 43.1.0 `win32-x64` 自身仍由受版本控制的全树锁固定：2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95`。当前 Ace 浏览器运行时仍依赖用户系统 Chrome。
 
-当前 `0.1.0-alpha.5` 最新源码 smoke 已在沙箱外隐藏 Electron 中 PASS；运行根为 `out/source-smoke/runs/ms44nzhb-8186d1b3c5148eba/projects/`，DOCX/EPUB 两个项目均先确认默认引用解析、各记录 4 次检查、`integrity.source_hash_ok=true`，PDF 分别为 251,646 / 177,416 字节。`release/` 尚无对应 alpha.5 EXE，因此不能声称打包 smoke 已通过。
+当前 `0.1.0-alpha.6` 最新源码 smoke 已在独立隐藏 Electron 中 PASS；运行根为 `out/source-smoke/runs/ms46fhdh-230a41fd46481179/projects/`，DOCX/EPUB 两个项目均先确认默认引用解析，各记录 4 次检查、1 次批量修复、3 个检查点且 `integrity.source_hash_ok=true`，PDF 分别为 251,661 / 177,434 字节。`release/` 尚无对应 alpha.6 EXE，因此不能声称打包 smoke 已通过。
