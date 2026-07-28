@@ -2,6 +2,19 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.16 EpubCheck 来源机器证据与 Windows 制品验收（2026-07-28）
+
+- [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.16`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] W3C/DAISY 官方 EpubCheck 5.3.0 release ZIP 的 URL、大小、本地 SHA-256 与 GitHub release API 服务端 digest 由 exact schema 与 canonical JSON 固定；
+- [x] 官方 ZIP 与本地分发均为 49 文件、36,263,890 字节，49/49 逐字节一致；证据绑定分发 manifest、JRE 双向探针锁、应用资源清单与 ASAR 锚点；
+- [x] 验证器拒绝自批准、schema/顺序/原始字节/官方制品摘要/本地文件树漂移；EpubCheck 专项和相关反向路径纳入 Node 全量；
+- [x] 随包/仓库 BSD-3-Clause 与当前官网 MIT 的矛盾以 `license_signal_consistent=false` 保留；没有把 tag 签名冒充生成 ZIP 的直接签名；
+- [x] 最终全量 Node 334 / Python 351，0 失败；alpha.16 NSIS/ZIP、真实 packaged 资源、9 fuse、EpubCheck/Ace smoke、发布摘要和安装生命周期只读预检均通过；
+- [ ] EpubCheck tag/制品密码学绑定、许可证信号矛盾和第三方再分发义务已由具名人员签署；
+- [ ] CPython 完整信任链和 PSF 再分发义务已由具名人员签署；
+- [ ] 真实 alpha.12 → alpha.16 安装、升级、旧版回装探测、卸载、HKCU/Desktop/Start Menu 清理和 userData 保留已在获准系统环境执行并产生 PASS 证据；
+- [ ] Windows Authenticode、干净机、macOS/Web、生产账号/订阅/同步和全部 sale 门禁完成；因此本节仍不是正式发行验收。
+
 ## 0.1.0-alpha.15 CPython 来源机器证据与 Windows 制品验收（2026-07-28）
 
 - [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.15`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；

@@ -22,7 +22,7 @@
     "tree_total_bytes": 343822457,
     "tree_sha256": "613c12718b72625393d84c35b4f09886e7e67addcb401a0b1949902eb05d8932"
   },
-  "epubcheck_distribution_manifest_sha256": "48af9a404d902dcab233901b6575299acc8b9dc04151ee1a99788b51e49df6f0",
+  "epubcheck_distribution_manifest_sha256": "8a791de9231702dceb236c4dbf6fd5499f0ff99f506238f0f5bf13429b2c5c26",
   "formal_source_provenance_audit_required": true,
-  "runtime_manifest_sha256": "3ffc0d8a4d7f9d7a3d16e2c5420d50d08398e26f4b194e9b3948511f65da7be1"
+  "runtime_manifest_sha256": "d0622d252094e387879713ef2497c917eec431e3d15287a826e7ccc6b8ce218d"
 }

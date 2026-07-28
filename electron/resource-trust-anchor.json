@@ -3,9 +3,9 @@
   "anchor_type": "oak-packaged-resource-trust-root",
   "app_resources": {
     "manifest": "config/tool-manifests/app-resources-v1.json",
-    "sha256": "70b6ee72601e38f62dfb351f7fd6e8c0bb858b124eb527c6964b4d14cc827581",
-    "file_count": 62,
-    "total_bytes": 1966858
+    "sha256": "2ab364b188311ed9fdf110731ab5187331ffcdfa05579680c55a6b978b0437c1",
+    "file_count": 64,
+    "total_bytes": 1982221
   },
   "targets": [
     {
@@ -18,11 +18,11 @@
         },
         "epubcheck": {
           "manifest": "config/tool-manifests/epubcheck-5.3.0.json",
-          "sha256": "48af9a404d902dcab233901b6575299acc8b9dc04151ee1a99788b51e49df6f0"
+          "sha256": "8a791de9231702dceb236c4dbf6fd5499f0ff99f506238f0f5bf13429b2c5c26"
         },
         "jre": {
           "manifest": "config/tool-manifests/jre-win32-x64.json",
-          "sha256": "60cdadbe431edadbd61353168e52fead30150feb8e4a46278dfc21c031dbc43f"
+          "sha256": "cb5e9047044cae70f1848349cdfb9f5e3d0c1824664869dede189f5442f9c872"
         },
         "ace": {
           "manifest": "config/tool-manifests/ace-1.4.6.json",

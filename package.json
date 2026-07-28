@@ -1,7 +1,7 @@
 {
   "name": "oak-manuscript",
   "productName": "湖岸稿件 Oak Manuscript",
-  "version": "0.1.0-alpha.15",
+  "version": "0.1.0-alpha.16",
   "private": true,
   "description": "本地优先的稿件检查与修订桌面应用（Electron 壳 + Python 零依赖检查核心）",
   "main": "electron/main.js",
@@ -15,6 +15,7 @@
     "verify:standards": "node scripts/standard_assets.js",
     "verify:electron-runtime": "node scripts/electron_runtime_manifest.js",
     "verify:provenance:python:win": "node scripts/runtime_provenance.js",
+    "verify:provenance:epubcheck": "node scripts/epubcheck_provenance.js",
     "verify:resource-trust": "node scripts/resource_trust_manifest.js",
     "download:builder:win": "node scripts/download_windows_builder_archives.js --allow-network",
     "stage:ace": "node scripts/stage_ace.js",

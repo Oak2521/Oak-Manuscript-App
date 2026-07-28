@@ -4,6 +4,18 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.16（ChatGPT EpubCheck 来源机器证据检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.16`。已生成未签名 Windows x64 NSIS 与 ZIP；EpubCheck/CPython 人工签署、实际系统安装与其余正式发布门禁未完成，不是可售卖正式版。
+
+- 新增 EpubCheck 5.3.0 provenance v1：固定 W3C/DAISY 官方 GitHub release ZIP URL、33,071,108 字节、GitHub 服务端及本地一致的 SHA-256 `6c07e68584b2e2ce2f89fe06e1246dfead3eb36b46b340e7d93524f29dcff6c5`；
+- 官方 ZIP 与本地完整分发均为 49 文件、36,263,890 字节，49/49 逐字节一致；证据 SHA-256 `2f5191140fd119bb288a71becf8ca3ddf077d17bc71aea12b179c502075735b0`，并由分发 manifest、JRE 探针锁、应用资源清单和 ASAR 锚点逐层绑定；
+- exact schema、canonical 字节验证与反向测试拒绝自批准、schema/顺序/官方摘要/本地树漂移；来源审计细节写入 `docs/audits/EPUBCHECK_5.3.0_PROVENANCE.md`；
+- 生成器直接从固定 ZIP 字节推导官方文件树，不接受可替换的外部解压目录；审读中发现这一绑定缺口后，首份同版本制品作废归档并以新 schema/ASAR 锚点完整重构建；
+- 随包/上游仓库 BSD-3-Clause 与当前官网 MIT 信号矛盾被明确固定为 `license_signal_consistent=false`；未把 GitHub tag 签名冒充生成 ZIP 的直接签名，正式第三方再分发义务仍待具名人工签核；
+- 全量回归：Node 334 total / 327 pass / 0 fail / 7 skip；Python 351 total / 0 failures / 0 errors / 3 skipped；真实 source/packaged 资源、9 fuse 与隐藏 DOCX/EPUB smoke PASS；
+- 最终 NSIS：189,956,597 字节，SHA-256 `c5d02da1fcf64f44f75e22b2d884d64660f6669932e8cce0499711051ca02d02`；ZIP：233,770,875 字节，SHA-256 `74ac191bfdc3feb1585f1760326ffa31a9f489912143f7810743ffda021842dd`；安装生命周期只读预检通过，实际安装器未运行。
+
 ### 2026-07-28 — 0.1.0-alpha.15（ChatGPT CPython 来源机器证据检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.15`。已生成未签名 Windows x64 NSIS 与 ZIP；CPython 人工签署、实际系统安装与其余正式发布门禁未完成，不是可售卖正式版。

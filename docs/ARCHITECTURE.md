@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.15` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约、Windows builder 独立锁、ASAR/全 9 fuse/资源可信链、受限应用协议、Ace 受控 utilityProcess、CPython 来源机器证据、未签名 NSIS/ZIP、packaged smoke，以及 Windows 安装生命周期的 fail-closed 编排与证据契约。生产认证/同步、联网标准获取、代码签名、真实安装生命周期、macOS 和 Web 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.16` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约、Windows builder 独立锁、ASAR/全 9 fuse/资源可信链、受限应用协议、Ace 受控 utilityProcess、CPython/EpubCheck 来源机器证据、未签名 NSIS/ZIP、packaged smoke，以及 Windows 安装生命周期的 fail-closed 编排与证据契约。生产认证/同步、联网标准获取、代码签名、真实安装生命周期、macOS 和 Web 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -153,7 +153,7 @@ Python 核心、`config/` 和 `samples/` 以 canonical `app-resources-v1.json` �
 
 运行时来源不能靠版本字符串或本地清单自证。每类二进制必须把官方发布 URL、大小、摘要和可用签名/SBOM 旁证固定到 exact schema 的 canonical 证据，再逐文件证明本地分发是原字节复制或明确列出的最小受控修改。证据原始 SHA-256 由运行时清单和 packaged 资源门禁绑定；默认命令只读，显式更新必须采用稳定读取、安全父链、独占候选、`fsync`、原子换入及换入后复验。
 
-机器证据和人工许可/法律签署是两个状态，工具不得把 `machine_status=verified` 写成 `human_review_status=verified`。alpha.15 首次应用于 Windows CPython 3.13.14：官方/本地均 34 个文件，33 个逐字节一致，唯一受控修改为 `_pth` 精确追加；Sigstore leaf/SPDX 已机器复验，但完整信任链、GPG、上游 tlog index 不一致和再分发签署仍待人工处理。因此 blocker 只能收窄为 `PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`，不能删除。
+机器证据和人工许可/法律签署是两个状态，工具不得把 `machine_status=verified` 写成 `human_review_status=verified`。alpha.15 首次应用于 Windows CPython 3.13.14：官方/本地均 34 个文件，33 个逐字节一致，唯一受控修改为 `_pth` 精确追加；Sigstore leaf/SPDX 已机器复验，但完整信任链、GPG、上游 tlog index 不一致和再分发签署仍待人工处理。因此 blocker 只能收窄为 `PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`，不能删除。alpha.16 将同一 fail-closed 模型用于 EpubCheck 5.3.0：官方/本地 49/49 文件逐字节一致、GitHub 服务端与本机 ZIP SHA-256 相同，但官网 MIT 与随包/仓库 BSD-3-Clause 信号矛盾，tag 签名也未证明生成 ZIP 的直接绑定；因此只能收窄为 `EPUBCHECK_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`。
 
 打包应用在标准存储初始化和窗口创建前运行同一验证，失败即退出。该锚点仍需与真实应用二进制的 ASAR integrity/fuses、操作系统代码签名和发布证据联合验证；构造测试中的真实 `app.asar` 只证明验证器行为，不能替代产品安装包或签名证据。macOS 目标在相应四份平台锁齐全并重新生成锚点前必须 fail-closed。
 
@@ -252,5 +252,5 @@ alpha.7 在构建输出端增加独立证据链。`build:win` 首先调用 `rele
 - 源码 smoke 与打包 smoke 都通过 `app:info` 核对 Electron 版本和 freshly verified `standardIdentity`；随后读取本次真实生成的 `project.json`、检查记录和导出 `report.json`，核对 Python core 版本、check ID 及四方七字段身份一致。打包 smoke 还强制证明 `app.isPackaged=true`，防止把旧版、陈旧 core 或错误规则包误记为新打包版。
 - 源码 smoke 每次生成独立 `out/source-smoke/runs/<run-id>/`，项目、标准 store、缓存、临时目录、用户数据、HOME/APPDATA/XDG 与 crash dumps 不复用；打包 smoke 同样按运行 ID 隔离并受仓库 `out/` 边界控制。Windows EXE 还须先通过 x64 PE32+ 校验。
 - macOS 构建拆为 `build:mac:x64` 与 `build:mac:arm64`；聚合入口 `build:mac` 只选择当前原生 host 架构，不在一个进程伪造双架构探针。`verify:resources:mac` 只是带 `--no-runtime-probe` 的跨架构静态聚合，不能替代两个原生 runner 的执行证据。
-- alpha.15 最终外层隐藏 packaged smoke 已 PASS：`out/packaged-smoke/runs/ms4qixuz-15ab5ab26e07949e/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,656/178,401 字节；EPUB 通过受控 utilityProcess 实际运行 EpubCheck/Ace，缺陷结果分别为 5 error/8 项失败断言。Electron sandbox 保持开启。
-- alpha.15 以 `oak-manuscript://renderer/` 的四文件白名单在 `GrantFileProtocolExtraPrivileges=false` 下保持 ASAR UI 可用；Python `-B` 防止运行时修改 loose 可信树；顶层 2.1.3 afterPack 严格写入并回读 Electron 43 全 9 fuse。真实 builder 锁、CPython provenance、NSIS/ZIP、packaged 资源与发布证据已成立；安装生命周期仅完成只读预检，仍无 CPython 人工签署、生产凭证、持久队列、上传 transport、Windows 签名、macOS 或 Web。packaged 资源门禁仍为 11 项。
+- alpha.16 最终外层隐藏 packaged smoke 已 PASS：`out/packaged-smoke/runs/ms4se5k4-0d1d2a33a1dd2017/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,656/178,238 字节；EPUB 通过受控 utilityProcess 实际运行 EpubCheck/Ace，缺陷结果分别为 5 error/8 项失败断言。Electron sandbox 保持开启。
+- alpha.16 以 `oak-manuscript://renderer/` 的四文件白名单在 `GrantFileProtocolExtraPrivileges=false` 下保持 ASAR UI 可用；Python `-B` 防止运行时修改 loose 可信树；顶层 2.1.3 afterPack 严格写入并回读 Electron 43 全 9 fuse。真实 builder 锁、CPython/EpubCheck provenance、NSIS/ZIP、packaged 资源与发布证据已成立；安装生命周期仅完成只读预检，仍无 CPython/EpubCheck 人工签署、生产凭证、持久队列、上传 transport、Windows 签名、macOS 或 Web。packaged 资源门禁仍为 11 项。

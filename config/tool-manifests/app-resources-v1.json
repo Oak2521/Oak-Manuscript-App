@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 62,
-  "total_bytes": 1966858,
+  "file_count": 64,
+  "total_bytes": 1982221,
   "files": [
     {
       "path": "config/app-config.json",
@@ -21,6 +21,11 @@
       "path": "config/provenance/cpython-3.13.14-win32-x64.json",
       "size_bytes": 9265,
       "sha256": "b198a727a0c12640a8a020758bcfc5dc41e01e577a25576795b1d081e3513176"
+    },
+    {
+      "path": "config/provenance/epubcheck-5.3.0.json",
+      "size_bytes": 10498,
+      "sha256": "2f5191140fd119bb288a71becf8ca3ddf077d17bc71aea12b179c502075735b0"
     },
     {
       "path": "config/rule-capabilities.json",
@@ -36,6 +41,11 @@
       "path": "config/rule-packs/oak-rules-2.0.0.json",
       "size_bytes": 25005,
       "sha256": "098b382e33c06ccddf154940fbbd51db384d8025cf235ed7f7e10e83d34897a4"
+    },
+    {
+      "path": "config/schemas/epubcheck-provenance-v1.schema.json",
+      "size_bytes": 4626,
+      "sha256": "4435c2e90d3e49c170b859ca95328f7c574ea5d8a11c7cf14d1f4ad206ab7f71"
     },
     {
       "path": "config/schemas/runtime-provenance-v1.schema.json",
@@ -79,13 +89,13 @@
     },
     {
       "path": "config/tool-manifests/epubcheck-5.3.0.json",
-      "size_bytes": 9009,
-      "sha256": "48af9a404d902dcab233901b6575299acc8b9dc04151ee1a99788b51e49df6f0"
+      "size_bytes": 9248,
+      "sha256": "8a791de9231702dceb236c4dbf6fd5499f0ff99f506238f0f5bf13429b2c5c26"
     },
     {
       "path": "config/tool-manifests/jre-win32-x64.json",
       "size_bytes": 1148,
-      "sha256": "60cdadbe431edadbd61353168e52fead30150feb8e4a46278dfc21c031dbc43f"
+      "sha256": "cb5e9047044cae70f1848349cdfb9f5e3d0c1824664869dede189f5442f9c872"
     },
     {
       "path": "config/tool-manifests/python-runtime-win32-x64.json",
@@ -95,7 +105,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "92a1e125b5103f2d0e79852c1190819b3c5d6c227886e7b4591f443e2c0178ec"
+      "sha256": "6b6a92026aff5852f51dc1de77b3fb832f716ddf87b1b2f393106b334b4fe979"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

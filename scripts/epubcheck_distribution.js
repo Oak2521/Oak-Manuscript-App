@@ -8,12 +8,15 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { compareUtf16 } = require("./deterministic_compare");
+const { readSafeRegularFile } = require("./safe_tracked_file");
+const { parseJsonStrict } = require("./strict_json");
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 const EPUBCHECK_VERSION = "5.3.0";
 const SCHEMA_VERSION = "1.0";
 const DISTRIBUTION_RELATIVE = `tools/epubcheck-${EPUBCHECK_VERSION}`;
 const MANIFEST_RELATIVE = `config/tool-manifests/epubcheck-${EPUBCHECK_VERSION}.json`;
+const PROVENANCE_RELATIVE = `config/provenance/epubcheck-${EPUBCHECK_VERSION}.json`;
 const REQUIRED_FILES = Object.freeze([
   "CHANGELOG.txt",
   "LICENSE.txt",
@@ -88,6 +91,26 @@ function resolveProjectPath(root, relative, label) {
   return target;
 }
 
+function provenanceReference(root, { required = false } = {}) {
+  const projectRoot = path.resolve(root);
+  const target = resolveProjectPath(projectRoot, PROVENANCE_RELATIVE, "EpubCheck provenance evidence");
+  const existing = fs.lstatSync(target, { throwIfNoEntry: false });
+  if (!existing && !required) return null;
+  const record = readSafeRegularFile(projectRoot, target, "EpubCheck provenance evidence", { allowMissing: !required });
+  if (!record) return null;
+  const evidence = parseJsonStrict(record.bytes.toString("utf8"), "EpubCheck provenance evidence");
+  const canonical = Buffer.from(`${JSON.stringify(evidence, null, 2)}\n`, "utf8");
+  if (!record.bytes.equals(canonical)) throw new Error("EpubCheck provenance evidence 不是 canonical UTF-8/LF JSON");
+  if (evidence?.schema_version !== 1 || evidence?.evidence_type !== "oak-tool-distribution-provenance" ||
+      evidence?.subject?.name !== "EpubCheck" || evidence?.subject?.version !== EPUBCHECK_VERSION ||
+      evidence?.subject?.distribution !== DISTRIBUTION_RELATIVE || evidence?.subject?.manifest !== MANIFEST_RELATIVE ||
+      evidence?.verification?.machine_status !== "verified" || evidence?.verification?.human_review_status !== "pending") {
+    throw new Error("EpubCheck provenance evidence 身份或机器/人工状态不匹配");
+  }
+  return { path: PROVENANCE_RELATIVE, sha256: crypto.createHash("sha256").update(record.bytes).digest("hex"),
+    machine_status: "verified", human_review_status: "pending" };
+}
+
 function buildManifest(root = REPO_ROOT) {
   const projectRoot = path.resolve(root);
   const distribution = resolveProjectPath(
@@ -107,6 +130,7 @@ function buildManifest(root = REPO_ROOT) {
   if (!files.some((item) => item.path.startsWith("lib/") && item.path.endsWith(".jar"))) {
     throw new Error("EpubCheck 分发的 lib/ 中没有 JAR 依赖");
   }
+  const provenance = provenanceReference(projectRoot);
   return {
     schema_version: SCHEMA_VERSION,
     tool: { name: "EpubCheck", version: EPUBCHECK_VERSION },
@@ -119,6 +143,7 @@ function buildManifest(root = REPO_ROOT) {
         item.startsWith("licenses/")),
     formal_provenance_audit_required: true,
     provenance_note: "Locally supplied distribution; origin and redistribution evidence require formal audit before sale.",
+    ...(provenance ? { provenance_evidence: provenance } : {}),
     file_count: files.length,
     total_bytes: files.reduce((sum, item) => sum + item.size_bytes, 0),
     files,
@@ -135,7 +160,7 @@ function verifyDistribution(root = REPO_ROOT) {
   }
   let manifest;
   try {
-    manifest = JSON.parse(fs.readFileSync(manifestTarget, "utf8"));
+    manifest = parseJsonStrict(fs.readFileSync(manifestTarget, "utf8"), "EpubCheck 固定清单");
   } catch (error) {
     throw new Error(`EpubCheck 固定清单无法解析：${error.message}`);
   }
@@ -144,6 +169,15 @@ function verifyDistribution(root = REPO_ROOT) {
       manifest.distribution !== DISTRIBUTION_RELATIVE || manifest.entry !== "epubcheck.jar" ||
       manifest.formal_provenance_audit_required !== true) {
     throw new Error("EpubCheck 固定清单的 schema、工具版本、目录、入口或审计状态不匹配");
+  }
+  if (Object.hasOwn(manifest, "provenance_evidence")) {
+    const expected = provenanceReference(projectRoot, { required: true });
+    const actual = manifest.provenance_evidence;
+    const keys = actual && typeof actual === "object" && !Array.isArray(actual)
+      ? Object.keys(actual).sort(compareUtf16) : [];
+    if (JSON.stringify(keys) !== JSON.stringify(["human_review_status", "machine_status", "path", "sha256"].sort(compareUtf16)) ||
+        actual.path !== expected.path || actual.sha256 !== expected.sha256 || actual.machine_status !== "verified" ||
+        actual.human_review_status !== "pending") throw new Error("EpubCheck 固定清单未精确绑定 provenance evidence");
   }
   const distribution = resolveProjectPath(projectRoot, manifest.distribution, "EpubCheck distribution");
   const distributionStat = fs.lstatSync(distribution, { throwIfNoEntry: false });
@@ -233,10 +267,12 @@ module.exports = {
   DISTRIBUTION_RELATIVE,
   EPUBCHECK_VERSION,
   MANIFEST_RELATIVE,
+  PROVENANCE_RELATIVE,
   REQUIRED_FILES,
   SCHEMA_VERSION,
   buildManifest,
   inventory,
+  provenanceReference,
   sha256File,
   verifyDistribution,
   writePinnedManifest,

@@ -2,9 +2,9 @@
 
 ## 桌面应用（推荐）
 
-当前开发版本为 `0.1.0-alpha.15`，已有未签名 Windows x64 NSIS 安装器和 ZIP，但不是可售卖正式版。macOS 安装包、Web 版、Windows 签名和干净机验收仍待完成。alpha.15 保持标准包 2.0.0、默认引用解析、账号/同步离线契约、Ace 受控 utilityProcess 和 Electron 43 全部 9 项 fuse，并新增 CPython 官方来源机器证据；普通测试、启动和构建不会触发联网下载。
+当前开发版本为 `0.1.0-alpha.16`，已有未签名 Windows x64 NSIS 安装器和 ZIP，但不是可售卖正式版。macOS 安装包、Web 版、Windows 签名和干净机验收仍待完成。alpha.16 保持标准包 2.0.0、默认引用解析、账号/同步离线契约、Ace 受控 utilityProcess 和 Electron 43 全部 9 项 fuse，并已有 CPython/EpubCheck 官方来源机器证据；普通测试、启动和构建不会触发联网下载。
 
-**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。统一测试用 `npm test`；分项排障用 `npm run test:node`、`npm run test:python`。alpha.15 最终统一结果为 Node 329/322/0/7、Python 351/0 failures/0 errors/3 skipped，墙钟 111.8 秒；跳过项不计作通过。真实 packaged smoke 已 PASS，并在应用内运行 EpubCheck/Ace；这仍不等于签名或干净机安装验收。
+**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。统一测试用 `npm test`；分项排障用 `npm run test:node`、`npm run test:python`。alpha.16 最终统一结果为 Node 334/327/0/7、Python 351/0 failures/0 errors/3 skipped，墙钟 154.3 秒；跳过项不计作通过。真实 packaged smoke 已 PASS，并在应用内运行 EpubCheck/Ace；这仍不等于签名或干净机安装验收。
 
 **账号与结果同步（当前边界）**：欢迎页、导出页和设置页保留湖岸账号入口。由于生产认证尚未配置，点击登录只会明确显示 `configuration_required`，不会打开浏览器或联网；真实登录状态只在自动化测试实例中模拟。登录用户导出后才会看到 SyncRecord v1 的逐字段预览，并可选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。当前确认项只进入当前进程的 `pending_transport` 队列，关闭 APP 即消失，绝未上传到网站。
 
@@ -21,7 +21,7 @@
 
 **外部验证（EPUB）**：问题页「外部验证」按钮运行固定的 EpubCheck 5.3.0 与 Ace 1.4.6。开发态优先使用清单校验通过的仓库 JRE，缺失时才允许查找系统 Java；未来打包态只接受捆绑且校验通过的 JRE，不回退系统 `PATH`。Ace 的 stage manifest 必须匹配受版本控制的 full lock；主进程生成绑定当前项目/标准/工具身份的计划，在固定 utilityProcess 中运行 Ace，并用受控隐藏 Chrome 的本地 loopback 端点承载浏览器。Ace 目前仍需要本机 Chrome。缺少工具/锁、完整性校验失败、计划过期、报告非法或进程异常时，报告如实标注「未运行」。
 
-当前构造样本的真实外部工具预期是：`epub_good.epub` 在 EpubCheck 与 Ace 都通过，`epub_needs_review.epub` 在两者都失败并报告问题。“失败”表示工具确实运行并发现缺陷，不表示程序故障。alpha.15 的真实 packaged smoke 已让缺陷样本得到 EpubCheck 5 error 和 Ace 8 项失败断言，证明打包受控链路真实运行；它仍不等于自带浏览器、OS 级网络隔离、签名绑定或干净机验收。受限环境若超时或未生成安全报告，核心会 fail-closed 标记未运行。
+当前构造样本的真实外部工具预期是：`epub_good.epub` 在 EpubCheck 与 Ace 都通过，`epub_needs_review.epub` 在两者都失败并报告问题。“失败”表示工具确实运行并发现缺陷，不表示程序故障。alpha.16 的真实 packaged smoke 已让缺陷样本得到 EpubCheck 5 error 和 Ace 8 项失败断言，证明打包受控链路真实运行；它仍不等于自带浏览器、OS 级网络隔离、签名绑定或干净机验收。受限环境若超时或未生成安全报告，核心会 fail-closed 标记未运行。
 
 **标准资源与项目升级**：标准页分别显示“当前新项目默认标准”和“本项目固定标准”。全局标准变化不会自动改已有项目；只有打开项目、查看规则/体例/标准的完整差异并点击一次确认，项目才会建立检查点、归档旧问题并切换，随后自动用新规则重检。取消、关闭对话框或计划过期都不写项目。
 
@@ -116,7 +116,7 @@ npm run verify:provenance:python:win
 npm run verify:resource-trust
 ```
 
-普通 staging 和验证只接受已经存在且一致的仓库锁；审计升级时才允许显式更新锁。JRE 与 Ace 的候选目录和锁以事务方式提交，目录或锁换入失败会恢复原目录和原锁。Windows CPython provenance 固定 PSF 官方 ZIP/Sigstore/SPDX、34/33/1 文件推导与原样许可，证据仍明确标为人工签署待办。Electron 43.1.0 `win32-x64` 另由 `config/tool-manifests/electron-43.1.0-win32-x64.json` 固定 2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95`；该 tracked manifest 使用严格 JSON、exact schema 和 canonical UTF-8/LF 原始字节。普通验证只读；显式 `--update-lock` 会验证安全父链、拒绝目标 symlink/hardlink，以独占候选文件、`fsync`、原子替换和换入后复验提交，失败恢复旧字节，回滚自身失败保留证据并明确报错。其它清单排序使用固定 UTF-16 code unit 顺序，不受系统 locale 影响。Ace 若遇到空/未知 license 声明或空许可证文件会直接拒绝；即使有许可证文件，全部 236 个包仍需正式逐包人工审计。
+普通 staging 和验证只接受已经存在且一致的仓库锁；审计升级时才允许显式更新锁。JRE 与 Ace 的候选目录和锁以事务方式提交，目录或锁换入失败会恢复原目录和原锁。Windows CPython provenance 固定 PSF 官方 ZIP/Sigstore/SPDX、34/33/1 文件推导与原样许可；EpubCheck provenance 固定官方 ZIP、GitHub 服务端 digest 与 49/49 原字节文件，并保留官网 MIT 与随包/仓库 BSD-3-Clause 矛盾。两份证据都明确标为人工签署待办。Electron 43.1.0 `win32-x64` 另由 `config/tool-manifests/electron-43.1.0-win32-x64.json` 固定 2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95`；该 tracked manifest 使用严格 JSON、exact schema 和 canonical UTF-8/LF 原始字节。普通验证只读；显式 `--update-lock` 会验证安全父链、拒绝目标 symlink/hardlink，以独占候选文件、`fsync`、原子替换和换入后复验提交，失败恢复旧字节，回滚自身失败保留证据并明确报错。其它清单排序使用固定 UTF-16 code unit 顺序，不受系统 locale 影响。Ace 若遇到空/未知 license 声明或空许可证文件会直接拒绝；即使有许可证文件，全部 236 个包仍需正式逐包人工审计。
 
 Windows builder 工具链不能由普通构建下载或自生成信任。安全下载器与导入器只接受以下三份精确归档：`nsis-3.0.4.1.7z`（`9877df902530f96357d13a7a31ae2b9df67f48b11ffc9a1700a7c961574ec5fa`）、`nsis-resources-3.4.1.7z`（`593a9a92ef958321293ac6a2ee61e64bf1bd543142a5bd6b3d310709cc924103`）、`winCodeSign-2.6.0.7z`（`cdaec7154dda7cc31f88d886e2489379a0625a737d610b5ae7f62a12f16743a4`）。只有在用户明确批准本次联网后，开发者才可按以下顺序执行；下载器把归档写入仓库内的 `out/downloads/windows-builder/`，不会导入、解压或更新受信 lock：
 
@@ -130,9 +130,9 @@ node scripts/import_windows_builder_toolchain.js --archive-dir out/downloads/win
 
 下载器只允许契约中固定的 GitHub 官方 HTTPS 起始 URL、有限的 GitHub release 资产跳转域、最多 5 次跳转、单文件 128 MiB 和 30 秒 socket 静默上限；拒绝凭据、查询串、fragment、越界/链接输出目录、未知文件、硬链接和已有错误哈希。三份候选全部下载并校验后才以独占方式提交，冲突或失败只回滚本次事务文件。导入器随后拒绝 UNC/设备形式（包括直接网络共享写法）、未知归档、路径穿越、链接/reparse、备用流、加密条目、Windows 名称冲突和解压膨胀；安装前预检旧树/旧锁，候选树与 tracked lock 共同换入，全部 forward rename 和 rollback rename 故障都有 fail-closed 回归。路径字符串不能识别映射成盘符的网络共享，因此归档目录必须人工确认为本地非映射目录。当前三份真实归档已由用户批准下载，工具树与 `config/tool-manifests/electron-builder-win32-x64.json` 已建立并复验；普通构建只消费该离线锁，缺失或漂移时失败，不会自动补齐。
 
-`verify:resources:win` 使用 `--release-tier auto`：prerelease 自动选择 `alpha`，资源正确时可通过并列出 sale 阻断；正式 semver 自动选择 `sale`。alpha.15 源码门禁为 16 项 blocker，真实 packaged ASAR/全树证据关闭其中 5 项后保留 11 项；CPython 来源项已收窄为人工签署待办，Electron fuse 兼容性阻断已经独立关闭。不要把 alpha 门禁通过理解为“可以销售”。
+`verify:resources:win` 使用 `--release-tier auto`：prerelease 自动选择 `alpha`，资源正确时可通过并列出 sale 阻断；正式 semver 自动选择 `sale`。alpha.16 源码门禁为 16 项 blocker，真实 packaged ASAR/全树证据关闭其中 5 项后保留 11 项；CPython/EpubCheck 来源项已收窄为人工签署待办，Electron fuse 兼容性阻断已经独立关闭。不要把 alpha 门禁通过理解为“可以销售”。
 
-`npm run verify:fuses:config` 可单独验证 ASAR integrity、全量 `afterPack` 注册与 Electron fuse 构建合同。实际 `build:win` / `build:mac:*` 会在 builder 完成、签名前用精确锁定的 `@electron/fuses 2.1.3` 和 `strictlyRequireAllFuses=true` 写入全部 9 项，立即回读，再由独立门禁读取真实应用二进制并验证 `app.asar` 资源锚点。当前索引 8 为 `WasmTrapHandlers=true`，真实 alpha.15 EXE 无未知项；未来新增项仍会 fail-closed。详见 `ELECTRON_FUSE_POLICY.md`。
+`npm run verify:fuses:config` 可单独验证 ASAR integrity、全量 `afterPack` 注册与 Electron fuse 构建合同。实际 `build:win` / `build:mac:*` 会在 builder 完成、签名前用精确锁定的 `@electron/fuses 2.1.3` 和 `strictlyRequireAllFuses=true` 写入全部 9 项，立即回读，再由独立门禁读取真实应用二进制并验证 `app.asar` 资源锚点。当前索引 8 为 `WasmTrapHandlers=true`，真实 alpha.16 EXE 无未知项；未来新增项仍会 fail-closed。详见 `ELECTRON_FUSE_POLICY.md`。
 
 资源探针默认要求 host platform/arch 与 target 一致。跨主机只做静态检查必须显式使用 `--no-runtime-probe`；该结果只证明文件结构和锁，不证明运行时可以执行。Electron 桥和 Python 资源探针共用固定 `-I -S -X utf8` bootstrap，显式加入受控 core 目录，不依赖用户 `PYTHONPATH` 或 site-packages。
 
@@ -144,9 +144,9 @@ node scripts/import_windows_builder_toolchain.js --archive-dir out/downloads/win
 npm run release:evidence:verify:win
 ```
 
-验证器会重新稳定读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。alpha.15 的真实 `release/` 证据已通过；alpha.12—alpha.14 已归档到项目内 `release/archive/`。若根目录混入同系列旧版本，生成器会拒绝而不是合并摘要。
+验证器会重新稳定读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。alpha.16 的真实 `release/` 证据已通过；alpha.12—alpha.15 已归档到项目内 `release/archive/`。若根目录混入同系列旧版本，生成器会拒绝而不是合并摘要。
 
-安装生命周期验收器默认只读，不启动安装器；它精确核对当前 alpha.15 与归档 alpha.12 的 manifest、SHA256SUMS、文件大小、摘要、版本顺序和 PE 架构：
+安装生命周期验收器默认只读，不启动安装器；它精确核对当前 alpha.16 与归档 alpha.12 的 manifest、SHA256SUMS、文件大小、摘要、版本顺序和 PE 架构：
 
 ```powershell
 npm run verify:install-lifecycle:win
@@ -158,11 +158,11 @@ npm run verify:install-lifecycle:win
 node scripts/windows_install_acceptance.js --run --allow-system-mutation
 ```
 
-alpha.15 只执行并通过了默认只读预检；真实安装生命周期尚未运行，不能据此声称安装、升级、降级保护或卸载已验收。
+alpha.16 只执行并通过了默认只读预检；真实安装生命周期尚未运行，不能据此声称安装、升级、降级保护或卸载已验收。
 
 macOS 分架构入口为 `npm run verify:resources:mac:x64` / `:arm64` 和 `npm run build:mac:x64` / `:arm64`，必须分别在对应原生 runner 执行。`npm run build:mac` 只选择当前 Mac 的原生架构；`npm run verify:resources:mac` 是显式 `--no-runtime-probe` 的跨架构静态聚合，不算探针或构建通过。当前仍缺 x64/arm64 Python/JRE 资源与锁、构建、签名、公证和实机证据。
 
-打包 smoke 从 `package.json` 读取期望版本，通过 `appInfo` 核对七字段标准身份和 `app.isPackaged=true`，再执行引用解析确认和项目闭环。alpha.12 起 packaged runner 强制 EpubCheck/Ace，调用者不能静默降级；alpha.15 真实运行已通过。项目、标准 store、临时目录、用户数据、缓存和崩溃目录按运行 ID 隔离在仓库 `out/`，窗口保持隐藏。
+打包 smoke 从 `package.json` 读取期望版本，通过 `appInfo` 核对七字段标准身份和 `app.isPackaged=true`，再执行引用解析确认和项目闭环。alpha.12 起 packaged runner 强制 EpubCheck/Ace，调用者不能静默降级；alpha.16 真实运行已通过。项目、标准 store、临时目录、用户数据、缓存和崩溃目录按运行 ID 隔离在仓库 `out/`，窗口保持隐藏。
 
 自选导出目录会逐级拒绝链接、目录联接和非常规目录；若选择项目内部目录，只允许 `exports/` 下。全部输出目标先统一预检，已有链接或硬链接目标不会被覆盖；每个文件在同目录完整暂存并原子换入。PDF 样张另在禁 JavaScript、导航和网络的非持久隔离 session 中生成。
 

@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.15`
+> 当前版本：`0.1.0-alpha.16`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.15`（含未签名 Windows alpha 制品证据，不代表正式发行）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.16`（含未签名 Windows alpha 制品证据，不代表正式发行）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,18 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.16 EpubCheck 5.3.0 来源机器证据检查点
+
+- 新增 `config/provenance/epubcheck-5.3.0.json`、exact schema、`scripts/epubcheck_provenance.js` 与反向测试。证据把本地 EpubCheck 完整分发精确绑定到 W3C/DAISY GitHub 官方 release ZIP（33,071,108 字节，SHA-256 `6c07e68584b2e2ce2f89fe06e1246dfead3eb36b46b340e7d93524f29dcff6c5`）；GitHub release API 的服务端 digest 与本机重算一致；证据 SHA-256 为 `2f5191140fd119bb288a71becf8ca3ddf077d17bc71aea12b179c502075735b0`；
+- 最终生成器不信任调用者提供的“官方解压目录”：它直接解析固定 ZIP 中央目录，拒绝多卷/ZIP64/加密/链接/路径逃逸和不支持的压缩方法，并解压每个条目计算 SHA-256；GitHub release API JSON 原始摘要也精确固定。审读中发现并修复该绑定缺口后，首份同版本制品作废并归档于 `release/archive/0.1.0-alpha.16-superseded-pre-zip-binding/`，不再作为发布证据；
+- 官方 ZIP 与本地分发均为 49 个文件、36,263,890 字节，49/49 逐字节一致；`epubcheck.jar` SHA-256 为 `f7f96617c929371821609b88c8484d6dc9f24fe916499863c46094c5fb778a65`。验证器拒绝自批准、schema/顺序/原始字节/官方摘要/本地树漂移；完整机器审计见 `docs/audits/EPUBCHECK_5.3.0_PROVENANCE.md`；
+- 官方 ZIP、上游仓库和随包 `LICENSE.txt` 指向 BSD-3-Clause，但当前 EpubCheck 官网首页显示 MIT；证据将 `license_signal_consistent=false` 原样保留，未擅自选择许可。GitHub 页面称 tag 已签名，但本轮未独立验证 tag，也没有把 tag 签名冒充生成 ZIP 的直接签名；第三方再分发义务仍待具名人工审阅；
+- `epubcheck-5.3.0.json`、JRE 双向探针锁、应用 loose 资源清单和真实 `app.asar` 锚点均绑定上述证据。源码 blocker 仍为 16 项，真实 packaged blocker 仍为 11 项；原 `EPUBCHECK_PROVENANCE_AUDIT_REQUIRED` 已收窄为 `EPUBCHECK_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`，数量不变；
+- 最终 `npm test`：Node 334 total / 327 pass / 0 fail / 7 skip（3.231 秒），Python 351 total / 0 failures / 0 errors / 3 skipped（103.297 秒），墙钟 154.3 秒；
+- `npm run build:win`：PASS（193.8 秒）。源/packaged 资源、9 项 fuse、隐藏 smoke 与 canonical 发布证据全部通过；smoke 运行根为 `out/packaged-smoke/runs/ms4se5k4-0d1d2a33a1dd2017/projects/`，DOCX/EPUB 各 4 次检查、1 个修复批次、3 个检查点，当前问题 13/5、应用 fixes 5/2、PDF 251,656/178,238 字节，原稿哈希不变；EPUB 实得 EpubCheck 5 error 与 Ace 8 项失败断言；
+- NSIS 189,956,597 字节，SHA-256 `c5d02da1fcf64f44f75e22b2d884d64660f6669932e8cce0499711051ca02d02`；ZIP 233,770,875 字节，SHA-256 `74ac191bfdc3feb1585f1760326ffa31a9f489912143f7810743ffda021842dd`；`SHA256SUMS.txt` SHA-256 `122d42aa2e8bf3505dd7b7700d0f74f65cf02f07d5f3b16c99e195ebe2aec567`；独立发布证据验证与 alpha.12 → alpha.16 安装生命周期只读预检均 PASS；
+- 实际安装器仍未运行；Windows 制品未签名，EpubCheck/CPython 人工签署、其余 packaged sale blocker、干净机、macOS/Web 和生产账号/订阅/同步均未完成。
 
 ### 已完成：0.1.0-alpha.15 CPython Windows 运行时来源机器证据检查点
 
@@ -302,8 +314,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.15 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
-- Windows：alpha.15 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、packaged smoke、CPython 来源机器证据和安装生命周期只读预检；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有 Authenticode 签名；
+- 打包版 Ace：alpha.16 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
+- Windows：alpha.16 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、packaged smoke、CPython/EpubCheck 来源机器证据和安装生命周期只读预检；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：服务端任务 API、隔离执行、限额、零留存和官网嵌入尚未实现；
 - 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览和当前进程队列契约已实现；生产 Supabase、OS 凭据存储、签名授权、支付、持久队列、网络 transport 和网站后台未连接；
@@ -313,13 +325,13 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ### Windows sale 门禁的当前明确阻断
 
-源码资源门禁现列 16 项（builder 独立全树锁已成立）；真实 alpha.15 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 11 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
+源码资源门禁现列 16 项（builder 独立全树锁已成立）；真实 alpha.16 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 11 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
 
 以下机器码来自当前 `verify_packaged_resources.js` 与实测 sale 输出，不得合并或省略：
 
 1. `FORMAL_LICENSE_AUDIT_REQUIRED`：Ace 18 个生成元数据通知包的原始许可证审计；
 2. `PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`：官方制品、Sigstore/SPDX、33 个原字节文件、1 个受控 `_pth` 修改和许可保留已机器复验；完整信任链/上游 index 异常与具名法律/再分发签署仍待完成；
-3. `EPUBCHECK_PROVENANCE_AUDIT_REQUIRED`；
+3. `EPUBCHECK_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`：官方 ZIP、GitHub 服务端摘要和 49 个原字节文件已机器复验；官网 MIT 与随包/仓库 BSD-3-Clause 的矛盾、tag/ZIP 绑定和第三方再分发义务仍待具名人工签核；
 4. `JRE_SOURCE_PROVENANCE_AUDIT_REQUIRED`；
 5. `ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED`；
 6. `BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED`；
@@ -333,9 +345,9 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划，按 v2.0 方案继续：
 
-1. 已完成 Windows 安装生命周期编排器与 alpha.15 只读预检；下一步须单独取得系统写入授权后，真实执行 alpha.12 → alpha.15 安装/升级/降级探测/卸载，核对 HKCU 与快捷方式并保留 canonical 证据；若历史安装器确实回退，必须把它记为产品 blocker，不能修改证据口径；
-2. 完成 CPython 来源/许可证据的具名人工签署，再完成 Windows 代码签名方案并逐项关闭其余 packaged sale blocker；取得签署、证书或生产密钥前不得伪造通过；
-3. 完成 Electron、builder、EpubCheck、Temurin 和 Ace 的 provenance/许可证正式审计证据；
+1. 已完成 Windows 安装生命周期编排器与 alpha.16 只读预检；下一步须单独取得系统写入授权后，真实执行 alpha.12 → alpha.16 安装/升级/降级探测/卸载，核对 HKCU 与快捷方式并保留 canonical 证据；若历史安装器确实回退，必须把它记为产品 blocker，不能修改证据口径；
+2. 完成 CPython 与 EpubCheck 来源/许可证据的具名人工签署，再完成 Windows 代码签名方案并逐项关闭其余 packaged sale blocker；取得签署、证书或生产密钥前不得伪造通过；
+3. 继续完成 Temurin/JRE 来源机器证据，再完成 Electron、builder 和 Ace 的 provenance/许可证正式审计证据；
 4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
 5. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
 6. 在现有 Auth / License / Sync 离线契约上实现持久安全凭据/队列与独立网络 transport，再经授权连接 Supabase、支付和网站后台；
@@ -352,6 +364,7 @@ npm run test:python
 $env:OAK_TEST_ACE='1'; python scripts\run_tests.py
 npm run verify:resource-trust
 npm run verify:provenance:python:win
+npm run verify:provenance:epubcheck
 npm run verify:electron-runtime
 npm run verify:fuses:config
 npm run download:builder:win  # 仅在用户明确批准联网后

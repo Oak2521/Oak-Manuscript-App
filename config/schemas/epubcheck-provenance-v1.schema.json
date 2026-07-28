@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/epubcheck-provenance-v1.schema.json",
+  "title": "Oak Manuscript EpubCheck 5.3.0 provenance evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_type", "subject", "official_release", "derivation", "redistribution", "verification", "official_files"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "evidence_type": { "const": "oak-tool-distribution-provenance" },
+    "subject": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "version", "distribution", "manifest"],
+      "properties": {
+        "name": { "const": "EpubCheck" },
+        "version": { "const": "5.3.0" },
+        "distribution": { "const": "tools/epubcheck-5.3.0" },
+        "manifest": { "const": "config/tool-manifests/epubcheck-5.3.0.json" }
+      }
+    },
+    "official_release": {
+      "type": "object", "additionalProperties": false,
+      "required": ["publisher", "release_page_url", "release_api_url", "release_api_sha256", "tag", "published_at", "artifact"],
+      "properties": {
+        "publisher": { "const": "DAISY Consortium for W3C" },
+        "release_page_url": { "const": "https://github.com/w3c/epubcheck/releases/tag/v5.3.0" },
+        "release_api_url": { "const": "https://api.github.com/repos/w3c/epubcheck/releases/tags/v5.3.0" },
+        "release_api_sha256": { "const": "be34c2978685077eb3fbb9bcaf6078f56521243074e828546878a1f076dd333f" },
+        "tag": { "const": "v5.3.0" },
+        "published_at": { "const": "2025-09-01T16:06:11Z" },
+        "artifact": {
+          "type": "object", "additionalProperties": false,
+          "required": ["url", "filename", "size_bytes", "sha256", "github_server_digest"],
+          "properties": {
+            "url": { "const": "https://github.com/w3c/epubcheck/releases/download/v5.3.0/epubcheck-5.3.0.zip" },
+            "filename": { "const": "epubcheck-5.3.0.zip" },
+            "size_bytes": { "const": 33071108 },
+            "sha256": { "const": "6c07e68584b2e2ce2f89fe06e1246dfead3eb36b46b340e7d93524f29dcff6c5" },
+            "github_server_digest": { "const": "sha256:6c07e68584b2e2ce2f89fe06e1246dfead3eb36b46b340e7d93524f29dcff6c5" }
+          }
+        }
+      }
+    },
+    "derivation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["official_file_count", "local_file_count", "byte_identical_file_count", "official_total_bytes", "local_total_bytes", "controlled_modifications"],
+      "properties": {
+        "official_file_count": { "const": 49 },
+        "local_file_count": { "const": 49 },
+        "byte_identical_file_count": { "const": 49 },
+        "official_total_bytes": { "const": 36263890 },
+        "local_total_bytes": { "const": 36263890 },
+        "controlled_modifications": { "type": "array", "maxItems": 0 }
+      }
+    },
+    "redistribution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["distribution_license", "license_files", "website_license_claim", "license_signal_consistent"],
+      "properties": {
+        "distribution_license": { "const": "BSD-3-Clause" },
+        "license_files": {
+          "const": ["LICENSE.txt", "THIRD-PARTY.txt", "licenses/Apache-2.0.txt", "licenses/BSD-3-Clause.txt", "licenses/MIT.txt", "licenses/MPL-2.0.txt", "licenses/W3C.txt"]
+        },
+        "website_license_claim": { "const": "MIT" },
+        "license_signal_consistent": { "const": false }
+      }
+    },
+    "verification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["machine_status", "human_review_status", "observed_at", "limitations"],
+      "properties": {
+        "machine_status": { "const": "verified" },
+        "human_review_status": { "const": "pending" },
+        "observed_at": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+        "limitations": { "type": "array", "minItems": 4, "maxItems": 4, "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "official_files": {
+      "type": "array", "minItems": 49, "maxItems": 49,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["path", "size_bytes", "sha256"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$" },
+          "size_bytes": { "type": "integer", "minimum": 1 },
+          "sha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+  }
+}

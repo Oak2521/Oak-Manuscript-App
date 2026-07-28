@@ -15,6 +15,7 @@ const {
   MANIFEST_RELATIVE: EPUBCHECK_MANIFEST_RELATIVE,
   verifyDistribution: verifyEpubCheckDistribution,
 } = require("./epubcheck_distribution");
+const { verifyEvidenceAgainstDistribution: verifyEpubCheckProvenance } = require("./epubcheck_provenance");
 const {
   manifestRelative: pythonRuntimeManifestRelative,
   verifyRuntime: verifyPythonRuntimeDistribution,
@@ -181,6 +182,20 @@ function verifyEpubCheck(root, errors, checks) {
       total_bytes: result.manifest.total_bytes,
       formal_provenance_audit_required: result.manifest.formal_provenance_audit_required,
     });
+    if (result.manifest.provenance_evidence) {
+      const provenance = verifyEpubCheckProvenance(root);
+      checks.push({
+        type: "epubcheck-provenance",
+        path: provenance.evidence_path,
+        evidence_sha256: provenance.evidence_sha256,
+        machine_status: provenance.machine_status,
+        human_review_status: provenance.human_review_status,
+        official_artifact_sha256: provenance.evidence.official_release.artifact.sha256,
+        official_file_count: provenance.evidence.derivation.official_file_count,
+        byte_identical_file_count: provenance.evidence.derivation.byte_identical_file_count,
+        license_signal_consistent: provenance.evidence.redistribution.license_signal_consistent,
+      });
+    }
   } catch (error) {
     errors.push(`EpubCheck 固定分发门禁失败：${error.message}`);
   }
@@ -1522,6 +1537,9 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
   const pythonProvenance = checks.find((item) => item.type === "python-runtime-provenance" &&
     item.machine_status === "verified" && typeof item.evidence_sha256 === "string" &&
     SHA256_RE.test(item.evidence_sha256));
+  const epubcheckProvenance = checks.find((item) => item.type === "epubcheck-provenance" &&
+    item.machine_status === "verified" && typeof item.evidence_sha256 === "string" &&
+    SHA256_RE.test(item.evidence_sha256));
   const pending = [
     pythonProvenance ? {
       code: "PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED",
@@ -1530,7 +1548,10 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
       code: "PYTHON_RUNTIME_PROVENANCE_AUDIT_REQUIRED",
       message: "CPython 运行时已由受版本控制的全量哈希清单固定，但官方来源与再分发证据仍需正式人工审计",
     },
-    {
+    epubcheckProvenance ? {
+      code: "EPUBCHECK_PROVENANCE_HUMAN_SIGNOFF_REQUIRED",
+      message: "W3C/DAISY 官方 ZIP、GitHub 服务端 SHA-256 与 49 个原字节文件已机器复验；官网 MIT 与随包 BSD-3-Clause 矛盾及第三方再分发义务仍需具名人工签核",
+    } : {
       code: "EPUBCHECK_PROVENANCE_AUDIT_REQUIRED",
       message: "EpubCheck 5.3.0 本地分发已固定全量哈希，但来源与再分发证据仍需正式人工审计",
     },
