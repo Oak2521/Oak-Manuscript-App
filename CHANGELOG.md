@@ -21,7 +21,8 @@
 - `npm test` PASS：Node 301 total / 294 pass / 0 fail / 7 skip；Python 351 total / 0 failures / 0 errors / 3 skipped；墙钟 171.3 秒；
 - `verify:resource-trust`、`verify:standards`、`stage:ace`、`verify:electron-runtime`、`verify:resources:win` 与 `verify:fuses:config` 全部 PASS；
 - 真实 `app.asar` 构造集成测试证明 packaged 门禁可把 17 项缩至 12 项，并在 `app.asar` 缺失时失败关闭；该结果不是 alpha.11 安装包证据；
-- 本轮未联网、未构建、未签名，也未重跑 alpha.11 UI smoke。alpha.10 UI smoke 仅保留为历史回归证据。
+- alpha.11 独立隐藏源码 UI smoke PASS：`out/source-smoke/runs/ms4eowx9-64e0aab5311e2a99/projects/`；DOCX/EPUB 各 4 次检查、1 个修复批次、3 个检查点，应用 fixes 5/2，PDF 251,654/178,235 字节，原稿哈希不变；EPUB 实得 EpubCheck 5 error 与 Ace 8 项失败断言；
+- 本轮未联网、未构建、未签名；上述 smoke 是源码 UI 证据，不是 alpha.11 安装包证据。
 
 ### 2026-07-28 — 0.1.0-alpha.10（ChatGPT Ace 受控 utilityProcess 与 RunAsNode 关闭检查点）
 

@@ -4,7 +4,7 @@
 
 ## 最新验证结论：0.1.0-alpha.11 ASAR 资源信任根
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未运行 electron-builder、未生成安装器/ZIP/发布证据，也未启动 GUI。alpha.10 的隐藏 UI smoke 只作为历史证据，不计作 alpha.11 通过。
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未运行 electron-builder、未生成安装器/ZIP/发布证据；已按授权在独立隐藏窗口运行 alpha.11 源码 UI smoke。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -16,6 +16,14 @@
 | `npm run verify:resources:win` | **PASS（alpha）** | Python core `0.1.0-alpha.11`；运行探针通过；源码证据仍完整报告 17 项 sale blocker |
 | `npm run verify:fuses:config` | **PASS** | ASAR/integrity/known fuses exact；`run_as_node_disabled=true` |
 | 资源信任 + packaging + fuse 定向测试 | **42 pass / 0 fail / 1 skip** | 包括真实 `app.asar` 读取、loose 伪锚点拒绝、资源/锁/平台漂移与启动顺序 |
+| `$env:OAK_SMOKE_EXTERNAL_VALIDATION='1'; npm run smoke` | **SMOKE-RESULT PASS** | 78.1 秒；alpha.11 DOCX/EPUB 全闭环；EPUB 真实运行 EpubCheck/Ace；退出后 profile/Electron 进程均为 0 |
+
+alpha.11 隐藏 smoke 运行根：`out/source-smoke/runs/ms4eowx9-64e0aab5311e2a99/projects/`。
+
+| 项目 | APP/core | 检查 | 修复批次 | 应用 fixes | 检查点 | 当前问题 | PDF 字节 | 引用模式 | 外部验证 | 原稿 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---|---|
+| `ui-smoke-docx` | 0.1.0-alpha.11 | 4 | 1 | 5 | 3 | 13 | 251,654 | `structure_only` | 不适用 | unchanged |
+| `ui-smoke-epub` | 0.1.0-alpha.11 | 4 | 1 | 2 | 3 | 5 | 178,235 | `structure_only` | EpubCheck failed：0 fatal / 5 error / 0 warning；Ace failed：8 项断言 | unchanged |
 
 资源信任证据边界：
 
@@ -25,6 +33,7 @@
 - 构造 packaged fixture 使用真实生成的 `app.asar`，完整证据下 blocker 从 17 减到 12；删除 `app.asar` 后验证失败。该测试只证明代码路径，不是 `release/` 中的产品包、fuse wire、代码签名或安装验收；
 - 源码 `verify:resources:win` 的锚点证据明确标记 `packaged=false`、`protected_by_app_asar=false`，所以 5 个可信根 blocker 一个也没有提前关闭；
 - 当前没有 macOS 四份目标锁，锚点只含 win32-x64；macOS 打包尝试必须失败关闭，不能复用 Windows 目标。
+- smoke 标志之后又直接读取两个 `project.json`、最新检查报告与 PDF 交叉核对；两项目 `source_hash_ok=true`，各有 4 次检查、1 个批量修复记录和 3 个检查点，且没有遗留 `oak-ace-chrome-*` profile 或 Electron 进程。该证据仍是源码 UI，不是 packaged 资源或安装器证据。
 
 ## 历史验证结论：0.1.0-alpha.10 Ace 受控 utilityProcess 与 RunAsNode 关闭
 

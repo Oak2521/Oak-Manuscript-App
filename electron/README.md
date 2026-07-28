@@ -41,4 +41,4 @@ PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专�
 
 账号与同步 IPC 不接受 Renderer 自带的负载、token、URL 或 transport；主进程通过固定 `sync-source` 命令取值并重建 SyncRecord v1。当前 Auth 登录为未配置的系统浏览器 PKCE 契约，License 为未签名本地能力矩阵，Sync 队列仅存在于当前进程且不联网。详见 `docs/SYNC_RECORD_V1.md`。
 
-当前 `0.1.0-alpha.11` 全量 Node/Python 回归与资源门禁通过，但未启动 GUI。最近一次条件源码 smoke 是 alpha.10 历史 PASS：`out/source-smoke/runs/ms4cz6o9-c2ad021ca7e2e83c/projects/`；它不能替代 alpha.11 packaged fuse、ASAR 资源、打包 smoke 或发布证据。`release/` 尚无 alpha.11 EXE。
+当前 `0.1.0-alpha.11` 全量 Node/Python 回归、资源门禁与条件隐藏源码 smoke 均通过。运行根 `out/source-smoke/runs/ms4eowx9-64e0aab5311e2a99/projects/`；DOCX/EPUB 各 4 次检查、1 个修复批次、3 个检查点且原稿哈希不变，EPUB 实得 EpubCheck 5 error 与 Ace 8 项失败断言，退出无 profile/Electron 残留。它不能替代 packaged fuse、ASAR 资源、安装器或发布证据；`release/` 尚无 alpha.11 EXE。

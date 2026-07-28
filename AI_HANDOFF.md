@@ -44,7 +44,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - 最终统一 `npm test`：**PASS，退出码 0，墙钟 171.3 秒**；Node 301 total / 294 pass / 0 fail / 7 skip（3.313 秒），Python 351 total / 0 failures / 0 errors / 3 skipped（110.355 秒）；
 - `verify:resource-trust`、`verify:standards`、`stage:ace`、`verify:electron-runtime`、`verify:resources:win` 和 `verify:fuses:config` 均 **PASS**；锚点 SHA-256 为 `1b52a14f82f80e9ef4596b83b4abf3f2ddc821fe8f8ee8aedd7e996c1e80c644`；
 - Windows 源码 alpha 资源门禁实际执行 Python/JRE/EpubCheck 探针，core 返回 `0.1.0-alpha.11`，并仍如实列出 17 项 sale blocker；
-- 本轮未联网、未运行 builder、未生成安装器/ZIP/发布证据，也未重跑 alpha.11 UI smoke；最近一次 alpha.10 隐藏 UI smoke 只能作为历史证据。
+- 独立隐藏 alpha.11 源码 smoke：**SMOKE-RESULT PASS**，运行根 `out/source-smoke/runs/ms4eowx9-64e0aab5311e2a99/projects/`；DOCX/EPUB 均 4 次检查、1 个修复批次、3 个检查点、原稿哈希不变，当前问题 13/5、应用 fixes 5/2、PDF 251,654/178,235 字节；EPUB 实得 EpubCheck 5 error 与 Ace 8 项失败断言；
+- 本轮未联网、未运行 builder、未生成安装器/ZIP/发布证据；smoke 退出后无 Ace Chrome profile 或 Electron 进程残留，但它仍不是 packaged 证据。
 
 ### 已完成：0.1.0-alpha.10 Ace 受控 utilityProcess 与 RunAsNode 关闭（历史检查点）
 

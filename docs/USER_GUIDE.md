@@ -4,7 +4,7 @@
 
 当前开发版本为 `0.1.0-alpha.11`，不是可售卖正式版，也还没有对应安装包或 ZIP。仓库中的 Claude `0.0.1` Windows 便携产物仅是历史基线；新的 Windows 安装器、macOS 安装包和 Web 版仍待构建、签名及真实验收。alpha.11 保持标准包 2.0.0、默认引用解析、账号/同步离线契约和 Ace 受控 utilityProcess，并新增 ASAR 内资源信任锚；普通测试、启动和构建不会触发联网下载。
 
-**开发运行**：`npm install` 后 `npm start`。统一测试用 `npm test`；分项排障用 `npm run test:node`、`npm run test:python`。alpha.11 最终统一结果为 Node 301/294/0/7（3.313 秒）、Python 351/0 failures/0 errors/3 skipped（110.355 秒），墙钟 171.3 秒；跳过项不计作通过。alpha.11 未启动 GUI；最近一次条件隐藏 Electron 闭环是 alpha.10 历史 PASS，不能作为 alpha.11 安装包或 UI 验收。
+**开发运行**：`npm install` 后 `npm start`。统一测试用 `npm test`；分项排障用 `npm run test:node`、`npm run test:python`。alpha.11 最终统一结果为 Node 301/294/0/7（3.313 秒）、Python 351/0 failures/0 errors/3 skipped（110.355 秒），墙钟 171.3 秒；跳过项不计作通过。alpha.11 条件隐藏源码 UI smoke 已 PASS：DOCX/EPUB 各 4 次检查、1 个修复批次、3 个检查点，原稿哈希不变；这仍不是安装包验收。
 
 **账号与结果同步（当前边界）**：欢迎页、导出页和设置页保留湖岸账号入口。由于生产认证尚未配置，点击登录只会明确显示 `configuration_required`，不会打开浏览器或联网；真实登录状态只在自动化测试实例中模拟。登录用户导出后才会看到 SyncRecord v1 的逐字段预览，并可选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。当前确认项只进入当前进程的 `pending_transport` 队列，关闭 APP 即消失，绝未上传到网站。
 

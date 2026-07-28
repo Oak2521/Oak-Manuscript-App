@@ -20,7 +20,7 @@
 | P0：检查点列表、撤销与恢复 | **完成（代码与测试）** | 完整状态快照；恢复前安全点；损坏项 UI 禁用；恢复失败项目树不变 |
 | P0：默认引用体例与确认 | **完成（代码、迁移与 UI）** | 本地结构信号解析；证据不足退回 `structure_only`；`plan-citation` 只读并要求 `citation_plan_id` 确认；项目/报告记录原因、置信度与解析器版本 |
 | P0：Node + Python 统一测试 | **完成（最新统一回归通过）** | alpha.11 最终计数见下方“最新测试基线”；0 失败 |
-| P0：真实桌面 UI 冒烟 | **历史 alpha.10 PASS；alpha.11 待跑** | alpha.10 独立隐藏 Electron 完成 DOCX + EPUB 全闭环并真实运行 EpubCheck/Ace；版本升级后未把旧证据冒充 alpha.11 |
+| P0：真实桌面 UI 冒烟 | **完成（alpha.11 PASS）** | 独立隐藏 Electron 完成 DOCX + EPUB 全闭环并真实运行 EpubCheck/Ace；各 4 次检查、1 个批次、3 个检查点且原稿哈希不变 |
 | P0：文档与测试基线纠错 | **完成** | 权威改为 v2.0；纠正“185 + Ace = 186”错误 |
 | Windows alpha 运行资源 | **完成（源码资源门禁）** | Python/JRE/EpubCheck/Ace 均有全量哈希/锁；Python 与 EpubCheck 双向探针实际执行并通过 |
 | Ace 正式发布条件 | **部分完成** | tracked full lock、生产闭包、受控 `utilityProcess`、主进程 Chrome controller、两阶段计划绑定和源码 UI 好/坏结果已验证；真实 packaged 证据、自带浏览器、OS 网络隔离、可信根及全闭包人工审计未完成 |
@@ -45,10 +45,10 @@
 - 发布证据专项：**6 项，5 通过、0 失败、1 条件跳过**；覆盖确定性输出、交叉摘要、坏格式/旧制品/版本漂移、链接/硬链接、篡改、联合提交回滚和安全清除预检。
 - downloader 专项：**11/11 通过**；覆盖显式联网授权、固定来源、重定向/容量/哈希门禁、零授权零写入、事务落盘/回滚及路径安全。
 - Electron runtime 锁专项：**37 项、36 通过、0 失败、1 条件跳过**；hardlink 与 junction 反向路径本机实测通过，文件 symlink 因 Windows `EPERM` 条件跳过，不计作通过。
-- alpha.11 没有重跑独立 `OAK_TEST_ACE=1` Python 慢测套件，也没有重跑 UI smoke；alpha.10 通过主进程受控 Chrome 与 utilityProcess 实际运行缺陷样本的结果仅作历史回归证据。
+- alpha.11 没有单独重跑 `OAK_TEST_ACE=1` Python 慢测套件；更完整的条件隐藏 UI smoke 已通过主进程受控 Chrome 与 utilityProcess 实际运行缺陷 EPUB，EpubCheck/Ace 均产生可解析的失败结果。
 - `npm run verify:standards`：**PASS**；2.0.0 manifest SHA-256 `0aff75eb181a62869147e9af27330c717bc808bdd23865197534fc9868568427`，规则包 SHA-256 `098b382e33c06ccddf154940fbbd51db384d8025cf235ed7f7e10e83d34897a4`，能力集 SHA-256 `af67d0aaf2ece431ec1b617934bdfa3627b6be1b1301a92fcf3b2b2f29ca232e`。
 - `npm run verify:electron-runtime`：**PASS**；Electron 43.1.0 win32-x64 固定锁覆盖 2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95`；tracked manifest 使用严格 JSON、exact schema 和 canonical UTF-8/LF 原始字节。
-- 独立隐藏 Electron `$env:OAK_SMOKE_EXTERNAL_VALIDATION='1'; npm run smoke`：**SMOKE-RESULT PASS**；最新输出为 `out/source-smoke/runs/ms4cz6o9-c2ad021ca7e2e83c/projects/`，两个项目均为 `app_version=0.1.0-alpha.10`、`integrity.source_hash_ok=true`、4 次检查、1 次批量修复、3 个检查点；当前问题 13 / 5、应用 fixes 5 / 2，PDF 251,649 / 178,228 字节；EPUB 的 EpubCheck 为 `failed`（5 error），Ace 为 `failed`（8 项断言），退出后浏览器 profile 残留为 0。该运行使用隐藏独立进程，未联网。
+- 独立隐藏 Electron `$env:OAK_SMOKE_EXTERNAL_VALIDATION='1'; npm run smoke`：**SMOKE-RESULT PASS**，78.1 秒；最新输出为 `out/source-smoke/runs/ms4eowx9-64e0aab5311e2a99/projects/`。两个项目均为 `app_version=0.1.0-alpha.11`、`integrity.source_hash_ok=true`、4 次检查、1 个批量修复记录、3 个检查点；当前问题 13/5、应用 fixes 5/2、PDF 251,654/178,235 字节；EPUB 的 EpubCheck 为 `failed`（5 error），Ace 为 `failed`（8 项断言）。退出后 profile 和 Electron 进程残留均为 0；未联网。
 - 当前测试环境：Windows 11，Python 3.14.6，Node 24.16.0，npm 11.13.0，Electron 43.1.0，Java 21.0.11。
 - Windows alpha 资源门禁：**PASS**。
   - 应用 loose 资源：58 个文件 / 1,873,018 字节；ASAR 锚点与源码清单一致；
@@ -157,7 +157,7 @@
 
 ## 历史里程碑
 
-- 2026-07-28：推进到 `0.1.0-alpha.11`；完成 ASAR 内资源锚点、58 文件应用清单、四类运行锁绑定、启动前全树复核和真实 `app.asar` 构造门禁；Node 301、Python 351 与六项只读门禁通过；没有联网、UI smoke 或新二进制。
+- 2026-07-28：推进到 `0.1.0-alpha.11`；完成 ASAR 内资源锚点、58 文件应用清单、四类运行锁绑定、启动前全树复核和真实 `app.asar` 构造门禁；Node 301、Python 351、六项只读门禁及含真实 EpubCheck/Ace 的隐藏双样本源码 smoke 通过；没有联网或新二进制。
 - 2026-07-28：推进到 `0.1.0-alpha.10`；把 Ace 外部验证迁移到主进程绑定的两阶段计划、固定 utilityProcess 与受控 loopback Chrome，关闭 `RunAsNode`；Node 295、Python 351 与含真实 EpubCheck/Ace 的隐藏双样本 smoke 通过；没有联网或新二进制。
 - 2026-07-28：推进到 `0.1.0-alpha.9`；完成 ASAR integrity、已知 Electron fuse 固定策略、真实打包二进制身份/wire 验证和构建顺序门禁；发现 Electron 43 的未知索引 8 并按 alpha blocker/sale fail-closed 处理；Node 284、Python 348 与隐藏双样本 smoke 通过；没有联网或新二进制。
 - 2026-07-28：推进到 `0.1.0-alpha.8`；完成统一账号状态、Free/Pro/宽限、SyncRecord v1/JSON Schema、可信核心来源、逐字段预览和当前进程幂等队列契约；完整回归与隐藏 Electron 双样本 smoke 通过；没有联网、生产账号/同步服务或新二进制。

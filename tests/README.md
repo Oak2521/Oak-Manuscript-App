@@ -29,6 +29,6 @@
 
 Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零污染创建、锁内单 FD 输入、OneDrive/reparse 来源、精确失败清理和安全原子导出覆盖在 `python/tests/test_project_validation.py` 与 `python/tests/test_project_write_lock.py`。
 
-真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。alpha.11 没有重跑这个独立慢测套件或 UI smoke；alpha.10 条件隐藏 UI smoke 的真实 EpubCheck/Ace 结果只作历史证据。缺少 alpha.11 EXE 时，`verify:packaged:fuses:win`、`smoke:packaged:win` 和 `release:evidence:verify:win` 都应失败而不是复用旧制品。
+真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。alpha.11 没有单独重跑该 Python 慢测，但条件隐藏 UI smoke 已通过受控链路实际运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言。缺少 alpha.11 EXE 时，`verify:packaged:fuses:win`、`smoke:packaged:win` 和 `release:evidence:verify:win` 都应失败而不是复用旧制品。
 
-alpha.10 条件隐藏源码 smoke 为 **历史 PASS**，运行根为 `out/source-smoke/runs/ms4cz6o9-c2ad021ca7e2e83c/projects/`；DOCX/EPUB 均先确认引用计划，各有 4 次检查、1 次批量修复、3 个检查点、`source_hash_ok=true`，且 EPUB 外部工具确实运行。这不是 alpha.11 UI、packaged fuse、安装器或发布 SHA 证据。
+alpha.11 条件隐藏源码 smoke 为 **PASS**，运行根为 `out/source-smoke/runs/ms4eowx9-64e0aab5311e2a99/projects/`；DOCX/EPUB 均先确认引用计划，各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，且 EPUB 外部工具确实运行。退出后 profile/Electron 残留为 0；这不是 packaged fuse、安装器或发布 SHA 证据。

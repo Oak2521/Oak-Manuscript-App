@@ -13,6 +13,7 @@
 - [x] 打包启动在标准存储和窗口创建前执行完整资源信任验证，失败退出；
 - [x] 构造的真实 `app.asar` 集成测试证明证据成立时只关闭 5 个可信根 blocker，缺失 `app.asar` 时拒绝；源码资源门禁仍保留 17 项；
 - [x] 最终 `npm test` 为 Node 301 / Python 351，0 失败；六项只读资源/标准/Ace/Electron/fuse 门禁均通过；
+- [x] alpha.11 独立隐藏源码 UI smoke 完成 DOCX/EPUB 全闭环：各 4 次检查、1 个批次、3 个检查点，应用 fixes 5/2，原稿哈希不变；EPUB 实得 EpubCheck 5 error 与 Ace 8 项失败断言，退出无 profile/Electron 残留；
 - [ ] 已在真实 alpha.11 Windows 安装包/ZIP 和两个 macOS `.app` 上取得 ASAR、fuse、资源、功能及签名联合证据；
 - [ ] 其余 12 项 Windows 资源 blocker、Electron 未知 fuse 和正式发布门禁全部关闭。
 
