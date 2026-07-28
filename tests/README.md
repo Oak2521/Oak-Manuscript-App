@@ -1,6 +1,6 @@
 # tests/ — Node 契约、发布资源与打包验证
 
-`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.11 最终统一结果为 Node **301 total / 294 pass / 0 fail / 7 skip / 3.313 秒**，Python **351 项 / 0 失败 / 0 错误 / 3 跳过 / 110.355 秒**，墙钟 171.3 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
+`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.12 最终统一结果为 Node **306 total / 300 pass / 0 fail / 6 skip / 3.096 秒**，Python **351 项 / 0 失败 / 0 错误 / 3 跳过 / 39.652 秒**，墙钟 89.434 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
 
 本目录覆盖：
 
@@ -20,7 +20,7 @@
 - Windows 发布证据只接受 package/lock 当前版本的精确 NSIS/ZIP；覆盖 PE/ZIP 结构、旧制品/版本漂移、稳定文件身份、SHA256SUMS 与 canonical manifest 交叉绑定、两文件提交回滚、clear 全预检，以及真实缺制品 fail-closed；
 - 许可证字段/文件为空的拒绝路径，以及“有许可证文件仍不能替代全部 236 包人工审计”的 sale blocker 契约；
 - 资源门禁两阶段顺序：静态全量检查有任一错误时不执行 Python/Java，静态全绿后才运行探针；非原生 host/arch fail-closed，纯静态必须显式 `--no-runtime-probe`；
-- Electron 桥与资源探针共享 `-I -S -X utf8` bootstrap、显式受控 core 目录及隔离环境；CPython 探针精确核对 implementation、三段版本、releaselevel 和 serial；
+- Electron 桥与资源探针共享 `-I -B -S -X utf8` bootstrap、显式受控 core 目录及隔离环境；`-B` 在 `-I` 忽略环境变量时仍禁止污染受信资源；
 - Ace 作者 XHTML 清洗、JavaScript 启用顺序、协议/`basedir` 限制、固定补丁哈希，以及 stage manifest 原始字节身份；
 - macOS x64/arm64 原生构建分流，静态聚合不得冒充运行证据；
 - 打包脚本契约、Windows x64 PE32+ 校验、受控输出目录、唯一 PASS 标志、`appInfo` 版本/`app.isPackaged`，以及从真实 `project.json`/报告验证 core 与规则包身份。
@@ -29,6 +29,6 @@
 
 Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零污染创建、锁内单 FD 输入、OneDrive/reparse 来源、精确失败清理和安全原子导出覆盖在 `python/tests/test_project_validation.py` 与 `python/tests/test_project_write_lock.py`。
 
-真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。alpha.11 没有单独重跑该 Python 慢测，但条件隐藏 UI smoke 已通过受控链路实际运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言。缺少 alpha.11 EXE 时，`verify:packaged:fuses:win`、`smoke:packaged:win` 和 `release:evidence:verify:win` 都应失败而不是复用旧制品。
+真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。alpha.12 packaged smoke 强制通过受控链路运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言；缺失或陈旧 EXE 不得复用。
 
-alpha.11 条件隐藏源码 smoke 为 **PASS**，运行根为 `out/source-smoke/runs/ms4eowx9-64e0aab5311e2a99/projects/`；DOCX/EPUB 均先确认引用计划，各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，且 EPUB 外部工具确实运行。退出后 profile/Electron 残留为 0；这不是 packaged fuse、安装器或发布 SHA 证据。
+alpha.12 隐藏 packaged smoke 为 **PASS**，运行根为 `out/packaged-smoke/runs/ms4lg2cv-ab0de58b69b46495/projects/`；DOCX/EPUB 均先确认引用计划，各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，且 EPUB 外部工具确实运行。退出后项目路径进程残留为 0。

@@ -37,6 +37,8 @@ const {
   readAnchorBytesFromAsar,
   verifyPackagedResourceTrust,
 } = require("../electron/resource-trust");
+const { LOCK_RELATIVE: BUILDER_LOCK_RELATIVE } = require("./builder_toolchain_contract");
+const { verifyWindowsToolchain } = require("./verify_builder_toolchain");
 
 const LICENSE_FILE_PATTERN = /^(license|licence|copying|notice)([._-]|$)/i;
 const GENERATED_LICENSE_URLS = Object.freeze({
@@ -543,6 +545,29 @@ function verifyResourceTrust(
     });
   } catch (error) {
     errors.push(`真实 packaged loose 资源未通过 ASAR trust anchor：${error.message}`);
+  }
+}
+
+function verifyBuilderToolchainTrust(root, platform, arch, checks) {
+  if (platform !== "win32") return;
+  const targetArch = arch || "x64";
+  try {
+    verifyWindowsToolchain(root, targetArch);
+    const lockTarget = path.join(root, ...BUILDER_LOCK_RELATIVE.split("/"));
+    const lockBytes = fs.readFileSync(lockTarget);
+    const lock = JSON.parse(lockBytes.toString("utf8"));
+    checks.push({
+      type: "builder-toolchain-lock",
+      evidence_scope: "source-build-input",
+      platform,
+      arch: targetArch,
+      path: BUILDER_LOCK_RELATIVE,
+      lock_sha256: sha256Bytes(lockBytes),
+      file_count: lock.file_count,
+      total_bytes: lock.total_bytes,
+    });
+  } catch {
+    // alpha 报告保留明确 blocker；sale 门禁会把该 blocker 提升为错误。
   }
 }
 
@@ -1474,6 +1499,11 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
   const lockAnchored = (name) => resourceTrust &&
     typeof resourceTrust.lock_sha256s?.[name] === "string" &&
     SHA256_RE.test(resourceTrust.lock_sha256s[name]);
+  const builderToolchainTrustRootHardened = platform === "win32" && checks.some((item) =>
+    item.type === "builder-toolchain-lock" && item.evidence_scope === "source-build-input" &&
+    item.platform === platform && item.arch === (arch || "x64") &&
+    typeof item.lock_sha256 === "string" && SHA256_RE.test(item.lock_sha256),
+  );
   const pending = [
     {
       code: "PYTHON_RUNTIME_PROVENANCE_AUDIT_REQUIRED",
@@ -1517,12 +1547,12 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
         ? "macOS 构建主机、DMG、签名与公证工具链的版本和来源尚未完成正式审计"
         : "NSIS、rcedit 与 signtool 等构建工具的官方来源和校验依据尚未完成正式审计",
     },
-    {
+    ...(!builderToolchainTrustRootHardened ? [{
       code: "BUILDER_TOOLCHAIN_TRUST_ROOT_NOT_HARDENED",
       message: platform === "darwin"
         ? "macOS builder、签名和公证构建输入尚未形成受版本控制的独立版本与校验锁"
         : "离线 Windows builder 工具链尚未从三份固定归档导入，且缺少由该导入事务生成的受版本控制独立全树锁",
-    },
+    }] : []),
     {
       code: "ACE_FULL_LICENSE_AUDIT_REQUIRED",
       message: "Ace 完整生产依赖闭包尚未逐包完成来源、许可证文本、版权声明与再分发义务的正式人工审计",
@@ -1533,7 +1563,7 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
     }] : []),
     {
       code: "ACE_CONTROLLED_HELPER_PENDING",
-      message: "Ace utilityProcess 受控 helper 已实现但尚无真实打包制品功能与安全验证证据",
+      message: "Ace utilityProcess 已通过 alpha packaged smoke，但正式门禁尚未消费与制品哈希绑定且不可伪造的功能/安全验收证据",
     },
     {
       code: "ACE_BROWSER_RUNTIME_PENDING",
@@ -1597,6 +1627,7 @@ function verifyPackagedResources({
     checks,
     { readPackagedAnchor },
   );
+  verifyBuilderToolchainTrust(electronDistributionRoot, platform, arch, checks);
 
   if (platform === "win32") {
     const pythonState = verifyWindowsRuntime(projectRoot, errors, checks, { execute: false });

@@ -4,7 +4,7 @@
 
 const path = require("path");
 const fs = require("fs");
-const { app, BrowserWindow, dialog, ipcMain, shell, session, utilityProcess } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, protocol, shell, session, utilityProcess } = require("electron");
 
 const pathPolicy = require("./path-policy");
 const bridge = require("./python-bridge");
@@ -25,11 +25,17 @@ const {
   applyOfflineChromiumPolicy,
   installOfflineRequestBlocker,
 } = require("./offline-policy");
+const {
+  APP_ENTRY_URL,
+  installAppProtocol,
+  registerAppSchemeAsPrivileged,
+} = require("./app-protocol");
 
 const SMOKE = process.argv.includes("--smoke");
 const ALLOWED_EXTERNAL_HOSTS = new Set(["oakbylake.com", "www.oakbylake.com"]);
 
 // 必须发生在 app ready 之前；正常启动和 smoke 使用同一默认离线基线。
+registerAppSchemeAsPrivileged(protocol);
 applyOfflineChromiumPolicy(app.commandLine);
 
 
@@ -316,7 +322,9 @@ function createWindow() {
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   mainWindow.webContents.on("will-navigate", (e) => e.preventDefault());
 
-  mainWindow.loadFile(path.join(pathPolicy.repoRoot(), "renderer", "index.html"));
+  mainWindow.loadURL(APP_ENTRY_URL).catch((error) => {
+    console.error("[renderer] app protocol load failed:", error && error.message);
+  });
 }
 
 console.log("[main] module loaded, smoke =", SMOKE);
@@ -348,6 +356,7 @@ app.whenReady().then(async () => {
       return;
     }
   }
+  installAppProtocol(protocol, path.join(pathPolicy.repoRoot(), "renderer"));
   const standardsStoreRoot = path.join(app.getPath("userData"), "standards");
   bridge.configureStandardsStoreRoot(standardsStoreRoot);
   standardsProvider = new StandardsProvider({

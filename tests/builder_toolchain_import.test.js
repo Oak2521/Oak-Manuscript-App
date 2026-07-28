@@ -10,6 +10,7 @@ const {
   SOURCE_ARCHIVES,
   assembleWindowsToolchain,
   inspectAndExtractArchive,
+  isWindowsCodeSignImportEntry,
   parse7zTechnicalListing,
   transactionalInstall,
   validateArchiveEntries,
@@ -218,6 +219,45 @@ test("archive path and technical-list validation reject traversal and links befo
     "Hard Link": "other",
   }]));
   assert.throws(() => validateArchiveEntries(hardLinked), /不得为链接/);
+});
+
+test("winCodeSign import selects only required Windows payload and still rejects selected links", () => {
+  const records = parse7zTechnicalListing(technicalListing([
+    { Path: "rcedit-x64.exe", Size: "512", Folder: "-", Encrypted: "-" },
+    { Path: "rcedit-ia32.exe", Size: "512", Folder: "-", Encrypted: "-" },
+    { Path: "windows-10", Size: "0", Folder: "+", Encrypted: "-" },
+    { Path: "windows-10/x64", Size: "0", Folder: "+", Encrypted: "-" },
+    { Path: "windows-10/x64/signtool.exe", Size: "512", Folder: "-", Encrypted: "-" },
+    {
+      Path: "darwin/10.12/lib/libcrypto.dylib",
+      Size: "21",
+      Folder: "-",
+      Attributes: "A_ lrwxr-xr-x",
+      Encrypted: "-",
+    },
+  ]));
+  assert.deepEqual(
+    validateArchiveEntries(records, { includeEntry: isWindowsCodeSignImportEntry })
+      .map((item) => item.path),
+    [
+      "rcedit-ia32.exe",
+      "rcedit-x64.exe",
+      "windows-10/x64",
+      "windows-10/x64/signtool.exe",
+    ],
+  );
+
+  const selectedLink = parse7zTechnicalListing(technicalListing([{
+    Path: "windows-10/x64/signtool.exe",
+    Size: "21",
+    Folder: "-",
+    Attributes: "A_ lrwxr-xr-x",
+    Encrypted: "-",
+  }]));
+  assert.throws(
+    () => validateArchiveEntries(selectedLink, { includeEntry: isWindowsCodeSignImportEntry }),
+    /不得为链接/,
+  );
 });
 
 test("post-extraction verification rejects unlisted files and filesystem links", (t) => {

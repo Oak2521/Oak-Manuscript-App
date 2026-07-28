@@ -2,6 +2,19 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.12 Windows 可安装 alpha 验收（2026-07-28）
+
+- [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.12`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 三份固定 Windows builder 归档下载并验哈希；安全导入 Windows payload，生成受版本控制的 385 文件独立全树锁；
+- [x] 构建只使用受验证 Electron dist、本地固定 7-Zip 和仓库内 cache/temp；调用者不能覆盖 trusted dist 或触发下载回退；
+- [x] 隔离 Python 显式 `-B`；真实 packaged 资源门禁和 smoke 后无 `.pyc`/`__pycache__`；
+- [x] `GrantFileProtocolExtraPrivileges=false` 保持关闭；受限 `oak-manuscript://` 只提供四个固定渲染文件，真实打包 UI 可启动；
+- [x] alpha.12 NSIS/ZIP、已知 fuse、真实 `app.asar` 锚点、loose 全树、应用身份、强制 EpubCheck/Ace packaged smoke 与发布证据全部通过；
+- [x] 最终 `npm test`：Node 306/300/0/6，Python 351/0 failures/0 errors/3 skipped；
+- [ ] Electron 43 未知 fuse 已由官方工具识别并逐项固定；
+- [ ] 干净 Windows 安装、升级、卸载、无系统 Python/Node 和 Authenticode 已验证；
+- [ ] 11 项 packaged sale blocker、macOS/Web、生产账号/订阅/同步及正式条款全部关闭。
+
 ## 0.1.0-alpha.11 ASAR 资源信任根验收（2026-07-28）
 
 > 本节验收源码清单、ASAR 读取与构造 packaged 门禁；当前没有 alpha.11 产品安装包，不把测试生成的 `app.asar` 冒充真实发行证据。

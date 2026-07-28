@@ -2,7 +2,44 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.11 ASAR 资源信任根
+## 最新验证结论：0.1.0-alpha.12 Windows 可安装 alpha
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已批准下载；构建、Electron 与 Chrome 均以隐藏进程运行。
+
+| 命令 / 检查 | 结果 | 关键事实 |
+|---|---|---|
+| `npm run download:builder:win` | **PASS** | 固定 NSIS、NSIS resources、winCodeSign 三归档下载并逐份匹配大小/SHA-256 |
+| builder 安全导入 + 独立锁 | **PASS** | 只选择 Windows winCodeSign payload；385 文件 / 19,150,116 字节；lock SHA-256 `8bb0221d…1aa4` |
+| `npm test` | **PASS** | 墙钟 89.434 秒；Node 306 total / 300 pass / 0 fail / 6 skip（3.096 秒）；Python 351 total / 0 failures / 0 errors / 3 skipped（39.652 秒） |
+| `npm run build:win` | **PASS** | 最终重建退出码 0；真实 fuse、packaged 资源、隐藏 smoke 和证据生成全部通过 |
+| `npm run verify:packaged:fuses:win` | **PASS（alpha）** | 8 个已知 fuse 精确匹配；索引 8 未知，保留 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING` |
+| `npm run verify:packaged:win` | **PASS（alpha）** | 真实 `app.asar` 锚点、59 个 loose 应用文件和四类运行锁通过；packaged blocker 11 项 |
+| `npm run smoke:packaged:win` | **SMOKE-RESULT PASS** | 强制应用内 EpubCheck/Ace；DOCX/EPUB 全闭环；项目路径进程残留 0 |
+| `npm run release:evidence:verify:win` | **PASS** | 重新稳定读取 NSIS/ZIP、SHA256SUMS 与 canonical manifest 并交叉核对 |
+
+最终 packaged smoke 运行根：`out/packaged-smoke/runs/ms4lg2cv-ab0de58b69b46495/projects/`。
+
+| 项目 | APP/core | 检查 | 修复批次 | 应用 fixes | 检查点 | 当前问题 | PDF 字节 | 引用模式 | 外部验证 | 原稿 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---|---|
+| `ui-smoke-docx` | 0.1.0-alpha.12 | 4 | 1 | 5 | 3 | 13 | 251,654 | `structure_only` | 不适用 | unchanged |
+| `ui-smoke-epub` | 0.1.0-alpha.12 | 4 | 1 | 2 | 3 | 5 | 178,232 | `structure_only` | EpubCheck failed：0 fatal / 5 error / 0 warning；Ace failed：8 项断言 | unchanged |
+
+最终制品：
+
+| 文件 | 字节 | SHA-256 |
+|---|---:|---|
+| `Oak-Manuscript-0.1.0-alpha.12-Windows-x64.exe` | 189,944,468 | `42c38acaeb98cf98e4871ad1a8d7fc1225bdab3bd6c1c2149b3bf27ff03603bf` |
+| `Oak-Manuscript-0.1.0-alpha.12-Windows-x64.zip` | 233,758,044 | `d99052ac1b803a58859f64b9c8874a9ef5de3118f7155f77b1789d5cc884adf2` |
+| `SHA256SUMS.txt` | 224 | `a3bd9c58662fd92bbfa19b681c3c42ae95a43e7552bd8283cc51eec2a0ddfed3` |
+
+证据边界：
+
+- Python 调用使用 `-I -B -S -X utf8`；打包资源探针和烟测后 `release/win-unpacked/resources` 内 `.pyc`/`__pycache__` 数为 0；
+- `GrantFileProtocolExtraPrivileges=false` 时，直接 `file://...app.asar/...` 会由 Electron 43 返回 `ERR_FILE_NOT_FOUND`；受限 `oak-manuscript://` 只提供四个固定渲染文件并已通过真实 packaged smoke；
+- packaged 资源门禁的 11 项 blocker与未知 fuse、未签名状态都仍有效；生成安装器不等于可售卖正式版；
+- 尚未执行干净 Windows 安装、升级、卸载、无开发环境验证或 Authenticode；macOS/Web/生产账号同步也未验收。
+
+## 历史验证结论：0.1.0-alpha.11 ASAR 资源信任根
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未运行 electron-builder、未生成安装器/ZIP/发布证据；已按授权在独立隐藏窗口运行 alpha.11 源码 UI smoke。
 

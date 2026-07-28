@@ -39,7 +39,7 @@ function source(overrides = {}) {
       resolverVersion: "1.0.0",
     },
     rulepackVersion: "2.0.0",
-    appVersion: "0.1.0-alpha.11",
+    appVersion: "0.1.0-alpha.12",
     platform: "win32",
     createdAt: "2026-07-28T12:00:00.000Z",
     authorizedAt: "2026-07-28T12:01:00.000Z",
@@ -165,7 +165,7 @@ test("SyncRecord v1 contains only the explicit allowlist and strips manuscript c
       reason_code: "paper_zh_numeric_reference_structure",
       resolver_version: "1.0.0",
     },
-    versions: { rulepack: "2.0.0", app: "0.1.0-alpha.11", platform: "win32" },
+    versions: { rulepack: "2.0.0", app: "0.1.0-alpha.12", platform: "win32" },
     counts: {
       total: 2,
       fixable: 1,

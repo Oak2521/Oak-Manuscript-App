@@ -4,6 +4,19 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.12（ChatGPT Windows 可安装 alpha 检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.12`。已生成未签名 Windows x64 NSIS 与 ZIP；仍不是可售卖正式版。
+
+- 经用户批准下载三份固定 electron-builder 官方归档，验哈希后只导入 Windows 所需条目；生成 385 文件、19,150,116 字节的独立 tracked 全树锁，构建继续使用本地固定 7-Zip，不允许下载回退；
+- builder 包装器改为在启动前解析受验证 Electron dist，并强制覆盖调用者的 `electronDist`；显式复制 Ace `node_modules` 和被 builder 固定过滤的 `.gitkeep`，packaged 资源门禁复核 6,672 文件；
+- Python 隔离调用增加 `-B`；`-I` 忽略环境变量时仍禁止在 loose 受信资源中生成 `.pyc`，真实打包门禁确认 packaged pyc 数为 0；
+- 新增受限 `oak-manuscript://renderer/` 协议，只提供四个固定 UI 资源；在 `GrantFileProtocolExtraPrivileges=false`、ASAR integrity 和 `OnlyLoadAppFromAsar=true` 下恢复安全页面加载；
+- packaged smoke 现在强制应用内 EpubCheck/Ace 外部验证，不能由调用者静默降级；最终 DOCX/EPUB 各 4 次检查、1 个修复批次、3 个检查点，原稿哈希不变，EPUB 得到预期 5 个 EpubCheck error 和 8 项 Ace 失败断言；
+- 完整回归：Node 306 total / 300 pass / 0 fail / 6 skip；Python 351 total / 0 failures / 0 errors / 3 skipped；
+- 最终 NSIS：189,944,468 字节，SHA-256 `42c38acaeb98cf98e4871ad1a8d7fc1225bdab3bd6c1c2149b3bf27ff03603bf`；ZIP：233,758,044 字节，SHA-256 `d99052ac1b803a58859f64b9c8874a9ef5de3118f7155f77b1789d5cc884adf2`；证据清单复验通过；
+- packaged 资源 blocker 从 12 降至 11（builder 独立可信锁成立）；未知 Electron fuse、Windows 签名、正式来源/许可证审计、自带浏览器与 OS 级网络隔离仍阻止 sale。
+
 ### 2026-07-28 — 0.1.0-alpha.11（ChatGPT ASAR 资源信任根检查点）
 
 > 源码检查点标签：`chatgpt-v0.1.0-alpha.11`。该标签只表示经本地验证的源码状态；当前没有 alpha.11 安装包、ZIP、签名或真实产品 `app.asar` 证据。

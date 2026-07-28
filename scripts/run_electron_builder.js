@@ -3,6 +3,8 @@
 const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
+const { resolveElectronDist } = require("./electron_dist");
+const { verifyPinnedExtractor } = require("./pinned_7zip");
 const { verifyOfflineToolchain } = require("./verify_builder_toolchain");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
@@ -109,6 +111,8 @@ function runElectronBuilder(args, {
   root = PROJECT_ROOT,
   spawn = spawnSync,
   preflight = verifyOfflineToolchain,
+  resolveDist = resolveElectronDist,
+  resolveSevenZip = verifyPinnedExtractor,
   hostPlatform = process.platform,
   hostArch = process.arch,
 } = {}) {
@@ -153,6 +157,18 @@ function runElectronBuilder(args, {
 
   const paths = getBuildPaths(root);
   const toolchain = preflight({ root: paths.projectRoot, platform, arch });
+  const sevenZip = platform === "win32" ? resolveSevenZip(paths.projectRoot) : null;
+  const electron = resolveDist({
+    projectRoot: paths.projectRoot,
+    platform,
+    arch,
+    hostPlatform,
+    hostArch,
+  });
+  if (typeof electron?.dist !== "string" || !path.isAbsolute(electron.dist)) {
+    throw new Error("受控 Electron dist 解析器未返回绝对目录");
+  }
+  assertInsideProject(paths.projectRoot, electron.dist, "受控 Electron dist");
   for (const [label, target] of Object.entries({
     electronCache: paths.electronCache,
     builderCache: paths.builderCache,
@@ -166,12 +182,15 @@ function runElectronBuilder(args, {
   const cli = require.resolve("electron-builder/cli.js", { paths: [paths.projectRoot] });
   const result = spawn(
     process.execPath,
-    [cli, ...args, "--publish", "never"],
+    [cli, ...args, `--config.electronDist=${electron.dist}`, "--publish", "never"],
     {
       cwd: paths.projectRoot,
       env: createBuilderEnvironment({
         root: paths.projectRoot,
-        toolchainEnv: toolchain.env,
+        toolchainEnv: {
+          ...toolchain.env,
+          ...(sevenZip == null ? {} : { ELECTRON_BUILDER_7ZIP_PATH: sevenZip }),
+        },
       }),
       stdio: "inherit",
       windowsHide: true,

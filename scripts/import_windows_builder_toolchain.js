@@ -20,22 +20,9 @@ const {
   BUILDER_VERSION,
   verifyWindowsToolchain,
 } = require("./verify_builder_toolchain");
+const { EXTRACTOR_FILES, verifyPinnedExtractor } = require("./pinned_7zip");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
-
-// electron-winstaller is locked by package-lock.json.  Pinning both the host
-// executable and its load-time DLL prevents an altered local extractor from
-// becoming part of the trust bootstrap.
-const EXTRACTOR_FILES = Object.freeze([
-  Object.freeze({
-    relative: "node_modules/electron-winstaller/vendor/7z.exe",
-    sha256: "c7245e21a7553d9e52d434002a401c77a7ca7d0f245f2311b0ddf16f8f946c6f",
-  }),
-  Object.freeze({
-    relative: "node_modules/electron-winstaller/vendor/7z.dll",
-    sha256: "9ed007aa82e440ceb39a6e105bb1d602a9bc59a4946267ba8de2f220aa15bc06",
-  }),
-]);
 
 const MAX_ARCHIVE_BYTES = 256 * 1024 * 1024;
 const MAX_EXTRACTED_BYTES = 1024 * 1024 * 1024;
@@ -162,16 +149,27 @@ function parse7zTechnicalListing(output) {
   return records;
 }
 
-function validateArchiveEntries(records) {
+function isWindowsCodeSignImportEntry(relative) {
+  return relative === "rcedit-x64.exe" ||
+    relative === "rcedit-ia32.exe" ||
+    relative === "windows-10/x64" ||
+    relative.startsWith("windows-10/x64/");
+}
+
+function validateArchiveEntries(records, { includeEntry = null } = {}) {
   if (!Array.isArray(records) || records.length === 0 ||
       records.length > MAX_ARCHIVE_ENTRIES) {
     throw new Error("归档条目数量为空或超过安全上限");
+  }
+  if (includeEntry != null && typeof includeEntry !== "function") {
+    throw new TypeError("归档条目选择器必须是函数");
   }
   const entries = [];
   const collisionKeys = new Set();
   let totalBytes = 0;
   for (const record of records) {
     const relative = validateArchiveRelativePath(record?.Path);
+    const selected = includeEntry == null || includeEntry(relative);
     const attributes = record.Attributes ?? "";
     const mode = record.Mode ?? "";
     const forbiddenLinkField = [
@@ -180,9 +178,9 @@ function validateArchiveEntries(records) {
       "Reparse Point",
       "Alternate Stream",
     ].find((field) => Object.hasOwn(record, field));
-    if (forbiddenLinkField || record.Anti === "+" || record.Encrypted === "+" ||
+    if (selected && (forbiddenLinkField || record.Anti === "+" || record.Encrypted === "+" ||
         /^l/u.test(mode) || /(?:^|\s)l[rwx-]{9}(?:\s|$)/u.test(attributes) ||
-        /(?:^|[_\s])L(?:$|[_\s])/u.test(attributes)) {
+        /(?:^|[_\s])L(?:$|[_\s])/u.test(attributes))) {
       throw new Error(
         `归档条目不得为链接、重解析点、备用流、反条目或加密条目：${relative}`,
       );
@@ -200,9 +198,11 @@ function validateArchiveEntries(records) {
       if (!Number.isSafeInteger(sizeBytes) || sizeBytes < 0) {
         throw new Error(`归档普通文件大小超出安全整数范围：${relative}`);
       }
-      totalBytes += sizeBytes;
-      if (!Number.isSafeInteger(totalBytes) || totalBytes > MAX_EXTRACTED_BYTES) {
-        throw new Error("归档解压总大小超过安全上限");
+      if (selected) {
+        totalBytes += sizeBytes;
+        if (!Number.isSafeInteger(totalBytes) || totalBytes > MAX_EXTRACTED_BYTES) {
+          throw new Error("归档解压总大小超过安全上限");
+        }
       }
     }
     const collisionKey = relative.normalize("NFC").toLowerCase();
@@ -210,8 +210,9 @@ function validateArchiveEntries(records) {
       throw new Error(`归档含 Windows 大小写或 Unicode 冲突路径：${relative}`);
     }
     collisionKeys.add(collisionKey);
-    entries.push({ path: relative, directory, size_bytes: sizeBytes });
+    if (selected) entries.push({ path: relative, directory, size_bytes: sizeBytes });
   }
+  if (entries.length === 0) throw new Error("归档条目选择器未选中任何载荷");
   return entries.sort((left, right) => compareUtf16(left.path, right.path));
 }
 
@@ -246,23 +247,6 @@ function validateSourceArchives(archiveDirectory, { hashFile = sha256File } = {}
     verified.push({ ...spec, target, size_bytes: stat.size });
   }
   return verified;
-}
-
-function verifyPinnedExtractor(root = PROJECT_ROOT, { hashFile = sha256File } = {}) {
-  const projectRoot = path.resolve(root);
-  for (const spec of EXTRACTOR_FILES) {
-    const target = path.join(projectRoot, ...spec.relative.split("/"));
-    assertInside(projectRoot, target, "7z 解压器");
-    statRegularFile(target, `7z 解压器组件 ${spec.relative}`);
-    const actualHash = hashFile(target).toLowerCase();
-    if (actualHash !== spec.sha256) {
-      throw new Error(
-        `7z 解压器组件 SHA256 不匹配：${spec.relative}；`
-        + `预期 ${spec.sha256}，实际 ${actualHash}`,
-      );
-    }
-  }
-  return path.join(projectRoot, ...EXTRACTOR_FILES[0].relative.split("/"));
 }
 
 function run7z(executable, args) {
@@ -335,12 +319,13 @@ function inspectAndExtractArchive({
   expectedSha256,
   extractor,
   execute7z = run7z,
+  includeEntry = null,
 }) {
   if (fs.existsSync(destination)) throw new Error(`归档解压目录必须预先不存在：${destination}`);
   const listing = execute7z(extractor, ["l", "-slt", "-sccUTF-8", archive]);
-  const entries = validateArchiveEntries(parse7zTechnicalListing(listing));
+  const entries = validateArchiveEntries(parse7zTechnicalListing(listing), { includeEntry });
   fs.mkdirSync(destination);
-  execute7z(extractor, [
+  const extractionArgs = [
     "x",
     "-y",
     "-bd",
@@ -348,7 +333,17 @@ function inspectAndExtractArchive({
     "-sccUTF-8",
     `-o${destination}`,
     archive,
-  ]);
+  ];
+  if (includeEntry != null) {
+    // Use exact, already-normalized paths instead of extracting the rest of the
+    // multi-platform archive. This keeps unused Darwin symlink entries out of
+    // the filesystem while retaining fail-closed checks for every selected
+    // Windows payload entry.
+    extractionArgs.push(...entries
+      .filter((entry) => !entry.directory)
+      .map((entry) => `-i!${entry.path}`));
+  }
+  execute7z(extractor, extractionArgs);
   const actualHash = sha256File(archive);
   if (actualHash !== expectedSha256) {
     throw new Error(`staging 内归档在检查与解压之间发生变化：${path.basename(archive)}`);
@@ -711,6 +706,7 @@ function importWindowsBuilderToolchain({
         expectedSha256: source.sha256,
         extractor,
         execute7z,
+        includeEntry: source.id === "winCodeSign" ? isWindowsCodeSignImportEntry : null,
       });
       extractedById[source.id] = destination;
     }
@@ -796,6 +792,7 @@ module.exports = {
   assembleWindowsToolchain,
   importWindowsBuilderToolchain,
   inspectAndExtractArchive,
+  isWindowsCodeSignImportEntry,
   parse7zTechnicalListing,
   parseArgs,
   prepareCandidateLock,

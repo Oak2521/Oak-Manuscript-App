@@ -1,7 +1,7 @@
 {
   "name": "oak-manuscript",
   "productName": "湖岸稿件 Oak Manuscript",
-  "version": "0.1.0-alpha.11",
+  "version": "0.1.0-alpha.12",
   "private": true,
   "description": "本地优先的稿件检查与修订桌面应用（Electron 壳 + Python 零依赖检查核心）",
   "main": "electron/main.js",
@@ -48,7 +48,6 @@
   "build": {
     "appId": "com.oakbylake.manuscript",
     "productName": "湖岸稿件 Oak Manuscript",
-    "electronDist": "scripts/electron_dist.js",
     "directories": { "output": "release" },
     "beforePack": "scripts/before_pack.js",
     "asar": true,
@@ -81,7 +80,9 @@
       "extraResources": [
         { "from": "python-runtime", "to": "python-runtime" },
         { "from": "tools/jre-win32-x64", "to": "tools/jre" },
-        { "from": "tools/ace", "to": "tools/ace" }
+        { "from": "tools/ace", "to": "tools/ace" },
+        { "from": "tools/ace/node_modules", "to": "tools/ace/node_modules" },
+        { "from": "tools/ace/node_modules/resolve/test/resolver/symlinked/_/symlink_target/.gitkeep", "to": "tools/ace/node_modules/resolve/test/resolver/symlinked/_/symlink_target/.gitkeep" }
       ]
     },
     "nsis": {
@@ -106,7 +107,9 @@
       "extraResources": [
         { "from": "python-runtime-macos-${arch}", "to": "python-runtime" },
         { "from": "tools/jre-darwin-${arch}", "to": "tools/jre" },
-        { "from": "tools/ace", "to": "tools/ace" }
+        { "from": "tools/ace", "to": "tools/ace" },
+        { "from": "tools/ace/node_modules", "to": "tools/ace/node_modules" },
+        { "from": "tools/ace/node_modules/resolve/test/resolver/symlinked/_/symlink_target/.gitkeep", "to": "tools/ace/node_modules/resolve/test/resolver/symlinked/_/symlink_target/.gitkeep" }
       ]
     }
   }

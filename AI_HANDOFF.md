@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.11`
+> 当前版本：`0.1.0-alpha.12`
 > 当前分支：`chatgpt/commercial-v1`
-> 源码检查点标签：`chatgpt-v0.1.0-alpha.11`（只标记源码与本地验证状态，不代表安装包或正式发行）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.12`（含未签名 Windows alpha 制品证据，不代表正式发行）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,23 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.12 Windows 可安装 alpha
+
+- 经用户批准，从固定官方 release URL 下载三份 Windows builder 归档并逐份验 SHA-256；安全导入器只选择 Windows 所需 winCodeSign 条目，生成 385 文件、19,150,116 字节的独立 tracked 全树锁；
+- 构建包装器固定受验证 Electron dist 和本地固定 7-Zip，拒绝调用者配置覆盖或联网回退；Ace 完整 6,672 文件被显式打入 extraResources；
+- 隔离 Python 固定为 `-I -B -S -X utf8`，真实 packaged 资源在探针与烟测后仍为 0 个 `.pyc`/`__pycache__`；
+- 在保持 `GrantFileProtocolExtraPrivileges=false` 时，以只允许四个固定渲染文件的 `oak-manuscript://` 协议加载 ASAR UI；路径穿越、其他 host/scheme、查询参数和未列文件均拒绝；
+- Windows x64 NSIS、ZIP、真实二进制 fuse、真实 `app.asar` 锚点、全部 loose 资源、应用身份和强制 EpubCheck/Ace packaged smoke 已通过；生成并复验 `SHA256SUMS.txt` 与 canonical release manifest；
+- 该版本未签名，不是可售卖正式版。packaged 资源门禁仍列 11 项 sale blocker，Electron 43 未知 fuse 另行阻断；干净机安装/升级/卸载尚未做。
+
+### 现场验证（2026-07-28，alpha.12）
+
+- 最终 `npm test`：**PASS**；Node 306 total / 300 pass / 0 fail / 6 skip（3.096 秒），Python 351 total / 0 failures / 0 errors / 3 skipped（39.652 秒），墙钟 89.434 秒；
+- 最终强制外部验证 packaged smoke：**SMOKE-RESULT PASS**，运行根 `out/packaged-smoke/runs/ms4lg2cv-ab0de58b69b46495/projects/`；DOCX/EPUB 各 4 次检查、1 个修复批次、3 个检查点，当前问题 13/5、应用 fixes 5/2、PDF 251,654/178,232 字节，原稿哈希不变；EPUB 实得 EpubCheck 5 error 与 Ace 8 项失败断言；
+- NSIS `Oak-Manuscript-0.1.0-alpha.12-Windows-x64.exe`：189,944,468 字节，SHA-256 `42c38acaeb98cf98e4871ad1a8d7fc1225bdab3bd6c1c2149b3bf27ff03603bf`；
+- ZIP `Oak-Manuscript-0.1.0-alpha.12-Windows-x64.zip`：233,758,044 字节，SHA-256 `d99052ac1b803a58859f64b9c8874a9ef5de3118f7155f77b1789d5cc884adf2`；`release:evidence:verify:win` 通过；
+- 退出后项目路径相关进程为 0，packaged 资源 pyc 为 0。构建和 smoke 均使用隐藏进程。
 
 ### 已完成：0.1.0-alpha.11 ASAR 资源信任根
 
@@ -247,8 +264,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.11 已有受控 `utilityProcess`、主进程 Chrome controller、两阶段计划绑定和 ASAR 资源锚点；alpha.10 有真实源码 UI 运行证据。正式版仍缺真实打包制品上的联合验证、自带且校验过的浏览器运行时、OS 级默认拒绝网络、代码签名和正式人工许可审计；
-- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.11 尚无安装器或 ZIP，未做真实打包 fuse/ASAR 资源、packaged smoke、干净系统安装/升级/卸载或签名。受控下载/导入及构建尾部发布证据链已实现，但本轮未联网，三份固定归档、真实工具树和独立 tracked lock 尚缺；
+- 打包版 Ace：alpha.12 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
+- Windows：alpha.12 已有未签名 NSIS/ZIP、真实 fuse/ASAR/资源与 packaged smoke 证据；仍缺干净系统安装、升级、卸载、无开发运行时验证和 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：服务端任务 API、隔离执行、限额、零留存和官网嵌入尚未实现；
 - 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览和当前进程队列契约已实现；生产 Supabase、OS 凭据存储、签名授权、支付、持久队列、网络 transport 和网站后台未连接；
@@ -256,9 +273,9 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - 标准升级：本地验证、签名包导入/回滚骨架、项目固定与显式升级已编码；生产 trust pin、在线获取/下载、签名撤回分发与联网自动更新未实现；
 - 正式发布仍缺隐私/条款最终文本、证书、生产密钥、人工内测、macOS 硬件和网站联调。
 
-### Windows sale 门禁的 17 项明确阻断
+### Windows sale 门禁的当前明确阻断
 
-以下 17 项来自**源码**资源门禁。alpha.11 的真实 packaged ASAR 锚点证据若成立，只关闭其中第 5、6、7、8、13 项，剩余 12 项不变；当前没有产品 `app.asar`，所以现场仍是 17 项。除此之外，真实打包二进制若仍暴露当前工具无法识别的 fuse，还会由独立验证器产生 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING` 并阻止 sale；两者不得混算。
+源码资源门禁现列 16 项（builder 独立全树锁已成立）；真实 alpha.12 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 11 项。Electron 未知 fuse 由独立验证器额外产生 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING`，不得混入这 11 项。
 
 以下机器码来自当前 `verify_packaged_resources.js` 与实测 sale 输出，不得合并或省略：
 
@@ -266,32 +283,25 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 2. `PYTHON_RUNTIME_PROVENANCE_AUDIT_REQUIRED`；
 3. `EPUBCHECK_PROVENANCE_AUDIT_REQUIRED`；
 4. `JRE_SOURCE_PROVENANCE_AUDIT_REQUIRED`；
-5. `EPUBCHECK_TRUST_ROOT_NOT_HARDENED`；
-6. `JRE_TRUST_ROOT_NOT_HARDENED`；
-7. `PYTHON_RUNTIME_TRUST_ROOT_NOT_HARDENED`；
-8. `APP_RESOURCES_TRUST_ROOT_NOT_HARDENED`；
-9. `ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED`；
-10. `BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED`；
-11. `BUILDER_TOOLCHAIN_TRUST_ROOT_NOT_HARDENED`；
-12. `ACE_FULL_LICENSE_AUDIT_REQUIRED`：Ace 全部生产依赖闭包的正式人工审计；
-13. `ACE_TRUST_ROOT_NOT_HARDENED`；
-14. `ACE_CONTROLLED_HELPER_PENDING`；
-15. `ACE_BROWSER_RUNTIME_PENDING`；
-16. `ACE_OS_NETWORK_ISOLATION_PENDING`；
-17. `WINDOWS_CODE_SIGNING_PENDING`。
+5. `ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED`；
+6. `BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED`；
+7. `ACE_FULL_LICENSE_AUDIT_REQUIRED`：Ace 全部生产依赖闭包的正式人工审计；
+8. `ACE_CONTROLLED_HELPER_PENDING`：packaged 功能已实测，但门禁尚未消费签名绑定的 smoke 证明；
+9. `ACE_BROWSER_RUNTIME_PENDING`；
+10. `ACE_OS_NETWORK_ISOLATION_PENDING`；
+11. `WINDOWS_CODE_SIGNING_PENDING`。
 
 ## 5. 下一执行顺序
 
 不要重新做宽泛规划，按 v2.0 方案继续：
 
-1. 经用户联网授权后显式运行 `npm run download:builder:win`，仅从合同固定的 electron-builder 官方 GitHub release URL 下载三份归档到仓库 `out/downloads/windows-builder/`；
-2. 下载器全部验哈希后运行 `node scripts/import_windows_builder_toolchain.js --archive-dir out/downloads/windows-builder --update-lock`，提交并复核真实独立 lock；
-3. 生成 alpha.11 NSIS 安装器与 ZIP；构建链必须依次通过资源锚点、fuse 配置、真实打包二进制 fuse、打包资源门禁、应用身份断言、含 EpubCheck/Ace 的隐藏 packaged smoke，最后生成并复验 `SHA256SUMS.txt` 与 canonical release manifest；
-4. 完成 Windows 代码签名，并逐项关闭 provenance、许可证、可信根、Ace helper/browser 等 sale blocker；
-5. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
-6. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
-7. 在现有 Auth / License / Sync 离线契约上实现持久安全凭据/队列与独立网络 transport，再经授权连接 Supabase、支付和网站后台；
-8. 实现服务端统一处理的 Web 作业 API、零留存和官网嵌入；完成 Free/Pro、支付、隐私、内测和正式发布门禁。
+1. 更新并验证 Electron 43 第 9 个 fuse 的官方名称/语义，逐项固定后消除兼容性 blocker；禁止猜测；
+2. 在不违反“只写仓库内”的环境中补 Windows 安装/升级/卸载自动化设计；真实系统安装会写仓库外，执行前必须另获明确授权；
+3. 完成 Windows 代码签名方案与 provenance/许可证审计证据格式，取得证书或生产密钥前不得伪造签名通过；
+4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
+5. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
+6. 在现有 Auth / License / Sync 离线契约上实现持久安全凭据/队列与独立网络 transport，再经授权连接 Supabase、支付和网站后台；
+7. 实现服务端统一处理的 Web 作业 API、零留存和官网嵌入；完成 Free/Pro、支付、隐私、内测和正式发布门禁。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。
 

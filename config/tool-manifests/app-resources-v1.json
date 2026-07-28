@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 58,
-  "total_bytes": 1873018,
+  "file_count": 59,
+  "total_bytes": 1942368,
   "files": [
     {
       "path": "config/app-config.json",
@@ -58,6 +58,11 @@
       "sha256": "ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95"
     },
     {
+      "path": "config/tool-manifests/electron-builder-win32-x64.json",
+      "size_bytes": 69350,
+      "sha256": "8bb0221d0b0b2ce853d0f8f1ec9022f4539a7466573e1d8cae7c7739915e1aa4"
+    },
+    {
       "path": "config/tool-manifests/epubcheck-5.3.0.json",
       "size_bytes": 9009,
       "sha256": "48af9a404d902dcab233901b6575299acc8b9dc04151ee1a99788b51e49df6f0"
@@ -75,7 +80,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "26b933a8eb1d0f36afa3c8d12a20d7cac48e4e869701cae67b1100db772fe877"
+      "sha256": "8fd76fffd752391e8d4e9c1a4acaecb7d9727ab211fb3476d71754a5597f986a"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

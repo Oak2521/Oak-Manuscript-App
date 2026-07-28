@@ -295,7 +295,12 @@ function runPackagedSmoke({
   const args = smokeArguments(paths);
   const result = spawn(paths.executable, args, {
     cwd: paths.projectRoot,
-    env: createSmokeEnvironment(paths, inheritedEnv, expectedVersion),
+    // A packaged release gate must exercise the bundled validators through the
+    // real application path; callers cannot silently downgrade this to core-only smoke.
+    env: createSmokeEnvironment(paths, inheritedEnv, expectedVersion, {
+      expectedPackaged: "1",
+      externalValidation: true,
+    }),
     encoding: "utf8",
     shell: false,
     windowsHide: true,

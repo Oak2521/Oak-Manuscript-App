@@ -1,12 +1,12 @@
 # 湖岸稿件（Oak Manuscript）
 
-本地优先的稿件检查与修订产品。当前开发版本为 `0.1.0-alpha.11`，已有 Electron 桌面端、Python 检查核心、Windows alpha 本地运行资源与发布前门禁，以及离线标准包验证、项目版本固定、显式升级和回滚链路；商业正式版目标为 Windows、macOS 与 Web。按论文、纸质出版物、电子书三类目标检查稿件，提供可追溯标准依据的问题解释、集中确认的白名单机械订正、检查点恢复、修订稿与检查报告导出。
+本地优先的稿件检查与修订产品。当前开发版本为 `0.1.0-alpha.12`，已有 Electron 桌面端、Python 检查核心、经真实 packaged 门禁和隐藏烟测验证的 Windows x64 NSIS/ZIP alpha 制品，以及离线标准包验证、项目版本固定、显式升级和回滚链路；商业正式版目标为 Windows、macOS 与 Web。按论文、纸质出版物、电子书三类目标检查稿件，提供可追溯标准依据的问题解释、集中确认的白名单机械订正、检查点恢复、修订稿与检查报告导出。
 
 **当前桌面核心承诺**：稿件默认只在本机处理；永不原地修改原稿（SHA-256 全程校验）；不强制注册；报告与导出不设营销门槛。
 
-`0.1.0-alpha.11` 的**源码检查点标签**为 `chatgpt-v0.1.0-alpha.11`；该标签只标记源码与本地验证状态，不代表二进制发行。alpha.11 把 Python 核心、配置、标准与样本的精确清单，以及 Python/EpubCheck/JRE/Ace 平台锁摘要锚定到随代码进入 `app.asar` 的固定 JSON。真实打包启动必须先从 `app.asar` 读取锚点并复核全部 loose 资源，失败即在创建标准存储或窗口前退出。生产 Supabase、凭据存储、网络 transport、持久队列与网站后台仍未接入；真实运行默认未登录且不联网，不能把 `pending_transport` 写成已上传。
+`0.1.0-alpha.12` 的本地检查点标签为 `chatgpt-v0.1.0-alpha.12`。本轮从三份固定归档导入并全树锁定 Windows builder，使用受限 `oak-manuscript://` 协议在保持 file 协议额外权限关闭时加载 ASAR 页面，并让所有隔离 Python 调用显式 `-B`，避免运行探针污染受信资源。生产 Supabase、凭据存储、网络 transport、持久队列与网站后台仍未接入；真实运行默认未登录且不联网。
 
-最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.11 全量回归为 Node 301 total / 294 pass / 0 fail / 7 skip、Python 351 total / 0 failures / 0 errors / 3 skipped；资源锚点覆盖 58 个 loose 应用文件、1,873,018 字节。独立隐藏 alpha.11 源码 UI smoke 已完成 DOCX/EPUB 全闭环并真实运行 EpubCheck/Ace，原稿哈希不变。带真实 `app.asar` 的构造门禁只证明 5 个可信根阻断的关闭条件，不是产品安装包证据；源码 Windows alpha 门禁仍保留全部 17 项 sale blocker，Electron 43.1.0 未知 fuse 仍是独立阻断。本轮未联网、未下载 builder 归档，也未生成 alpha.11 安装包或 ZIP。
+最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.12 全量回归为 Node 306 total / 300 pass / 0 fail / 6 skip、Python 351 total / 0 failures / 0 errors / 3 skipped。真实 packaged smoke 在应用内运行 EpubCheck/Ace 后 PASS，原稿哈希不变；NSIS 为 189,944,468 字节（SHA-256 `42c38aca…03bf`），ZIP 为 233,758,044 字节（`d99052ac…adf2`）。这仍是未签名 alpha：packaged 资源门禁保留 11 项 sale blocker，Electron 43.1.0 未知 fuse 另行阻止正式售卖。
 
 当前桌面安全边界包括：默认 Electron session 离线与固定 CSP；PDF 使用禁 JavaScript/导航/网络的非持久隔离 session；项目 schema/路径完整校验与跨进程内核写锁；创建项目在锁内以单一输入文件描述符复制到 `source`，再生成 `working`；自选导出目录逐级验证、全部目标预检和逐文件原子换入；标准包以 canonical manifest、内容寻址存储、高水位和精确回滚目标 fail-closed。已有项目不会因全局标准更新而静默换规则，必须先查看差异并显式确认，升级后强制重检。
 

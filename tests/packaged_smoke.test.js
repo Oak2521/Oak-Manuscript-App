@@ -439,6 +439,7 @@ test("packaged runner launches the fixed executable hidden and accepts exit 0 pl
   assert.equal(invocation.options.env.OAK_SMOKE_OUTPUT_ROOT, paths.projectOutput);
   assert.equal(invocation.options.env[EXPECTED_VERSION_ENV], readExpectedAppVersion(root));
   assert.equal(invocation.options.env[EXPECT_PACKAGED_ENV], "1");
+  assert.equal(invocation.options.env.OAK_SMOKE_EXTERNAL_VALIDATION, "1");
   assert.equal(Object.hasOwn(invocation.options.env, "NODE_OPTIONS"), false);
   assert.equal(invocation.args.includes("--disable-background-networking"), true);
   assert.equal(invocation.args.some((arg) => arg.startsWith("--user-data-dir=")), true);

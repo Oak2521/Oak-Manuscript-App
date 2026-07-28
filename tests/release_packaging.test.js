@@ -431,7 +431,7 @@ function createJreStage(root, relative = "tools/jre") {
   return runtimeRoot;
 }
 
-function createResourceFixture(t) {
+function createResourceFixture(t, { builderToolchain = false } = {}) {
   const root = makeTestRoot(t);
   for (const relative of [
     "python/oak_manuscript_core/__init__.py",
@@ -506,12 +506,13 @@ function createResourceFixture(t) {
   writeElectronRuntimeManifest(root, { platform: "win32", arch: "x64" });
   createJreStage(root);
   createAceStage(root);
+  if (builderToolchain) createToolchainFixture(t, root);
   writeSourceResourceTrust(root);
   return root;
 }
 
-function createToolchainFixture(t) {
-  const root = makeTestRoot(t);
+function createToolchainFixture(t, existingRoot = null) {
+  const root = existingRoot || makeTestRoot(t);
   const toolchain = path.join(root, "tools", "electron-builder", "win32-x64");
   for (const relative of [
     "nsis/Bin/makensis.exe",
@@ -560,12 +561,12 @@ function createToolchainFixture(t) {
   return { root, toolchain };
 }
 
-test("electron-builder config is valid and pins alpha.11 Windows installer policy", async () => {
+test("electron-builder config is valid and pins alpha.12 Windows installer policy", async () => {
   const packageJson = require("../package.json");
   const packageLock = require("../package-lock.json");
   await validateConfiguration(packageJson.build, { isEnabled: false, add() {} });
 
-  assert.equal(packageJson.version, "0.1.0-alpha.11");
+  assert.equal(packageJson.version, "0.1.0-alpha.12");
   assert.equal(packageLock.version, packageJson.version);
   assert.equal(packageLock.packages[""].version, packageJson.version);
   const pythonInit = fs.readFileSync(
@@ -583,7 +584,7 @@ test("electron-builder config is valid and pins alpha.11 Windows installer polic
   );
 
   assert.equal(packageJson.build.beforePack, "scripts/before_pack.js");
-  assert.equal(packageJson.build.electronDist, "scripts/electron_dist.js");
+  assert.equal(Object.hasOwn(packageJson.build, "electronDist"), false);
   assert.deepEqual(packageJson.build.win.target, [
     { target: "nsis", arch: ["x64"] },
     { target: "zip", arch: ["x64"] },
@@ -598,10 +599,25 @@ test("electron-builder config is valid and pins alpha.11 Windows installer polic
   assert.equal(packageJson.build.nsis.perMachine, false);
   assert.equal(packageJson.build.nsis.allowToChangeInstallationDirectory, true);
   assert.equal(packageJson.build.nsis.deleteAppDataOnUninstall, false);
+  assert.deepEqual(packageJson.build.win.extraResources, [
+    { from: "python-runtime", to: "python-runtime" },
+    { from: "tools/jre-win32-x64", to: "tools/jre" },
+    { from: "tools/ace", to: "tools/ace" },
+    { from: "tools/ace/node_modules", to: "tools/ace/node_modules" },
+    {
+      from: "tools/ace/node_modules/resolve/test/resolver/symlinked/_/symlink_target/.gitkeep",
+      to: "tools/ace/node_modules/resolve/test/resolver/symlinked/_/symlink_target/.gitkeep",
+    },
+  ]);
   assert.deepEqual(packageJson.build.mac.extraResources, [
     { from: "python-runtime-macos-${arch}", to: "python-runtime" },
     { from: "tools/jre-darwin-${arch}", to: "tools/jre" },
     { from: "tools/ace", to: "tools/ace" },
+    { from: "tools/ace/node_modules", to: "tools/ace/node_modules" },
+    {
+      from: "tools/ace/node_modules/resolve/test/resolver/symlinked/_/symlink_target/.gitkeep",
+      to: "tools/ace/node_modules/resolve/test/resolver/symlinked/_/symlink_target/.gitkeep",
+    },
   ]);
   assert.equal(
     packageJson.build.extraResources.some((item) => item.from === "python-runtime"),
@@ -713,6 +729,77 @@ test("builder wrapper keeps cache/temp local, blocks publish, and never starts w
     /离线 Windows 构建工具链缺失/,
   );
   assert.equal(spawned, false, "builder must not start before offline toolchain preflight passes");
+
+  const wrapperRoot = makeTestRoot(t, "builder-wrapper-");
+  const pinnedDist = path.join(wrapperRoot, "pinned-electron-dist");
+  const pinnedSevenZip = path.join(wrapperRoot, "pinned-7zip", "7z.exe");
+  const calls = [];
+  const status = runElectronBuilder(["--win", "--x64"], {
+    root: wrapperRoot,
+    hostPlatform: "win32",
+    hostArch: "x64",
+    preflight({ root, platform, arch }) {
+      assert.equal(root, wrapperRoot);
+      assert.equal(platform, "win32");
+      assert.equal(arch, "x64");
+      return { env: { PINNED_TOOLCHAIN: "yes" } };
+    },
+    resolveDist(options) {
+      assert.deepEqual(options, {
+        projectRoot: wrapperRoot,
+        platform: "win32",
+        arch: "x64",
+        hostPlatform: "win32",
+        hostArch: "x64",
+      });
+      return { dist: pinnedDist };
+    },
+    resolveSevenZip(root) {
+      assert.equal(root, wrapperRoot);
+      return pinnedSevenZip;
+    },
+    spawn(command, args, options) {
+      calls.push({ command, args, options });
+      return { status: 0, signal: null };
+    },
+  });
+  assert.equal(status, 0);
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0].args.slice(-3), [
+    `--config.electronDist=${pinnedDist}`,
+    "--publish",
+    "never",
+  ]);
+  assert.equal(calls[0].options.env.PINNED_TOOLCHAIN, "yes");
+  assert.equal(calls[0].options.env.ELECTRON_BUILDER_7ZIP_PATH, pinnedSevenZip);
+
+  let fallbackSpawned = false;
+  assert.throws(
+    () => runElectronBuilder(["--win", "--x64"], {
+      root: wrapperRoot,
+      hostPlatform: "win32",
+      hostArch: "x64",
+      preflight() { return { env: {} }; },
+      resolveSevenZip() { return pinnedSevenZip; },
+      resolveDist() { throw new Error("pinned dist rejected"); },
+      spawn() { fallbackSpawned = true; return { status: 0 }; },
+    }),
+    /pinned dist rejected/,
+  );
+  assert.equal(fallbackSpawned, false, "builder must not start or download after dist rejection");
+
+  assert.throws(
+    () => runElectronBuilder(["--win", "--x64"], {
+      root: wrapperRoot,
+      hostPlatform: "win32",
+      hostArch: "x64",
+      preflight() { return { env: {} }; },
+      resolveSevenZip() { throw new Error("pinned 7zip rejected"); },
+      resolveDist() { return { dist: pinnedDist }; },
+      spawn() { fallbackSpawned = true; return { status: 0 }; },
+    }),
+    /pinned 7zip rejected/,
+  );
   assert.throws(
     () => runElectronBuilder(["--win", "--x64", "--config", "evil.json"], {
       root: REPO_ROOT,
@@ -853,7 +940,7 @@ test("beforePack forwards the builder project root and target platform", () => {
   const calls = [];
   beforePack(
     {
-      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.11" } },
+      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.12" } },
       electronPlatformName: "darwin",
       arch: 1,
     },
@@ -959,7 +1046,7 @@ test("Python bridge removes inherited Python and Oak injection before setting fi
   });
   assert.equal(invocation.command, "python3");
   assert.deepEqual(invocation.args, [
-    "-I", "-S", "-X", "utf8", "-c", CORE_BOOTSTRAP,
+    "-I", "-B", "-S", "-X", "utf8", "-c", CORE_BOOTSTRAP,
     path.join(REPO_ROOT, "python"), "--version",
   ]);
   assert.equal(invocation.cwd, path.join(REPO_ROOT, "python"));
@@ -991,6 +1078,11 @@ test("isolated Python bootstrap emits non-ASCII JSON as UTF-8 bytes", (t) => {
   assert.equal(result.status, 0, result.stderr?.toString("utf8"));
   assert.equal(result.stdout.includes(Buffer.from("湖岸稿件", "utf8")), true);
   assert.equal(result.stdout.toString("utf8").includes("�"), false);
+  assert.equal(
+    fs.existsSync(path.join(coreDir, "oak_manuscript_core", "__pycache__")),
+    false,
+    "隔离 Python 调用不得在受信资源目录写入字节码缓存",
+  );
 });
 
 test("Python runtime probe rejects a runnable interpreter with the wrong exact version", () => {
@@ -1047,7 +1139,7 @@ test("runtime probes fail closed on a non-native host unless static-only is expl
 });
 
 test("Windows resource gate accepts a complete offline fixture", (t) => {
-  const root = createResourceFixture(t);
+  const root = createResourceFixture(t, { builderToolchain: true });
   const report = verifyPackagedResources({
     root,
     platform: "win32",
@@ -1066,14 +1158,13 @@ test("Windows resource gate accepts a complete offline fixture", (t) => {
     "JRE_SOURCE_PROVENANCE_AUDIT_REQUIRED",
     "ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED",
     "BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED",
-    "BUILDER_TOOLCHAIN_TRUST_ROOT_NOT_HARDENED",
     "ACE_FULL_LICENSE_AUDIT_REQUIRED",
     "ACE_CONTROLLED_HELPER_PENDING",
     "ACE_BROWSER_RUNTIME_PENDING",
     "ACE_OS_NETWORK_ISOLATION_PENDING",
     "WINDOWS_CODE_SIGNING_PENDING",
   ]));
-  assert.equal(report.blockers.length, 12);
+  assert.equal(report.blockers.length, 11);
   const trustEvidence = report.checks.find((item) => item.type === "resource-trust-anchor");
   assert.equal(trustEvidence?.evidence_scope, "packaged-app-asar");
   assert.equal(trustEvidence?.protected_by_app_asar, true);
@@ -1085,6 +1176,11 @@ test("Windows resource gate accepts a complete offline fixture", (t) => {
   assert.equal(electronEvidence?.evidence_root, root);
   assert.equal(electronEvidence?.path,
     "config/tool-manifests/electron-43.1.0-win32-x64.json");
+  const builderEvidence = report.checks.find((item) => item.type === "builder-toolchain-lock");
+  assert.equal(builderEvidence?.evidence_scope, "source-build-input");
+  assert.equal(builderEvidence?.platform, "win32");
+  assert.equal(builderEvidence?.arch, "x64");
+  assert.match(builderEvidence?.lock_sha256, /^[a-f0-9]{64}$/);
 });
 
 test("packaged resource gate reads the trust anchor from the real app.asar", async (t) => {

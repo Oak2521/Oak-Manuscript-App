@@ -78,9 +78,9 @@ function isolatedPythonInvocation({ executable, script, cwd, args = [] } = {}) {
   }
   return {
     command,
-    // -I 会忽略 PYTHONUTF8/PYTHONIOENCODING；因此 UTF-8 必须由不可被
-    // 继承环境覆盖的显式 -X utf8 固定，保证中文 JSON 在各系统同字节。
-    args: ["-I", "-S", "-X", "utf8", "-c", fixedScript, ...args],
+    // -I 会忽略 PYTHONDONTWRITEBYTECODE/PYTHONUTF8/PYTHONIOENCODING；因此
+    // 禁止写入字节码与 UTF-8 都必须由不可被继承环境覆盖的显式参数固定。
+    args: ["-I", "-B", "-S", "-X", "utf8", "-c", fixedScript, ...args],
     cwd: path.resolve(requestedCwd),
   };
 }

@@ -1,6 +1,6 @@
 # ELECTRON_FUSE_POLICY — Electron 打包硬化合同
 
-> 当前实现：`0.1.0-alpha.11`。本文件描述源码配置、打包后二进制 fuse 与 ASAR 资源锚点验证合同；仓库尚无 alpha.11 安装包，因此尚未取得真实产品二进制证据。
+> 当前实现：`0.1.0-alpha.12`。本文件描述源码配置、打包后二进制 fuse、ASAR 资源锚点与受限应用协议合同；真实未签名 Windows alpha 二进制证据已取得。
 
 ## 固定策略
 
@@ -15,7 +15,7 @@
 | `EnableEmbeddedAsarIntegrityValidation` | `true` | 启用嵌入式 ASAR 完整性验证 |
 | `OnlyLoadAppFromAsar` | `true` | 只从 ASAR 加载应用 |
 
-alpha.11 另把 `electron/resource-trust-anchor.json` 打入 `app.asar`。packaged 门禁必须从该 ASAR 读取锚点，固定应用 loose 清单及目标平台 Python/EpubCheck/JRE/Ace 锁；应用启动在窗口前复核全部 loose 树。构造 ASAR 测试不替代真实二进制 fuse、ASAR integrity、代码签名或安装验收。
+alpha.12 把 `electron/resource-trust-anchor.json` 打入 `app.asar`，packaged 门禁从真实 ASAR 读取锚点并复核 loose 全树。由于 `GrantFileProtocolExtraPrivileges=false` 会使 Electron 43 的 `file://...app.asar/...` 页面加载失败，主窗口改用四文件白名单 `oak-manuscript://renderer/`；这不放宽 file 协议。真实 fuse/ASAR/资源和烟测已通过，但不替代代码签名或安装验收。
 | `LoadBrowserProcessSpecificV8Snapshot` | `false` | 不启用当前未使用的 browser-specific snapshot |
 | `GrantFileProtocolExtraPrivileges` | `false` | 不扩大 `file:` 协议权限 |
 | `ResetAdHocDarwinSignature` | `false` | 不要求 fuses 工具重置 macOS ad-hoc 签名 |
