@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 73,
-  "total_bytes": 2117464,
+  "file_count": 76,
+  "total_bytes": 2121245,
   "files": [
     {
       "path": "config/app-config.json",
@@ -103,6 +103,21 @@
       "sha256": "5f25c22be8d42b8d9201104945b816608f2818818d2985647290d4b51d9487e7"
     },
     {
+      "path": "config/schemas/web-job-create-v1.schema.json",
+      "size_bytes": 1775,
+      "sha256": "ed8d95008a7035b1e9efbd66a33b450e9fa796406c7612b49ab1eb985e0c557a"
+    },
+    {
+      "path": "config/schemas/web-job-deletion-v1.schema.json",
+      "size_bytes": 905,
+      "sha256": "c71a408976591ae3a4322b441a12812c6d9c0501ce1ec68b93a670b3eddef381"
+    },
+    {
+      "path": "config/schemas/web-job-status-v1.schema.json",
+      "size_bytes": 1101,
+      "sha256": "e58560a5c7301a4fb0a665e14efad12ac1e5210e68efcfe933422bb6f63fb78c"
+    },
+    {
       "path": "config/schemas/windows-install-acceptance-v1.schema.json",
       "size_bytes": 6928,
       "sha256": "1359f626efc787d12b6c1178eb2c819b382971d90f7c2c56f21f23b19e4090ca"
@@ -150,7 +165,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "c3ba09ca85da61609559b44b090a08aa29a924d7dca28fc7d212f548df837b91"
+      "sha256": "14aae52dd78264fcf1e666e0f9c3a2e650b18ee7ac44fc6ad3b6ab979f643094"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

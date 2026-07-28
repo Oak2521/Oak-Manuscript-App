@@ -2,9 +2,9 @@
 
 > 当前依据为商业正式版方案 v2.0。网站现状只在 2026-07-11 做过只读快照，启动真实对接前必须重新核对，不能把旧分支状态写成当前线上事实。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.21）
+## Provider 一览（当前 alpha.22）
 
-alpha.21 继承 alpha.8 已固定的账号、权益和结果同步离线客户端契约，并加入按账号隔离、由操作系统安全存储加密、可跨重启恢复的本地 `pending_transport` 队列；生产认证、签名权益/计费、网络 transport 与网站后台仍不存在。CPython 来源审计与 Windows builder 下载只发生在开发者明确授权的构建/审计输入阶段，与账号/同步 Provider 隔离；真实 APP 默认 session 仍离线，Ace loopback 仅为本机进程控制。SyncRecord v1 可包含最终体例、解析模式、原因码、置信度和解析器版本，但不得包含引用/书目原文、姓名、路径或内容哈希；权威字段见 `SYNC_RECORD_V1.md` 和 schema。
+alpha.22 继承按账号隔离、由操作系统安全存储加密、可跨重启恢复的本地 `pending_transport` 队列，并新增 Web 临时作业的 exact schema 与内存参考状态机；生产认证、签名权益/计费、网络 transport、HTTPS 作业 API 与网站后台仍不存在。CPython 来源审计与 Windows builder 下载只发生在开发者明确授权的构建/审计输入阶段，与账号/同步 Provider 隔离；真实 APP 默认 session 仍离线，Ace loopback 仅为本机进程控制。SyncRecord v1 可包含最终体例、解析模式、原因码、置信度和解析器版本，但不得包含引用/书目原文、姓名、路径或内容哈希；权威字段见 `SYNC_RECORD_V1.md` 和 schema。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
@@ -26,6 +26,26 @@ alpha.21 继承 alpha.8 已固定的账号、权益和结果同步离线客户�
 - 同步负载物理上不得包含稿件、正文、摘录、标题、文件名、本地路径、参考文献原文或任何文件哈希；
 - “同步结果”与 Web 版“用户主动提交临时处理任务”是两条不同数据流。Web 作业可以在明确操作后上传待处理文件，但必须使用隔离临时存储、TTL 删除和零留存审计，不能进入用户同步历史；
 - Windows、macOS 和 Web 共用同一湖岸官网账号与权益判定，不另建 APP 独立账号库。
+
+## Web 作业契约 v1（alpha.22 参考实现）
+
+源码入口为 `web/job-contract.js`，机器可读契约为：
+
+- `config/schemas/web-job-create-v1.schema.json`；
+- `config/schemas/web-job-status-v1.schema.json`；
+- `config/schemas/web-job-deletion-v1.schema.json`。
+
+固定边界：
+
+- 上游认证层传入只含 `kind/subject_id` 的可信主体；创建请求不能自报账号、携带 token 或追加未知字段；
+- 创建必须含新鲜的 `single_job_processing` 明示同意、隐私版本、幂等键和最小文档枚举/字节数；文件名、路径、正文、片段与内容哈希无合法字段；
+- 上传 Buffer 与任务元数据分道；公开状态和观察事件不含账号 ID、文档元数据或上传字节；
+- 每账号/匿名会话与全局并发在接收内容前门禁；同一幂等键对应不同请求会冲突，终态键拒绝隐式重建；
+- 完成处理时删除输入，只保留到同一短 TTL 的结果；取消、用户删除和 TTL 清扫删除输入与输出，并把 `deleteAt` 传给存储生命周期策略；
+- 删除部分失败时状态为 `deletion_pending`，准确报告输入/结果是否仍保留；只有两类内容均删除后才生成回执；
+- 作业完成不会自动生成、排队或发送 SyncRecord。只有用户另行明确选择时，结果元数据才进入独立同步流程。
+
+当前 `MemoryEphemeralStorage` 仅用于契约测试和本地参考，不是生产存储。尚未实现同源 HTTPS 路由、Supabase 会话校验、隔离对象存储/容器、任务队列、恶意 ZIP/病毒检测、订阅计费、短时签名下载、真实生命周期策略或官网 UI；因此不得称为“网页版可用”或“零留存已通过生产验收”。
 
 ## 网站侧待建页面
 

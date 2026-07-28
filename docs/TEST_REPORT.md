@@ -2,7 +2,44 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.21 本机加密同步队列与重启恢复检查点
+## 最新验证结论：0.1.0-alpha.22 Web 临时作业契约与零留存状态机检查点
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未发出应用网络请求；所有 Electron/packaged 进程隐藏执行，实际安装器未运行。Web 代码仅为内存参考实现，没有启动 HTTP 服务或上传稿件。
+
+| 命令 / 检查 | 结果 | 关键事实 |
+|---|---|---|
+| `node --test tests/web_job_contract.test.js` | **PASS 17/17** | 覆盖 exact schema、明示同意/时效、主体隔离、文件名/路径/正文/哈希夹带、大小/MIME、幂等终态、并发、UUID 碰撞、TTL/过期访问、完成删除、取消、部分删除失败、重试和观察事件故障 |
+| 最终 `npm test` | **PASS** | 墙钟 151.3 秒；Node 387 total / 380 pass / 0 fail / 7 skip（3.478 秒）；Python 351 total / 0 failures / 0 errors / 3 skipped（102.876 秒） |
+| 最终 `npm run smoke` | **PASS** | 隐藏双启动；输出 `out/source-smoke/runs/ms516yi2-6c5eaaae0d6e3493/projects/`；DOCX/EPUB 原稿哈希不变 |
+| 最终外层隐藏 `npm run build:win` | **PASS** | 195.9 秒；JRE/Ace staging、真实 ASAR、9 fuse、源码/packaged 资源、NSIS/ZIP、EpubCheck/Ace、双阶段 packaged smoke 与发布证据同链退出码 0 |
+| `npm run release:evidence:verify:win` | **PASS** | alpha.22 NSIS/ZIP、SHA256SUMS 与 canonical manifest 全量交叉复验；六项发行文件与 final 归档逐项 SHA-256 一致 |
+| `npm run verify:install-lifecycle:win` | **PASS（只读预检）** | 当前 alpha.22 与归档 alpha.12 的 manifest/SHA256SUMS/文件/PE/版本顺序匹配；`authorized=false`、`ready_for_authorized_run=true`；未启动安装器 |
+| 真实安装生命周期 | **未运行** | 会写 HKCU、Desktop 与 Start Menu；仍需单独系统写入授权，不能写成通过 |
+
+真实 smoke 证据：
+
+| 模式 / 项目 | APP/core | 检查 | 修复批次 | applied fixes | 检查点 | 当前问题 | PDF 字节 | 外部验证 | 原稿 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---|
+| source DOCX | 0.1.0-alpha.22 | 4 | 1 | 5 | 3 | 13 | 251,662 | 不适用 | unchanged |
+| source EPUB | 0.1.0-alpha.22 | 4 | 1 | 2 | 3 | 5 | 177,264 | EpubCheck 5 error；Ace 8 项失败断言 | unchanged |
+| packaged DOCX | 0.1.0-alpha.22 | 4 | 1 | 5 | 3 | 13 | 251,663 | 不适用 | unchanged |
+| packaged EPUB | 0.1.0-alpha.22 | 4 | 1 | 2 | 3 | 5 | 178,396 | EpubCheck 5 error；Ace 8 项失败断言 | unchanged |
+
+packaged 运行根：`out/packaged-smoke/runs/ms51i9ei-380951fc1506cffb/projects/`。加密队列 `queue-v1.enc` 为 1,960 字节、头 `OAKSYNC1`、SHA-256 `764e59adb87d45dd1136ed2199f1cef033236219415632db41b311aa59ba7068`；未发现 store type 或合成记录 ID 明文。
+
+资源信任清单为 76 文件 / 2,121,245 字节；manifest SHA-256 `85af7fedd3f0c82743f9acb6e7f29241ebc60f9adb90aab33b89c5436a2121dd`，锚点 SHA-256 `ea15d45d39dd7eae24a3f8a323836eb6bf832be5727e34482421d325fd763070`。
+
+最终制品：
+
+| 文件 | 字节 | SHA-256 |
+|---|---:|---|
+| `Oak-Manuscript-0.1.0-alpha.22-Windows-x64.exe` | 189,993,535 | `e50ac4e3e79f426c8f78ee55a234d6a9dd5505f6b5884213a57402f4dc8af1ec` |
+| `Oak-Manuscript-0.1.0-alpha.22-Windows-x64.zip` | 233,812,123 | `3214f639af372f84f0eeae4a2c826845abe76e7797d647a1f180f3dbb12a22e3` |
+| `SHA256SUMS.txt` | 224 | `66542b5bd43aa552f69e732f122c312e6a0c1a94ee90ea5f207b4f81df29d471` |
+
+六项最终发行文件（含 blockmap、manifest 与 builder debug）位于 `release/archive/0.1.0-alpha.22-final/`。证据边界：本检查点证明 Web 作业 JSON/状态机契约和本地删除失败模型，不证明已部署 HTTPS、生产会话、对象存储生命周期、隔离执行、恶意文件门禁、计费、官网嵌入或生产零留存。Windows 制品仍未签名，12 项 packaged sale blocker 未关闭。
+
+## 历史验证结论：0.1.0-alpha.21 本机加密同步队列与重启恢复检查点
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网；所有 Electron/packaged 进程隐藏执行，实际安装器未运行。
 

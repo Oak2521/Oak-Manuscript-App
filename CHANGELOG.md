@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.22（ChatGPT Web 临时作业契约与零留存状态机检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.22`。已生成未签名 Windows x64 NSIS 与 ZIP；本轮交付的是无网络 Web 作业契约和内存参考实现，不是已部署网页版或生产零留存证明。
+
+- 新增 `web/job-contract.js`：可信账号/匿名主体独立传入，创建请求强制单任务明示同意、短 TTL、格式/大小门禁、账号隔离、每主体/全局并发和幂等冲突；请求不能自报账号或携带 token；
+- 新增创建、公开状态和删除回执三份 exact schema；文件名、路径、正文、片段、内容哈希和未知字段没有合法入口；上传字节与公开元数据/观察事件分道；
+- 完成处理先删输入再开放短期结果；取消、用户删除和 TTL 清扫删除输入与输出，并传递对象存储 `deleteAt` 兜底。删除失败进入 `deletion_pending` 并准确报告仍保留的数据，不生成成功回执；
+- 终态幂等墓碑只保留非内容请求指纹，拒绝同键重建/重复计费；UUID 连续碰撞失败关闭，不能覆盖其它主体任务；观察事件接收器故障不阻断内容清理；
+- 新增 17 项 Web 契约回归，覆盖同意时效、越权、内容夹带、大小/MIME、TTL、过期访问、取消、部分删除失败、重试、并发、幂等和 ID 碰撞。完整回归为 Node 387 total / 380 pass / 0 fail / 7 skip，Python 351 total / 0 failures / 0 errors / 3 skipped；
+- source 与 packaged 隐藏 smoke 均 PASS；完整 Windows build 195.9 秒退出 0。NSIS 189,993,535 字节，SHA-256 `e50ac4e3e79f426c8f78ee55a234d6a9dd5505f6b5884213a57402f4dc8af1ec`；ZIP 233,812,123 字节，SHA-256 `3214f639af372f84f0eeae4a2c826845abe76e7797d647a1f180f3dbb12a22e3`。
+
 ### 2026-07-28 — 0.1.0-alpha.21（ChatGPT 本机加密同步队列与重启恢复检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.21`。已生成未签名 Windows x64 NSIS 与 ZIP；网络 transport、生产登录、网站后台、真实安装、签名和其余 sale 门禁仍未完成，不是可售卖正式版。

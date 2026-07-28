@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.21` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、真实 ASAR production package 发行身份门禁、Windows builder 独立锁、ASAR/全 9 fuse/资源可信链、受限应用协议、Ace 受控 utilityProcess、CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据、未签名 NSIS/ZIP、source/packaged 双启动 smoke，以及 Windows 安装生命周期的 fail-closed 编排与证据契约。生产认证/网络同步、联网标准获取、完整发行身份、代码签名、真实安装生命周期、macOS 和 Web 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.22` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、Web 临时作业 exact 契约与内存参考状态机、真实 ASAR production package 发行身份门禁、Windows builder 独立锁、ASAR/全 9 fuse/资源可信链、受限应用协议、Ace 受控 utilityProcess、CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据，以及 Windows 安装生命周期的 fail-closed 编排与证据契约。生产认证/网络同步、真实 HTTPS Web 路由与隔离执行、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -127,6 +127,14 @@ Renderer 必须先调用严格只读的 `plan-citation`，展示体例/模式、
 Renderer 不能构造同步负载，也不能提供 token、任意 URL 或 transport。主进程只接受受路径门禁保护的项目和固定 `check|export` 事件，调用 Python `sync-source` 取得只读结构来源，再由 `buildSyncRecordV1` 生成并以 exact validator 校验负载。字段权威定义为 `config/schemas/sync-record-v1.schema.json`；标题、正文、解释、位置、预览、文件名、路径、用户名、引用原文和任何内容哈希都没有可用字段，未知字段一律拒绝。
 
 只有已登录状态才可生成预览；预览本身不入队、不发送。界面必须逐字段展示同一份缓存负载，用户随后明确选择 `sync_once`、`ask_each_time`、`not_now` 或 `never_for_project`。确认只提交 opaque `idempotency_id` 和固定选择，过期或替换后的预览拒绝。alpha.21 队列固定为 `pending_transport|canceled`，使用 Electron `safeStorage` 加密并按账户隔离；内部状态以 exact schema/canonical JSON 校验，经同目录独占候选、文件 `fsync`、原子替换、提交后解密复验和 revision CAS 落盘。未登录不读取队列，Renderer 不接收内部账户 ID。没有后台发送或网络上传，因此“已入队”绝不等于“已同步到网站”。
+
+### AD-018 Web 临时任务必须“可信主体—单任务同意—内容/元数据分道—删除失败可见”（2026-07-28，冻结）
+
+Web 创建请求不接收账号 ID；账号或匿名会话主体必须由上游可信会话层以独立参数注入。请求 exact schema 只允许幂等键、单任务处理同意、隐私版本和格式/类型/检查配置/引用体例/字节数，不允许文件名、路径、正文、片段或内容哈希。上传字节只进入临时存储适配器，公开状态与观察事件不含主体和稿件元数据；运行时大小上限不能放宽 tracked schema。
+
+任务状态为 `awaiting_upload → queued → processing → result_ready`；完成处理必须先写短期结果并删除输入，取消、用户删除和 TTL 清扫必须删除输入与输出。对象存储适配器同时接收固定 `deleteAt`，作为服务端删除与清扫之外的生命周期兜底。任一删除失败转为 `deletion_pending`，准确保留 `input_retained/result_available`，不生成成功回执；可重试成功后才返回 exact 删除回执。幂等终态只保留非内容请求指纹，禁止以同一键重建或重复计费；UUID 连续碰撞失败关闭，不能覆盖其它主体任务。
+
+alpha.22 只实现 `web/job-contract.js` 的内存参考状态机和三份共享 schema，不提供 HTTP 路由、生产会话、对象存储、容器执行、恶意 ZIP/病毒扫描、计费、短时下载签名或网站 UI，不能称为网页版已上线。Web 作业上传与 SyncRecord 长期结果同步仍是两条独立数据流。
 
 `AuthProvider` 当前固定未来生产形态为系统浏览器 PKCE，但未配置服务时只返回 `configuration_required` 且不打开页面；登录/过期/撤销仅能由测试专用实例模拟。`LicenseProvider` 已固定 Free/Pro 能力矩阵、有效期和离线宽限语义；签名订阅凭证、服务端设备管理与计费尚未实现。当前 `safeStorage` 只保护待发送队列，不等于生产 token 凭据层。生产 transport 上线时必须保持默认 Electron session 离线，使用独立最小权限网络通道，并在不改变 SyncRecord v1 最小字段边界的前提下另行威胁建模。
 
@@ -258,4 +266,4 @@ alpha.20 进一步把“源码构建配置正确”和“制品实际身份正�
 - 源码 smoke 每次生成独立 `out/source-smoke/runs/<run-id>/`，项目、标准 store、缓存、临时目录、用户数据、HOME/APPDATA/XDG 与 crash dumps 不复用；打包 smoke 同样按运行 ID 隔离并受仓库 `out/` 边界控制。Windows EXE 还须先通过 x64 PE32+ 校验。
 - macOS 构建拆为 `build:mac:x64` 与 `build:mac:arm64`；聚合入口 `build:mac` 只选择当前原生 host 架构，不在一个进程伪造双架构探针。`verify:resources:mac` 只是带 `--no-runtime-probe` 的跨架构静态聚合，不能替代两个原生 runner 的执行证据。
 - alpha.20 最终 source/packaged 隐藏 smoke 已 PASS：`out/packaged-smoke/runs/ms4yn5a2-2412f8598c07f65e/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,665/178,403 字节；EPUB 通过受控 utilityProcess 实际运行 EpubCheck/Ace，缺陷结果分别为 5 error/8 项失败断言。Electron sandbox 保持开启。
-- alpha.21 以 `oak-manuscript://renderer/` 的四文件白名单在 `GrantFileProtocolExtraPrivileges=false` 下保持 ASAR UI 可用；Python `-B` 防止运行时修改 loose 可信树；顶层 2.1.3 afterPack 严格写入并回读 Electron 43 全 9 fuse。真实 ASAR production package 身份、builder 锁、CPython/EpubCheck/Temurin-JRE/Electron/builder provenance、NSIS/ZIP、source/packaged 双启动 smoke、safeStorage 队列恢复、资源与发布证据已成立；安装生命周期仅完成只读预检，仍无完整法定身份、五类 provenance 人工签署、生产凭证/上传 transport、Windows 签名、macOS 或 Web。packaged 资源门禁为 12 项。
+- alpha.22 继续以 `oak-manuscript://renderer/` 的四文件白名单在 `GrantFileProtocolExtraPrivileges=false` 下保持 ASAR UI 可用；Python `-B` 防止运行时修改 loose 可信树；顶层 2.1.3 afterPack 严格写入并回读 Electron 43 全 9 fuse。Web 作业模块当前不进入桌面 Renderer 或网络 session；三份共享 schema 进入 loose 资源信任清单。真实构建、smoke、资源与制品数字只以 `TEST_REPORT.md` 当次记录为准；安装生命周期仍需单独系统写入授权，完整法定身份、五类 provenance 人工签署、生产凭证/transport、Windows 签名、macOS 与已部署 Web 仍待完成。
