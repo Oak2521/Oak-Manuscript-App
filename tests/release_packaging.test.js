@@ -537,6 +537,7 @@ function createToolchainFixture(t, existingRoot = null) {
     host_arch: "x64",
     electron_builder_version: require("electron-builder/package.json").version,
     source_archives: sourceArchives,
+    provenance_evidence: null,
     file_count: files.length,
     total_bytes: files.reduce((sum, item) => sum + item.size_bytes, 0),
     files,
@@ -549,6 +550,7 @@ function createToolchainFixture(t, existingRoot = null) {
     host_arch: "x64",
     electron_builder_version: require("electron-builder/package.json").version,
     source_archives: sourceArchives,
+    provenance_evidence: null,
     tool_manifest: {
       path: `${BUILDER_TOOLCHAIN_RELATIVE}/manifest.json`,
       size_bytes: manifestStat.size,
@@ -561,12 +563,12 @@ function createToolchainFixture(t, existingRoot = null) {
   return { root, toolchain };
 }
 
-test("electron-builder config is valid and pins alpha.17 Windows installer policy", async () => {
+test("electron-builder config is valid and pins alpha.18 Windows installer policy", async () => {
   const packageJson = require("../package.json");
   const packageLock = require("../package-lock.json");
   await validateConfiguration(packageJson.build, { isEnabled: false, add() {} });
 
-  assert.equal(packageJson.version, "0.1.0-alpha.17");
+  assert.equal(packageJson.version, "0.1.0-alpha.18");
   assert.equal(packageLock.version, packageJson.version);
   assert.equal(packageLock.packages[""].version, packageJson.version);
   const pythonInit = fs.readFileSync(
@@ -941,7 +943,7 @@ test("beforePack forwards the builder project root and target platform", () => {
   const calls = [];
   beforePack(
     {
-      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.17" } },
+      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.18" } },
       electronPlatformName: "darwin",
       arch: 1,
     },

@@ -1,47 +1,76 @@
 {
-  "schema_version": "1.0",
-  "lock_type": "oak-electron-runtime",
-  "runtime": {
+  "schema_version": 1,
+  "evidence_type": "oak-electron-runtime-provenance",
+  "subject": {
     "name": "Electron",
-    "version": "43.1.0"
+    "version": "43.1.0",
+    "target": {
+      "platform": "win32",
+      "arch": "x64"
+    },
+    "runtime_root": "node_modules/electron/dist",
+    "runtime_lock": "config/tool-manifests/electron-43.1.0-win32-x64.json"
   },
-  "target": {
-    "platform": "win32",
-    "arch": "x64"
+  "official_release": {
+    "publisher": "Electron maintainers",
+    "release_page_url": "https://github.com/electron/electron/releases/tag/v43.1.0",
+    "release_api_url": "https://api.github.com/repos/electron/electron/releases/tags/v43.1.0",
+    "release_api_sha256": "aab2c6e1c35460de487aa9d2a561340cea99e21b72f22c773b13a0b84c15bf8b",
+    "tag": "v43.1.0",
+    "published_at": "2026-07-07T19:27:26Z",
+    "artifact": {
+      "url": "https://github.com/electron/electron/releases/download/v43.1.0/electron-v43.1.0-win32-x64.zip",
+      "filename": "electron-v43.1.0-win32-x64.zip",
+      "size_bytes": 144237574,
+      "sha256": "a07dc1e3d5e589593d37e3b19d1b373e02bb58270e2eb0d6633eee0198ad09f0",
+      "github_server_digest": "sha256:a07dc1e3d5e589593d37e3b19d1b373e02bb58270e2eb0d6633eee0198ad09f0"
+    },
+    "shasums": {
+      "url": "https://github.com/electron/electron/releases/download/v43.1.0/SHASUMS256.txt",
+      "size_bytes": 7610,
+      "sha256": "5750c4c4964f9febf50a03a69a54b2a671e0a6520c3ea6b4500081d32cf53f13",
+      "declared_artifact_sha256": "a07dc1e3d5e589593d37e3b19d1b373e02bb58270e2eb0d6633eee0198ad09f0",
+      "filename_matches": true
+    },
+    "signature_status": "not_provided_as_release_asset"
   },
-  "package_lock": {
-    "path": "package-lock.json",
-    "package_key": "node_modules/electron",
-    "requested": "^43.1.0",
+  "npm_package": {
+    "package_lock_path": "package-lock.json",
     "resolved": "https://registry.npmjs.org/electron/-/electron-43.1.0.tgz",
-    "integrity": "sha512-DPfxpQLd4NL3BJ8DBxYAfmLUKKesF5Rx9dQx5FyczAP8bhOPScjHE48GArVeXu68LlAainuwkmQTQvdZwpIIAQ=="
+    "integrity": "sha512-DPfxpQLd4NL3BJ8DBxYAfmLUKKesF5Rx9dQx5FyczAP8bhOPScjHE48GArVeXu68LlAainuwkmQTQvdZwpIIAQ==",
+    "installed_package_json_sha256": "112071db9cf7c002f294bb517b840a865fc5a74acacb3a2c79ace6a45c010264",
+    "installed_checksums_path": "node_modules/electron/checksums.json",
+    "installed_checksums_sha256": "7c6faa41291ccd0db2cd73236ca80e6c82398812ad2cf2b9490fd9524c7d13c5",
+    "artifact_digest_matches": true
   },
-  "entry": "electron.exe",
-  "required_files": [
-    "LICENSE",
-    "LICENSES.chromium.html",
-    "electron.exe",
-    "icudtl.dat",
-    "resources.pak",
-    "resources/default_app.asar",
-    "version"
-  ],
-  "formal_source_provenance_audit_required": true,
-  "provenance_note": "npm package metadata is pinned, but the separately downloaded Electron binary distribution still requires formal source and redistribution audit before sale.",
-  "provenance_evidence": {
-    "path": "config/provenance/electron-43.1.0-win32-x64.json",
-    "sha256": "5f850b7ad7a5971e3ccf4ecce505ed2793530952081a68afe3c648c1862c5075",
+  "derivation": {
+    "official_file_count": 75,
+    "local_file_count": 75,
+    "byte_identical_file_count": 75,
+    "official_total_bytes": 364083658,
+    "local_total_bytes": 364083658,
+    "official_tree_sha256": "652e9b29f6f8f37b7d8d8beffb2eb5c149efb7afe54bcf65f1df7facadcc0462",
+    "local_tree_sha256": "652e9b29f6f8f37b7d8d8beffb2eb5c149efb7afe54bcf65f1df7facadcc0462"
+  },
+  "redistribution": {
+    "license_expression": "MIT",
+    "runtime_license_path": "node_modules/electron/dist/LICENSE",
+    "chromium_notices_path": "node_modules/electron/dist/LICENSES.chromium.html",
+    "npm_license_path": "node_modules/electron/LICENSE",
+    "license_materials_byte_identical": true,
+    "human_signoff_required": true
+  },
+  "verification": {
     "machine_status": "verified",
-    "human_review_status": "pending"
+    "human_review_status": "pending",
+    "observed_at": "2026-07-28",
+    "limitations": [
+      "The release snapshot contains no detached-signature asset; GitHub server digest, SHASUMS256 and npm checksums were cross-checked instead.",
+      "The official ZIP and installed runtime are byte-bound, but this is not an independent reproducible-build audit of Electron and Chromium sources.",
+      "MIT, Chromium third-party notices, trademark and redistribution obligations still require named human sign-off before sale."
+    ]
   },
-  "directory_count": 2,
-  "directories": [
-    "locales",
-    "resources"
-  ],
-  "file_count": 75,
-  "total_bytes": 364083658,
-  "files": [
+  "official_files": [
     {
       "path": "LICENSE",
       "size_bytes": 1096,

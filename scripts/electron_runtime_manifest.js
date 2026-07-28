@@ -18,6 +18,7 @@ const SCHEMA_VERSION = "1.0";
 const LOCK_TYPE = "oak-electron-runtime";
 const RUNTIME_NAME = "Electron";
 const PROVENANCE_NOTE = "npm package metadata is pinned, but the separately downloaded Electron binary distribution still requires formal source and redistribution audit before sale.";
+const PROVENANCE_RELATIVE = "config/provenance/electron-43.1.0-win32-x64.json";
 const MANIFEST_KEYS = Object.freeze([
   "schema_version",
   "lock_type",
@@ -28,6 +29,7 @@ const MANIFEST_KEYS = Object.freeze([
   "required_files",
   "formal_source_provenance_audit_required",
   "provenance_note",
+  "provenance_evidence",
   "directory_count",
   "directories",
   "file_count",
@@ -277,7 +279,27 @@ function inventory(root, { ignoredLocalMetadata = [] } = {}) {
   };
 }
 
-function manifestFromInventory(locked, platform, arch, actual) {
+function provenanceReference(root) {
+  const projectRoot = path.resolve(root);
+  const target = resolveProjectPath(projectRoot, PROVENANCE_RELATIVE, "Electron provenance evidence");
+  const stat = fs.lstatSync(target, { throwIfNoEntry: false });
+  if (!stat) return null;
+  requireSafeFile(target, "Electron provenance evidence");
+  requireNoReparse(projectRoot, target, "Electron provenance evidence");
+  const parsed = readJsonStrict(target, "Electron provenance evidence");
+  if (!parsed.bytes.equals(Buffer.from(`${JSON.stringify(parsed.value, null, 2)}\n`, "utf8")) ||
+      parsed.value?.schema_version !== 1 || parsed.value?.evidence_type !== "oak-electron-runtime-provenance" ||
+      parsed.value?.subject?.name !== RUNTIME_NAME || parsed.value?.subject?.version !== PINNED_TARGETS["win32-x64"] ||
+      parsed.value?.subject?.target?.platform !== "win32" || parsed.value?.subject?.target?.arch !== "x64" ||
+      parsed.value?.verification?.machine_status !== "verified" ||
+      parsed.value?.verification?.human_review_status !== "pending") {
+    throw new Error("Electron provenance evidence 身份、canonical 字节或机器/人工状态不匹配");
+  }
+  return { path: PROVENANCE_RELATIVE, sha256: sha256File(target),
+    machine_status: "verified", human_review_status: "pending" };
+}
+
+function manifestFromInventory(root, locked, platform, arch, actual) {
   const key = validateTarget(platform, arch);
   return {
     schema_version: SCHEMA_VERSION,
@@ -295,6 +317,7 @@ function manifestFromInventory(locked, platform, arch, actual) {
     required_files: [...REQUIRED_FILES[key]],
     formal_source_provenance_audit_required: true,
     provenance_note: PROVENANCE_NOTE,
+    provenance_evidence: provenanceReference(root),
     directory_count: actual.directories.length,
     directories: actual.directories,
     file_count: actual.files.length,
@@ -321,7 +344,7 @@ function buildManifest(root = REPO_ROOT, {
   if (fs.readFileSync(versionTarget, "utf8").trim() !== locked.version) {
     throw new Error(`Electron dist/version 与 package-lock.json 不一致：${versionTarget}`);
   }
-  return manifestFromInventory(locked, platform, arch, actual);
+  return manifestFromInventory(projectRoot, locked, platform, arch, actual);
 }
 
 function verifyRuntime(root = REPO_ROOT, {
@@ -354,6 +377,9 @@ function verifyRuntime(root = REPO_ROOT, {
     ["path", "package_key", "requested", "resolved", "integrity"],
     "Electron 运行时固定清单 package_lock",
   );
+  if (manifest.provenance_evidence !== null) {
+    exactKeys(manifest.provenance_evidence, ["path", "sha256", "machine_status", "human_review_status"], "Electron 运行时固定清单 provenance_evidence");
+  }
   const requiredFiles = [...REQUIRED_FILES[key]];
   if (manifest.schema_version !== SCHEMA_VERSION || manifest.lock_type !== LOCK_TYPE ||
       manifest.runtime?.name !== RUNTIME_NAME || manifest.runtime?.version !== locked.version ||
@@ -428,7 +454,7 @@ function verifyRuntime(root = REPO_ROOT, {
   if (fs.readFileSync(versionTarget, "utf8").trim() !== locked.version) {
     throw new Error(`Electron dist/version 与 package-lock.json 不一致：${versionTarget}`);
   }
-  const canonical = canonicalManifestBytes(manifestFromInventory(locked, platform, arch, actual));
+  const canonical = canonicalManifestBytes(manifestFromInventory(projectRoot, locked, platform, arch, actual));
   if (!manifestBytes.equals(canonical)) {
     throw new Error("Electron 运行时固定清单不是生成器定义的唯一规范 UTF-8/LF 字节序列");
   }

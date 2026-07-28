@@ -32,14 +32,14 @@
 
 打包安全另由 `scripts/electron_fuse_policy.js` 固定：必须启用 ASAR 与 embedded integrity、用顶层 `@electron/fuses 2.1.3` 显式设置 Electron 43 全部 9 项，并在 electron-builder 后从真实应用二进制读回。索引 8 已定义为 `WasmTrapHandlers`；未来未知 wire 项仍 fail-closed。alpha.10 已把 Ace 迁移到 `utilityProcess` 并固定 `RunAsNode=false`。详见 `docs/ELECTRON_FUSE_POLICY.md`。
 
-alpha.17 的 `resource-trust-anchor.json` 随代码进入 ASAR，绑定 66 个应用 loose 文件的 canonical 清单和目标平台四类运行锁；Windows Python/EpubCheck/JRE 锁再分别绑定 CPython/EpubCheck/Temurin-JRE 官方来源证据摘要。packaged 启动在标准存储/窗口前验证全部树，且门禁只接受从真实 `app.asar` 读取的锚点。
+alpha.18 的 `resource-trust-anchor.json` 随代码进入 ASAR，绑定 70 个应用 loose 文件的 canonical 清单和目标平台四类运行锁；Windows Python/EpubCheck/JRE/Electron/builder 锁再分别绑定五类官方来源证据摘要。packaged 启动在标准存储/窗口前验证全部树，且门禁只接受从真实 `app.asar` 读取的锚点。
 
 PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专用 CSP 只允许自包含 HTML 所需的内联样式和 `data:` 图片。加载报告前后核对文件身份，拒绝项目根/`exports`/报告/目标的 symlink、junction/reparse、硬链接和目录身份换入，最后同目录原子写入。
 
 `python-invocation.js` 不依赖 `PYTHONPATH`、site-packages 或工作目录：固定 bootstrap 把路径策略给出的 core 目录放到 `sys.path[0]`，再以 `runpy` 启动模块；桥与 Python runtime 探针使用同一参数字节序列和隔离环境。
 
-`app:info` 返回 `appVersion`、经当前存储重新验证的七字段 `standardIdentity` 和 `packaged=app.isPackaged`。smoke 必须先通过 Renderer 规划并确认引用解析，再读取本次创建的 `project.json` 及其引用报告，核对 Python core 版本、check ID、`citation_resolution`，以及 APP/项目/检查/报告的完整标准身份；条件外部 smoke 还要求 EpubCheck/Ace 确实运行，打包 smoke 强制 `packaged=true`。打包态 Python、JRE 或 Ace stage 失配时必须失败关闭，不得回退用户环境中的同名代码资源；Electron 43.1.0 `win32-x64` 自身仍由受版本控制的全树锁固定：2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95`。当前 Ace 浏览器运行时仍依赖用户系统 Chrome。
+`app:info` 返回 `appVersion`、经当前存储重新验证的七字段 `standardIdentity` 和 `packaged=app.isPackaged`。smoke 必须先通过 Renderer 规划并确认引用解析，再读取本次创建的 `project.json` 及其引用报告，核对 Python core 版本、check ID、`citation_resolution`，以及 APP/项目/检查/报告的完整标准身份；条件外部 smoke 还要求 EpubCheck/Ace 确实运行，打包 smoke 强制 `packaged=true`。打包态 Python、JRE 或 Ace stage 失配时必须失败关闭，不得回退用户环境中的同名代码资源；Electron 43.1.0 `win32-x64` 自身仍由受版本控制的全树锁固定：2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `f5c2c915633c1917bc37377f8232bde4259588eb138bc4072a3c7df976e27486`，并绑定官方 ZIP/SHASUMS256/npm checksums provenance。当前 Ace 浏览器运行时仍依赖用户系统 Chrome。
 
 账号与同步 IPC 不接受 Renderer 自带的负载、token、URL 或 transport；主进程通过固定 `sync-source` 命令取值并重建 SyncRecord v1。当前 Auth 登录为未配置的系统浏览器 PKCE 契约，License 为未签名本地能力矩阵，Sync 队列仅存在于当前进程且不联网。详见 `docs/SYNC_RECORD_V1.md`。
 
-当前 `0.1.0-alpha.17` 全量 Node/Python 回归、真实 packaged 全 9 fuse/ASAR/资源、CPython/EpubCheck/Temurin-JRE provenance、强制外部验证 smoke 与发布证据均通过。最终运行根 `out/packaged-smoke/runs/ms4tv80b-a5166595d558e0e3/projects/`；DOCX/EPUB 各 4 次检查、1 个修复批次、3 个检查点且原稿哈希不变，EPUB 实得 EpubCheck 5 error 与 Ace 8 项失败断言。三类运行资源人工签署、未签名和其余 packaged sale blocker 仍有效。
+当前 `0.1.0-alpha.18` 全量 Node/Python 回归、真实 packaged 全 9 fuse/ASAR/资源、CPython/EpubCheck/Temurin-JRE/Electron/builder provenance、强制外部验证 smoke 与发布证据均通过。最终运行根 `out/packaged-smoke/runs/ms4vbk2z-11762cedd25847f4/projects/`；DOCX/EPUB 各 4 次检查、1 个修复批次、3 个检查点且原稿哈希不变，EPUB 实得 EpubCheck 5 error 与 Ace 8 项失败断言。五类运行/构建资源人工签署、未签名和其余 packaged sale blocker 仍有效。

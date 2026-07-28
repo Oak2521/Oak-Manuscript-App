@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.17` 已实现的桌面隐私与安全边界。当前有未签名 Windows NSIS/ZIP，但不是可售卖正式版。Windows builder 下载器和系统安装生命周期都需要开发者显式授权；默认安装预检只读，不运行安装器。统一账号、Free/Pro 与 SyncRecord v1 的严格离线契约已实现，生产凭证、持久队列、同步 transport、计费和 Web 上传仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.18` 已实现的桌面隐私与安全边界。当前有未签名 Windows NSIS/ZIP，但不是可售卖正式版。Windows builder 下载器和系统安装生命周期都需要开发者显式授权；默认安装预检只读，不运行安装器。统一账号、Free/Pro 与 SyncRecord v1 的严格离线契约已实现，生产凭证、持久队列、同步 transport、计费和 Web 上传仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -81,7 +81,7 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 
 ## 9. 运行时完整性与执行顺序
 
-- CPython、EpubCheck、JRE、Ace 和 Electron 的完整文件集合、大小与 SHA-256 均被清单覆盖；目标平台相关锁按 `platform/arch` 分开选择。Windows 锁不能替代 macOS 锁。Electron 43.1.0 `win32-x64` 锁固定 2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95`；tracked manifest 必须通过严格 JSON 重复键拒绝、exact schema 与 canonical UTF-8/LF 原始字节校验，`electronDist` 返回构建输入前必须重新验证该锁。
+- CPython、EpubCheck、JRE、Ace 和 Electron 的完整文件集合、大小与 SHA-256 均被清单覆盖；目标平台相关锁按 `platform/arch` 分开选择。Windows 锁不能替代 macOS 锁。Electron 43.1.0 `win32-x64` 锁固定 2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `f5c2c915633c1917bc37377f8232bde4259588eb138bc4072a3c7df976e27486`；tracked manifest 必须通过严格 JSON 重复键拒绝、exact schema 与 canonical UTF-8/LF 原始字节校验，`electronDist` 返回构建输入前必须重新验证该锁。
 - Electron tracked manifest 默认只读；只有显式 `--update-lock` 才能更新。更新前验证完整安全父链与 realpath，拒绝目标 symlink/hardlink；候选文件独占创建、写入并 `fsync`，复核后原子替换并做换入后全量验证。任一步失败恢复旧字节；回滚自身失败必须明确报错并保留事务证据，不能静默留下撕裂状态。
 - 资源门禁先做不启动任何运行时的全量静态验证；只有**全部**静态错误为零，才执行 Python 版本探针及 JRE/EpubCheck 好样本/缺陷样本探针。静态校验失败必须阻止执行可疑二进制。
 - 运行探针只能在与目标相同的原生 platform/arch 上执行；非原生 host 必须失败。跨主机纯静态检查须显式使用 `--no-runtime-probe`，其通过不构成运行证据。
@@ -89,12 +89,12 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - Windows CPython 3.13.14 另由 provenance v1 绑定 PSF 官方 ZIP/Sigstore/SPDX、34 文件清单、33 个原字节文件、唯一 `_pth` 精确追加和原样许可证；证据原始 SHA-256 同时进入运行时 manifest 与 ASAR 资源锚点。完整 Sigstore/GPG 与具名许可签署仍待办，机器验证不能替代法律/再分发审阅。
 - Electron 桥和门禁共用固定 Python bootstrap：`-I -S -X utf8`，显式把经路径策略验证的 core 绝对目录插入 `sys.path[0]` 后用 `runpy` 执行；同时清理可注入模块或启动参数的继承环境，并始终以参数数组和 `shell=false` 启动。CPython 探针核对 `sys.implementation`、精确三段版本、`releaselevel=final` 与 `serial=0`，不只匹配宽松版本字符串。
 - 打包配置必须显式开启 ASAR、保持 embedded ASAR integrity，并注册全量 fuse `afterPack`。顶层锁定 `@electron/fuses 2.1.3`，以 `strictlyRequireAllFuses=true` 写入 Electron 43 的全部 9 项；索引 8 `WasmTrapHandlers=true`。写后立即回读，随后再独立读取真实二进制；路径逃逸、不安全父链、链接/硬链接、实际 Framework 文件身份变化、API/索引和状态漂移均拒绝。完整合同见 `ELECTRON_FUSE_POLICY.md`。
-- alpha.17 在 `app.asar` 内固定资源锚点，锚点绑定 66 个 loose 应用文件、目标平台 Python/EpubCheck/JRE/Ace 锁和三份来源证据；打包启动在标准存储和窗口前复核完整资源树。Python 显式 `-B` 禁止探针写入字节码；锚点和清单不读取或记录用户稿件内容。
+- alpha.18 在 `app.asar` 内固定资源锚点，锚点绑定 70 个 loose 应用文件、目标平台 Python/EpubCheck/JRE/Ace 锁，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 五类来源证据；打包启动在标准存储和窗口前复核完整资源树。Python 显式 `-B` 禁止探针写入字节码；锚点和清单不读取或记录用户稿件内容。
 - Java 与 Ace/Node/Electron 外部工具进程也清理类路径、模块和启动参数注入变量，并以固定参数数组、`shell=false` 启动。
 - 所有锁和清单使用 locale-independent UTF-16 code unit 排序；Ace tracked lock 同时固定 stage manifest 原始字节哈希，JSON 语义等价但字节漂移也拒绝。JRE/Ace 的候选 stage 与受版本控制锁在显式更新时事务提交，失败恢复旧目录和旧锁，避免身份撕裂。
 - Ace 的空/未知 license 声明和空许可证文件直接拒绝。现有许可证文件或生成元数据通知只满足 alpha 可追溯性；全部 236 包仍需正式逐包人工审计。
 - Windows builder 导入器独立固定三份归档的名称和 SHA-256，只接受显式 `--archive-dir`，拒绝 UNC/设备形式（包括直接网络共享写法）、未知归档、路径穿越、链接/reparse、备用流、加密条目、Windows 名称冲突和解压膨胀。普通构建不会调用导入器；只有显式 `--update-lock` 才可建立或更新独立 tracked lock。候选/旧工具树与候选/旧锁在换入前完整预检，全部 forward rename 和 rollback rename 故障路径均 fail-closed；回滚失败会保留人工恢复证据。路径字符串不能识别映射为盘符的网络共享，实际导入必须人工确认使用本地非映射目录。
-- 上述 builder 契约已在用户批准下载后落地：三份真实归档验哈希通过，`tools/electron-builder/win32-x64` 工具树和 `config/tool-manifests/electron-builder-win32-x64.json` tracked lock 覆盖 385 文件、19,150,116 字节。普通构建只读复验并消费该离线树；缺失或漂移时失败，不联网回退，也不能用测试夹具代替。
+- 上述 builder 契约已在用户批准下载后落地：三份真实归档验哈希通过，`tools/electron-builder/win32-x64` 工具树和 `config/tool-manifests/electron-builder-win32-x64.json` tracked lock 覆盖 385 文件、19,150,116 字节。alpha.18 provenance 另固定官方 release API、`app-builder-lib 26.15.3` 选择逻辑和受控重组结果；三个 legacy release 无 digest/签名且部分所选载荷无具名许可证文件。普通构建只读复验并消费该离线树；缺失或漂移时失败，不联网回退，也不能用测试夹具代替或把机器状态冒充人工签核。
 
 ## 10. 标准包、项目 pin 与升级安全
 
@@ -118,4 +118,4 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 
 ## 11. Alpha 与正式售卖可信根
 
-当前全量锁和真实 packaged 锚点能发现本地资源漂移；alpha.17 已取得 ASAR integrity、全 9 fuse、CPython/EpubCheck/Temurin-JRE 来源机器证据、资源与应用烟测联合证据，packaged 资源门禁由 16 项源码 blocker 降至 11 项。安装生命周期工具/预检不等于真实系统验收；CPython/EpubCheck/Temurin-JRE 仍缺具名人工签署，Electron、builder 与 Ace 仍缺正式来源/许可审计。Windows Authenticode、干净机安装验收、macOS 签名/公证和对应实机验证完成前，不得宣称为可售卖正式版。
+当前全量锁和真实 packaged 锚点能发现本地资源漂移；alpha.18 已取得 ASAR integrity、全 9 fuse、CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据、资源与应用烟测联合证据，packaged 资源门禁由 16 项源码 blocker 降至 11 项。安装生命周期工具/预检不等于真实系统验收；五类资源仍缺具名人工许可/再分发签署，Ace 仍缺正式来源/许可审计、自带浏览器、OS 级网络隔离和签名绑定 smoke。Windows Authenticode、正式 seller 元数据、干净机安装验收、macOS 签名/公证和对应实机验证完成前，不得宣称为可售卖正式版。

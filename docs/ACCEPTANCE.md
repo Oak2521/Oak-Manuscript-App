@@ -2,7 +2,22 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.17 Temurin/JRE 来源机器证据与 Windows 制品验收（2026-07-28）
+## 0.1.0-alpha.18 Electron 与 Windows builder 来源机器证据验收（2026-07-28）
+
+- [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.18`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] Electron 43.1.0 官方 release API、ZIP、GitHub digest、SHASUMS256 与 npm checksums 由 exact schema/canonical evidence 固定；官方 ZIP 与本地 runtime 均为 75 文件、364,083,658 字节，75/75 原字节一致；
+- [x] Electron provenance、runtime lock、应用资源清单与 ASAR 锚点逐层绑定；验证器拒绝自批准、未知字段、非 canonical 字节、官方摘要/运行时树/锁漂移；
+- [x] Windows builder 三份官方归档/API、`app-builder-lib 26.15.3` 固定选择逻辑、受控解压重组与 385 文件工具树由 exact schema/canonical evidence 固定；
+- [x] builder provenance、tool manifest 与 tracked lock 双向绑定；重新导入后工具树为 385 文件、19,150,116 字节，完整树复验通过；
+- [x] 最终全量 Node 344 / Python 351，0 失败；外层隐藏完整 `npm run build:win` 213.4 秒退出 0；alpha.18 NSIS/ZIP、真实 packaged 资源、9 fuse、EpubCheck/Ace smoke、发布摘要及安装生命周期只读预检均通过；
+- [x] 两个原 provenance audit blocker 均只收窄为具名人工签核 blocker；源码/packaged 总数保持 16/11，没有把机器证据冒充正式许可或再分发签署；
+- [ ] Electron 许可、Chromium 第三方通知、商标与再分发义务已由具名人员签署；官方 release 无 detached signature 的边界已审阅；
+- [ ] builder 三个 legacy release 无 digest/签名、部分所选载荷无具名许可证文件等边界已由具名人员签署；
+- [ ] CPython、EpubCheck 与 Temurin/JRE 的剩余人工来源/许可门禁已签署；
+- [ ] 真实 alpha.12 → alpha.18 安装、升级、旧版回装探测、卸载、HKCU/Desktop/Start Menu 清理和 userData 保留已在获准系统环境执行并产生 PASS 证据；
+- [ ] `package.json` 正式 seller/author 元数据、Windows Authenticode、干净机、macOS/Web、生产账号/订阅/同步和全部 sale 门禁完成；因此本节仍不是正式发行验收。
+
+## 0.1.0-alpha.17 Temurin/JRE 来源机器证据与 Windows 制品验收（历史，2026-07-28）
 
 - [x] APP、Python core 与 lockfile 统一为 `0.1.0-alpha.17`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] Eclipse Adoptium 官方 Temurin 21.0.11+10 Windows x64 ZIP 的 URL、大小、本地/GitHub SHA-256、checksum、build metadata 和 release API 原始摘要由 exact schema 与 canonical JSON 固定；
@@ -278,7 +293,7 @@
 - [ ] macOS x64/arm64 Python/JRE 资源及锁、DMG 构建、签名、公证、Gatekeeper 和实机 smoke 已完成；
 - [ ] 正式售卖 `sale` 门禁已通过。
 
-当前源码 Windows sale 门禁为 16 类机器码；真实 alpha.17 packaged ASAR 会关闭其中 5 个 loose 可信根项，保留 11 类：
+当前源码 Windows sale 门禁为 16 类机器码；真实 alpha.18 packaged ASAR 会关闭其中 5 个 loose 可信根项，保留 11 类：
 
 1. `FORMAL_LICENSE_AUDIT_REQUIRED`；
 2. `PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
@@ -288,8 +303,8 @@
 6. `JRE_TRUST_ROOT_NOT_HARDENED`；
 7. `PYTHON_RUNTIME_TRUST_ROOT_NOT_HARDENED`；
 8. `APP_RESOURCES_TRUST_ROOT_NOT_HARDENED`；
-9. `ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED`；
-10. `BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED`；
+9. `ELECTRON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
+10. `BUILDER_TOOLCHAIN_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
 11. `ACE_FULL_LICENSE_AUDIT_REQUIRED`；
 12. `ACE_TRUST_ROOT_NOT_HARDENED`；
 13. `ACE_CONTROLLED_HELPER_PENDING`；

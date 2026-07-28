@@ -2,7 +2,42 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.17 Temurin/JRE 来源机器证据与 Windows 制品检查点
+## 最新验证结论：0.1.0-alpha.18 Electron 与 Windows builder 来源机器证据检查点
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已明确允许下载；Electron 证据使用 GitHub 官方 release/API/SHASUMS256 与 npm checksums，builder 证据使用 GitHub 官方 release API 和仓库内已有的三份已验哈希归档。所有 packaged GUI 进程隐藏执行，实际安装器未运行。
+
+| 命令 / 检查 | 结果 | 关键事实 |
+|---|---|---|
+| `npm run verify:provenance:electron:win` | **PASS** | 官方 ZIP 144,237,574 字节 / `a07dc1e3…09f0`；GitHub server digest、SHASUMS256、npm checksums 同值；官方 ZIP 与本地 runtime 均 75 文件 / 364,083,658 字节，75/75 原字节一致；证据 SHA-256 `5f850b7a…075` |
+| Electron 签名/许可边界 | **机器范围有界 PASS，人工范围待办** | 官方 release 没有 detached signature 资产，状态 `not_provided_as_release_asset`；许可、Chromium 第三方通知、商标与再分发义务未由具名人员签核 |
+| `npm run verify:provenance:builder:win` | **PASS** | 三份官方归档/API 与 `app-builder-lib 26.15.3` 固定选择逻辑已绑定；受控重组 385 文件 / 19,150,116 字节，与当前工具树 385/385 一致；证据 SHA-256 `c1651839…bb5`，tracked lock SHA-256 `ccb2701b…c1a` |
+| builder 签名/许可边界 | **机器范围有界 PASS，人工范围待办** | 三个 legacy release API 不提供 digest 或签名；组装树只保留 NSIS `COPYING`，所选 nsis-resources/winCodeSign 载荷无具名许可证文件；未伪称正式再分发审计通过 |
+| 最终 `npm test` | **PASS** | 墙钟 162 秒；Node 344 total / 337 pass / 0 fail / 7 skip（3.280 秒）；Python 351 total / 0 failures / 0 errors / 3 skipped（104.368 秒） |
+| 首次 Node 全量 | **4 个旧 fixture 失败，已修复后重跑** | 旧夹具只允许 `*_PROVENANCE_AUDIT_REQUIRED`；兼容真实新 `*_HUMAN_SIGNOFF_REQUIRED` 后最终全量 0 失败，未掩盖失败记录 |
+| 外层隐藏 `npm run build:win` | **PASS** | 213.4 秒；JRE/Ace staging、源资源、9 fuse、NSIS/ZIP、packaged 资源、原始隐藏 smoke 与发布证据同链退出码 0；electron-builder 同时提示 `package.json` 缺 `author`，该售卖元数据仍待配置 |
+| `npm run release:evidence:verify:win` | **PASS** | NSIS/ZIP、SHA256SUMS 与 canonical manifest 全量交叉复验 |
+| `npm run verify:install-lifecycle:win` | **PASS（只读预检）** | 当前 alpha.18 与归档 alpha.12 的哈希/大小/manifest/PE 匹配；`authorized=false`、`ready_for_authorized_run=true`；未启动安装器 |
+| packaged 资源门禁 | **PASS（alpha）** | 70 个应用 loose 文件、真实 `app.asar` 锚点、全 9 fuse 与五类 provenance/运行资源通过；packaged sale blocker 仍为 11 项 |
+| 真实安装生命周期 | **未运行** | 会写 HKCU、Desktop 与 Start Menu；仍需另行系统写入授权，不能写成通过 |
+
+最终 packaged smoke 运行根：`out/packaged-smoke/runs/ms4vbk2z-11762cedd25847f4/projects/`。
+
+| 项目 | APP/core | 检查 | 修复批次 | 应用 issue fixes | 检查点 | 当前问题 | PDF 字节 | 引用模式 | 外部验证 | 原稿 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|---|---|
+| `ui-smoke-docx` | 0.1.0-alpha.18 | 4 | 1 | 5 | 3 | 13 | 251,661 | `structure_only` | 不适用 | unchanged |
+| `ui-smoke-epub` | 0.1.0-alpha.18 | 4 | 1 | 2 | 3 | 5 | 178,234 | `structure_only` | EpubCheck failed：0 fatal / 5 error / 0 warning；Ace failed：8 项断言 | unchanged |
+
+最终制品：
+
+| 文件 | 字节 | SHA-256 |
+|---|---:|---|
+| `Oak-Manuscript-0.1.0-alpha.18-Windows-x64.exe` | 189,984,819 | `d55899aa6681d420d90523a7c8e3fa46d91f8342cce64ea2435f9e71b8351e05` |
+| `Oak-Manuscript-0.1.0-alpha.18-Windows-x64.zip` | 233,800,734 | `34c26fab7d1c733acda82b34047bea9d7b36d5f247c54ec970a9c6ec0250547a` |
+| `SHA256SUMS.txt` | 224 | `ce0b771be470db5ed3a3c61adb037d9f443bfdfb89554f8cabb4ae1e7a8f65d6` |
+
+证据边界：Electron 与 Windows builder 的机器来源证据已成立，但 `human_review_status=pending`。两个 blocker 均由 `*_PROVENANCE_AUDIT_REQUIRED` 收窄为 `*_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`，总数没有下降；源码/packaged blocker 仍为 16/11。制品未签名，真实安装生命周期、干净机、macOS/Web、生产服务及正式售卖元数据均未验收。
+
+## 历史验证结论：0.1.0-alpha.17 Temurin/JRE 来源机器证据与 Windows 制品检查点
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已明确允许下载；本轮从 Eclipse Adoptium 官方 GitHub release 获取 Temurin 21.0.11+10 ZIP、checksum、build metadata、detached signature、release API JSON，并从官方 Adoptium 端点获取公钥。所有 packaged GUI 进程隐藏执行，实际安装器未运行。
 
@@ -499,7 +534,7 @@ alpha.11 隐藏 smoke 运行根：`out/source-smoke/runs/ms4eowx9-64e0aab5311e2a
 
 ### Windows sale 门禁
 
-alpha 门禁实际执行运行时探针并通过；当前源码 sale 门禁以以下 16 项机器可读 blocker 按设计失败，真实 alpha.17 packaged ASAR 关闭其中 5 个 loose 可信根项后保留 11 项：
+alpha 门禁实际执行运行时探针并通过；当前源码 sale 门禁以以下 16 项机器可读 blocker 按设计失败，真实 alpha.18 packaged ASAR 关闭其中 5 个 loose 可信根项后保留 11 项：
 
 1. `FORMAL_LICENSE_AUDIT_REQUIRED`：Ace 18 个依赖包仍需正式人工许可证审计；
 2. `PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
@@ -509,8 +544,8 @@ alpha 门禁实际执行运行时探针并通过；当前源码 sale 门禁以�
 6. `JRE_TRUST_ROOT_NOT_HARDENED`；
 7. `PYTHON_RUNTIME_TRUST_ROOT_NOT_HARDENED`；
 8. `APP_RESOURCES_TRUST_ROOT_NOT_HARDENED`；
-9. `ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED`；
-10. `BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED`；
+9. `ELECTRON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
+10. `BUILDER_TOOLCHAIN_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`；
 11. `ACE_FULL_LICENSE_AUDIT_REQUIRED`：Ace 完整生产依赖闭包的正式人工审计；
 12. `ACE_TRUST_ROOT_NOT_HARDENED`；
 13. `ACE_CONTROLLED_HELPER_PENDING`；

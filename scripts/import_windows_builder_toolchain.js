@@ -23,6 +23,7 @@ const {
 const { EXTRACTOR_FILES, verifyPinnedExtractor } = require("./pinned_7zip");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
+const PROVENANCE_RELATIVE = "config/provenance/electron-builder-win32-x64.json";
 
 const MAX_ARCHIVE_BYTES = 256 * 1024 * 1024;
 const MAX_EXTRACTED_BYTES = 1024 * 1024 * 1024;
@@ -425,7 +426,33 @@ function inventoryToolchain(toolchain) {
     }));
 }
 
-function writeDeterministicManifest(toolchain, sourceArchives) {
+function readBuilderProvenanceReference(root) {
+  const projectRoot = path.resolve(root);
+  const target = path.join(projectRoot, ...PROVENANCE_RELATIVE.split("/"));
+  assertInside(projectRoot, target, "builder provenance evidence");
+  const stat = fs.lstatSync(target, { throwIfNoEntry: false });
+  if (!stat) return null;
+  statRegularFile(target, "builder provenance evidence");
+  assertSafeExistingPathChain(projectRoot, target, "builder provenance evidence");
+  const bytes = fs.readFileSync(target);
+  let evidence;
+  try {
+    evidence = JSON.parse(bytes.toString("utf8"));
+  } catch (error) {
+    throw new Error(`builder provenance evidence 无法解析：${error.message}`);
+  }
+  if (!bytes.equals(Buffer.from(`${JSON.stringify(evidence, null, 2)}\n`, "utf8")) ||
+      evidence?.schema_version !== 1 || evidence?.evidence_type !== "oak-windows-builder-provenance" ||
+      evidence?.subject?.platform !== "win32" || evidence?.subject?.arch !== "x64" ||
+      evidence?.verification?.machine_status !== "verified" ||
+      evidence?.verification?.human_review_status !== "pending") {
+    throw new Error("builder provenance evidence 身份、canonical 字节或机器/人工状态不匹配");
+  }
+  return { path: PROVENANCE_RELATIVE, sha256: sha256File(target),
+    machine_status: "verified", human_review_status: "pending" };
+}
+
+function writeDeterministicManifest(toolchain, sourceArchives, provenanceEvidence = null) {
   const files = inventoryToolchain(toolchain);
   const manifest = {
     schema_version: "1.0",
@@ -444,6 +471,7 @@ function writeDeterministicManifest(toolchain, sourceArchives) {
         sha256: spec.sha256,
       };
     }),
+    provenance_evidence: provenanceEvidence,
     file_count: files.length,
     total_bytes: files.reduce((sum, item) => sum + item.size_bytes, 0),
     files,
@@ -467,6 +495,7 @@ function writeTrackedLock(candidateProjectRoot, toolchain, manifest) {
     host_arch: TARGET_ARCH,
     electron_builder_version: BUILDER_VERSION,
     source_archives: manifest.source_archives,
+    provenance_evidence: manifest.provenance_evidence,
     tool_manifest: {
       path: `${TOOLCHAIN_RELATIVE}/manifest.json`,
       size_bytes: manifestStat.size,
@@ -509,6 +538,7 @@ function assembleWindowsToolchain({
   nsisResourcesRoot,
   winCodeSignRoot,
   sourceArchives,
+  provenanceEvidence = null,
 }) {
   const candidateRoot = path.resolve(candidateProjectRoot);
   if (fs.existsSync(candidateRoot)) {
@@ -538,7 +568,7 @@ function assembleWindowsToolchain({
   // Keep signtool's adjacent Windows Kit DLLs next to the pinned SIGNTOOL_PATH,
   // rather than copying only the executable and creating a latent runtime fault.
   copyDirectoryContentsSafe(windowsKit, toolchain);
-  const manifest = writeDeterministicManifest(toolchain, sourceArchives);
+  const manifest = writeDeterministicManifest(toolchain, sourceArchives, provenanceEvidence);
   return { candidateProjectRoot: candidateRoot, toolchain, manifest };
 }
 
@@ -717,6 +747,7 @@ function importWindowsBuilderToolchain({
       nsisResourcesRoot: extractedById.nsisResources,
       winCodeSignRoot: extractedById.winCodeSign,
       sourceArchives: stagedSources,
+      provenanceEvidence: readBuilderProvenanceReference(projectRoot),
     });
     prepareCandidateLock({
       projectRoot,
@@ -795,6 +826,7 @@ module.exports = {
   isWindowsCodeSignImportEntry,
   parse7zTechnicalListing,
   parseArgs,
+  readBuilderProvenanceReference,
   prepareCandidateLock,
   run7z,
   transactionalInstall,

@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/builder-provenance-v1.schema.json",
+  "title": "Oak Manuscript Windows builder provenance evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_type", "subject", "official_releases", "hash_authority", "derivation", "redistribution", "verification"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "evidence_type": { "const": "oak-windows-builder-provenance" },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["electron_builder_version", "platform", "arch", "toolchain_root", "tracked_lock"],
+      "properties": {
+        "electron_builder_version": { "const": "26.15.3" },
+        "platform": { "const": "win32" },
+        "arch": { "const": "x64" },
+        "toolchain_root": { "const": "tools/electron-builder/win32-x64" },
+        "tracked_lock": { "const": "config/tool-manifests/electron-builder-win32-x64.json" }
+      }
+    },
+    "official_releases": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "tag", "published_at", "release_page_url", "release_api_url", "release_api_sha256", "asset", "signature_status"],
+        "properties": {
+          "id": { "enum": ["nsis", "nsisResources", "winCodeSign"] },
+          "tag": { "type": "string", "minLength": 1 },
+          "published_at": { "type": "string", "format": "date-time" },
+          "release_page_url": { "type": "string", "format": "uri" },
+          "release_api_url": { "type": "string", "format": "uri" },
+          "release_api_sha256": { "$ref": "#/$defs/sha256" },
+          "asset": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["url", "filename", "size_bytes", "sha256", "github_server_digest_status"],
+            "properties": {
+              "url": { "type": "string", "format": "uri" },
+              "filename": { "type": "string", "minLength": 1 },
+              "size_bytes": { "type": "integer", "minimum": 1 },
+              "sha256": { "$ref": "#/$defs/sha256" },
+              "github_server_digest_status": { "const": "unavailable_legacy_release" }
+            }
+          },
+          "signature_status": { "const": "not_provided_as_release_asset" }
+        }
+      }
+    },
+    "hash_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["package_lock_path", "app_builder_lib_resolved", "app_builder_lib_integrity", "app_builder_lib_package_sha256", "checksum_source_path", "checksum_source_sha256", "all_archive_hashes_present"],
+      "properties": {
+        "package_lock_path": { "const": "package-lock.json" },
+        "app_builder_lib_resolved": { "type": "string", "format": "uri" },
+        "app_builder_lib_integrity": { "type": "string", "minLength": 1 },
+        "app_builder_lib_package_sha256": { "$ref": "#/$defs/sha256" },
+        "checksum_source_path": { "const": "node_modules/app-builder-lib/out/toolsets/windows.js" },
+        "checksum_source_sha256": { "$ref": "#/$defs/sha256" },
+        "all_archive_hashes_present": { "const": true }
+      }
+    },
+    "derivation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_archive_count", "importer_path", "importer_sha256", "extractor_files", "rebuilt_from_archives", "toolchain_file_count", "toolchain_total_bytes", "toolchain_tree_sha256"],
+      "properties": {
+        "source_archive_count": { "const": 3 },
+        "importer_path": { "const": "scripts/import_windows_builder_toolchain.js" },
+        "importer_sha256": { "$ref": "#/$defs/sha256" },
+        "extractor_files": {
+          "type": "array", "minItems": 2, "maxItems": 2,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["path", "sha256"],
+            "properties": { "path": { "type": "string", "minLength": 1 }, "sha256": { "$ref": "#/$defs/sha256" } }
+          }
+        },
+        "rebuilt_from_archives": { "const": true },
+        "toolchain_file_count": { "const": 385 },
+        "toolchain_total_bytes": { "const": 19150116 },
+        "toolchain_tree_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "redistribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["build_time_only", "retained_license_files", "missing_named_license_materials", "human_signoff_required"],
+      "properties": {
+        "build_time_only": { "const": true },
+        "retained_license_files": { "type": "array", "minItems": 1, "maxItems": 1, "items": { "$ref": "#/$defs/file" } },
+        "missing_named_license_materials": { "const": ["nsis-resources", "selected-winCodeSign"] },
+        "human_signoff_required": { "const": true }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["machine_status", "human_review_status", "observed_at", "limitations"],
+      "properties": {
+        "machine_status": { "const": "verified" },
+        "human_review_status": { "const": "pending" },
+        "observed_at": { "type": "string", "format": "date" },
+        "limitations": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "type": "string", "minLength": 1 } }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "file": {
+      "type": "object", "additionalProperties": false, "required": ["path", "size_bytes", "sha256"],
+      "properties": { "path": { "type": "string", "minLength": 1 }, "size_bytes": { "type": "integer", "minimum": 1 }, "sha256": { "$ref": "#/$defs/sha256" } }
+    }
+  }
+}

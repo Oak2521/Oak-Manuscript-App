@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.18（ChatGPT Electron 与 Windows builder 来源机器证据检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.18`。已生成未签名 Windows x64 NSIS 与 ZIP；五类运行/构建资源的人工许可/再分发签核、实际系统安装与其余正式发布门禁未完成，不是可售卖正式版。
+
+- 新增 Electron 43.1.0 provenance v1：固定 GitHub 官方 release API、ZIP、SHASUMS256、npm checksums；官方 ZIP 与本地运行时均为 75 文件、364,083,658 字节，75/75 原字节一致；证据 SHA-256 `5f850b7ad7a5971e3ccf4ecce505ed2793530952081a68afe3c648c1862c5075`；
+- 新增 Windows builder provenance v1：固定三份官方 GitHub 归档/API 与 `app-builder-lib 26.15.3` 选择逻辑；受控重解压/重组 385 文件、19,150,116 字节并与当前工具树 385/385 一致；证据 SHA-256 `c16518397eb1d02cfe1beaf70eda5eaab6c6177c03af33f9b071e7f1ec22fbb5`；
+- 两类证据均使用 exact schema、canonical JSON、完整树复核和反向测试，并分别绑定 runtime/tool manifest、tracked lock、应用资源清单和 ASAR 锚点；
+- Electron release 无 detached signature；builder 三个 legacy release 无 digest/签名且部分所选载荷无具名许可证文件。两个 blocker 仅收窄为 `*_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`，源码/packaged 数量仍为 16/11；
+- 全量回归：Node 344 total / 337 pass / 0 fail / 7 skip；Python 351 total / 0 failures / 0 errors / 3 skipped；外层隐藏完整 Windows build 213.4 秒退出 0，真实 source/packaged 资源、9 fuse、EpubCheck/Ace smoke 与发布证据通过；
+- 最终 NSIS：189,984,819 字节，SHA-256 `d55899aa6681d420d90523a7c8e3fa46d91f8342cce64ea2435f9e71b8351e05`；ZIP：233,800,734 字节，SHA-256 `34c26fab7d1c733acda82b34047bea9d7b36d5f247c54ec970a9c6ec0250547a`；安装生命周期只读预检通过，实际安装器未运行。
+
 ### 2026-07-28 — 0.1.0-alpha.17（ChatGPT Temurin/JRE 来源机器证据检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.17`。已生成未签名 Windows x64 NSIS 与 ZIP；OpenPGP/许可人工签署、实际系统安装与其余正式发布门禁未完成，不是可售卖正式版。

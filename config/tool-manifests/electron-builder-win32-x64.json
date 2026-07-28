@@ -20,10 +20,16 @@
       "sha256": "cdaec7154dda7cc31f88d886e2489379a0625a737d610b5ae7f62a12f16743a4"
     }
   ],
+  "provenance_evidence": {
+    "path": "config/provenance/electron-builder-win32-x64.json",
+    "sha256": "c16518397eb1d02cfe1beaf70eda5eaab6c6177c03af33f9b071e7f1ec22fbb5",
+    "machine_status": "verified",
+    "human_review_status": "pending"
+  },
   "tool_manifest": {
     "path": "tools/electron-builder/win32-x64/manifest.json",
-    "size_bytes": 69156,
-    "sha256": "a82d313905434b1aa2bf7e89d4450f5acffd267c661b01653e60d0634ea7ef04"
+    "size_bytes": 69406,
+    "sha256": "f65116c8eaac5ea33f06635026e9f250373a2c0124573a6014feebeb995fa42d"
   },
   "file_count": 385,
   "total_bytes": 19150116,

@@ -17,6 +17,8 @@ const {
 } = require("./epubcheck_distribution");
 const { verifyEvidenceAgainstDistribution: verifyEpubCheckProvenance } = require("./epubcheck_provenance");
 const { verifyEvidenceAgainstRuntime: verifyJreProvenance } = require("./jre_provenance");
+const { verifyEvidenceAgainstRuntime: verifyElectronProvenance } = require("./electron_provenance");
+const { verifyEvidenceAgainstToolchain: verifyBuilderProvenance } = require("./builder_provenance");
 const {
   manifestRelative: pythonRuntimeManifestRelative,
   verifyRuntime: verifyPythonRuntimeDistribution,
@@ -234,6 +236,36 @@ function verifyElectronDistribution(root, platform, arch, errors, checks) {
     } catch (error) {
       errors.push(`Electron dist ${platform}-${targetArch} 不可用：${error.message}`);
     }
+  }
+}
+
+function verifyElectronProvenanceEvidence(root, platform, arch, errors, checks) {
+  if (platform !== "win32" || arch !== "x64") return;
+  try {
+    const lock = JSON.parse(fs.readFileSync(
+      path.join(root, "config", "tool-manifests", "electron-43.1.0-win32-x64.json"),
+      "utf8",
+    ));
+    if (!lock.provenance_evidence) return;
+  } catch {
+    return;
+  }
+  try {
+    const result = verifyElectronProvenance(root);
+    checks.push({
+      type: "electron-runtime-provenance",
+      evidence_scope: "source-build-input",
+      path: result.evidence_path,
+      evidence_sha256: result.evidence_sha256,
+      machine_status: result.machine_status,
+      human_review_status: result.human_review_status,
+      official_artifact_sha256: result.evidence.official_release.artifact.sha256,
+      official_file_count: result.evidence.derivation.official_file_count,
+      byte_identical_file_count: result.evidence.derivation.byte_identical_file_count,
+      signature_status: result.evidence.official_release.signature_status,
+    });
+  } catch (error) {
+    errors.push(`Electron provenance 校验失败：${error.message}`);
   }
 }
 
@@ -599,6 +631,24 @@ function verifyBuilderToolchainTrust(root, platform, arch, checks) {
     });
   } catch {
     // alpha 报告保留明确 blocker；sale 门禁会把该 blocker 提升为错误。
+  }
+  try {
+    const result = verifyBuilderProvenance(root);
+    checks.push({
+      type: "builder-toolchain-provenance",
+      evidence_scope: "source-build-input",
+      platform,
+      arch: targetArch,
+      path: result.evidence_path,
+      evidence_sha256: result.evidence_sha256,
+      machine_status: result.machine_status,
+      human_review_status: result.human_review_status,
+      source_archive_count: result.evidence.derivation.source_archive_count,
+      toolchain_file_count: result.evidence.derivation.toolchain_file_count,
+      legacy_release_server_digest_status: "unavailable",
+    });
+  } catch {
+    // 来源证据缺失或漂移时继续保留正式审计 blocker；不把旧锁自证为来源完成。
   }
 }
 
@@ -1572,6 +1622,12 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
   const jreProvenance = checks.find((item) => item.type === "jre-provenance" &&
     item.machine_status === "verified" && typeof item.evidence_sha256 === "string" &&
     SHA256_RE.test(item.evidence_sha256));
+  const electronProvenance = checks.find((item) => item.type === "electron-runtime-provenance" &&
+    item.machine_status === "verified" && typeof item.evidence_sha256 === "string" &&
+    SHA256_RE.test(item.evidence_sha256));
+  const builderProvenance = checks.find((item) => item.type === "builder-toolchain-provenance" &&
+    item.machine_status === "verified" && typeof item.evidence_sha256 === "string" &&
+    SHA256_RE.test(item.evidence_sha256));
   const pending = [
     pythonProvenance ? {
       code: "PYTHON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED",
@@ -1610,7 +1666,10 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
       code: "APP_RESOURCES_TRUST_ROOT_NOT_HARDENED",
       message: "Python 核心、规则/标准与样本等 loose extraResources 尚未由受签名的 asar integrity/fuses 可信根固定",
     }] : []),
-    {
+    electronProvenance ? {
+      code: "ELECTRON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED",
+      message: "Electron 官方 ZIP、GitHub 服务端摘要、SHASUMS256、npm checksums 与 75 个运行时文件已机器复验；许可、Chromium 第三方通知、商标与再分发仍需具名人工签核",
+    } : {
       code: "ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED",
       message: "Electron 原生分发的官方来源、校验和与再分发证据尚未完成正式审计",
     },
@@ -1618,7 +1677,10 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
       code: "ELECTRON_RUNTIME_TRUST_ROOT_NOT_HARDENED",
       message: "Electron 原生分发尚无本次验证通过的受版本控制全树哈希锁，少量文件和架构检查不能替代构建输入可信根",
     }]),
-    {
+    builderProvenance ? {
+      code: "BUILDER_TOOLCHAIN_PROVENANCE_HUMAN_SIGNOFF_REQUIRED",
+      message: "三份官方 GitHub 归档、app-builder-lib 固定哈希、受控解压重建与 385 文件工具树已机器复验；旧发布无服务端 digest/签名且部分选定载荷无具名许可证文件，仍需具名人工签核",
+    } : {
       code: "BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED",
       message: platform === "darwin"
         ? "macOS 构建主机、DMG、签名与公证工具链的版本和来源尚未完成正式审计"
@@ -1694,6 +1756,7 @@ function verifyPackagedResources({
   // repository-tracked source distribution lock instead of trusting a loose
   // manifest copied into writable packaged resources.
   verifyElectronDistribution(electronDistributionRoot, platform, arch, errors, checks);
+  verifyElectronProvenanceEvidence(electronDistributionRoot, platform, arch, errors, checks);
   verifyResourceTrust(
     projectRoot,
     electronDistributionRoot,

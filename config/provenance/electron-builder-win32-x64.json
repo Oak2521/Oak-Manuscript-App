@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "evidence_type": "oak-windows-builder-provenance",
+  "subject": {
+    "electron_builder_version": "26.15.3",
+    "platform": "win32",
+    "arch": "x64",
+    "toolchain_root": "tools/electron-builder/win32-x64",
+    "tracked_lock": "config/tool-manifests/electron-builder-win32-x64.json"
+  },
+  "official_releases": [
+    {
+      "id": "nsis",
+      "tag": "nsis-3.0.4.1",
+      "published_at": "2019-11-27T08:12:40Z",
+      "release_page_url": "https://github.com/electron-userland/electron-builder-binaries/releases/tag/nsis-3.0.4.1",
+      "release_api_url": "https://api.github.com/repos/electron-userland/electron-builder-binaries/releases/tags/nsis-3.0.4.1",
+      "release_api_sha256": "1622334edd90d3fab3710c9122cc298719aaafc4d9ae0057ac5d806fa0a07425",
+      "asset": {
+        "url": "https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-3.0.4.1/nsis-3.0.4.1.7z",
+        "filename": "nsis-3.0.4.1.7z",
+        "size_bytes": 1287512,
+        "sha256": "9877df902530f96357d13a7a31ae2b9df67f48b11ffc9a1700a7c961574ec5fa",
+        "github_server_digest_status": "unavailable_legacy_release"
+      },
+      "signature_status": "not_provided_as_release_asset"
+    },
+    {
+      "id": "nsisResources",
+      "tag": "nsis-resources-3.4.1",
+      "published_at": "2019-07-17T08:05:23Z",
+      "release_page_url": "https://github.com/electron-userland/electron-builder-binaries/releases/tag/nsis-resources-3.4.1",
+      "release_api_url": "https://api.github.com/repos/electron-userland/electron-builder-binaries/releases/tags/nsis-resources-3.4.1",
+      "release_api_sha256": "2735ce72af81cd872fc775462e57b1b9243b292d85711507a6cf1a169cadcf5b",
+      "asset": {
+        "url": "https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-resources-3.4.1/nsis-resources-3.4.1.7z",
+        "filename": "nsis-resources-3.4.1.7z",
+        "size_bytes": 730800,
+        "sha256": "593a9a92ef958321293ac6a2ee61e64bf1bd543142a5bd6b3d310709cc924103",
+        "github_server_digest_status": "unavailable_legacy_release"
+      },
+      "signature_status": "not_provided_as_release_asset"
+    },
+    {
+      "id": "winCodeSign",
+      "tag": "winCodeSign-2.6.0",
+      "published_at": "2020-03-03T12:36:19Z",
+      "release_page_url": "https://github.com/electron-userland/electron-builder-binaries/releases/tag/winCodeSign-2.6.0",
+      "release_api_url": "https://api.github.com/repos/electron-userland/electron-builder-binaries/releases/tags/winCodeSign-2.6.0",
+      "release_api_sha256": "8abf3581b29ce721622896b3871e2a1082b8e4687c885e12e7df16852b9b3960",
+      "asset": {
+        "url": "https://github.com/electron-userland/electron-builder-binaries/releases/download/winCodeSign-2.6.0/winCodeSign-2.6.0.7z",
+        "filename": "winCodeSign-2.6.0.7z",
+        "size_bytes": 5635384,
+        "sha256": "cdaec7154dda7cc31f88d886e2489379a0625a737d610b5ae7f62a12f16743a4",
+        "github_server_digest_status": "unavailable_legacy_release"
+      },
+      "signature_status": "not_provided_as_release_asset"
+    }
+  ],
+  "hash_authority": {
+    "package_lock_path": "package-lock.json",
+    "app_builder_lib_resolved": "https://registry.npmjs.org/app-builder-lib/-/app-builder-lib-26.15.3.tgz",
+    "app_builder_lib_integrity": "sha512-2VnyWkqsP5v5XbBhL3tD5Syx8iNPBYsoU7kY4S2fz7wg8Rj/nztWKCUzGKaFRTv0Xwf3/H058CR1Kvtd/3lRow==",
+    "app_builder_lib_package_sha256": "3abe63010a62a67512f1dedaae48747081dfe22e22e4f197767bf2f4c51b60f9",
+    "checksum_source_path": "node_modules/app-builder-lib/out/toolsets/windows.js",
+    "checksum_source_sha256": "a6e3009ca9680aec48646793289224a8df26cfb9c8dafba1e3b08323f09a331b",
+    "all_archive_hashes_present": true
+  },
+  "derivation": {
+    "source_archive_count": 3,
+    "importer_path": "scripts/import_windows_builder_toolchain.js",
+    "importer_sha256": "8e8c19afe7aefbb43648d41d2b45ee72860825702195d8ef997eba98fafd3c76",
+    "extractor_files": [
+      {
+        "path": "node_modules/electron-winstaller/vendor/7z.exe",
+        "sha256": "c7245e21a7553d9e52d434002a401c77a7ca7d0f245f2311b0ddf16f8f946c6f"
+      },
+      {
+        "path": "node_modules/electron-winstaller/vendor/7z.dll",
+        "sha256": "9ed007aa82e440ceb39a6e105bb1d602a9bc59a4946267ba8de2f220aa15bc06"
+      }
+    ],
+    "rebuilt_from_archives": true,
+    "toolchain_file_count": 385,
+    "toolchain_total_bytes": 19150116,
+    "toolchain_tree_sha256": "ff8e0f5f1175de445a57893dedde17a48c3365def4b1c00350841aff23e1d171"
+  },
+  "redistribution": {
+    "build_time_only": true,
+    "retained_license_files": [
+      {
+        "path": "tools/electron-builder/win32-x64/nsis/COPYING",
+        "size_bytes": 15488,
+        "sha256": "3c8de989f6504d52f5f8dfafedb6668cd47201f5d01f1319570727c091425dd6"
+      }
+    ],
+    "missing_named_license_materials": [
+      "nsis-resources",
+      "selected-winCodeSign"
+    ],
+    "human_signoff_required": true
+  },
+  "verification": {
+    "machine_status": "verified",
+    "human_review_status": "pending",
+    "observed_at": "2026-07-28",
+    "limitations": [
+      "The three legacy GitHub releases expose no server digest and no detached-signature asset; exact SHA-256 values are cross-checked against app-builder-lib 26.15.3 code and local archive bytes.",
+      "The selected winCodeSign and nsis-resources payloads contain no retained named license file in the assembled build-only tree.",
+      "NSIS plugins, rcedit, Microsoft Windows Kit payloads, source provenance and build-tool redistribution obligations still require named human sign-off before sale."
+    ]
+  }
+}

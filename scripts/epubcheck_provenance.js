@@ -87,7 +87,8 @@ function findEndOfCentralDirectory(bytes, label) {
 
 function inventoryZipArchive(bytes, rootDirectory, label = "ZIP", { maxOutputLength = 64 * 1024 * 1024 } = {}) {
   if (!Buffer.isBuffer(bytes) || bytes.length < 22) throw new Error(`${label} 不是有效 ZIP 字节`);
-  safeRelative(rootDirectory, `${label} 根目录`);
+  const hasFixedRoot = rootDirectory != null && rootDirectory !== "";
+  if (hasFixedRoot) safeRelative(rootDirectory, `${label} 根目录`);
   const eocd = findEndOfCentralDirectory(bytes, label);
   const disk = bytes.readUInt16LE(eocd + 4);
   const centralDisk = bytes.readUInt16LE(eocd + 6);
@@ -98,7 +99,7 @@ function inventoryZipArchive(bytes, rootDirectory, label = "ZIP", { maxOutputLen
   if (disk !== 0 || centralDisk !== 0 || diskEntries !== totalEntries || totalEntries === 0xffff ||
       centralSize === 0xffffffff || centralOffset === 0xffffffff ||
       centralOffset + centralSize > eocd) throw new Error(`${label} 使用多卷、ZIP64 或越界中央目录`);
-  const rootPrefix = `${rootDirectory}/`;
+  const rootPrefix = hasFixedRoot ? `${rootDirectory}/` : "";
   const seen = new Set();
   const files = [];
   let cursor = centralOffset;
@@ -131,14 +132,17 @@ function inventoryZipArchive(bytes, rootDirectory, label = "ZIP", { maxOutputLen
     if ((unixMode & 0xf000) === 0xa000) throw new Error(`${label} 不接受符号链接：${name}`);
     const directory = name.endsWith("/");
     if (directory) {
-      if (compressedSize !== 0 || uncompressedSize !== 0 || !(name === rootPrefix || name.startsWith(rootPrefix))) {
+      const directoryPath = name.slice(0, -1);
+      if (compressedSize !== 0 || uncompressedSize !== 0 || directoryPath === "" ||
+          (hasFixedRoot && !(name === rootPrefix || name.startsWith(rootPrefix)))) {
         throw new Error(`${label} 目录条目非法：${name}`);
       }
+      safeRelative(directoryPath, `${label} 目录条目路径`);
       cursor = next;
       continue;
     }
-    if (!name.startsWith(rootPrefix)) throw new Error(`${label} 文件不在固定根目录：${name}`);
-    const relative = safeRelative(name.slice(rootPrefix.length), `${label} 条目路径`);
+    if (hasFixedRoot && !name.startsWith(rootPrefix)) throw new Error(`${label} 文件不在固定根目录：${name}`);
+    const relative = safeRelative(hasFixedRoot ? name.slice(rootPrefix.length) : name, `${label} 条目路径`);
     if (seen.has(relative)) throw new Error(`${label} 含重复文件：${relative}`);
     seen.add(relative);
     if (localOffset + 30 > bytes.length || bytes.readUInt32LE(localOffset) !== 0x04034b50) {

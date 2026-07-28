@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/electron-provenance-v1.schema.json",
+  "title": "Oak Manuscript Electron runtime provenance evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_type", "subject", "official_release", "npm_package", "derivation", "redistribution", "verification", "official_files"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "evidence_type": { "const": "oak-electron-runtime-provenance" },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "target", "runtime_root", "runtime_lock"],
+      "properties": {
+        "name": { "const": "Electron" },
+        "version": { "const": "43.1.0" },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["platform", "arch"],
+          "properties": { "platform": { "const": "win32" }, "arch": { "const": "x64" } }
+        },
+        "runtime_root": { "const": "node_modules/electron/dist" },
+        "runtime_lock": { "const": "config/tool-manifests/electron-43.1.0-win32-x64.json" }
+      }
+    },
+    "official_release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publisher", "release_page_url", "release_api_url", "release_api_sha256", "tag", "published_at", "artifact", "shasums", "signature_status"],
+      "properties": {
+        "publisher": { "const": "Electron maintainers" },
+        "release_page_url": { "type": "string", "format": "uri" },
+        "release_api_url": { "type": "string", "format": "uri" },
+        "release_api_sha256": { "$ref": "#/$defs/sha256" },
+        "tag": { "const": "v43.1.0" },
+        "published_at": { "type": "string", "format": "date-time" },
+        "artifact": { "$ref": "#/$defs/asset" },
+        "shasums": { "$ref": "#/$defs/shasums" },
+        "signature_status": { "const": "not_provided_as_release_asset" }
+      }
+    },
+    "npm_package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["package_lock_path", "resolved", "integrity", "installed_package_json_sha256", "installed_checksums_path", "installed_checksums_sha256", "artifact_digest_matches"],
+      "properties": {
+        "package_lock_path": { "const": "package-lock.json" },
+        "resolved": { "type": "string", "format": "uri" },
+        "integrity": { "type": "string", "minLength": 1 },
+        "installed_package_json_sha256": { "$ref": "#/$defs/sha256" },
+        "installed_checksums_path": { "const": "node_modules/electron/checksums.json" },
+        "installed_checksums_sha256": { "$ref": "#/$defs/sha256" },
+        "artifact_digest_matches": { "const": true }
+      }
+    },
+    "derivation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["official_file_count", "local_file_count", "byte_identical_file_count", "official_total_bytes", "local_total_bytes", "official_tree_sha256", "local_tree_sha256"],
+      "properties": {
+        "official_file_count": { "const": 75 },
+        "local_file_count": { "const": 75 },
+        "byte_identical_file_count": { "const": 75 },
+        "official_total_bytes": { "const": 364083658 },
+        "local_total_bytes": { "const": 364083658 },
+        "official_tree_sha256": { "$ref": "#/$defs/sha256" },
+        "local_tree_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "redistribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["license_expression", "runtime_license_path", "chromium_notices_path", "npm_license_path", "license_materials_byte_identical", "human_signoff_required"],
+      "properties": {
+        "license_expression": { "const": "MIT" },
+        "runtime_license_path": { "const": "node_modules/electron/dist/LICENSE" },
+        "chromium_notices_path": { "const": "node_modules/electron/dist/LICENSES.chromium.html" },
+        "npm_license_path": { "const": "node_modules/electron/LICENSE" },
+        "license_materials_byte_identical": { "const": true },
+        "human_signoff_required": { "const": true }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["machine_status", "human_review_status", "observed_at", "limitations"],
+      "properties": {
+        "machine_status": { "const": "verified" },
+        "human_review_status": { "const": "pending" },
+        "observed_at": { "type": "string", "format": "date" },
+        "limitations": { "type": "array", "minItems": 3, "maxItems": 3, "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "official_files": { "type": "array", "minItems": 75, "maxItems": 75, "items": { "$ref": "#/$defs/file" } }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "file": {
+      "type": "object", "additionalProperties": false, "required": ["path", "size_bytes", "sha256"],
+      "properties": { "path": { "type": "string", "minLength": 1 }, "size_bytes": { "type": "integer", "minimum": 1 }, "sha256": { "$ref": "#/$defs/sha256" } }
+    },
+    "asset": {
+      "type": "object", "additionalProperties": false, "required": ["url", "filename", "size_bytes", "sha256", "github_server_digest"],
+      "properties": { "url": { "type": "string", "format": "uri" }, "filename": { "type": "string", "minLength": 1 }, "size_bytes": { "type": "integer", "minimum": 1 }, "sha256": { "$ref": "#/$defs/sha256" }, "github_server_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" } }
+    },
+    "shasums": {
+      "type": "object", "additionalProperties": false, "required": ["url", "size_bytes", "sha256", "declared_artifact_sha256", "filename_matches"],
+      "properties": { "url": { "type": "string", "format": "uri" }, "size_bytes": { "type": "integer", "minimum": 1 }, "sha256": { "$ref": "#/$defs/sha256" }, "declared_artifact_sha256": { "$ref": "#/$defs/sha256" }, "filename_matches": { "const": true } }
+    }
+  }
+}

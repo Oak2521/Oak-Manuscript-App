@@ -233,6 +233,7 @@ function verifyWindowsToolchain(root, arch) {
       "host_arch",
       "electron_builder_version",
       "source_archives",
+      "provenance_evidence",
       "file_count",
       "total_bytes",
       "files",
@@ -246,6 +247,9 @@ function verifyWindowsToolchain(root, arch) {
       "离线构建工具链 manifest.source_archives",
       errors,
     );
+    if (manifest.provenance_evidence !== null) {
+      exactKeys(manifest.provenance_evidence, ["path", "sha256", "machine_status", "human_review_status"], "离线构建工具链 manifest.provenance_evidence", errors);
+    }
     manifestFiles = validateFileRecords(
       manifest.files,
       "离线构建工具链 manifest.files",
@@ -275,6 +279,7 @@ function verifyWindowsToolchain(root, arch) {
       "host_arch",
       "electron_builder_version",
       "source_archives",
+      "provenance_evidence",
       "tool_manifest",
       "file_count",
       "total_bytes",
@@ -289,6 +294,9 @@ function verifyWindowsToolchain(root, arch) {
       "离线构建工具链 tracked lock.source_archives",
       errors,
     );
+    if (lock.provenance_evidence !== null) {
+      exactKeys(lock.provenance_evidence, ["path", "sha256", "machine_status", "human_review_status"], "离线构建工具链 tracked lock.provenance_evidence", errors);
+    }
     const lockFiles = validateFileRecords(
       lock.files,
       "离线构建工具链 tracked lock.files",
@@ -310,6 +318,7 @@ function verifyWindowsToolchain(root, arch) {
       errors.push("离线构建工具链 tracked lock 与 manifest.json 原始字节不匹配");
     }
     if (manifest && (!sameJson(lock.source_archives, manifest.source_archives) ||
+        !sameJson(lock.provenance_evidence, manifest.provenance_evidence) ||
         !sameJson(lock.files, manifest.files) || lock.file_count !== manifest.file_count ||
         lock.total_bytes !== manifest.total_bytes)) {
       errors.push("离线构建工具链 tracked lock 与 manifest 的来源、全树或汇总不匹配");

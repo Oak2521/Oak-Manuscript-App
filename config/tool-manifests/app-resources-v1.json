@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 66,
-  "total_bytes": 2078798,
+  "file_count": 70,
+  "total_bytes": 2112042,
   "files": [
     {
       "path": "config/app-config.json",
@@ -21,6 +21,16 @@
       "path": "config/provenance/cpython-3.13.14-win32-x64.json",
       "size_bytes": 9265,
       "sha256": "b198a727a0c12640a8a020758bcfc5dc41e01e577a25576795b1d081e3513176"
+    },
+    {
+      "path": "config/provenance/electron-43.1.0-win32-x64.json",
+      "size_bytes": 15271,
+      "sha256": "5f850b7ad7a5971e3ccf4ecce505ed2793530952081a68afe3c648c1862c5075"
+    },
+    {
+      "path": "config/provenance/electron-builder-win32-x64.json",
+      "size_bytes": 5611,
+      "sha256": "c16518397eb1d02cfe1beaf70eda5eaab6c6177c03af33f9b071e7f1ec22fbb5"
     },
     {
       "path": "config/provenance/epubcheck-5.3.0.json",
@@ -46,6 +56,16 @@
       "path": "config/rule-packs/oak-rules-2.0.0.json",
       "size_bytes": 25005,
       "sha256": "098b382e33c06ccddf154940fbbd51db384d8025cf235ed7f7e10e83d34897a4"
+    },
+    {
+      "path": "config/schemas/builder-provenance-v1.schema.json",
+      "size_bytes": 5810,
+      "sha256": "86a437598760b2b189b0a9eee09ce293d61b335e3614a08776309df2767bf48b"
+    },
+    {
+      "path": "config/schemas/electron-provenance-v1.schema.json",
+      "size_bytes": 6053,
+      "sha256": "8faf04bfd72ed7a1602af43a22b11ded30680c6bdad1bf1866792b36ca44263d"
     },
     {
       "path": "config/schemas/epubcheck-provenance-v1.schema.json",
@@ -89,13 +109,13 @@
     },
     {
       "path": "config/tool-manifests/electron-43.1.0-win32-x64.json",
-      "size_bytes": 12876,
-      "sha256": "ae67132b95e21b62450fd0e34faaf00164514b38322076c56e37c0301c520d95"
+      "size_bytes": 13125,
+      "sha256": "f5c2c915633c1917bc37377f8232bde4259588eb138bc4072a3c7df976e27486"
     },
     {
       "path": "config/tool-manifests/electron-builder-win32-x64.json",
-      "size_bytes": 69350,
-      "sha256": "8bb0221d0b0b2ce853d0f8f1ec9022f4539a7466573e1d8cae7c7739915e1aa4"
+      "size_bytes": 69600,
+      "sha256": "ccb2701bf121fd093c7d0fccf78db8725b516f4a06b67bd17fcb309b458dcc1a"
     },
     {
       "path": "config/tool-manifests/epubcheck-5.3.0.json",
@@ -115,7 +135,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "79a12976932461ceff8050f9d3d02b07f91e9542171eaebb3d02c4e8a56d730e"
+      "sha256": "66583a0ba6d0531c93d808d66814e43b689686769c88444993e44c1e21c8f721"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",
