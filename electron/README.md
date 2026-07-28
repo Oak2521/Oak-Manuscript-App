@@ -5,6 +5,7 @@
 | 文件 | 职责 |
 |---|---|
 | `main.js` | 创建沙箱窗口、注册固定 IPC、安装默认离线门禁、外链白名单、Provider 与 `app:info` |
+| `resource-trust.js` | 从真实 `app.asar` 读取固定锚点，复核应用 loose 清单及 Python/EpubCheck/JRE/Ace 完整树 |
 | `preload.js` | 在 sandboxed preload 中暴露最小 `window.oak` API；不提供任意命令或直接 `fix` 通道 |
 | `python-bridge.js` | 以参数数组、`shell=false` 和清理后的环境调用 Python JSON CLI |
 | `python-invocation.js` | 桥与资源门禁共用的 `-I -S -X utf8` bootstrap；显式插入受控 core 绝对目录 |
@@ -30,6 +31,8 @@
 
 打包安全另由 `scripts/electron_fuse_policy.js` 固定：必须启用 ASAR 与 embedded integrity、显式设置全部已知 fuse，并在 electron-builder 后从真实应用二进制读回。Electron 43 当前多出一个本地工具无法识别的 wire 索引；alpha 必须带 blocker，sale 失败关闭。alpha.10 已把 Ace 迁移到 `utilityProcess` 并固定 `RunAsNode=false`。详见 `docs/ELECTRON_FUSE_POLICY.md`。
 
+alpha.11 的 `resource-trust-anchor.json` 随代码进入 ASAR，绑定 58 个应用 loose 文件的 canonical 清单和目标平台四类运行锁。packaged 启动在标准存储/窗口前验证全部树，且门禁只接受从真实 `app.asar` 读取的锚点；源码锚点或测试 fixture 不能冒充签名产品证据。
+
 PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专用 CSP 只允许自包含 HTML 所需的内联样式和 `data:` 图片。加载报告前后核对文件身份，拒绝项目根/`exports`/报告/目标的 symlink、junction/reparse、硬链接和目录身份换入，最后同目录原子写入。
 
 `python-invocation.js` 不依赖 `PYTHONPATH`、site-packages 或工作目录：固定 bootstrap 把路径策略给出的 core 目录放到 `sys.path[0]`，再以 `runpy` 启动模块；桥与 Python runtime 探针使用同一参数字节序列和隔离环境。
@@ -38,4 +41,4 @@ PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专�
 
 账号与同步 IPC 不接受 Renderer 自带的负载、token、URL 或 transport；主进程通过固定 `sync-source` 命令取值并重建 SyncRecord v1。当前 Auth 登录为未配置的系统浏览器 PKCE 契约，License 为未签名本地能力矩阵，Sync 队列仅存在于当前进程且不联网。详见 `docs/SYNC_RECORD_V1.md`。
 
-当前 `0.1.0-alpha.10` 最新条件源码 smoke 已在独立隐藏 Electron 中 PASS；运行根为 `out/source-smoke/runs/ms4cz6o9-c2ad021ca7e2e83c/projects/`，DOCX/EPUB 两个项目均先确认默认引用解析，各记录 4 次检查、1 次批量修复、3 个检查点且 `integrity.source_hash_ok=true`，PDF 分别为 251,649 / 178,228 字节；EPUB 还实际得到 EpubCheck 5 error 和 Ace 8 项失败断言，退出后 profile 残留为 0。`release/` 尚无对应 alpha.10 EXE，因此不能声称 packaged fuse、打包 smoke 或发布证据已通过。
+当前 `0.1.0-alpha.11` 全量 Node/Python 回归与资源门禁通过，但未启动 GUI。最近一次条件源码 smoke 是 alpha.10 历史 PASS：`out/source-smoke/runs/ms4cz6o9-c2ad021ca7e2e83c/projects/`；它不能替代 alpha.11 packaged fuse、ASAR 资源、打包 smoke 或发布证据。`release/` 尚无 alpha.11 EXE。

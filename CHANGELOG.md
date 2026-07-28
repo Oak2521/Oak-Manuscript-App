@@ -4,6 +4,25 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.11（ChatGPT ASAR 资源信任根检查点）
+
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.11`。该标签只表示经本地验证的源码状态；当前没有 alpha.11 安装包、ZIP、签名或真实产品 `app.asar` 证据。
+
+**资源信任根**
+
+- 新增 canonical `app-resources-v1.json`，精确固定将作为 loose extraResources 分发的 Python 核心、配置、标准和样本；当前覆盖 58 个文件、1,873,018 字节；
+- 新增随代码进入 `app.asar` 的 `resource-trust-anchor.json`，固定应用资源清单原始字节摘要及 win32-x64 的 Python、EpubCheck、JRE、Ace tracked lock 摘要；
+- 打包资源门禁必须从真实 `app.asar` 读取锚点，拒绝 loose 伪锚点、资源增删改、锁替换、平台替换、链接/硬链接和读取身份漂移；
+- 打包应用启动在标准存储与窗口创建前复核锚点和完整 loose 资源，失败即退出；显式 `--update-lock` 使用受控 tracked-file 事务替换并写后复验；
+- 只有真实 packaged ASAR 证据存在时才关闭 5 个资源可信根 blocker。源码门禁仍保留 17 项，不能用构造 fixture 冒充产品制品。
+
+**验证**
+
+- `npm test` PASS：Node 301 total / 294 pass / 0 fail / 7 skip；Python 351 total / 0 failures / 0 errors / 3 skipped；墙钟 171.3 秒；
+- `verify:resource-trust`、`verify:standards`、`stage:ace`、`verify:electron-runtime`、`verify:resources:win` 与 `verify:fuses:config` 全部 PASS；
+- 真实 `app.asar` 构造集成测试证明 packaged 门禁可把 17 项缩至 12 项，并在 `app.asar` 缺失时失败关闭；该结果不是 alpha.11 安装包证据；
+- 本轮未联网、未构建、未签名，也未重跑 alpha.11 UI smoke。alpha.10 UI smoke 仅保留为历史回归证据。
+
 ### 2026-07-28 — 0.1.0-alpha.10（ChatGPT Ace 受控 utilityProcess 与 RunAsNode 关闭检查点）
 
 > 源码检查点标签：`chatgpt-v0.1.0-alpha.10`。该标签只表示经本地验证的源码状态；当前没有 alpha.10 安装包、ZIP 或真实打包二进制证据。

@@ -19,6 +19,8 @@ const { StandardsProvider } = require("./standards-provider");
 const { createStandardBoundCore } = require("./standard-bound-core");
 const { readCoreCommandResult, toFailureResponse } = require("./core-result");
 const { createPdfPreview } = require("./pdf-preview");
+const { verifyPackagedResourceTrust } = require("./resource-trust");
+const RESOURCE_TRUST_ANCHOR = require("./resource-trust-anchor.json");
 const {
   applyOfflineChromiumPolicy,
   installOfflineRequestBlocker,
@@ -331,6 +333,21 @@ if (!hasSingleInstanceLock) {
 
 app.whenReady().then(async () => {
   console.log("[main] app ready");
+  if (app.isPackaged) {
+    try {
+      verifyPackagedResourceTrust({
+        root: pathPolicy.resourcesRoot(),
+        platform: process.platform,
+        arch: process.arch,
+        anchor: RESOURCE_TRUST_ANCHOR,
+      });
+      console.log("[resources] packaged trust root verified");
+    } catch (error) {
+      console.error("[resources] packaged trust root failed:", error && error.message);
+      app.exit(1);
+      return;
+    }
+  }
   const standardsStoreRoot = path.join(app.getPath("userData"), "standards");
   bridge.configureStandardsStoreRoot(standardsStoreRoot);
   standardsProvider = new StandardsProvider({

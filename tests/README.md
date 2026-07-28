@@ -1,6 +1,6 @@
 # tests/ — Node 契约、发布资源与打包验证
 
-`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.10 最终统一结果为 Node **295 total / 288 pass / 0 fail / 7 skip / 2.461 秒**，Python **351 项 / 0 失败 / 0 错误 / 3 跳过 / 112.121 秒**，墙钟 119.4 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
+`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.11 最终统一结果为 Node **301 total / 294 pass / 0 fail / 7 skip / 3.313 秒**，Python **351 项 / 0 失败 / 0 错误 / 3 跳过 / 110.355 秒**，墙钟 171.3 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
 
 本目录覆盖：
 
@@ -9,6 +9,7 @@
 - Auth 登录/退出/过期/撤销状态、Free/Pro/宽限/过期权益、SyncRecord v1 exact schema 和反内容泄露、可信来源 IPC、伪造 Renderer 负载拒绝、四选一授权、幂等队列与安全 UI 渲染；
 - Electron 默认 session 离线 switches/网络请求拦截、Renderer CSP、源码 smoke 的 `out/source-smoke/` 路径边界；
 - ASAR/integrity 与 Electron fuse exact 配置、真实二进制 wire 读取、未知 fuse 的 alpha blocker/sale fail-closed、文件身份和构建顺序；
+- ASAR 内资源锚点、58 文件应用 loose 清单、四类平台锁绑定、真实 `app.asar` 读取、loose 伪锚点拒绝、启动前验证及 5 个可信根 blocker 的严格关闭条件；
 - Ace 外部验证 IPC 的可信项目来源、Python plan/prepare/finalize 绑定、固定 utilityProcess、注入环境清理、输出/时间上限、受控 loopback Chrome、精确 child/profile 清理及路径换入拒绝；
 - PDF 非持久隔离 session、禁 JavaScript/导航/网络、报告身份快照、项目/`exports` 父链校验、链接/硬链接/目录换入拒绝和原子 writer；
 - CLI 退出码 1 业务结果、退出码 2 错误，以及 `code/message/retryable/details` 结构化错误的 IPC 透传；
@@ -28,6 +29,6 @@
 
 Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零污染创建、锁内单 FD 输入、OneDrive/reparse 来源、精确失败清理和安全原子导出覆盖在 `python/tests/test_project_validation.py` 与 `python/tests/test_project_write_lock.py`。
 
-真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。alpha.10 没有重跑这个独立慢测套件，但条件隐藏 UI smoke 已通过新受控链路实际运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言。缺少 alpha.10 EXE 时，`verify:packaged:fuses:win`、`smoke:packaged:win` 和 `release:evidence:verify:win` 都应失败而不是复用旧制品。
+真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。alpha.11 没有重跑这个独立慢测套件或 UI smoke；alpha.10 条件隐藏 UI smoke 的真实 EpubCheck/Ace 结果只作历史证据。缺少 alpha.11 EXE 时，`verify:packaged:fuses:win`、`smoke:packaged:win` 和 `release:evidence:verify:win` 都应失败而不是复用旧制品。
 
-alpha.10 最新条件隐藏源码 smoke 为 **PASS**，运行根为 `out/source-smoke/runs/ms4cz6o9-c2ad021ca7e2e83c/projects/`；DOCX/EPUB 均先确认引用计划，各有 4 次检查、1 次批量修复、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,649 / 178,228 字节；EPUB 外部工具确实运行，退出后 profile 残留为 0。这是源码 UI 闭环证据，不是 packaged fuse、安装器或发布 SHA 证据。
+alpha.10 条件隐藏源码 smoke 为 **历史 PASS**，运行根为 `out/source-smoke/runs/ms4cz6o9-c2ad021ca7e2e83c/projects/`；DOCX/EPUB 均先确认引用计划，各有 4 次检查、1 次批量修复、3 个检查点、`source_hash_ok=true`，且 EPUB 外部工具确实运行。这不是 alpha.11 UI、packaged fuse、安装器或发布 SHA 证据。

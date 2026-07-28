@@ -2,7 +2,21 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.10 Ace 受控 utilityProcess 与 RunAsNode 关闭验收（2026-07-28）
+## 0.1.0-alpha.11 ASAR 资源信任根验收（2026-07-28）
+
+> 本节验收源码清单、ASAR 读取与构造 packaged 门禁；当前没有 alpha.11 产品安装包，不把测试生成的 `app.asar` 冒充真实发行证据。
+
+- [x] APP、Python 核心和 lockfile 统一为 `0.1.0-alpha.11`；标准 release、规则/fixer、账号与同步合同未变化；
+- [x] canonical 应用资源清单精确固定 58 个 Python/配置/标准/样本文件和 1,873,018 字节；默认验证只读，更新必须显式 `--update-lock`；
+- [x] ASAR 内固定锚点绑定应用清单以及 win32-x64 Python/EpubCheck/JRE/Ace 四份 tracked lock 的原始 SHA-256；
+- [x] packaged 验证从真实 `app.asar` 读取锚点，不接受 loose 同名伪造；资源/锁增删改、目标替换、链接/硬链接与读取身份漂移 fail-closed；
+- [x] 打包启动在标准存储和窗口创建前执行完整资源信任验证，失败退出；
+- [x] 构造的真实 `app.asar` 集成测试证明证据成立时只关闭 5 个可信根 blocker，缺失 `app.asar` 时拒绝；源码资源门禁仍保留 17 项；
+- [x] 最终 `npm test` 为 Node 301 / Python 351，0 失败；六项只读资源/标准/Ace/Electron/fuse 门禁均通过；
+- [ ] 已在真实 alpha.11 Windows 安装包/ZIP 和两个 macOS `.app` 上取得 ASAR、fuse、资源、功能及签名联合证据；
+- [ ] 其余 12 项 Windows 资源 blocker、Electron 未知 fuse 和正式发布门禁全部关闭。
+
+## 0.1.0-alpha.10 Ace 受控 utilityProcess 与 RunAsNode 关闭验收（历史，2026-07-28）
 
 > 本节验收源码实现与真实隐藏 Electron UI 链路；没有 alpha.10 安装包，不把源码 smoke 冒充 packaged fuse、安装器或正式发布证据。
 
@@ -282,11 +296,11 @@
 
 > 完成标准（方案 §18）：匿名 DOCX 与 EPUB 均能在 UI 中完成完整闭环。
 > 证据：`npm run smoke` 冒烟驱动真实 UI 代码路径（与按钮同一 actions + 真实 IPC + 真实核心），
-> DOCX 与 EPUB 双闭环 PASS；旧 `0.0.1` 打包版历史结果同样 PASS，不能替代当前 alpha.10 打包验收。
+> DOCX 与 EPUB 双闭环 PASS；旧 `0.0.1` 打包版历史结果同样 PASS，不能替代当前 alpha.11 打包验收。
 
 - [x] Electron 壳安全基线：contextIsolation / sandbox / nodeIntegration=false / IPC 固定通道 + 输入验证 / 子进程 shell=false / CSP / 导航与新窗口拦截 / 外链仅 HTTPS 白名单域名；
 - [x] 七个主页面（中文 UI）：欢迎隐私 / 创建项目 / 检查目标 / 进度（阶段式，无虚假百分比）/ 问题双栏（接受·拒绝·暂不处理）/ 导出中心 / 标准资源与设置；
-- [x] 历史 0.0.1 登录入口为「即将开放」占位；当前 alpha.10 继承不联网的账号/同步离线契约，未登录仍不出现同步询问（冒烟自动断言）；
+- [x] 历史 0.0.1 登录入口为「即将开放」占位；当前 alpha.11 继承不联网的账号/同步离线契约，alpha.10 冒烟已断言未登录不出现同步询问；
 - [x] 出版评估软转化位按 §8.1–8.2 位置与文案，仅打开白名单网站页面；
 - [x] PDF 审阅样张（printToPDF，≤16 页，标注非印前文件）；
 - [x] 匿名样本体验入口；错误以可理解文案呈现（toast + 文件安全说明）。

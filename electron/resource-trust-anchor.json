@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "anchor_type": "oak-packaged-resource-trust-root",
+  "app_resources": {
+    "manifest": "config/tool-manifests/app-resources-v1.json",
+    "sha256": "377f03b0b08a134dce3fae671cc2c839c106a572eb926bbeaf260c5926e9f95e",
+    "file_count": 58,
+    "total_bytes": 1873018
+  },
+  "targets": [
+    {
+      "platform": "win32",
+      "arch": "x64",
+      "locks": {
+        "python_runtime": {
+          "manifest": "config/tool-manifests/python-runtime-win32-x64.json",
+          "sha256": "eb88aca18c427e16a78e41ac96476d94fb1d47002950dc3d65b9432656dc3b8a"
+        },
+        "epubcheck": {
+          "manifest": "config/tool-manifests/epubcheck-5.3.0.json",
+          "sha256": "48af9a404d902dcab233901b6575299acc8b9dc04151ee1a99788b51e49df6f0"
+        },
+        "jre": {
+          "manifest": "config/tool-manifests/jre-win32-x64.json",
+          "sha256": "60cdadbe431edadbd61353168e52fead30150feb8e4a46278dfc21c031dbc43f"
+        },
+        "ace": {
+          "manifest": "config/tool-manifests/ace-1.4.6.json",
+          "sha256": "02269aaffa50d5d3aaa98036717a3a364e70c3c4e4074a71770ab28b908e92fe"
+        }
+      }
+    }
+  ]
+}

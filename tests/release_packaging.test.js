@@ -6,6 +6,7 @@ const crypto = require("node:crypto");
 const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
+const { createPackage } = require("@electron/asar");
 
 const { validateConfiguration } = require("app-builder-lib/out/util/config/config");
 const beforePack = require("../scripts/before_pack");
@@ -56,14 +57,26 @@ const {
   verifyStandardAssets,
 } = require("../scripts/standard_assets");
 const { BUNDLED_STANDARD_RELEASE } = require("../electron/standards-provider");
+const {
+  ANCHOR_RELATIVE: RESOURCE_TRUST_ANCHOR_RELATIVE,
+  writeSourceResourceTrust,
+} = require("../scripts/resource_trust_manifest");
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 const PATCH_BEFORE = "681b52d047d5f6eebbfc62a925b7dc22b82589ab63b36a9ea602297f8cd86ea6";
 const PATCH_AFTER = "6c7da7364d05548355fb1ab90c3d6d77366e2fd01b6f67551b648c5fb8285614";
 
 function verifyPackagedResources(options) {
-  if (options?.source === false && options.electronSourceRoot === undefined) {
-    return verifyPackagedResourcesRaw({ ...options, electronSourceRoot: options.root });
+  if (options?.source === false) {
+    const normalized = { ...options };
+    if (normalized.electronSourceRoot === undefined) normalized.electronSourceRoot = options.root;
+    if (normalized.readPackagedAnchor === undefined) {
+      normalized.readPackagedAnchor = () => fs.readFileSync(path.join(
+        options.root,
+        ...RESOURCE_TRUST_ANCHOR_RELATIVE.split("/"),
+      ));
+    }
+    return verifyPackagedResourcesRaw(normalized);
   }
   return verifyPackagedResourcesRaw(options);
 }
@@ -493,6 +506,7 @@ function createResourceFixture(t) {
   writeElectronRuntimeManifest(root, { platform: "win32", arch: "x64" });
   createJreStage(root);
   createAceStage(root);
+  writeSourceResourceTrust(root);
   return root;
 }
 
@@ -546,12 +560,12 @@ function createToolchainFixture(t) {
   return { root, toolchain };
 }
 
-test("electron-builder config is valid and pins alpha.10 Windows installer policy", async () => {
+test("electron-builder config is valid and pins alpha.11 Windows installer policy", async () => {
   const packageJson = require("../package.json");
   const packageLock = require("../package-lock.json");
   await validateConfiguration(packageJson.build, { isEnabled: false, add() {} });
 
-  assert.equal(packageJson.version, "0.1.0-alpha.10");
+  assert.equal(packageJson.version, "0.1.0-alpha.11");
   assert.equal(packageLock.version, packageJson.version);
   assert.equal(packageLock.packages[""].version, packageJson.version);
   const pythonInit = fs.readFileSync(
@@ -763,6 +777,7 @@ test("hash-pinned manifests and controlled patches always checkout with LF bytes
   assert.match(attributes, /^config\/rule-capabilities\.json text eol=lf$/m);
   assert.match(attributes, /^config\/rule-packs\/\*\.json text eol=lf$/m);
   assert.match(attributes, /^config\/standard-packs\/\*\.json text eol=lf$/m);
+  assert.match(attributes, /^electron\/resource-trust-anchor\.json text eol=lf$/m);
   assert.match(attributes, /^scripts\/patches\/\*\.js text eol=lf$/m);
 });
 
@@ -838,7 +853,7 @@ test("beforePack forwards the builder project root and target platform", () => {
   const calls = [];
   beforePack(
     {
-      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.10" } },
+      packager: { projectDir: REPO_ROOT, appInfo: { version: "0.1.0-alpha.11" } },
       electronPlatformName: "darwin",
       arch: 1,
     },
@@ -1049,26 +1064,66 @@ test("Windows resource gate accepts a complete offline fixture", (t) => {
     "FORMAL_LICENSE_AUDIT_REQUIRED",
     "EPUBCHECK_PROVENANCE_AUDIT_REQUIRED",
     "JRE_SOURCE_PROVENANCE_AUDIT_REQUIRED",
-    "EPUBCHECK_TRUST_ROOT_NOT_HARDENED",
-    "JRE_TRUST_ROOT_NOT_HARDENED",
-    "PYTHON_RUNTIME_TRUST_ROOT_NOT_HARDENED",
-    "APP_RESOURCES_TRUST_ROOT_NOT_HARDENED",
     "ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED",
     "BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED",
     "BUILDER_TOOLCHAIN_TRUST_ROOT_NOT_HARDENED",
     "ACE_FULL_LICENSE_AUDIT_REQUIRED",
-    "ACE_TRUST_ROOT_NOT_HARDENED",
     "ACE_CONTROLLED_HELPER_PENDING",
     "ACE_BROWSER_RUNTIME_PENDING",
     "ACE_OS_NETWORK_ISOLATION_PENDING",
     "WINDOWS_CODE_SIGNING_PENDING",
   ]));
-  assert.equal(report.blockers.length, 17);
+  assert.equal(report.blockers.length, 12);
+  const trustEvidence = report.checks.find((item) => item.type === "resource-trust-anchor");
+  assert.equal(trustEvidence?.evidence_scope, "packaged-app-asar");
+  assert.equal(trustEvidence?.protected_by_app_asar, true);
+  assert.deepEqual(Object.keys(trustEvidence?.lock_sha256s || {}).sort(), [
+    "ace", "epubcheck", "jre", "python_runtime",
+  ]);
   const electronEvidence = report.checks.find((item) => item.type === "electron-runtime-lock");
   assert.equal(electronEvidence?.evidence_scope, "source-build-input");
   assert.equal(electronEvidence?.evidence_root, root);
   assert.equal(electronEvidence?.path,
     "config/tool-manifests/electron-43.1.0-win32-x64.json");
+});
+
+test("packaged resource gate reads the trust anchor from the real app.asar", async (t) => {
+  const root = createResourceFixture(t);
+  const asarSource = path.join(root, "asar-source");
+  const anchorSource = path.join(root, ...RESOURCE_TRUST_ANCHOR_RELATIVE.split("/"));
+  const anchorTarget = path.join(asarSource, ...RESOURCE_TRUST_ANCHOR_RELATIVE.split("/"));
+  fs.mkdirSync(path.dirname(anchorTarget), { recursive: true });
+  fs.copyFileSync(anchorSource, anchorTarget);
+  await createPackage(asarSource, path.join(root, "app.asar"));
+
+  const report = verifyPackagedResourcesRaw({
+    root,
+    electronSourceRoot: root,
+    platform: "win32",
+    arch: "x64",
+    source: false,
+    releaseTier: "alpha",
+    executeRuntimes: false,
+  });
+  const evidence = report.checks.find((item) => item.type === "resource-trust-anchor");
+  assert.equal(evidence?.evidence_scope, "packaged-app-asar");
+  assert.equal(evidence?.protected_by_app_asar, true);
+  assert.equal(report.blockers.length, 12);
+
+  fs.rmSync(path.join(root, "app.asar"));
+  assert.throws(
+    () => verifyPackagedResourcesRaw({
+      root,
+      electronSourceRoot: root,
+      platform: "win32",
+      arch: "x64",
+      source: false,
+      releaseTier: "alpha",
+      executeRuntimes: false,
+    }),
+    (error) => error instanceof ResourceGateError &&
+      error.errors.some((item) => item.includes("真实 app.asar 资源信任锚读取失败")),
+  );
 });
 
 test("packaged resource gate keeps Electron trust-root blocker when source evidence is missing", (t) => {
@@ -1112,15 +1167,10 @@ test("sale resource tier rejects generated license notices that alpha reports as
         "FORMAL_LICENSE_AUDIT_REQUIRED",
         "EPUBCHECK_PROVENANCE_AUDIT_REQUIRED",
         "JRE_SOURCE_PROVENANCE_AUDIT_REQUIRED",
-        "EPUBCHECK_TRUST_ROOT_NOT_HARDENED",
-        "JRE_TRUST_ROOT_NOT_HARDENED",
-        "PYTHON_RUNTIME_TRUST_ROOT_NOT_HARDENED",
-        "APP_RESOURCES_TRUST_ROOT_NOT_HARDENED",
         "ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED",
         "BUILDER_TOOLCHAIN_PROVENANCE_AUDIT_REQUIRED",
         "BUILDER_TOOLCHAIN_TRUST_ROOT_NOT_HARDENED",
         "ACE_FULL_LICENSE_AUDIT_REQUIRED",
-        "ACE_TRUST_ROOT_NOT_HARDENED",
         "ACE_CONTROLLED_HELPER_PENDING",
         "ACE_BROWSER_RUNTIME_PENDING",
         "ACE_OS_NETWORK_ISOLATION_PENDING",

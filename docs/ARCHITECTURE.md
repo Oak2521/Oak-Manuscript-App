@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.10` 源码检查点架构；本轮尚未生成 alpha.10 Windows 安装器或 ZIP。本地标准/项目 pin/升级回滚、默认引用解析、Windows 构建/制品证据、账号/同步离线契约、ASAR/fuse 合同，以及 Ace 受控 utilityProcess 源码链路已实现。真实 builder 资产和 packaged 证据、生产认证/同步、联网标准获取、生产信任根、macOS 和 Web 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.11` 源码检查点架构；本轮尚未生成 alpha.11 Windows 安装器或 ZIP。本地标准/项目 pin/升级回滚、默认引用解析、Windows 构建/制品证据、账号/同步离线契约、ASAR/fuse 合同、Ace 受控 utilityProcess，以及 ASAR 保护的 loose 资源信任锚已实现。真实 builder 资产和产品 packaged 证据、生产认证/同步、联网标准获取、代码签名、macOS 和 Web 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -13,6 +13,7 @@ Electron Main
   ├─ PDF：非持久隔离 session / 禁 JS、导航、网络 / 身份校验后原子写
   ├─ appInfo 身份（版本 + 规则包 + app.isPackaged），供源码与打包 smoke 防止错验旧包
   ├─ 打包合同：ASAR integrity + Electron fuses 配置门禁与真实二进制 wire 复核
+  ├─ 资源信任：ASAR 内固定锚点 → 应用资源清单/平台锁 → 全量 loose 树复核
   ├─ StandardsProvider：内置 release 验证 / 本地签名包预览与安装 / 全局回滚
   ├─ StandardsStore：严格 payload / 签名 / CAS / 高水位 / 撤回 / 事务恢复
   ├─ standard-bound-core：项目 release 预检 + 七字段 Python 绑定
@@ -142,6 +143,14 @@ Ace 只在 Electron `utilityProcess` 中运行固定 module 和固定参数。�
 
 该 loopback 控制通道是本机进程间通信，不上传稿件；但 Chromium 层网络抑制不等于 OS 级无网沙箱，系统 Chrome 也不等于可再分发的固定浏览器运行时。源码 UI smoke 只能证明当前源码链路，`ACE_CONTROLLED_HELPER_PENDING` 必须保留到真实 packaged 功能、安全和 fuse 联合证据完成。
 
+### AD-016 Loose 打包资源必须由真实 app.asar 内的固定锚点导出信任（2026-07-28，冻结）
+
+Python 核心、`config/` 和 `samples/` 以 canonical `app-resources-v1.json` 固定精确文件集合、大小与 SHA-256；Python runtime、EpubCheck、JRE 与 Ace 则沿用各自完整树锁。`resource-trust-anchor.json` 随 Electron 代码进入 `app.asar`，固定应用资源清单原始字节 SHA-256，以及目标平台四份 tracked lock 的原始 SHA-256。锚点不能放在可独立改写的 loose resources 中作为信任来源。
+
+源码验证只证明将要进入构建的清单与锁一致，不关闭正式发布 blocker。packaged 验证必须从真实 `app.asar` 读取锚点、与源码固定字节交叉核对，再拒绝所有 loose 树的增删改、链接/硬链接、平台替换与读取身份漂移。只有这条证据链完整成立时，门禁才可关闭 `APP_RESOURCES_TRUST_ROOT_NOT_HARDENED`、`PYTHON_RUNTIME_TRUST_ROOT_NOT_HARDENED`、`EPUBCHECK_TRUST_ROOT_NOT_HARDENED`、`JRE_TRUST_ROOT_NOT_HARDENED` 和 `ACE_TRUST_ROOT_NOT_HARDENED`；其它 provenance、许可、helper/browser/隔离和签名 blocker 不受影响。
+
+打包应用在标准存储初始化和窗口创建前运行同一验证，失败即退出。该锚点仍需与真实应用二进制的 ASAR integrity/fuses、操作系统代码签名和发布证据联合验证；构造测试中的真实 `app.asar` 只证明验证器行为，不能替代产品安装包或签名证据。macOS 目标在相应四份平台锁齐全并重新生成锚点前必须 fail-closed。
+
 ## 3. Python 核心模块地图（随实现更新）
 
 | 模块 | 职责 |
@@ -221,7 +230,7 @@ alpha.7 在构建输出端增加独立证据链。`build:win` 首先调用 `rele
 
 阶段化 Ace runner 在加载作者 XHTML 时先关闭 JavaScript，再用固定的 `@xmldom/xmldom` 清洗器移除 `script`、`iframe`、`object`、`embed`、`base`、事件属性、危险 URL、XSLT processing instruction、meta refresh 与作者 CSP。清洗完成后才启用 JavaScript 并注入固定 Ace/axe 脚本。请求拦截只允许解包 EPUB `basedir` 真实路径内的 `file:`，以及运行所需的 `data:`、`blob:`、`about:`；其它协议和目录逃逸一律拒绝，同时抑制 Chromium 后台联网。
 
-这仍不是正式版的完整隔离证明：当前 Ace 通过通用 Electron/Node helper 启动，并依赖用户系统 Chrome；网络限制主要位于浏览器参数与请求拦截层，尚无 OS 级网络沙箱。系统 Chrome、受控最小权限 helper、签名可信根和 OS 级隔离均继续作为 sale 门禁阻断项。
+这仍不是正式版的完整隔离证明：当前 Ace 通过固定 Electron `utilityProcess` 执行，并依赖用户系统 Chrome；网络限制主要位于浏览器参数与请求拦截层，尚无 OS 级网络沙箱。自带且校验的浏览器、真实 packaged helper/资源联合证据、代码签名和 OS 级隔离均继续作为 sale 门禁阻断项。
 
 ## 7. 构建与冒烟边界
 
@@ -230,4 +239,4 @@ alpha.7 在构建输出端增加独立证据链。`build:win` 首先调用 `rele
 - 源码 smoke 每次生成独立 `out/source-smoke/runs/<run-id>/`，项目、标准 store、缓存、临时目录、用户数据、HOME/APPDATA/XDG 与 crash dumps 不复用；打包 smoke 同样按运行 ID 隔离并受仓库 `out/` 边界控制。Windows EXE 还须先通过 x64 PE32+ 校验。
 - macOS 构建拆为 `build:mac:x64` 与 `build:mac:arm64`；聚合入口 `build:mac` 只选择当前原生 host 架构，不在一个进程伪造双架构探针。`verify:resources:mac` 只是带 `--no-runtime-probe` 的跨架构静态聚合，不能替代两个原生 runner 的执行证据。
 - alpha.10 隐藏条件源码 smoke 已 PASS：`out/source-smoke/runs/ms4cz6o9-c2ad021ca7e2e83c/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 次批量修复、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,649 / 178,228 字节；EPUB 还通过受控 utilityProcess 实际运行 EpubCheck/Ace，缺陷结果分别为 5 error / 8 项失败断言。最终统一测试数字以 `docs/TEST_REPORT.md` 为准。
-- 当前 alpha.10 具备账号/同步离线合同、ASAR/fuse 构建合同和 Ace 受控源码链路，但没有生产凭证、持久队列、上传 transport 或真实 packaged fuse/Ace 证据。本轮未联网，真实 builder 资产、Windows 签名和 alpha.10 制品尚缺，证据验证器按预期拒绝缺失 NSIS。既有 Windows sale 资源门禁仍有 17 项阻断，未知 packaged fuse 另行阻止 sale。macOS 运行资源、原生构建、签名、公证与实机 smoke 均未完成。
+- 当前 alpha.11 具备账号/同步离线合同、ASAR/fuse 构建合同、Ace 受控源码链路和 ASAR 内资源锚点，但没有生产凭证、持久队列、上传 transport 或真实产品 packaged 证据。本轮未联网，真实 builder 资产、Windows 签名和 alpha.11 制品尚缺。源码 Windows sale 资源门禁仍有 17 项阻断；5 个可信根 blocker 只在真实 packaged 锚点证据成立时关闭，未知 packaged fuse 另行阻止 sale。macOS 运行资源、原生构建、签名、公证与实机 smoke 均未完成。

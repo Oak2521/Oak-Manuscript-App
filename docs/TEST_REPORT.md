@@ -2,7 +2,31 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.10 Ace 受控 utilityProcess 与 RunAsNode 关闭
+## 最新验证结论：0.1.0-alpha.11 ASAR 资源信任根
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未运行 electron-builder、未生成安装器/ZIP/发布证据，也未启动 GUI。alpha.10 的隐藏 UI smoke 只作为历史证据，不计作 alpha.11 通过。
+
+| 命令 / 检查 | 结果 | 关键事实 |
+|---|---|---|
+| `npm test` | **PASS** | 墙钟 171.3 秒；Node 301 total / 294 pass / 0 fail / 7 skip（3.313 秒）；Python 351 total / 0 failures / 0 errors / 3 skipped（110.355 秒） |
+| `npm run verify:resource-trust` | **PASS** | 58 个应用 loose 文件、1,873,018 字节；manifest `377f03b0…f95e`；ASAR anchor `1b52a14f…c644` |
+| `npm run verify:standards` | **PASS** | `oak-standards 2.0.0`，manifest SHA-256 `0aff75eb181a62869147e9af27330c717bc808bdd23865197534fc9868568427` |
+| `npm run stage:ace` | **PASS** | Ace 1.4.6：236 包、6,672 文件、58,969,045 字节；stage 与 tracked lock 一致 |
+| `npm run verify:electron-runtime` | **PASS** | Electron 43.1.0 win32-x64：2 目录、75 文件、364,083,658 字节 |
+| `npm run verify:resources:win` | **PASS（alpha）** | Python core `0.1.0-alpha.11`；运行探针通过；源码证据仍完整报告 17 项 sale blocker |
+| `npm run verify:fuses:config` | **PASS** | ASAR/integrity/known fuses exact；`run_as_node_disabled=true` |
+| 资源信任 + packaging + fuse 定向测试 | **42 pass / 0 fail / 1 skip** | 包括真实 `app.asar` 读取、loose 伪锚点拒绝、资源/锁/平台漂移与启动顺序 |
+
+资源信任证据边界：
+
+- `config/tool-manifests/app-resources-v1.json` 精确固定 Python 核心、`config/` 和 `samples/` 将 loose 分发的文件；清单自身排除以避免自引用；
+- `electron/resource-trust-anchor.json` 随代码进入 ASAR，固定应用清单原始摘要和 win32-x64 Python/EpubCheck/JRE/Ace 四份 tracked lock 摘要；
+- packaged 门禁通过 `@electron/asar` 从实际 `app.asar` 读取锚点，并在前后复核 ASAR 身份；资源树拒绝额外/缺失/变更文件、平台替换、symlink/reparse、hardlink 与竞态；
+- 构造 packaged fixture 使用真实生成的 `app.asar`，完整证据下 blocker 从 17 减到 12；删除 `app.asar` 后验证失败。该测试只证明代码路径，不是 `release/` 中的产品包、fuse wire、代码签名或安装验收；
+- 源码 `verify:resources:win` 的锚点证据明确标记 `packaged=false`、`protected_by_app_asar=false`，所以 5 个可信根 blocker 一个也没有提前关闭；
+- 当前没有 macOS 四份目标锁，锚点只含 win32-x64；macOS 打包尝试必须失败关闭，不能复用 Windows 目标。
+
+## 历史验证结论：0.1.0-alpha.10 Ace 受控 utilityProcess 与 RunAsNode 关闭
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未下载 builder 归档、未运行 electron-builder，也未生成安装器、ZIP 或发布证据。
 

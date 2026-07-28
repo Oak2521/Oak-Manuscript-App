@@ -29,6 +29,14 @@ const {
   verifyAceStageLock,
 } = require("./stage_ace");
 const { verifyStandardAssets } = require("./standard_assets");
+const {
+  ANCHOR_RELATIVE: RESOURCE_TRUST_ANCHOR_RELATIVE,
+  verifySourceResourceTrust,
+} = require("./resource_trust_manifest");
+const {
+  readAnchorBytesFromAsar,
+  verifyPackagedResourceTrust,
+} = require("../electron/resource-trust");
 
 const LICENSE_FILE_PATTERN = /^(license|licence|copying|notice)([._-]|$)/i;
 const GENERATED_LICENSE_URLS = Object.freeze({
@@ -47,6 +55,7 @@ const JRE_VENDOR = "Eclipse Adoptium";
 const JRE_MODULE_POLICY = "fixed-conservative-java-se";
 const JRE_REQUESTED_MODULES = Object.freeze(["java.se", "jdk.unsupported", "jdk.xml.dom"]);
 const EPUBCHECK_VERSION = "5.3.0";
+const SHA256_RE = /^[a-f0-9]{64}$/;
 const JAVA_INJECTION_ENV = new Set([
   "CLASSPATH",
   "JAVA_TOOL_OPTIONS",
@@ -439,6 +448,102 @@ function sha256File(target) {
   const hash = crypto.createHash("sha256");
   hash.update(fs.readFileSync(target));
   return hash.digest("hex");
+}
+
+function sha256Bytes(bytes) {
+  return crypto.createHash("sha256").update(bytes).digest("hex");
+}
+
+function verifyResourceTrust(
+  projectRoot,
+  electronSourceRoot,
+  platform,
+  arch,
+  source,
+  errors,
+  checks,
+  { readPackagedAnchor = null } = {},
+) {
+  let sourceEvidence;
+  try {
+    sourceEvidence = verifySourceResourceTrust(electronSourceRoot);
+  } catch (error) {
+    errors.push(`受 ASAR 保护的资源信任锚源码门禁失败：${error.message}`);
+    return;
+  }
+  if (source) {
+    checks.push({
+      type: "resource-trust-anchor",
+      evidence_scope: "source-build-input",
+      packaged: false,
+      protected_by_app_asar: false,
+      anchor_path: sourceEvidence.anchor_path,
+      anchor_sha256: sourceEvidence.anchor_sha256,
+      app_manifest_path: sourceEvidence.app_manifest_path,
+      app_manifest_sha256: sourceEvidence.app_manifest_sha256,
+      app_file_count: sourceEvidence.file_count,
+      app_total_bytes: sourceEvidence.total_bytes,
+      targets: sourceEvidence.targets,
+    });
+    return;
+  }
+
+  let packagedBytes;
+  try {
+    packagedBytes = readPackagedAnchor
+      ? Buffer.from(readPackagedAnchor(projectRoot))
+      : readAnchorBytesFromAsar(path.join(projectRoot, "app.asar"));
+  } catch (error) {
+    errors.push(`真实 app.asar 资源信任锚读取失败：${error.message}`);
+    return;
+  }
+  const sourceAnchorTarget = path.join(
+    electronSourceRoot,
+    ...RESOURCE_TRUST_ANCHOR_RELATIVE.split("/"),
+  );
+  let sourceBytes;
+  try {
+    sourceBytes = fs.readFileSync(sourceAnchorTarget);
+  } catch (error) {
+    errors.push(`源码资源信任锚无法读取：${error.message}`);
+    return;
+  }
+  if (!packagedBytes.equals(sourceBytes) || sha256Bytes(packagedBytes) !== sourceEvidence.anchor_sha256) {
+    errors.push("真实 app.asar 内资源信任锚与已验证源码构建输入不一致");
+    return;
+  }
+  let anchor;
+  try {
+    anchor = JSON.parse(packagedBytes.toString("utf8"));
+  } catch (error) {
+    errors.push(`真实 app.asar 资源信任锚 JSON 非法：${error.message}`);
+    return;
+  }
+  try {
+    const result = verifyPackagedResourceTrust({
+      root: projectRoot,
+      platform,
+      arch: arch || (platform === "win32" ? "x64" : process.arch),
+      anchor,
+    });
+    checks.push({
+      type: "resource-trust-anchor",
+      evidence_scope: "packaged-app-asar",
+      packaged: true,
+      protected_by_app_asar: true,
+      anchor_path: RESOURCE_TRUST_ANCHOR_RELATIVE,
+      anchor_sha256: sourceEvidence.anchor_sha256,
+      app_manifest_path: sourceEvidence.app_manifest_path,
+      app_manifest_sha256: result.app_manifest_sha256,
+      app_file_count: result.app_file_count,
+      app_total_bytes: result.app_total_bytes,
+      platform: result.platform,
+      arch: result.arch,
+      lock_sha256s: result.lock_sha256s,
+    });
+  } catch (error) {
+    errors.push(`真实 packaged loose 资源未通过 ASAR trust anchor：${error.message}`);
+  }
 }
 
 function cleanJavaEnvironment(source = process.env) {
@@ -1362,6 +1467,13 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
       item.platform === platform && item.arch === targetArch &&
       typeof item.manifest_sha256 === "string" && /^[a-f0-9]{64}$/.test(item.manifest_sha256)),
   );
+  const resourceTrust = checks.find((item) => item.type === "resource-trust-anchor" &&
+    item.packaged === true && item.protected_by_app_asar === true &&
+    item.platform === platform && item.arch === arch &&
+    typeof item.app_manifest_sha256 === "string" && SHA256_RE.test(item.app_manifest_sha256));
+  const lockAnchored = (name) => resourceTrust &&
+    typeof resourceTrust.lock_sha256s?.[name] === "string" &&
+    SHA256_RE.test(resourceTrust.lock_sha256s[name]);
   const pending = [
     {
       code: "PYTHON_RUNTIME_PROVENANCE_AUDIT_REQUIRED",
@@ -1375,22 +1487,22 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
       code: "JRE_SOURCE_PROVENANCE_AUDIT_REQUIRED",
       message: "Temurin JDK 输入和生成 JRE 已由受版本控制锁固定，但官方来源与再分发证据仍需正式人工审计",
     },
-    {
+    ...(!lockAnchored("epubcheck") ? [{
       code: "EPUBCHECK_TRUST_ROOT_NOT_HARDENED",
       message: "EpubCheck 分发清单仍与工具文件同处可写资源目录，正式版需锚定到受签名与 asar integrity/fuses 保护的可信根",
-    },
-    {
+    }] : []),
+    ...(!lockAnchored("jre") ? [{
       code: "JRE_TRUST_ROOT_NOT_HARDENED",
       message: "JRE 运行时清单仍与可执行文件同处可写资源目录，正式版需锚定到受签名与 asar integrity/fuses 保护的可信根",
-    },
-    {
+    }] : []),
+    ...(!lockAnchored("python_runtime") ? [{
       code: "PYTHON_RUNTIME_TRUST_ROOT_NOT_HARDENED",
       message: "Python 运行时清单尚未锚定到代码签名、asar integrity 与 Electron fuses 保护的可信根",
-    },
-    {
+    }] : []),
+    ...(!resourceTrust ? [{
       code: "APP_RESOURCES_TRUST_ROOT_NOT_HARDENED",
       message: "Python 核心、规则/标准与样本等 loose extraResources 尚未由受签名的 asar integrity/fuses 可信根固定",
-    },
+    }] : []),
     {
       code: "ELECTRON_RUNTIME_PROVENANCE_AUDIT_REQUIRED",
       message: "Electron 原生分发的官方来源、校验和与再分发证据尚未完成正式审计",
@@ -1415,10 +1527,10 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
       code: "ACE_FULL_LICENSE_AUDIT_REQUIRED",
       message: "Ace 完整生产依赖闭包尚未逐包完成来源、许可证文本、版权声明与再分发义务的正式人工审计",
     },
-    {
+    ...(!lockAnchored("ace") ? [{
       code: "ACE_TRUST_ROOT_NOT_HARDENED",
       message: "Ace 全量哈希清单尚未锚定到代码签名、asar integrity 与 Electron fuses 保护的可信根",
-    },
+    }] : []),
     {
       code: "ACE_CONTROLLED_HELPER_PENDING",
       message: "Ace utilityProcess 受控 helper 已实现但尚无真实打包制品功能与安全验证证据",
@@ -1457,6 +1569,7 @@ function verifyPackagedResources({
   executeRuntimes = true,
   hostPlatform = process.platform,
   hostArch = process.arch,
+  readPackagedAnchor = null,
 } = {}) {
   const projectRoot = path.resolve(root || path.join(__dirname, ".."));
   const errors = [];
@@ -1474,6 +1587,16 @@ function verifyPackagedResources({
   // repository-tracked source distribution lock instead of trusting a loose
   // manifest copied into writable packaged resources.
   verifyElectronDistribution(electronDistributionRoot, platform, arch, errors, checks);
+  verifyResourceTrust(
+    projectRoot,
+    electronDistributionRoot,
+    platform,
+    arch || (platform === "win32" ? "x64" : null),
+    source,
+    errors,
+    checks,
+    { readPackagedAnchor },
+  );
 
   if (platform === "win32") {
     const pythonState = verifyWindowsRuntime(projectRoot, errors, checks, { execute: false });

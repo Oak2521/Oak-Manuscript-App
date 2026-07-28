@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.10`
+> 当前版本：`0.1.0-alpha.11`
 > 当前分支：`chatgpt/commercial-v1`
-> 源码检查点标签：`chatgpt-v0.1.0-alpha.10`（只标记源码与本地验证状态，不代表安装包或正式发行）
+> 源码检查点标签：`chatgpt-v0.1.0-alpha.11`（只标记源码与本地验证状态，不代表安装包或正式发行）
 
 ## 1. 权威入口与工作区
 
@@ -30,7 +30,23 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 2. 当前现场事实
 
-### 已完成：0.1.0-alpha.10 Ace 受控 utilityProcess 与 RunAsNode 关闭
+### 已完成：0.1.0-alpha.11 ASAR 资源信任根
+
+- APP、Python 核心和 lockfile 统一到 `0.1.0-alpha.11`；标准内容、35 条规则、6 个 fixer、账号和同步合同未变化；
+- `config/tool-manifests/app-resources-v1.json` 以 canonical 字节固定 58 个将 loose 分发的应用文件，共 1,873,018 字节；`electron/resource-trust-anchor.json` 位于应用代码 ASAR 内，固定该清单及 win32-x64 Python/EpubCheck/JRE/Ace 四份平台锁的原始 SHA-256；
+- packaged 门禁只接受从真实 `app.asar` 读取的锚点，不信任 resources 目录内的同名 loose 文件；完整验证拒绝资源或锁增删改、平台替换、链接/硬链接及读取竞态；
+- 打包应用在初始化标准存储和创建窗口前运行同一资源信任验证；失败记录错误并以退出码 1 终止；
+- `--update-lock` 改用仓库既有 tracked-file 事务安全替换并写后复验。两文件之间若第二步失败会保持 fail-closed，重新显式执行即可恢复一致；
+- 构造的真实 `app.asar` 集成测试在证据成立时只关闭 5 个可信根 blocker，剩余 12 个不变；源码门禁仍完整列出 17 个 blocker，当前没有产品 `app.asar`，不能宣称正式可信根已关闭。
+
+### 现场验证（2026-07-28，alpha.11）
+
+- 最终统一 `npm test`：**PASS，退出码 0，墙钟 171.3 秒**；Node 301 total / 294 pass / 0 fail / 7 skip（3.313 秒），Python 351 total / 0 failures / 0 errors / 3 skipped（110.355 秒）；
+- `verify:resource-trust`、`verify:standards`、`stage:ace`、`verify:electron-runtime`、`verify:resources:win` 和 `verify:fuses:config` 均 **PASS**；锚点 SHA-256 为 `1b52a14f82f80e9ef4596b83b4abf3f2ddc821fe8f8ee8aedd7e996c1e80c644`；
+- Windows 源码 alpha 资源门禁实际执行 Python/JRE/EpubCheck 探针，core 返回 `0.1.0-alpha.11`，并仍如实列出 17 项 sale blocker；
+- 本轮未联网、未运行 builder、未生成安装器/ZIP/发布证据，也未重跑 alpha.11 UI smoke；最近一次 alpha.10 隐藏 UI smoke 只能作为历史证据。
+
+### 已完成：0.1.0-alpha.10 Ace 受控 utilityProcess 与 RunAsNode 关闭（历史检查点）
 
 - APP、Python 核心和 lockfile 统一到 `0.1.0-alpha.10`；标准内容、35 条规则、6 个 fixer、账号和同步合同未变化；
 - Renderer 的外部验证只提交受路径门禁保护的项目目录；主进程生成绑定项目/working/报告/标准与 Java、JAR、Ace、Chrome 文件身份的计划，准备输出后才启动固定 helper，完成后再由 Python 重验计划并解析报告；
@@ -230,8 +246,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.10 已有受控 `utilityProcess`、主进程 Chrome controller、两阶段计划绑定和真实源码 UI 运行证据；正式版仍缺真实打包制品上的联合验证、自带且校验过的浏览器运行时、OS 级默认拒绝网络、可信根加固和正式人工许可审计；
-- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.10 尚无安装器或 ZIP，未做真实打包 fuse、packaged smoke、干净系统安装/升级/卸载或签名。受控下载/导入及构建尾部发布证据链已实现，但本轮未联网，三份固定归档、真实工具树和独立 tracked lock 尚缺；
+- 打包版 Ace：alpha.11 已有受控 `utilityProcess`、主进程 Chrome controller、两阶段计划绑定和 ASAR 资源锚点；alpha.10 有真实源码 UI 运行证据。正式版仍缺真实打包制品上的联合验证、自带且校验过的浏览器运行时、OS 级默认拒绝网络、代码签名和正式人工许可审计；
+- Windows：当前只有旧 0.0.1 便携 ZIP 的历史构建；alpha.11 尚无安装器或 ZIP，未做真实打包 fuse/ASAR 资源、packaged smoke、干净系统安装/升级/卸载或签名。受控下载/导入及构建尾部发布证据链已实现，但本轮未联网，三份固定归档、真实工具树和独立 tracked lock 尚缺；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：服务端任务 API、隔离执行、限额、零留存和官网嵌入尚未实现；
 - 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览和当前进程队列契约已实现；生产 Supabase、OS 凭据存储、签名授权、支付、持久队列、网络 transport 和网站后台未连接；
@@ -241,7 +257,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ### Windows sale 门禁的 17 项明确阻断
 
-以下 17 项来自资源门禁。除此之外，真实打包二进制若仍暴露当前工具无法识别的 fuse，还会由独立验证器产生 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING` 并阻止 sale；两者不得混算。
+以下 17 项来自**源码**资源门禁。alpha.11 的真实 packaged ASAR 锚点证据若成立，只关闭其中第 5、6、7、8、13 项，剩余 12 项不变；当前没有产品 `app.asar`，所以现场仍是 17 项。除此之外，真实打包二进制若仍暴露当前工具无法识别的 fuse，还会由独立验证器产生 `ELECTRON_FUSE_TOOL_COMPATIBILITY_PENDING` 并阻止 sale；两者不得混算。
 
 以下机器码来自当前 `verify_packaged_resources.js` 与实测 sale 输出，不得合并或省略：
 
@@ -269,7 +285,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 1. 经用户联网授权后显式运行 `npm run download:builder:win`，仅从合同固定的 electron-builder 官方 GitHub release URL 下载三份归档到仓库 `out/downloads/windows-builder/`；
 2. 下载器全部验哈希后运行 `node scripts/import_windows_builder_toolchain.js --archive-dir out/downloads/windows-builder --update-lock`，提交并复核真实独立 lock；
-3. 生成 alpha.10 NSIS 安装器与 ZIP；构建链必须依次通过 fuse 配置、真实打包二进制 fuse、打包资源门禁、应用身份断言、含 EpubCheck/Ace 的隐藏 packaged smoke，最后生成并复验 `SHA256SUMS.txt` 与 canonical release manifest；
+3. 生成 alpha.11 NSIS 安装器与 ZIP；构建链必须依次通过资源锚点、fuse 配置、真实打包二进制 fuse、打包资源门禁、应用身份断言、含 EpubCheck/Ace 的隐藏 packaged smoke，最后生成并复验 `SHA256SUMS.txt` 与 canonical release manifest；
 4. 完成 Windows 代码签名，并逐项关闭 provenance、许可证、可信根、Ace helper/browser 等 sale blocker；
 5. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
 6. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
@@ -285,6 +301,7 @@ npm test
 npm run test:node
 npm run test:python
 $env:OAK_TEST_ACE='1'; python scripts\run_tests.py
+npm run verify:resource-trust
 npm run verify:electron-runtime
 npm run verify:fuses:config
 npm run download:builder:win  # 仅在用户明确批准联网后

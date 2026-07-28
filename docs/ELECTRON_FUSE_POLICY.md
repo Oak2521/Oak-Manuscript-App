@@ -1,6 +1,6 @@
 # ELECTRON_FUSE_POLICY — Electron 打包硬化合同
 
-> 当前实现：`0.1.0-alpha.10`。本文件描述源码配置与打包后二进制验证合同；仓库尚无 alpha.10 安装包，因此尚未取得真实打包二进制的 fuse 证据。
+> 当前实现：`0.1.0-alpha.11`。本文件描述源码配置、打包后二进制 fuse 与 ASAR 资源锚点验证合同；仓库尚无 alpha.11 安装包，因此尚未取得真实产品二进制证据。
 
 ## 固定策略
 
@@ -14,6 +14,8 @@
 | `EnableNodeCliInspectArguments` | `false` | 禁止 CLI inspect 参数 |
 | `EnableEmbeddedAsarIntegrityValidation` | `true` | 启用嵌入式 ASAR 完整性验证 |
 | `OnlyLoadAppFromAsar` | `true` | 只从 ASAR 加载应用 |
+
+alpha.11 另把 `electron/resource-trust-anchor.json` 打入 `app.asar`。packaged 门禁必须从该 ASAR 读取锚点，固定应用 loose 清单及目标平台 Python/EpubCheck/JRE/Ace 锁；应用启动在窗口前复核全部 loose 树。构造 ASAR 测试不替代真实二进制 fuse、ASAR integrity、代码签名或安装验收。
 | `LoadBrowserProcessSpecificV8Snapshot` | `false` | 不启用当前未使用的 browser-specific snapshot |
 | `GrantFileProtocolExtraPrivileges` | `false` | 不扩大 `file:` 协议权限 |
 | `ResetAdHocDarwinSignature` | `false` | 不要求 fuses 工具重置 macOS ad-hoc 签名 |
