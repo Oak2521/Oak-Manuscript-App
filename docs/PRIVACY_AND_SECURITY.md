@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.44` 源码已实现的桌面隐私边界、SyncRecord 服务端/API/Supabase、PKCE/加密 token-store/同步失败恢复、Ed25519 签名权益/加密缓存、三模式 AI，以及 Web 临时作业和同步历史客户端源码契约。默认账号与权益配置没有网络目标；最新 alpha.42 Windows 制品已通过 packaged 安全门禁但仍未签名，不是可售卖正式版。真实账号、权益签发/计费、数据库迁移、API/官网部署和生产隔离仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.45` 源码已实现的桌面隐私边界、SyncRecord 服务端/API/Supabase、PKCE/加密 token-store/同步失败恢复、Ed25519 权益客户端与独立服务端签发/原子设备授权链、三模式 AI，以及 Web 临时作业和同步历史客户端源码契约。默认账号与权益配置没有网络目标，仓库没有生产私钥；最新 alpha.42 Windows 制品已通过 packaged 安全门禁但仍未签名，不是可售卖正式版。真实账号、计费、数据库迁移、API/官网部署和生产隔离仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -57,6 +57,8 @@
 - 缓存明文只含 device ID 与签名 envelope，进入 `userData/license/entitlement-v1.enc` 的 `OAKLIC1` safeStorage 密文；canonical/revision/原子提交和文件身份门禁与账号/同步 store 同级；
 - 退出、错账号、撤销、过期、未生效、篡改或损坏统一降为 Free，不删除本地项目，不锁导出；恶意刷新结果不能覆盖已验证缓存；
 - 默认 `desktop-license.json` 为 `pending_configuration`，因此当前普通 APP 不会访问权益端点。生产签发、私钥保管/轮换、支付、设备后台和真实 E2E 尚未完成；详见 `SIGNED_ENTITLEMENT_V1.md`。
+
+alpha.45 的服务端请求只接受 GoTrue 验证后的 Bearer account principal 与 device ID；账号、套餐、时间和状态不能由客户端自报。权益/设备表不允许稿件、文件名、路径、哈希、token 或私钥字段，浏览器角色无表/RPC 权限。Signer、public API key、service-role key 和 audit sink 分别注入；成功响应发送前再次 exact 校验，固定错误与审计不记录账号、设备、token、请求头、稿件或上游正文。当前仅有 SQL 静态契约和注入测试，不能据此宣称生产秘密隔离或 RLS 已验证。
 
 ### 4.3 AI 配置与凭据边界
 

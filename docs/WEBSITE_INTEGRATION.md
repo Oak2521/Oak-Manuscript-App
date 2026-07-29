@@ -2,14 +2,14 @@
 
 > 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.44 源码）
+## Provider 一览（当前 alpha.45 源码）
 
-alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI；alpha.44 增加桌面签名权益验证和网站账号后台的同步历史列表/属主删除客户端。受信账号与权益配置仍为 `pending_configuration` 且端点/key/公钥为空；数据库迁移未执行、API 与客户端未部署，因此普通 APP 仍不登录、刷新订阅或同步。商业仓库没有真实 service-role key、OAuth 配置、权益私钥或 AI key。
+alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI；alpha.44 增加桌面签名权益验证和网站同步历史客户端；alpha.45 增加独立服务端权益 signer/service/HTTP/runtime 与原子设备授权 SQL。受信账号与权益配置仍为 `pending_configuration` 且端点/key/公钥为空；数据库迁移未执行、API 与客户端未部署，因此普通 APP 仍不登录、刷新订阅或同步。商业仓库没有真实 service-role key、OAuth 配置、权益私钥或 AI key。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
 | `AuthProvider` | 系统浏览器 Authorization Code + PKCE S256/state、固定 Windows/macOS 深链、safeStorage token-store、刷新身份复核已完成离线源码/注入测试；默认配置为空时返回 `configuration_required`，不打开页面、不联网 | 在获准预生产环境核对正式 OAuth/OIDC、nonce/ID-token 取舍、真实刷新/退出/撤销、邮箱与 Google OAuth |
-| `LicenseProvider` | alpha.44 已实现受信配置、显式 HTTPS/Bearer 刷新、Ed25519 signed-entitlement、账号/设备绑定、离线宽限和 safeStorage 缓存；状态读取零网络，验证失败降 Free 且永不锁已有本地文件；默认配置为空 | 实现服务端签发、私钥轮换、支付/退款、设备管理，填充生产配置并完成真实 E2E；价格未拍板 |
+| `LicenseProvider` | alpha.44 已实现桌面受信配置/验签/加密缓存；alpha.45 已实现独立服务端 signer、可信账号授权、固定 HTTP/runtime、原子设备上限 RPC 及客户端稳定错误映射；默认配置为空，仓库无生产私钥 | 实现支付/退款事件摄入、设备自助管理、私钥托管/轮换，执行迁移并填充生产配置完成真实 E2E；价格未拍板 |
 | `EvaluationProvider` | 用户点击后返回固定湖岸 HTTPS 评估页 URL，由主进程白名单校验并交给系统浏览器打开；APP 不在该 Provider 中生成或上传摘要 | 用户确认后提交脱敏摘要（§8.3–§8.4） |
 | `SyncProvider` | 可信 Python 来源 → exact 校验 → 完整预览 → 四选一确认 → 按账户 OS 加密队列；服务/API/Supabase、桌面 client/coordinator 和网站列表/属主删除 client 已有源码；默认无端点，迁移/服务/页面未部署 | 填充受信正式配置，完成预生产迁移、真实 E2E 与官网账号后台部署 |
 | `StandardsProvider` | 离线验证内置 release；本地签名包预览/安装/全局回滚、项目固定版本与显式升级已实现；生产 trust pin 缺失时导入禁用 | 用户主动触发的在线检查/下载、签名与撤回分发、可观测回滚；绝不上传稿件 |
@@ -37,6 +37,14 @@ alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；al
 `web/sync-record-runtime.js` 组合独立的公开 Supabase API key、GoTrue verifier、session resolver、service-role repository、service、HTTP handler、Fetch adapter 和必填的 content-free audit sink。部署平台需显式把这些构造参数映射到服务端秘密与同源站点 origin；源码没有自动读取或暗示任何真实环境变量值。`electron/sync-http-client.js` 固定规范 HTTPS origin、路径、Bearer、超时/响应上限和 canonical 回显；`electron/sync-transport-coordinator.js` 要求 token 与当前队列账号 exact 绑定，保证单项单在途，复核登录账号稳定性，并只在远端 `created|replayed` 后删除精确本地项。
 
 当前未执行 `002_sync_records.sql`，未配置真实 OAuth/public/service-role key，也未部署 runtime。alpha.44 的网站 client 已有列表、刷新和属主删除 UI；导出仍未实现，页面亦未部署。桌面 PKCE/token provider/main 已具备条件接线源码，但默认配置为空；上述源码和 Fake fetch/repository 测试不能替代真实 OAuth/OIDC、GoTrue、RLS、多实例、备份恢复、删除和无密钥泄露验收。
+
+## 订阅权益 API v1（alpha.45，未部署）
+
+固定路由为 `POST /manuscript/api/v1/entitlement`。桌面只发送当前稳定 device ID；账号来自服务器验证的 GoTrue Bearer session，不能由请求自报。成功直接返回 signed-entitlement v1；无订阅、设备已满、认证失败和服务故障只返回 exact content-free 错误。该路由不接受 Cookie，不开放 CORS，不记录账号、设备、token 或稿件信息。
+
+`web/entitlement-runtime.js` 组合公开 GoTrue key、独立 service-role repository、服务端 signer 和必填 audit sink。`web/supabase/003_manuscript_entitlements.sql` 提供权益/设备表和账户锁下的原子授权 RPC，只授予 `service_role`；浏览器、桌面和普通用户 JWT 不得获得 service-role key 或签名私钥。部署必须分别注入 Ed25519 私钥、key ID、issuer、API keys 和容量，不得把任何秘密打入客户端 bundle。
+
+当前未执行 `003_manuscript_entitlements.sql`，没有真实支付事件来源、生产私钥/HSM/轮换、设备管理页面或真实端到端证据。alpha.45 的 fake GoTrue/RPC 纵向测试只能证明边界组合，不证明线上订阅可用。
 
 ## Web 作业契约 v1、HTTP/GoTrue/Fetch/Blobs/Postgres/inspection/worker/result/cleanup 与账号适配（alpha.31）
 

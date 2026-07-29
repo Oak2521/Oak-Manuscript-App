@@ -1,6 +1,6 @@
 # Signed Entitlement v1 — 桌面订阅权益契约
 
-> 状态：`0.1.0-alpha.44` 已实现桌面端严格配置、Ed25519 验签、账号/设备绑定、OS 加密缓存、显式刷新和失败关闭；仓库默认配置为 `pending_configuration`，没有生产端点或公钥，不会发起权益网络请求。服务端签发、订阅计费、设备后台和真实联调尚未实现。
+> 状态：`0.1.0-alpha.45` 已在桌面端严格配置、Ed25519 验签、账号/设备绑定、OS 加密缓存、显式刷新和失败关闭之上，实现独立服务端 signer、可信账号授权 service、固定 HTTP/runtime、Supabase repository 与原子设备授权 SQL 源码。仓库默认配置为 `pending_configuration`，没有生产端点、公钥或私钥，不会发起权益网络请求。订阅计费、设备后台、真实迁移/部署和联调尚未实现。
 
 ## 1. 目的与边界
 
@@ -33,7 +33,7 @@
 }
 ```
 
-客户端不发送 Cookie，不跟随重定向，不读取代理环境，并限制超时、媒体类型、声明长度和流式响应大小。服务端响应的机器契约为 `config/schemas/signed-entitlement-v1.schema.json`：
+客户端不发送 Cookie，不跟随重定向，不读取代理环境，并限制超时、媒体类型、声明长度和流式响应大小。请求、固定错误与 content-free 审计分别由 `entitlement-request-v1.schema.json`、`license-http-error-v1.schema.json` 和 `license-http-audit-v1.schema.json` 固定。服务端响应的机器契约为 `config/schemas/signed-entitlement-v1.schema.json`：
 
 ```json
 {
@@ -73,7 +73,17 @@
 
 无效或攻击性响应不得覆盖上一次有效缓存。退出登录不会把缓存冒充为当前权益；重新登录后仍须按当前账号、设备和时间重新验证。
 
-## 5. 服务端上线前门禁
+## 5. alpha.45 服务端源码边界
+
+`web/entitlement-runtime.js` 组合 GoTrue verifier、Bearer session resolver、Supabase entitlement repository、service、独立 Ed25519 signer、HTTP handler 与 Fetch adapter。私钥、公开 API key、service-role key 和 audit sink 只能由服务端部署环境分别注入；runtime 不读取环境变量，仓库没有默认秘密。
+
+`web/supabase/003_manuscript_entitlements.sql` 定义 content-free 的 `oak_manuscript_entitlements` 与 `oak_manuscript_devices`。两表强制 RLS，撤销 `public`、`anon`、`authenticated` 权限；唯一授权 RPC 只授予 `service_role`，并在账号 advisory transaction lock 内原子读取有效权益、复核既有设备或执行容量检查和首次登记。它不包含稿件、文件名、路径、哈希、token 或私钥字段。
+
+服务端从已验证 GoTrue 会话取得账号；请求只能提供 device ID。HTTP 成功响应在写回前再做一次 exact envelope/claims/容量验证，防止内部适配器夹带未知字段。HTTP 错误与审计不包含账号、设备、token、稿件或上游正文。
+
+这些是生产形状源码和假服务测试，不是数据库迁移、真实 RLS、多实例、密钥托管或线上可用证据。
+
+## 6. 服务端上线前门禁
 
 上线前必须另行完成并留证：
 

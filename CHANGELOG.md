@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.45（ChatGPT 服务端签名权益签发链源码）
+
+> 源码检查点；本轮未联网、未注入生产私钥、未执行迁移、未部署或打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。
+
+- 新增独立服务端 Ed25519 签发器、可信账号绑定的 entitlement service、固定 HTTPS/Bearer HTTP handler 和生产形状 runtime；服务端不复用 Electron canonicalizer，也不接受客户端自报账号；
+- 新增 `oak_manuscript_entitlements` / `oak_manuscript_devices` 与 service-role-only 原子授权 RPC 源码；账户 advisory lock 内完成有效权益读取、既有设备复核、设备上限和首次登记，浏览器角色无表/RPC 权限；
+- 新增请求、错误、审计和内部授权 Schema；HTTP 响应再次 exact 校验，拒绝内部服务夹带额外字段；错误和审计不含 token、账号、设备或稿件信息；
+- 桌面权益客户端新增 `SUBSCRIPTION_REQUIRED`、`DEVICE_LIMIT`、`SERVICE_UNAVAILABLE` 稳定映射，不反射服务端正文；假 GoTrue + 假 RPC + 真签名 + 真桌面验签纵向测试通过；
+- APP/Python core/桌面与 Web lockfile 升至 alpha.45；全量回归 Node 630/623/0/7、Python 362/0/0/3；资源信任 91 文件 / 2,153,004 字节，manifest `3107b927…af45`，anchor `78442b5d…96ea`；隐藏源码 smoke PASS；
+- 支付/退款事件写入、设备自助管理、生产私钥/HSM/轮换、真实 OAuth/数据库迁移/API/网站部署、Windows/macOS 新制品和可售卖正式版仍未完成。
+
 ### 2026-07-29 — 0.1.0-alpha.44（ChatGPT 签名订阅权益与网站账号后台源码）
 
 > 源码检查点；默认账号/权益配置为空且零网络，未部署、未迁移、未重新打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。

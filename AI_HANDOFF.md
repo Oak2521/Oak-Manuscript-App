@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-29
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.44`
+> 当前版本：`0.1.0-alpha.45`
 > 当前分支：`chatgpt/commercial-v1`
-> 当前源码本地标签：`chatgpt-v0.1.0-alpha.44-signed-entitlements`；既有 `chatgpt-v0.1.0-alpha.43-lmstudio-e2e` 为 LM Studio 窄验收，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据；真实 Ollama 补充验收为 `chatgpt-v0.1.0-alpha.42-ollama-e2e`
+> 当前源码本地标签：`chatgpt-v0.1.0-alpha.45-entitlement-issuer`；既有 `chatgpt-v0.1.0-alpha.44-signed-entitlements` 为桌面签名权益检查点，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,15 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.45 服务端签名权益签发链源码
+
+- 新增独立服务端 Ed25519 signer、可信账号 entitlement service、固定 `/manuscript/api/v1/entitlement` HTTPS/Bearer handler、Fetch adapter 组合 runtime；服务端 canonicalizer 不复用 Electron 实现，客户端不能自报账号、tier、有效期或设备状态；
+- 新增 `web/supabase/003_manuscript_entitlements.sql`：两张 server-only 表与 service-role-only 原子授权 RPC。账户 advisory transaction lock 内完成权益读取、既有设备状态复核、设备容量检查和首次登记；`anon`/`authenticated` 无表或 RPC 权限；
+- 新增 exact 请求、错误、content-free audit 与内部授权 Schema。HTTP 层在发送前再次校验完整签名 envelope，内部服务若夹带未知字段统一 503，不反射任何内容；审计不含 token、账号、设备、稿件或私钥；
+- 桌面 HTTP client 新增无订阅、设备已满、服务不可用稳定错误映射。生产形状纵向测试使用假 GoTrue/假 Supabase RPC、真实服务端 Ed25519 签名和真实桌面验签，证明账号/设备绑定闭环，不冒充真实服务联调；
+- 最终 `npm test`：Node 630 total / 623 pass / 0 fail / 7 skip（3.939 秒），Python 362 / 0 failures / 0 errors / 3 skipped（103.584 秒），墙钟 112 秒；资源信任 91 文件 / 2,153,004 字节，manifest `3107b927…af45`，anchor `78442b5d…96ea`；隐藏源码 smoke PASS，输出 `out/source-smoke/runs/ms5t7xvo-003f395b8318392b/projects/`；
+- 本轮未联网、未读取或写入真实账号/订阅/支付/数据库，未配置生产私钥、公钥或端点，未执行 SQL、部署、修改官网、推送或重新打包。支付/退款事件写入、设备自助后台、生产密钥/HSM/轮换、真实迁移与 E2E 仍未完成。
 
 ### 已完成：0.1.0-alpha.44 签名订阅权益与网站账号后台源码
 
@@ -596,7 +605,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - Windows：alpha.37 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke、schema v2 发布证据，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：临时作业链保持；alpha.38 另实现 SyncRecord 独立服务验证、同源 API、GoTrue/runtime、Supabase repository/002 迁移源码。生产环境/真实账号与 Blobs/Postgres E2E、病毒库/平台扫描、容器/OS 禁网与资源隔离、计费和官网嵌入仍未实现；
-- 账号/订阅/同步：离线 Provider/Free+Pro、逐字段确认、OS 加密队列和重启恢复、桌面 PKCE/加密 token-store/条件 main 接线，以及固定 client/coordinator 与服务端幂等/归属/删除源码已实现；默认账号配置仍为空，真实 PKCE/刷新/撤销、Supabase 迁移/部署、签名权益、支付和网站后台未连接；
+- 账号/订阅/同步：离线 Provider/Free+Pro、逐字段确认、OS 加密队列和重启恢复、桌面 PKCE/加密 token-store/条件 main 接线、SyncRecord 服务链，以及签名权益客户端与服务端签发/原子设备授权源码已实现；默认账号/权益配置仍为空，生产私钥不存在，真实 PKCE/刷新/撤销、支付事件、设备后台、Supabase 迁移/部署和网站后台未连接；
 - AI：Ollama 0.32.5 + qwen3:4b 与 LM Studio llmster 0.0.20+1 + 同一 Qwen3 4B GGUF 已分别通过一个匿名连续空格问题的窄范围验收；其他版本/模型/硬件、多模型语义、多规则/真实稿件质量、官方云、远程 TLS 与湖岸 AI 仍未验收；
 - 标准库：治理结构和引用解析政策已完成，13 项标准、35 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
 - 标准升级：本地验证、签名包导入/回滚骨架、项目固定与显式升级已编码；生产 trust pin、在线获取/下载、签名撤回分发与联网自动更新未实现；
@@ -625,10 +634,10 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划。近期直接闭合“账号 → 权益 → 检查 → 明确同步”主链：
 
-1. Ollama 与 LM Studio 各一个固定组合的窄验收已完成；不要继续横向扩展 AI 兼容矩阵。近期回到“账号 → 权益 → 检查 → 明确同步”商业主链；
-2. 在不触碰真实生产系统的前提下，先完成可配置预生产账号契约、订阅 entitlement 验证与网站后台 SyncRecord 展示的本地/假服务闭环；真实端点、迁移和账号仍需单独授权；
-3. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，才填充 `desktop-auth.json` 并执行真实 PKCE/刷新/退出/撤销、Supabase 迁移和网站账号后台联调；
-4. OpenAI、Anthropic、Gemini 官方云适配仍必须先核对当前官方协议；不得套用 compatible 形状或凭记忆猜测，但它们不再排在账号/订阅主线之前；
+1. alpha.45 已完成账号 → 原子设备授权 → 独立签名 → 桌面验签的仓库内纵向链；下一项是在同一 server-only 边界实现订阅/退款/宽限事件摄入契约与设备列表/撤销服务源码，不接触真实支付平台；
+2. 再补网站账号后台的设备管理客户端和订阅状态展示，保持稿件内容、文件身份与权益数据物理分离；
+3. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，才填充 `desktop-auth.json` / `desktop-license.json`，执行真实 PKCE、数据库迁移、RLS、签发刷新、撤销和网站后台 E2E；
+4. OpenAI、Anthropic、Gemini 官方云适配仍必须先核对当前官方协议；不得套用 compatible 形状或凭记忆猜测，但不排在账号/订阅主线之前；
 5. 其后关闭发行门禁：具名许可/再分发签核、发行身份、Ace 自带浏览器/OS 隔离、Windows Authenticode/真实安装生命周期、macOS 双架构签名/公证/实机、Web 生产零留存；经联网授权后再核验标准官方来源和签名更新 transport。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。

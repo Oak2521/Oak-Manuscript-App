@@ -4,12 +4,12 @@
 
 ## 当前版本与基线
 
-- 当前版本：`0.1.0-alpha.44`
+- 当前版本：`0.1.0-alpha.45`
 - 当前分支：`chatgpt/commercial-v1`
-- 当前源码本地标签：`chatgpt-v0.1.0-alpha.44-signed-entitlements`；`chatgpt-v0.1.0-alpha.43-lmstudio-e2e` 为 LM Studio 窄验收，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据；真实 Ollama 验收为 `chatgpt-v0.1.0-alpha.42-ollama-e2e`
+- 当前源码本地标签：`chatgpt-v0.1.0-alpha.45-entitlement-issuer`；`chatgpt-v0.1.0-alpha.44-signed-entitlements` 为桌面签名权益检查点，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据
 - 商业版权威方案：`docs/湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`
 - 只读 Claude 基线：0.0.1，提交 `16736147ed734a3be3535d43152719cf4b97a07e`，标签 `claude-0.0.1-baseline`
-- 当前内置标准为 `oak-standards 2.0.0` / `oak-rules 2.0.0`（release sequence 2）：35 条规则、6 个白名单机械 fixer；alpha.5 新增默认引用解析政策，alpha.6—alpha.44 未改变标准内容或自动修复白名单。
+- 当前内置标准为 `oak-standards 2.0.0` / `oak-rules 2.0.0`（release sequence 2）：35 条规则、6 个白名单机械 fixer；alpha.5 新增默认引用解析政策，alpha.6—alpha.45 未改变标准内容或自动修复白名单。
 
 ## 商业正式版路线状态
 
@@ -19,8 +19,8 @@
 | P0：事务批量修复 | **完成（正常异常模型）** | working / issues / project 失败回滚；已有 5 个检查点时恢复被裁剪目录 |
 | P0：检查点列表、撤销与恢复 | **完成（代码与测试）** | 完整状态快照；恢复前安全点；损坏项 UI 禁用；恢复失败项目树不变 |
 | P0：默认引用体例与确认 | **完成（代码、迁移与 UI）** | 本地结构信号解析；证据不足退回 `structure_only`；`plan-citation` 只读并要求 `citation_plan_id` 确认；项目/报告记录原因、置信度与解析器版本 |
-| P0：Node + Python 统一测试 | **完成（最新统一回归通过）** | alpha.44 最终计数见下方“最新测试基线”；0 失败 |
-| P0：真实桌面 UI 冒烟 | **完成（alpha.44 source；alpha.42 packaged）** | alpha.44 源码与最新 alpha.42 win-unpacked 均保持 Electron sandbox 并完成隐藏本地闭环；packaged 双启动、加密队列恢复和哈希绑定证据属于 alpha.42 |
+| P0：Node + Python 统一测试 | **完成（最新统一回归通过）** | alpha.45 最终计数见下方“最新测试基线”；0 失败 |
+| P0：真实桌面 UI 冒烟 | **完成（alpha.45 source；alpha.42 packaged）** | alpha.45 源码与最新 alpha.42 win-unpacked 均保持 Electron sandbox 并完成隐藏本地闭环；packaged 双启动、加密队列恢复和哈希绑定证据属于 alpha.42 |
 | P0：文档与测试基线纠错 | **完成** | 权威改为 v2.0；纠正“185 + Ace = 186”错误 |
 | Windows alpha 运行资源 | **完成（源码资源门禁）** | Python/JRE/EpubCheck/Ace 均有全量哈希/锁；Python 与 EpubCheck 双向探针实际执行并通过 |
 | CPython 3.13.14 来源证据 | **机器验证完成，人工签署待办** | 官方 ZIP/Sigstore/SPDX、34 文件树、33 个原字节文件、1 个受控 `_pth` 追加与 PSF 许可保留已绑定；完整 Sigstore/GPG 与具名法律/再分发签署未完成 |
@@ -33,43 +33,43 @@
 | Windows 发布制品证据 | **完成（alpha.42 schema v2）** | SHA256SUMS + canonical manifest 与真实 NSIS/ZIP 交叉复验；manifest 另绑定 packaged-smoke 证据、EXE 和匿名输出树摘要 |
 | Windows 安装生命周期 | **工具/alpha.42 预检完成，真实运行待授权** | 九阶段编排、证据 v1、HKCU/快捷方式探针和专项测试完成；历史 release manifest v1 与当前 v2 均严格验证；alpha.42/alpha.12 安装器只读预检通过；未执行真实安装、升级、回装探测或卸载 |
 | Electron ASAR / fuse 硬化 | **真实制品 9 项全验** | `@electron/fuses 2.1.3` 识别 `WasmTrapHandlers`；afterPack 严格写入全部 9 项并回读；真实 EXE 无未知 fuse |
-| ASAR 资源信任根 | **alpha.44 源码、alpha.42 packaged 已验证** | alpha.44 源码锚点固定 88 个 loose 文件；真实 `app.asar`、packaged 全树与发布证据仍对应 alpha.42，未混称同一制品 |
+| ASAR 资源信任根 | **alpha.45 源码、alpha.42 packaged 已验证** | alpha.45 源码锚点固定 91 个 loose 文件；真实 `app.asar`、packaged 全树与发布证据仍对应 alpha.42，未混称同一制品 |
 | 发行商/销售主体元数据 | **源码/生产 ASAR 契约完成，真实身份待确认** | 已知产品/品牌/appId/官网固定；packaged 门禁读取真实 `app.asar/package.json` 的 `oakReleaseIdentity`；法定主体、链接、版权、签名主体和具名复核待定，sale fail-closed |
 | Windows sale 门禁 | **未通过（如实阻断）** | 源码/packaged 资源门禁为 17/12 项；新增发行身份 blocker；签名、来源/许可审计、自带浏览器与 OS 隔离未完成 |
 | macOS arm64/x64 安装版 | **基础设施完成，发行未完成** | 已拆原生 x64/arm64 runner；静态聚合不执行探针；缺 Electron/Python/JRE、`.app`/DMG、签名、公证和真实硬件证据 |
 | 标准包本地验证、升级与回滚 | **完成（代码与测试）** | 内置 2.0.0；canonical manifest、签名/CAS/高水位/回滚、项目七字段 pin、差异确认、升级后强制重检均已实现；旧 release 缺失时 fail-closed；生产 trust pin 与联网传输未实现 |
 | 标准与规则补全 | **治理结构完成，内容补全未完成** | 13 标准/35 规则/6 fixer 映射一致；外部来源核验 0 项，4 项仍 under_review，真实审校签核与多类标准深度不足 |
-| 湖岸统一账号 / Free+Pro / 结果同步 | **客户端生产形状完成，生产服务未配置/未联调** | 已有系统浏览器 PKCE/加密会话、桌面显式同步、服务/API/Supabase 源码；alpha.44 新增 Ed25519 签名权益、账号/设备绑定、OS 加密缓存、显式刷新，以及网站账号后台列表/属主删除源码。账号与权益默认配置均为空；签发/计费/设备后台、真实 PKCE/迁移/API/网站部署未完成 |
+| 湖岸统一账号 / Free+Pro / 结果同步 | **客户端与权益签发生产形状完成，生产未配置/未联调** | 已有系统浏览器 PKCE/加密会话、桌面显式同步、SyncRecord 服务/API/Supabase 源码；alpha.44 完成桌面签名权益和网站同步历史客户端，alpha.45 完成独立服务端签发、可信账号绑定、原子设备授权、HTTP/runtime/SQL 源码。默认配置为空且无生产私钥；支付/退款摄入、设备后台、真实 PKCE/迁移/API/网站部署未完成 |
 | 三模式 AI / 用户自带 AI | **compatible 源码链完成；Ollama 与 LM Studio 各一固定组合窄验收通过** | alpha.43 以 llmster 0.0.20+1 + Qwen3 4B 验证成功、静默模型替换拒绝、超时和不落盘，并修复 LM Studio 响应模型核对与空 `tool_calls: []`。其他组合/硬件/多模型语义、多规则质量、官方云、Web 会话凭据和湖岸 AI 仍无证据 |
 | Web 服务端统一处理 | **临时作业与长期结果源码纵向链完成，生产未部署** | 临时作业链保持；另有 SyncRecord service/API/runtime、强制 RLS/service-role-only 四 RPC、桌面 transport 与网站列表/删除 client。两份迁移均未在真实平台执行；容器 E2E、计划任务/告警、OS 禁网、病毒扫描、计费、生产账号/API 和官网部署待实现 |
 | 可售卖正式版发布 | **未达到** | 缺跨端产物、生产账号/支付、条款、签名、公证、内测和网站联调 |
 
 ## 最新测试基线
 
-- 最终统一 `npm test`：**PASS，退出码 0，墙钟 110.7 秒**；Node 615/608/0/7（3.843 秒），Python 362/0 failures/0 errors/3 skipped（102.353 秒）。跳过项不计作通过。签名权益、加密缓存、显式刷新、退出后权益重算、网站同步历史 client、smoke 参数顺序及既有账号/同步/AI 链均纳入全量。
+- 最终统一 `npm test`：**PASS，退出码 0，墙钟 112 秒**；Node 630/623/0/7（3.939 秒），Python 362/0 failures/0 errors/3 skipped（103.584 秒）。跳过项不计作通过。服务端签发、原子设备授权、HTTP/runtime、桌面错误映射以及既有账号/同步/AI 链均纳入全量。
 - 真实 LM Studio headless 补充验收：官方 `0.0.20-1-win32-x64.full.zip` 881,662,805 字节，SHA-512 匹配；llmster `0.0.20+1` / `a39c907b…9c43`，Qwen3 4B Q4_K_M / 2,497,280,480 字节 / `3e4cb141…4e4f`。最终 **PASS**：成功推理 18,956 ms、静默模型替换被 `AI_SERVICE_INCOMPATIBLE` 拒绝、100 ms 超时、失败 plan 不可重放、不落盘/不改稿；证据 1,661 字节 / `a5f1fb5b…b3e9`。
 - 真实 Ollama 补充验收：官方 0.32.5 standalone ZIP 1,457,824,795 字节 / SHA-256 `7c941ae0…c7bb`；qwen3:4b manifest `359d7dd4…fae7`。最终 run4 为 **PASS**，推理 17,893 ms，证据 1,451 字节 / `767197c5…0f98`，并绑定 APP 0.1.0-alpha.42、规则包 `098b382e…97a4`、`DOCX-SPACE-001` / `FIX-SPACE-001` 和脚本摘要；预览 0 请求，成功/缺失模型/100 ms 超时均各 1 请求，建议不落盘且不改稿。前两次质量门禁失败及未绑定真实规则 ID 的 run3 均保留，不冒充最终证据。
-- 源码 Electron smoke：alpha.44 当前源码在独立隐藏、非文件系统沙箱进程运行，应用保持 Renderer sandbox，最终 **PASS**；输出 `out/source-smoke/runs/ms5sbt1b-80ec3e07939966bd/projects/`，未使用 `--no-sandbox`。此前沙箱内运行因 Windows GPU/renderer 子进程启动失败而非业务断言失败，不计作通过证据。smoke 未配置账号、权益或 AI，未产生网络请求。最新 alpha.42 packaged smoke 也通过，见下。
+- 源码 Electron smoke：alpha.45 当前源码在独立隐藏窗口运行，应用保持 Renderer sandbox，最终 **PASS**；输出 `out/source-smoke/runs/ms5t7xvo-003f395b8318392b/projects/`，未使用 `--no-sandbox`。smoke 未配置账号、权益或 AI，未产生网络请求。最新 alpha.42 packaged smoke 也通过，见下。
 - 发行身份专项纳入 Node 全量：当前仓库身份结构有效但 `complete=false`，12 个 Windows 完备性字段显式缺失；源码 `build.appId`、生产 `oakReleaseIdentity`、重复键、字段/顺序/schema/canonical 字节、占位文本、非官方 URL 和 package 漂移均 fail-closed。
-- ASAR/资源信任专项已纳入 Node 全量：alpha.44 源码 `verify:resource-trust` PASS，88 文件 / 2,150,289 字节，应用清单 SHA-256 `f824378d8fa6b31ca55058b977df26eabbea469c7d1e8b62d80885c44d892f61`，锚点 SHA-256 `7c389cba4812b7e1ad3df4df6ee58fb0e980f897aabf3d9fca7f48abd2386177`；真实 packaged `app.asar` 证据仍为 alpha.42。
+- ASAR/资源信任专项已纳入 Node 全量：alpha.45 源码 `verify:resource-trust` PASS，91 文件 / 2,153,004 字节，应用清单 SHA-256 `3107b9277b444350a3920466d8e6fa545f44069caf9d8a1514ef332c9f59af45`，锚点 SHA-256 `78442b5d72fbd3c6376b9433f059d59148486d924cf72e19d1d6f7b94c6596ea`；真实 packaged `app.asar` 证据仍为 alpha.42。
 - CPython provenance 专项已纳入 Node 全量：tracked evidence、exact schema/canonical 字节、官方制品摘要、Sigstore leaf、SPDX、34/33/1 推导、证据/运行时清单绑定、真实 `python.exe` 漂移和原子更新故障均通过；证据保持 `machine_status=verified`、`human_review_status=pending`。
 - EpubCheck provenance 专项已纳入 Node 全量：官方 ZIP/服务端 digest、本地 49/49 原字节文件、exact schema/canonical 字节、证据/分发/JRE/资源锚点绑定、自批准与漂移拒绝均通过；证据保持 `machine_status=verified`、`human_review_status=pending`、`license_signal_consistent=false`。
 - Temurin/JRE provenance 专项已纳入 Node 全量：官方 ZIP/API/digest/checksum/build metadata、490/490 JDK 文件树、本机源 JDK、固定 jlink、207 文件 runtime、94 份许可材料、证据/锁/ASAR 绑定、自批准和漂移拒绝均通过；GPG 状态保持 `not_verified_no_openpgp_tool`，人工状态保持 pending。
 - Electron provenance 专项已纳入 Node 全量：官方 ZIP/GitHub server digest/SHASUMS256/npm checksums、75/75 文件树、证据/runtime lock/ASAR 绑定、自批准和漂移拒绝均通过；证据 SHA-256 `5f850b7a…075`，签名状态保持 `not_provided_as_release_asset`，人工状态 pending。
 - Windows builder provenance 专项已纳入 Node 全量：三份官方归档/API、固定选择逻辑、受控重解压重组和 385/385 工具树、证据/tool manifest/lock 绑定及反向路径均通过；证据 SHA-256 `c1651839…bb5`，旧 release digest 状态保持 unavailable，人工状态 pending。
 - Ace utility/Chrome controller、两阶段外部验证、Fuse 与相关路径反向测试均纳入上述全量回归；afterPack 专项覆盖全 9 项严格写入、API 漂移、macOS arm64 临时签名和路径逃逸；真实 EXE 回读 `fully_known=true`、`unknown_fuses=[]`。
-- 账号/权益/同步专项：既有明确确认/safeStorage 队列、服务/client/coordinator、PKCE/加密 token-store/main 接线继续通过；alpha.44 新增 exact 配置与 Schema、Ed25519 签名/账号/设备/时间验证、加密权益缓存、显式刷新和认证稳定性复核。状态读取零网络，无效状态降 Free 且不锁本地项目。所有网络/DB 为注入仿真或 SQL 静态检查，受信端点/公钥仍为空。
+- 账号/权益/同步专项：既有明确确认/safeStorage 队列、服务/client/coordinator、PKCE/加密 token-store/main 接线继续通过；alpha.44 的桌面权益验签/缓存基础上，alpha.45 新增独立服务端 Ed25519 signer、可信 GoTrue 主体、原子设备授权 RPC、固定 entitlement HTTP/runtime、响应投毒拒绝和稳定客户端错误。所有网络/DB 仍为注入仿真或 SQL 静态检查，受信端点/公钥为空且仓库没有生产私钥。
 - Web 客户端/Fetch/GoTrue/HTTP/Supabase/作业状态机/Netlify 存储/持久 repository/私有 worker/双清扫与 SyncRecord 服务继续全通过；alpha.44 客户端另覆盖同步历史 strict parse、列表和属主删除。`production_zero_retention_verified=false`；DB/store/network 仍为注入仿真或静态检查，没有真实迁移、容器、OS 禁网、平台生命周期或生产同步证明。Web 私有子包仍锁定 Blobs 10.1.0；桌面根依赖无新增。
 - packaged-smoke/发布证据专项纳入全量；canonical smoke 证据绑定实际 EXE、两次进程唯一成功标志/输出摘要和匿名输出树，覆盖输出漂移、EXE 漂移、伪造标志、陈旧路径/版本、隐藏名、链接/硬链接、schema/canonical 篡改；发布 manifest schema v2 强制消费证据，清除与联合提交失败均 fail-closed。
 - downloader 专项：**11/11 通过**；覆盖显式联网授权、固定来源、重定向/容量/哈希门禁、零授权零写入、事务落盘/回滚及路径安全。
 - Electron runtime 锁专项：**37 项、36 通过、0 失败、1 条件跳过**；hardlink 与 junction 反向路径本机实测通过，文件 symlink 因 Windows `EPERM` 条件跳过，不计作通过。
-- alpha.44 source 与最新 alpha.42 packaged smoke 均强制应用内外部验证并 PASS；packaged 第二进程队列恢复、制品/输出树哈希证据只属于 alpha.42。两者均保持 Electron sandbox，未使用 `--no-sandbox` 作为证据。
+- alpha.45 source 与最新 alpha.42 packaged smoke 均强制应用内外部验证并 PASS；packaged 第二进程队列恢复、制品/输出树哈希证据只属于 alpha.42。两者均保持 Electron sandbox，未使用 `--no-sandbox` 作为证据。
 - `npm run verify:standards`：**PASS**；2.0.0 manifest SHA-256 `0aff75eb181a62869147e9af27330c717bc808bdd23865197534fc9868568427`，规则包 SHA-256 `098b382e33c06ccddf154940fbbd51db384d8025cf235ed7f7e10e83d34897a4`，能力集 SHA-256 `af67d0aaf2ece431ec1b617934bdfa3627b6be1b1301a92fcf3b2b2f29ca232e`。
 - `npm run verify:electron-runtime`：**PASS**；Electron 43.1.0 win32-x64 固定锁覆盖 2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `f5c2c915633c1917bc37377f8232bde4259588eb138bc4072a3c7df976e27486`；tracked manifest 使用严格 JSON、exact schema 和 canonical UTF-8/LF 原始字节，并绑定 Electron provenance。
 - 外层隐藏 `npm run smoke:packaged:win`：**SMOKE-RESULT + SYNC-RECOVERY PASS**；最终输出 `out/packaged-smoke/runs/ms5nicav-edc12e1b32aaafed/projects/`，运行真实 alpha.42 二进制 `release/win-unpacked/湖岸稿件 Oak Manuscript.exe`。证据绑定 EXE SHA-256 `c65ebfbc…d87e` 与输出树 76 文件 / 1,368,631 字节 / `209a487e…e9ec`。
 - 当前测试环境：Windows 11，Python 3.14.6，Node 24.16.0，npm 11.13.0，Electron 43.1.0，Java 21.0.11。
 - Windows alpha 资源门禁：**PASS**。
-  - alpha.44 源码 loose 资源：88 个文件 / 2,150,289 字节，manifest `f824378d…2f61`、anchor `7c389cba…6177`；最新真实 ASAR/packaged 全树仍为 alpha.42；
+  - alpha.45 源码 loose 资源：91 个文件 / 2,153,004 字节，manifest `3107b927…af45`、anchor `78442b5d…96ea`；最新真实 ASAR/packaged 全树仍为 alpha.42；
   - Python：34 个文件 / 21,260,753 字节；
   - JRE：207 个文件 / 52,384,264 字节；
   - EpubCheck：49 个文件 / 36,263,890 字节；
@@ -168,8 +168,8 @@
 
 按 v2.0 方案继续，不重做总体规划；近期继续闭合用户可感知纵向链：
 
-1. Ollama 与 LM Studio 各一固定组合的窄验收已完成；不再横向扩展 compatible 矩阵，回到账号、订阅 entitlement、明确同步与网站后台展示主链；
-2. 先在仓库内完成可配置预生产账号契约、签名 entitlement 和网站后台 SyncRecord 展示的本地/假服务闭环；真实 Supabase/GoTrue/OAuth/OIDC、迁移和网站联调仍需另行授权及有效预生产配置；
+1. alpha.45 已完成仓库内账号 → 原子设备授权 → 服务端独立签名 → 桌面验签纵向链；下一项实现支付/退款/宽限事件摄入契约与设备列表/撤销服务源码，不接真实平台；
+2. 再补网站账号后台的订阅状态和设备管理客户端；真实 Supabase/GoTrue/OAuth/OIDC、迁移和网站联调仍需另行授权及有效预生产配置；
 3. OpenAI、Anthropic、Gemini 官方适配必须先获准联网核对当前官方协议；不得套用 compatible 形状或凭记忆猜测，但不排在账号/订阅主线之前；
 4. 同时保留正式发行阻断：具名许可/再分发签核、发行法定身份、Ace 自带浏览器/OS 隔离、Authenticode、干净 Windows 安装生命周期、macOS 签名/公证与实机验证；
 5. alpha 产物不得表述为可售卖正式版；alpha.43 本机 LM Studio/Ollama 证据与 alpha.42 packaged 哈希都不是签名、不可伪造证明或全面兼容矩阵。

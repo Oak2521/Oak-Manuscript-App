@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.44` 源码架构与最新 alpha.42 Windows packaged 证据：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、独立服务端/API/Supabase 持久层、桌面 PKCE/加密 token-store/同步失败恢复、账号/设备绑定的 Ed25519 签名权益与 safeStorage 缓存，以及三模式 AI/OS 加密凭据/单条预览/建议审阅。Web 临时作业保持独立零留存源码边界，网站客户端已能查看和属主删除同步历史。默认账号与权益配置无端点/密钥；alpha.44 源码与 alpha.42 Windows x64 ASAR/fuse/资源/smoke 分别验证。真实账号、权益签发/计费、Sync API/数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.45` 源码架构与最新 alpha.42 Windows packaged 证据：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、独立服务端/API/Supabase 持久层、桌面 PKCE/加密 token-store/同步失败恢复、账号/设备绑定的 Ed25519 权益客户端与独立服务端签发/原子设备授权链，以及三模式 AI/OS 加密凭据/单条预览/建议审阅。Web 临时作业保持独立零留存源码边界，网站客户端已能查看和属主删除同步历史。默认账号与权益配置无端点/密钥，仓库无生产私钥；alpha.45 源码与 alpha.42 Windows x64 ASAR/fuse/资源/smoke 分别验证。真实账号、计费事件、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
 
 ## 1. 总体分层
 
@@ -149,7 +149,9 @@ alpha.44 在 `web/client/` 增加当前账号的同步历史列表与属主删�
 
 用户登录后只有点击“刷新订阅权益”才会触发固定 Bearer POST。响应必须符合 `signed-entitlement-v1.schema.json` 的 exact envelope；Ed25519 签名覆盖 canonical UTF-8 payload，并精确绑定 trusted key、issuer、`oak-manuscript-desktop` audience、当前账号、stable device ID、Pro tier、设备状态和规范时间顺序。transport 前后都复核认证账号稳定；验证失败、错号、篡改和恶意响应不能替换已有缓存。
 
-缓存明文由 `license-cache-v1.schema.json` 定义，只作为 `OAKLIC1` safeStorage 密文保存；revision CAS、独占候选、`fsync`、原子换入、提交后解密复验、父链/链接/硬链接/读取竞态门禁沿用账号/同步 store 的 fail-closed 标准。active 与 grace 提供 Pro；expired、revoked、not-yet-valid、invalid、signed-out 与 not-cached 均为 Free。任何状态固定 `localProjectsLocked=false`，订阅失败不得劫持用户已有本地文件。服务端签发、支付/退款、设备管理、密钥轮换与真实 E2E 是独立未完成门禁；详见 `SIGNED_ENTITLEMENT_V1.md`。
+缓存明文由 `license-cache-v1.schema.json` 定义，只作为 `OAKLIC1` safeStorage 密文保存；revision CAS、独占候选、`fsync`、原子换入、提交后解密复验、父链/链接/硬链接/读取竞态门禁沿用账号/同步 store 的 fail-closed 标准。active 与 grace 提供 Pro；expired、revoked、not-yet-valid、invalid、signed-out 与 not-cached 均为 Free。任何状态固定 `localProjectsLocked=false`，订阅失败不得劫持用户已有本地文件。
+
+alpha.45 的服务端链由 `entitlement-runtime.js` 组合 GoTrue verifier/session resolver、service-role repository、独立 Ed25519 signer、HTTP handler 和 Fetch adapter。`003_manuscript_entitlements.sql` 把权益与设备分表，强制 RLS，唯一 RPC 在 account advisory lock 内原子读取权益、复核既有设备或检查容量后登记新设备。Signer 不复用 Electron canonicalizer，私钥只允许服务器构造注入；HTTP 成功响应还要再次通过 exact shape/容量校验，错误与审计 content-free。支付/退款事件摄入、设备管理 UI、真实迁移/RLS/多实例、生产私钥托管/轮换与 E2E 仍是独立门禁；详见 `SIGNED_ENTITLEMENT_V1.md`。
 
 ### AD-018 Web 临时任务必须“可信主体—单任务同意—内容/元数据分道—删除失败可见”（2026-07-28，冻结）
 
@@ -207,7 +209,7 @@ alpha.31 增加仅 `service_role` 可调用的 `oak_manuscript_web_job_list_clea
 
 alpha.39 的 `DesktopAuthProvider` 以受信 `desktop-auth.json` 为唯一端点来源。配置为 `pending_configuration` 时，授权、token、user、Sync API origin、client 与 public key 必须全部为 null，登录返回 `configuration_required` 且不打开页面。配置完整时，主进程生成随机 state/verifier、先将 pending 状态写入独立 `OAKAUTH1` safeStorage 密文，再通过系统浏览器发起 Authorization Code + PKCE S256；Windows second-instance 与 macOS open-url 只接受固定 `oak-manuscript-auth://callback` 的唯一 `code+state`，拒绝 token/额外参数/错配/过期/重放。code exchange 后必须再调用固定 user endpoint 取得 exact account ID；刷新后同样复核账号，错绑清除会话。access/refresh token 和 verifier 不进入 Renderer、项目、报告或日志。
 
-这仍不是正式 OAuth/OIDC 兼容证明：真实服务契约、nonce/ID-token 取舍、刷新/退出/设备撤销和故障恢复必须在获准的隔离预生产环境核对。`LicenseProvider` 的签名订阅凭证、服务端设备管理与计费也尚未实现。默认 Electron session 继续完全离线；Auth/Sync 使用的是只在用户登录或发送动作后才调用的主进程有界通道，不能被 Renderer 提供 URL、token 或任意 payload。
+这仍不是正式 OAuth/OIDC 兼容证明：真实服务契约、nonce/ID-token 取舍、刷新/退出/设备撤销和故障恢复必须在获准的隔离预生产环境核对。`LicenseProvider` 的客户端验签和服务端签发/原子设备授权已有源码，但设备自助管理、计费事件、真实迁移和部署尚未实现。默认 Electron session 继续完全离线；Auth/Sync 使用的是只在用户登录或发送动作后才调用的主进程有界通道，不能被 Renderer 提供 URL、token 或任意 payload。
 
 ### AD-024 AI 设置与模型 transport 必须分层（2026-07-28，冻结）
 

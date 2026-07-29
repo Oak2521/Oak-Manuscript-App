@@ -2,7 +2,25 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.44 签名订阅权益与网站账号后台源码
+## 最新验证结论：0.1.0-alpha.45 服务端签名权益签发链源码
+
+验证日期：2026-07-29。本轮未联网、未调用真实账号/订阅/支付或数据库服务，未注入生产私钥、端点或公钥，未执行 SQL、部署、修改官网、推送或重新打包。
+
+| 项目 | 结果 | 证据与边界 |
+|---|---|---|
+| 独立 Ed25519 signer | **PASS（源码）** | 服务端独立 canonicalizer；私钥仅构造注入；exact claims、规范 HTTPS issuer、固定 audience、账号/设备/时间绑定；桌面真实 verifier 接受签名 |
+| 可信账号与设备授权 | **PASS（源码）** | 只接受 GoTrue 解析后的 exact account principal；请求不能自报账号；无订阅/设备已满为稳定失败；撤销/过期的既有授权继续签名供客户端失败关闭 |
+| 权益 HTTP/runtime | **PASS（注入 HTTP）** | 固定 `/manuscript/api/v1/entitlement`、HTTPS/Bearer、4 KiB、无 Cookie/重定向；错误和 audit content-free；服务响应未知字段在发送前拒绝 |
+| Supabase repository/SQL | **PASS（静态/注入）** | 固定 service-role RPC；两张表强制 RLS；浏览器角色无权；账户 advisory lock 内原子完成容量检查与设备登记；SQL 未在 PostgreSQL 执行 |
+| 客户端失败映射 | **PASS** | `SUBSCRIPTION_REQUIRED`、`DEVICE_LIMIT`、`SERVICE_UNAVAILABLE` 映射为固定本地错误；不反射服务端正文 |
+| 生产形状纵向链 | **PASS（假服务）** | 假 GoTrue + 假 Supabase RPC + 真实服务端签名 + 真实桌面 HTTP client/verifier；审计不含 token、账号、设备、公钥或 service-role key |
+| 定向测试 | **PASS** | 权益/账号/同步相关 70/70；新增核心五文件聚焦套件 17/17 |
+| 全量测试 | **PASS** | `npm test` 退出码 0；Node 630 total / 623 pass / 0 fail / 7 skip，3.939 秒；Python 362 / 0 failures / 0 errors / 3 skipped，103.584 秒；墙钟 112 秒 |
+| 源码 Electron smoke | **PASS** | 独立隐藏运行，Renderer sandbox 保持；`out/source-smoke/runs/ms5t7xvo-003f395b8318392b/projects/`；未产生账号/权益/AI 网络请求 |
+| 资源与静态门禁 | **PASS（alpha source）** | 91 文件 / 2,153,004 字节；manifest `3107b9277b444350a3920466d8e6fa545f44069caf9d8a1514ef332c9f59af45`；anchor `78442b5d72fbd3c6376b9433f059d59148486d924cf72e19d1d6f7b94c6596ea`；Windows alpha 资源、fuse、发行身份和 Electron runtime 检查退出 0 |
+| 生产订阅与发行 | **未运行/未完成** | 支付/退款事件摄入、设备自助后台、HSM/私钥轮换、真实 OAuth、迁移/RLS、多实例、网站部署和生产 E2E 未完成；alpha.45 未打包，最新 Windows 制品仍为未签名 alpha.42 |
+
+## 前一验证结论：0.1.0-alpha.44 签名订阅权益与网站账号后台源码
 
 验证日期：2026-07-29。本轮未联网、未调用真实账号/订阅/支付或数据库服务，未配置端点、密钥或生产公钥，未迁移、部署、修改官网或重新打包。
 

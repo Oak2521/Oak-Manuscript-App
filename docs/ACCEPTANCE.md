@@ -2,6 +2,18 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.45 服务端签名权益签发链源码验收（2026-07-29）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.45`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 服务端 Ed25519 signer 独立于桌面 canonicalizer，私钥仅由部署构造注入；签名 claims 精确绑定可信账号、稳定设备、issuer/audience/tier/state/时间；
+- [x] entitlement service 拒绝匿名主体、请求自报账号和 malformed device；无订阅、设备已满与 repository drift 使用稳定、非反射错误；
+- [x] `/manuscript/api/v1/entitlement` 只接受 HTTPS/Bearer 固定 POST；请求、错误、audit 和内部授权均有 exact Schema，响应未知字段在发送前拒绝；
+- [x] `003_manuscript_entitlements.sql` 建立 server-only entitlement/device 表、强制 RLS 与 service-role-only 原子 RPC；账户锁内完成容量检查和首次设备登记；
+- [x] 假 GoTrue/假 RPC/真实 signer/真实桌面 verifier 纵向链通过；定向 70/70；全量 Node 630 / Python 362 零失败；资源信任 91 文件 / 2,153,004 字节；独立隐藏源码 smoke PASS；
+- [ ] SQL 已在隔离 PostgreSQL/Supabase 执行，RLS、并发、备份恢复、service-role 泄露和真实账号端到端通过；
+- [ ] 支付/退款/宽限事件写入、设备自助后台、生产私钥/HSM/轮换、生产部署和商业订阅验收完成；
+- [ ] alpha.45 Windows/macOS 安装包、代码签名、公证、真实安装生命周期与可售卖正式版门禁完成；最新 packaged 证据仍为未签名 alpha.42。
+
 ## 0.1.0-alpha.44 签名订阅权益与网站账号后台源码验收（2026-07-29）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.44`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；

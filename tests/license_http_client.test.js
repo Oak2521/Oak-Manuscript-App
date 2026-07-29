@@ -34,3 +34,23 @@ test("license HTTP client rejects non-HTTPS, auth errors, wrong media, and overs
   await assert.rejects(() => new LicenseHttpClient({ endpoint: "https://accounts.oakbylake.com/e", fetchImpl: async () => response(401, { error: true }) }).fetchEntitlement(request), /登录|授权/);
   await assert.rejects(() => new LicenseHttpClient({ endpoint: "https://accounts.oakbylake.com/e", fetchImpl: async () => response(200, {}, "text/plain") }).fetchEntitlement(request), /响应/);
 });
+
+test("license HTTP client maps exact subscription and device failures without reflecting server text", async () => {
+  const request = { accessToken: "a".repeat(48), deviceId: "device-10000000-0000-4000-8000-000000000001" };
+  for (const [status, remoteCode, localCode, message] of [
+    [403, "SUBSCRIPTION_REQUIRED", "LICENSE_SUBSCRIPTION_REQUIRED", "Pro 订阅"],
+    [429, "DEVICE_LIMIT", "LICENSE_DEVICE_LIMIT", "设备数量"],
+    [503, "SERVICE_UNAVAILABLE", "LICENSE_UNAVAILABLE", "暂时不可用"],
+  ]) {
+    const client = new LicenseHttpClient({
+      endpoint: "https://accounts.oakbylake.com/e",
+      fetchImpl: async () => response(status, {
+        schema_version: "1.0",
+        error: { code: remoteCode, message: "private upstream detail must not be reflected" },
+        request_id: "30000000-0000-4000-8000-000000000003",
+      }),
+    });
+    await assert.rejects(() => client.fetchEntitlement(request), (error) =>
+      error.code === localCode && error.message.includes(message) && !error.message.includes("private"));
+  }
+});

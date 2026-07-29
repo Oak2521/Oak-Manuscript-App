@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 88,
-  "total_bytes": 2150289,
+  "file_count": 91,
+  "total_bytes": 2153004,
   "files": [
     {
       "path": "config/app-config.json",
@@ -98,6 +98,11 @@
       "sha256": "8faf04bfd72ed7a1602af43a22b11ded30680c6bdad1bf1866792b36ca44263d"
     },
     {
+      "path": "config/schemas/entitlement-request-v1.schema.json",
+      "size_bytes": 593,
+      "sha256": "44dac6fa11ba9bdde101e7f72925a47c40c07312ad6919a8f9304e61f475db41"
+    },
+    {
       "path": "config/schemas/epubcheck-provenance-v1.schema.json",
       "size_bytes": 4626,
       "sha256": "4435c2e90d3e49c170b859ca95328f7c574ea5d8a11c7cf14d1f4ad206ab7f71"
@@ -111,6 +116,16 @@
       "path": "config/schemas/license-cache-v1.schema.json",
       "size_bytes": 808,
       "sha256": "ab6ba1a21b1744f3e17d8477fdfba0e9f25dbb98df67c8b2b90ec41288427d0f"
+    },
+    {
+      "path": "config/schemas/license-http-audit-v1.schema.json",
+      "size_bytes": 1010,
+      "sha256": "1e5169da6bde4252b505a5e8f7b955eb696ffc1a616f1d116ab49d3b62284d81"
+    },
+    {
+      "path": "config/schemas/license-http-error-v1.schema.json",
+      "size_bytes": 1112,
+      "sha256": "788c6d50324471bbd6fb2bed79807e3d5fe1ebe96fb1b9d800945dcaabc0fb5d"
     },
     {
       "path": "config/schemas/release-identity-v1.schema.json",
@@ -220,7 +235,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "30e67834c5925067488ab39e5e3bfaa724d7273638b5e9102271eaa8fbb9c2be"
+      "sha256": "5c6984f0cdbf6e88add1bdbf9dc8de6e7e35feb677e7bb45786c1a7799d2cfaa"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

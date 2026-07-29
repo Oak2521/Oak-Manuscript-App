@@ -4,6 +4,14 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 const MAX_RESPONSE_BYTES = 256 * 1024;
 const TOKEN_PATTERN = /^[A-Za-z0-9._~+\/-]+={0,2}$/u;
 const DEVICE_PATTERN = /^device-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
+const REQUEST_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
+const REMOTE_ERROR_CODES = new Set([
+  "AUTH_REQUIRED", "BODY_LENGTH_MISMATCH", "CROSS_SITE_REQUEST", "DEVICE_LIMIT",
+  "INSECURE_TRANSPORT", "INVALID_HEADERS", "INVALID_JSON", "INVALID_REQUEST",
+  "LENGTH_REQUIRED", "METHOD_NOT_ALLOWED", "NOT_FOUND", "REQUEST_TOO_LARGE",
+  "SERVICE_UNAVAILABLE", "SUBSCRIPTION_REQUIRED", "TRANSFER_ENCODING_NOT_ALLOWED",
+  "UNSUPPORTED_MEDIA_TYPE",
+]);
 
 function failure(message, code) {
   const error = new Error(message);
@@ -38,6 +46,19 @@ async function boundedJson(response) {
     failure("订阅权益服务返回了非法响应", "LICENSE_RESPONSE_INVALID");
   }
   try { return JSON.parse(bytes.toString("utf8")); } catch { failure("订阅权益服务返回了非法响应", "LICENSE_RESPONSE_INVALID"); }
+}
+
+function exactKeys(value, keys) {
+  return value && typeof value === "object" && !Array.isArray(value) &&
+    Object.keys(value).sort().join("\0") === [...keys].sort().join("\0");
+}
+
+function remoteErrorCode(value) {
+  if (!exactKeys(value, ["schema_version", "error", "request_id"]) || value.schema_version !== "1.0" ||
+      !REQUEST_ID_PATTERN.test(value.request_id || "") || !exactKeys(value.error, ["code", "message"]) ||
+      !REMOTE_ERROR_CODES.has(value.error.code) || typeof value.error.message !== "string" ||
+      value.error.message.length < 1 || value.error.message.length > 160) return null;
+  return value.error.code;
 }
 
 class LicenseHttpClient {
@@ -82,10 +103,24 @@ class LicenseHttpClient {
       failure("订阅权益服务暂时不可用", "LICENSE_UNAVAILABLE");
     } finally { clearTimeout(timer); }
     const value = await boundedJson(response);
-    if (response.status === 401 || response.status === 403) failure("湖岸账号登录或订阅授权已过期", "LICENSE_AUTH_REQUIRED");
-    if (response.status !== 200) failure("订阅权益服务返回了非法响应", "LICENSE_RESPONSE_INVALID");
+    if (response.status !== 200) {
+      const code = remoteErrorCode(value);
+      if (response.status === 401 || (response.status === 403 && code === "AUTH_REQUIRED")) {
+        failure("湖岸账号登录或授权已过期", "LICENSE_AUTH_REQUIRED");
+      }
+      if (response.status === 403 && code === "SUBSCRIPTION_REQUIRED") {
+        failure("当前账号没有有效的 Pro 订阅权益", "LICENSE_SUBSCRIPTION_REQUIRED");
+      }
+      if (response.status === 429 && code === "DEVICE_LIMIT") {
+        failure("当前订阅的设备数量已达上限", "LICENSE_DEVICE_LIMIT");
+      }
+      if (response.status === 503 && code === "SERVICE_UNAVAILABLE") {
+        failure("订阅权益服务暂时不可用", "LICENSE_UNAVAILABLE");
+      }
+      failure("订阅权益服务返回了非法响应", "LICENSE_RESPONSE_INVALID");
+    }
     return value;
   }
 }
 
-module.exports = { DEFAULT_TIMEOUT_MS, DEVICE_PATTERN, LicenseHttpClient, MAX_RESPONSE_BYTES };
+module.exports = { DEFAULT_TIMEOUT_MS, DEVICE_PATTERN, LicenseHttpClient, MAX_RESPONSE_BYTES, remoteErrorCode };
