@@ -2,7 +2,18 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.34 AI 建议人工审阅验收（2026-07-28）
+## 0.1.0-alpha.35 AI 有界 HTTP 底座验收（2026-07-28）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.35`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 独立模块只接受 exact POST JSON；远程仅 HTTPS、本机 HTTP 仅精确 loopback；URL 凭据/查询/片段、重定向、Cookie、代理/转发/hop-by-hop 头和响应压缩均拒绝；
+- [x] 请求头 16 个/8 KiB、JSON 32 KiB/32 层/10,000 节点、响应 64 KiB、超时 100—120,000 ms 均双向门禁；Content-Type/Length 重复、漂移、声明/实际超限和畸形 JSON fail-closed；
+- [x] `AITransportRouter` 只接受已注册 provider 和 exact 适配器/config/request/result；凭据进入 URL、上游精确回显凭据、未知结果字段及适配/网络异常均拒绝且错误不泄密；
+- [x] 网络底座定向 13/13、Node 517、Python 362 全量零失败；独立隐藏源码 Electron smoke PASS；资源锁 79 文件 / 2,139,277 字节；
+- [x] 生产适配器注册表保持为空，主进程继续 `transport:null`；普通测试/smoke 不联网，也不把底座冒充真实供应商兼容性；
+- [ ] 六类官方协议、真实 TLS/证书/代理策略、真实凭据兼容性、供应商故障演练及湖岸 AI 服务完成；
+- [ ] alpha.35 Windows/macOS packaged、签名、安装生命周期与干净机证据完成；最新真实 Windows 制品仍是 alpha.23。
+
+## 0.1.0-alpha.34 AI 建议人工审阅验收（历史，2026-07-28）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.34`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] 建议生成后建立最多 8 个、30 分钟有效、一次处理的内存态审阅会话；模型文本不进入项目、报告、同步或 working；

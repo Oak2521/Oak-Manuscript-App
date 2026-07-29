@@ -29,12 +29,14 @@
 | `standards-ipc.js` | 本地包安装、全局回滚、项目差异预览与一次确认升级 IPC |
 | `smoke.js` | 在隐藏窗口走 DOCX/EPUB 真 UI闭环、AI 单条发送预览零 transport，并核对版本与打包身份 |
 | `ai-request.js` | 绑定可信单条上下文的请求预览/一次确认、注入式建议响应与内存态人工审阅；采纳只经核心记录问题状态，永不直接改稿 |
+| `ai-http-client.js` | 未接线的供应商无关 POST/JSON 客户端；固定 HTTPS/loopback、禁重定向/代理转发/Cookie，限制头、请求、响应和超时 |
+| `ai-transport-router.js` | 未接线的 exact 适配器路由；拒绝未知 provider、配置漂移、凭据 URL/响应回显和未净化适配错误 |
 
 安全基线：`contextIsolation=true`、`sandbox=true`、`nodeIntegration=false`、固定 CSP/IPC、导航和新窗口拦截。默认 session 在正常启动时永久离线；未来获授权联网能力必须用独立受限通道，不能解除该基线。完整说明见 `docs/PRIVACY_AND_SECURITY.md`。
 
 打包安全另由 `scripts/electron_fuse_policy.js` 固定：必须启用 ASAR 与 embedded integrity、用顶层 `@electron/fuses 2.1.3` 显式设置 Electron 43 全部 9 项，并在 electron-builder 后从真实应用二进制读回。索引 8 已定义为 `WasmTrapHandlers`；未来未知 wire 项仍 fail-closed。alpha.10 已把 Ace 迁移到 `utilityProcess` 并固定 `RunAsNode=false`。详见 `docs/ELECTRON_FUSE_POLICY.md`。
 
-alpha.34 源码的 `resource-trust-anchor.json` 绑定应用 loose 文件（含发行身份、同步队列、Web 作业、AI 请求预览/审阅及 HTTP 错误/审计 exact schema）的 canonical 清单和目标平台四类运行锁；精确文件数、字节数与摘要以 `docs/TEST_REPORT.md` 为准。最新真实 packaged 锚点证据仍为 alpha.23。Windows Python/EpubCheck/JRE/Electron/builder 锁再分别绑定五类官方来源证据摘要；packaged 门禁从真实 ASAR 读取 production `package.json` 与 `oakReleaseIdentity`。
+alpha.35 源码的 `resource-trust-anchor.json` 绑定应用 loose 文件（含发行身份、同步队列、Web 作业、AI 请求预览/审阅及 HTTP 错误/审计 exact schema）的 canonical 清单和目标平台四类运行锁；精确文件数、字节数与摘要以 `docs/TEST_REPORT.md` 为准。最新真实 packaged 锚点证据仍为 alpha.23。Windows Python/EpubCheck/JRE/Electron/builder 锁再分别绑定五类官方来源证据摘要；packaged 门禁从真实 ASAR 读取 production `package.json` 与 `oakReleaseIdentity`。
 
 PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专用 CSP 只允许自包含 HTML 所需的内联样式和 `data:` 图片。加载报告前后核对文件身份，拒绝项目根/`exports`/报告/目标的 symlink、junction/reparse、硬链接和目录身份换入，最后同目录原子写入。
 

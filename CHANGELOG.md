@@ -4,6 +4,15 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.35（ChatGPT AI 有界 HTTP 底座检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.35`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未部署、未修改官网或重新打包；最新真实 Windows 制品仍为 alpha.23。
+
+- 新增 `BoundedAIHttpClient`：固定 POST/JSON、远程 HTTPS/本机精确 loopback、禁重定向/URL 凭据与查询/Cookie/代理转发头/压缩响应，固定请求头、结构、容量、超时及响应媒体门禁；
+- 新增 `AITransportRouter`：适配器注册表和配置/语义请求 exact 校验、未注册供应商拒绝、凭据 URL/响应回显拒绝、适配与网络错误净化；
+- 生产主进程继续显式 `transport:null`，没有真实供应商适配器；本轮只交付离线可测的供应商无关底座，不把协议猜测写成完成事实；
+- 网络底座定向 13/13；最终 `npm test` 114.524 秒：Node 517 total / 510 pass / 0 fail / 7 skip（3.988 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（106.025 秒）；独立隐藏源码 Electron smoke PASS；资源清单 79 文件 / 2,139,277 字节，manifest SHA-256 `80bdc6cf31793a1efb784edd4fef6f87c41899842333560ae513dbd5bf71c4e4`，锚点 SHA-256 `3b3acc489a51e0d3c529e4bbb90145804394442ccf8230b09df79a911a9754ca`。
+
 ### 2026-07-28 — 0.1.0-alpha.34（ChatGPT AI 建议人工审阅检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.34`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未部署、未修改官网或重新打包；最新真实 Windows 制品仍为 alpha.23。

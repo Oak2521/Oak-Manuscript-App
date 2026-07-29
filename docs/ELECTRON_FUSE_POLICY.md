@@ -1,6 +1,6 @@
 # ELECTRON_FUSE_POLICY — Electron 打包硬化合同
 
-> 当前源码实现：`0.1.0-alpha.34`；最新真实打包二进制证据仍为 alpha.23。本文件描述源码配置、打包后强制写入与回读、ASAR 资源/production package 身份及受限应用协议合同；不得用 alpha.23 二进制证据证明未构建的 alpha.34。Web SDK、Postgres 迁移、服务端 repository、上传检查、私有 worker、一次性领取与 Python 子进程处理器位于 `web/` 私有子包且不在 Electron `build.files` 中。
+> 当前源码实现：`0.1.0-alpha.35`；最新真实打包二进制证据仍为 alpha.23。本文件描述源码配置、打包后强制写入与回读、ASAR 资源/production package 身份及受限应用协议合同；不得用 alpha.23 二进制证据证明未构建的 alpha.35。Web SDK、Postgres 迁移、服务端 repository、上传检查、私有 worker、一次性领取与 Python 子进程处理器位于 `web/` 私有子包且不在 Electron `build.files` 中。
 
 ## 固定策略
 

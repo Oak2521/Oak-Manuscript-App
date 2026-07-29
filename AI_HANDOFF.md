@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.34`
+> 当前版本：`0.1.0-alpha.35`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.34`（源码、本机隐藏 Electron 与离线 AI 建议审阅检查点；最新未签名 Windows 制品仍是 alpha.23）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.35`（源码、本机隐藏 Electron 与离线 AI 有界 HTTP 底座检查点；最新未签名 Windows 制品仍是 alpha.23）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,15 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.35 AI 有界 HTTP 底座与适配路由契约
+
+- 新增未接入生产的 `BoundedAIHttpClient`：只允许固定 POST JSON；远程仅 HTTPS，本机 HTTP 仅精确 loopback；拒绝 URL 凭据、查询、片段、重定向、Cookie、代理/转发/hop-by-hop 头、自定义 Content-Length/Host、压缩响应与非 JSON；
+- 请求头最多 16 个/8 KiB，请求 JSON 最多 32 KiB、深度/节点有界；响应最多 64 KiB，同时校验唯一 Content-Type/Content-Length、声明长度和实际流长度；超时固定在 100—120,000 ms，默认 60 秒；使用 Node 原生 `http/https` 且 `agent:false`，不读取代理环境或复用连接；
+- 新增 `AITransportRouter` 注入式适配路由：只接受已注册的六类 provider、exact 配置/语义请求、适配器 exact 接口；拒绝把凭据放进 URL或把上游回显凭据交给 UI；适配/网络错误和未知响应字段全部净化；
+- 当前适配器注册表在生产中为空，主进程仍显式 `transport:null`。本轮没有猜测或实现 OpenAI、Anthropic、Gemini、OpenAI-compatible、Ollama、LM Studio 的真实协议，也没有执行任何网络请求；
+- 新增网络底座定向 13/13；最终 `npm test` 114.524 秒：Node 517 total / 510 pass / 0 fail / 7 skip（3.988 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（106.025 秒）；独立隐藏 Electron `SMOKE-RESULT: PASS`；
+- 资源锁 79 文件 / 2,139,277 字节，manifest SHA-256 `80bdc6cf31793a1efb784edd4fef6f87c41899842333560ae513dbd5bf71c4e4`，锚点 SHA-256 `3b3acc489a51e0d3c529e4bbb90145804394442ccf8230b09df79a911a9754ca`。本轮未联网、未调用模型、未使用真实密钥、未部署、未修改官网或打包；发行身份仍 `complete=false`、缺 12 项。
 
 ### 已完成：0.1.0-alpha.34 AI 建议人工审阅契约
 
@@ -499,7 +508,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 6. 同步只允许检查结果和必要元数据，不同步稿件、正文、摘录、文件名、路径或哈希；登录用户必须明确选择是否同步；
 7. 引用体例保留“默认”，由确定性映射自动选择，并在报告中说明；
 8. 标准文件需要签名清单、下载校验、版本固定、回滚和升级提示；已有项目不得被静默换规则；
-9. “接入用户自己的 AI”六项设计已由用户明确批准并写入 v2.0 方案；alpha.32 已实现桌面三模式设置、Pro 门禁和 OS 加密凭据存储，alpha.33 已实现可信单条问题上下文、完整请求预览、一次确认计划和只读建议接收边界，alpha.34 已实现建议级采纳/放弃和接受问题状态记录；生产模型 transport、真实供应商响应质量与 Web 会话凭据仍未实现；
+9. “接入用户自己的 AI”六项设计已由用户明确批准并写入 v2.0 方案；alpha.32—alpha.34 已完成桌面模式/加密凭据、单条请求预览和建议审阅，alpha.35 新增尚未接入生产的有界 HTTP 客户端与适配路由；六类官方协议适配、真实供应商响应质量与 Web 会话凭据仍未实现；
 10. 不进行 AI 语义改写，自动修复仍只限冻结白名单机械操作。
 
 ## 4. 已核实但尚未解决的缺口

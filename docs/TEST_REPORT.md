@@ -2,7 +2,23 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.34 AI 建议人工审阅契约
+## 最新验证结论：0.1.0-alpha.35 AI 有界 HTTP 底座与适配路由契约
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未修改官网、未部署或生成 alpha.35 安装包。
+
+| 验证 | 结果 | 证据 |
+|---|---|---|
+| AI HTTP client / transport router 定向 | **PASS** | 13/13：固定 POST JSON、HTTPS/精确 loopback、URL/头/JSON exact 门禁、禁重定向/Cookie/代理转发/压缩、容量/超时、重复长度、流超限、畸形响应、适配器注册、未注册供应商、凭据 URL/回显及错误净化 |
+| `npm test` | **PASS** | 退出码 0，墙钟 114.524 秒；Node 517 total / 510 pass / 0 fail / 7 skip（3.988 秒）；Python 362 total / 0 failures / 0 errors / 3 skipped（106.025 秒） |
+| 独立隐藏源码 Electron smoke | **PASS** | `SMOKE-RESULT: PASS`；版本身份为 alpha.35，完成既有 DOCX/EPUB、AI 预览零 transport、批量修复/撤销/导出/验证及加密队列恢复；没有调用新增 HTTP client |
+| 资源信任锁更新/复验 | **PASS** | 79 文件 / 2,139,277 字节；manifest SHA-256 `80bdc6cf31793a1efb784edd4fef6f87c41899842333560ae513dbd5bf71c4e4`；anchor SHA-256 `3b3acc489a51e0d3c529e4bbb90145804394442ccf8230b09df79a911a9754ca` |
+| 发行身份只读复验 | **PASS（阻断状态正确）** | `complete=false`，12 个 Windows 完备性字段仍缺失 |
+| 六类真实供应商适配/联网 E2E | **未实现、未运行** | 主进程仍为 `transport:null`；适配器注册表未进入生产，测试使用注入假响应且不创建 socket；本轮不证明任何官方协议、TLS/代理/证书兼容或模型质量 |
+| alpha.35 Windows packaged / 安装生命周期 / macOS / Web 部署 | **未运行** | 最新可复验 Windows 制品仍是 alpha.23；源码测试不证明新制品或跨平台通过 |
+
+证据边界：本轮只证明一个供应商无关、主进程可用但未接线的本地网络原语及适配路由，能在发送前后执行固定门禁。它不是独立 OS 沙箱进程，也没有真实供应商适配器；必须先核对官方协议和完成真实网络/凭据测试，才能替换生产 `transport:null`。
+
+## 历史验证结论：0.1.0-alpha.34 AI 建议人工审阅契约
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未修改官网、未部署或生成 alpha.34 安装包。
 
