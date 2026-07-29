@@ -1,6 +1,6 @@
 # SyncRecord v1 — 结果与元数据同步契约
 
-> 状态：`0.1.0-alpha.54` 已在逐字段预览、OS 加密队列、独立服务/API/Supabase、桌面 PKCE/条件 transport 和网站历史客户端源码之上，闭合“明确确认后即时发送、失败安全留队”的本地生产形状纵向链；既有桌面链随 alpha.42 Windows packaged smoke 复验通过。受信账号配置仍为 `pending_configuration` 且无端点/key；迁移、API 和页面均未部署，所以普通 APP 仍不发同步请求。AI 建议文本、审阅会话和权益缓存均不进入 SyncRecord。本文件不能作为“生产数据已可同步到网站”的证明。
+> 状态：`0.1.0-alpha.54` 已在逐字段预览、OS 加密队列、独立服务/API/Supabase、桌面 PKCE/条件 transport 和网站历史客户端源码之上，闭合“明确确认后即时发送、失败安全留队”的本地生产形状纵向链；既有桌面链随同版 Windows packaged smoke 复验通过。受信账号配置仍为 `pending_configuration` 且无端点/key；迁移、API 和页面均未部署，所以普通 APP 仍不发同步请求。AI 建议文本、审阅会话和权益缓存均不进入 SyncRecord。本文件不能作为“生产数据已可同步到网站”的证明。
 
 ## 1. 信任边界
 

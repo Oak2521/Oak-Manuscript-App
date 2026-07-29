@@ -2,9 +2,9 @@
 
 ## 桌面应用（推荐）
 
-当前开发源码为 `0.1.0-alpha.48`；最新已打包 Windows x64 NSIS/ZIP 仍是未签名 alpha.42，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.48 已包含桌面 PKCE/加密账号会话、签名订阅权益客户端、未部署的服务端签发/订阅事件/设备服务、同步失败恢复、网站同步历史和订阅/掩码设备客户端，以及网站撤销后桌面显式刷新降级的匿名纵向证据；默认账号与权益配置仍为空，仓库没有生产私钥，普通启动和构建不会触发账号/权益联网或下载。
+当前开发源码与最新已打包 Windows x64 NSIS/ZIP 均为 `0.1.0-alpha.54`；制品未签名，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.54 已包含桌面 PKCE/加密账号会话、签名订阅权益客户端、未部署的服务端签发/订阅事件/设备服务、确认后即时同步与失败恢复、网站同步历史和订阅/掩码设备客户端，以及网站撤销后桌面显式刷新降级的匿名纵向证据；默认账号与权益配置仍为空，仓库没有生产私钥，普通启动和构建不会触发账号/权益联网或下载。
 
-**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.48 结果为 Node 655/648/0/7、Python 362/0 failures/0 errors/3 skipped；跳过项不计作通过。alpha.48 隐藏 Web 客户端和 Electron 源码 smoke 通过；packaged smoke、第二进程加密队列恢复、实际 EXE 和匿名输出树证据仍对应 alpha.42。
+**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.54 结果为 Node 700/693/0/7、Python 362/0 failures/0 errors/3 skipped；跳过项不计作通过。alpha.54 Electron 源码与 packaged smoke、第二进程加密队列恢复、实际 EXE 和匿名输出树证据均通过；Web 客户端 UI 最新 smoke 仍为未改动该页面后的 alpha.51。
 
 **Web 状态**：`web/client/` 已提供可本地渲染的临时处理工作台，保留湖岸账号登录/注册，包含“默认”引用体例、本次临时处理同意、创建/上传/轮询/取消/一次性领取；另提供当前账号 SyncRecord 历史列表、刷新/确认删除，以及订阅状态、掩码设备和逐台确认撤销。服务端已有 GoTrue、Fetch、Netlify Blobs、Supabase/Postgres、上传检查、私有 worker、`/manuscript/api/v1/sync-records`、`/manuscript/api/v1/entitlement` 与账号设备管理源码边界。四条 SQL 均未在真实 Supabase 执行，API/计划任务/页面也未部署；本地注入测试不等于平台零留存、订阅可用或线上可用。临时任务完成后自动生成同步记录仍禁用；支付商 webhook 未接通。用户不要把稿件交给任何声称基于该 alpha 的线上地址；正式地址只能在官网联调、隐私文本和生产验收后公布。
 
@@ -160,9 +160,9 @@ npm run verify:release-identity
 
 `config/release-identity.json` 只固定已确认的产品名、appId、品牌和官网。法定销售主体、支持/隐私/条款链接、版权声明、Windows 证书 subject、Apple Team ID 和具名复核在未确认时保持 `null` / `pending`；不要用示例值或猜测值填充。源码验证器交叉检查 `build.appId`、production `oakReleaseIdentity`、author/homepage/copyright；packaged 验证器从真实 `app.asar/package.json` 复核生产标记并报告证据范围。当前输出 `complete=false` 是正确阻断状态，不是验证器故障。
 
-`verify:resources:win` 使用 `--release-tier auto`：prerelease 自动选择 `alpha`，资源正确时可通过并列出 sale 阻断；正式 semver 自动选择 `sale`。alpha.42 源码门禁为 17 项 blocker，真实 packaged ASAR/全树证据关闭其中 5 项后保留 12 项；`RELEASE_PUBLISHER_METADATA_PENDING` 仍存在，CPython/EpubCheck/Temurin-JRE/Electron/builder 来源项已收窄为人工签署待办，Electron fuse 兼容性阻断已经独立关闭。不要把 alpha 门禁通过理解为“可以销售”。
+`verify:resources:win` 使用 `--release-tier auto`：prerelease 自动选择 `alpha`，资源正确时可通过并列出 sale 阻断；正式 semver 自动选择 `sale`。alpha.54 源码门禁为 17 项 blocker，真实 packaged ASAR/全树证据关闭其中 5 项后保留 12 项；`RELEASE_PUBLISHER_METADATA_PENDING` 仍存在，CPython/EpubCheck/Temurin-JRE/Electron/builder 来源项已收窄为人工签署待办，Electron fuse 兼容性阻断已经独立关闭。不要把 alpha 门禁通过理解为“可以销售”。
 
-`npm run verify:fuses:config` 可单独验证 ASAR integrity、全量 `afterPack` 注册与 Electron fuse 构建合同。实际 `build:win` / `build:mac:*` 会在 builder 完成、签名前用精确锁定的 `@electron/fuses 2.1.3` 和 `strictlyRequireAllFuses=true` 写入全部 9 项，立即回读，再由独立门禁读取真实应用二进制并验证 `app.asar` 资源锚点及 production package identity。当前索引 8 为 `WasmTrapHandlers=true`，真实 alpha.42 EXE 无未知项；未来新增项仍会 fail-closed。详见 `ELECTRON_FUSE_POLICY.md`。
+`npm run verify:fuses:config` 可单独验证 ASAR integrity、全量 `afterPack` 注册与 Electron fuse 构建合同。实际 `build:win` / `build:mac:*` 会在 builder 完成、签名前用精确锁定的 `@electron/fuses 2.1.3` 和 `strictlyRequireAllFuses=true` 写入全部 9 项，立即回读，再由独立门禁读取真实应用二进制并验证 `app.asar` 资源锚点及 production package identity。当前索引 8 为 `WasmTrapHandlers=true`，真实 alpha.54 EXE 无未知项；未来新增项仍会 fail-closed。详见 `ELECTRON_FUSE_POLICY.md`。
 
 资源探针默认要求 host platform/arch 与 target 一致。跨主机只做静态检查必须显式使用 `--no-runtime-probe`；该结果只证明文件结构和锁，不证明运行时可以执行。Electron 桥和 Python 资源探针共用固定 `-I -S -X utf8` bootstrap，显式加入受控 core 目录，不依赖用户 `PYTHONPATH` 或 site-packages。
 
@@ -174,9 +174,9 @@ npm run verify:release-identity
 npm run release:evidence:verify:win
 ```
 
-验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest；不会扫描其他版本替代当前制品。alpha.42 的 NSIS、ZIP、SHA 文件与 schema v2 canonical manifest 已通过交叉验证；当前源码已升 alpha.54 且尚无对应制品，因此运行 alpha.54 发布验证应按设计拒绝缺失，不能复用 alpha.42 字节。
+验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest；不会扫描其他版本替代当前制品。alpha.54 的 NSIS、ZIP、SHA 文件、packaged-smoke evidence 与 schema v2 canonical manifest 已通过交叉验证；旧 alpha.42 残留曾让生成步骤按设计拒绝，不能复用或混入当前版本证据。
 
-安装生命周期验收器默认只读、不启动安装器，并要求当前源码版本存在精确制品。alpha.42 对归档 alpha.12 的只读预检已经通过；当前 alpha.54 未构建，因此不具备 alpha.54 预检输入：
+安装生命周期验收器默认只读、不启动安装器，并要求当前源码版本存在精确制品。alpha.54 对归档 alpha.12 的只读预检已经通过：
 
 ```powershell
 npm run verify:install-lifecycle:win
@@ -188,11 +188,11 @@ npm run verify:install-lifecycle:win
 node scripts/windows_install_acceptance.js --run --allow-system-mutation
 ```
 
-alpha.42 已执行并通过默认只读安装生命周期预检，`authorized=false`，没有启动安装器；真实安装生命周期始终未运行，不能据此声称安装、升级、降级保护或卸载已验收。
+alpha.54 已执行并通过默认只读安装生命周期预检，`authorized=false`，没有启动安装器；真实安装生命周期始终未运行，不能据此声称安装、升级、降级保护或卸载已验收。
 
 macOS 分架构入口为 `npm run verify:resources:mac:x64` / `:arm64` 和 `npm run build:mac:x64` / `:arm64`，必须分别在对应原生 runner 执行。`npm run build:mac` 只选择当前 Mac 的原生架构；`npm run verify:resources:mac` 是显式 `--no-runtime-probe` 的跨架构静态聚合，不算探针或构建通过。当前仍缺 x64/arm64 Python/JRE 资源与锁、构建、签名、公证和实机证据。
 
-打包 smoke 从源码 `package.json` 读取期望版本，通过 `appInfo` 核对七字段标准身份和 `app.isPackaged=true`，同时由资源门禁独立核对 ASAR production package identity，再执行引用解析确认和项目闭环。alpha.12 起 packaged runner 强制 EpubCheck/Ace，调用者不能静默降级；alpha.43 source smoke 与 alpha.42 source/packaged 历史运行均已通过，packaged 证据只属于 alpha.42。packaged runner 在 EXE 启动前后复核字节摘要，并把双进程输出摘要和匿名项目输出树写入 canonical 证据；该证据不含稿件正文，但与制品同处本地时仍不等于签名。项目、标准 store、临时目录、用户数据、缓存和崩溃目录按运行 ID 隔离在仓库 `out/`，窗口保持隐藏。
+打包 smoke 从源码 `package.json` 读取期望版本，通过 `appInfo` 核对七字段标准身份和 `app.isPackaged=true`，同时由资源门禁独立核对 ASAR production package identity，再执行引用解析确认和项目闭环。alpha.12 起 packaged runner 强制 EpubCheck/Ace，调用者不能静默降级；alpha.54 source 与 packaged smoke 均已通过，当前 packaged 证据只属于 alpha.54。packaged runner 在 EXE 启动前后复核字节摘要，并把双进程输出摘要和匿名项目输出树写入 canonical 证据；该证据不含稿件正文，但与制品同处本地时仍不等于签名。项目、标准 store、临时目录、用户数据、缓存和崩溃目录按运行 ID 隔离在仓库 `out/`，窗口保持隐藏。
 
 自选导出目录会逐级拒绝链接、目录联接和非常规目录；若选择项目内部目录，只允许 `exports/` 下。全部输出目标先统一预检，已有链接或硬链接目标不会被覆盖；每个文件在同目录完整暂存并原子换入。PDF 样张另在禁 JavaScript、导航和网络的非持久隔离 session 中生成。
 

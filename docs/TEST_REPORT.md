@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.54 明确确认后的即时结果同步闭环
+## 最新验证结论：0.1.0-alpha.54 账号同步闭环与 Windows packaged 检查点
 
-验证日期：2026-07-29。本轮未联网、未使用真实账号/令牌/数据库/网站，tracked desktop auth config 仍为 `pending_configuration`。未迁移、部署、推送或重新打包。
+验证日期：2026-07-29。本轮未联网、未使用真实账号/令牌/数据库/网站，tracked desktop auth config 仍为 `pending_configuration`。未迁移、部署或推送；Windows 打包完全使用仓库内离线依赖。
 
 | 项目 | 结果 | 证据与边界 |
 |---|---|---|
@@ -17,9 +17,17 @@
 | 全量测试 | **PASS** | 最终 `npm test` 退出码 0；Node 700 total / 693 pass / 0 fail / 7 skip，4.398 秒；Python 362 / 0 failures / 0 errors / 3 skipped，104.874 秒；墙钟 114.1 秒 |
 | 隐藏源码 smoke | **PASS（沙箱外最终证据）** | Codex 沙箱内两次在窗口创建后因 Chromium GPU 子进程 DLL 载入失败 `0xC0000135` 退出；沙箱外以同一隐藏脚本重跑 PASS，Renderer 保持 sandbox、未用 `--no-sandbox`；输出 `out/source-smoke/runs/ms611umr-1948430f091121ac/projects/` |
 | 资源信任 | **PASS（alpha 源码）** | 108 文件 / 2,171,922 字节；manifest `c0c44f2609e4e55347c6aef997e97bfda29fa0a9a47ae9b8837f7e2402e94b09`，anchor `b0b4dc7419b0fa1052ffd3fda2fbc10441fea627b8f403ba83a0ff3410df0107` |
-| 生产与销售门禁 | **未运行/未完成** | 真实 PKCE、正式端点、迁移/RLS、多实例、网站部署与生产账号 E2E 未运行；alpha.54 未打包，最新 Windows 制品仍为未签名 alpha.42；source sale 仍 17 blocker、发行身份缺 12 字段 |
+| 完整 Windows 构建 | **PASS** | 最终 `npm run build:win` 全链退出码 0，墙钟 200.8 秒；从发布证据清理、JRE/Ace stage、源码门禁、electron-builder、fuse/packaged 资源到双进程 smoke 和 schema v2 证据一次完成 |
+| Windows packaged 运行门禁 | **PASS** | 实际 ASAR/production package identity、Electron 43 全部 9 项 fuse、packaged Python/JRE/EpubCheck/Ace 资源与 `.pyc=0` 均通过；packaged sale 仍按设计报告 12 blocker |
+| Packaged smoke | **PASS** | `SMOKE-RESULT: PASS` 与第二进程 `SYNC-RECOVERY PASS` 均唯一；强制 EpubCheck/Ace；运行根 `out/packaged-smoke/runs/ms629abp-11818f84be690e63/projects/`，匿名树 76 文件 / 1,368,627 字节 / SHA-256 `3e0181990b803e65419bf99513feb5b0ef79144708f78ae40967bb045a8ca264` |
+| 发布证据 | **PASS（schema v2）** | SHA256SUMS、canonical release manifest、独立 packaged-smoke evidence、真实 NSIS/ZIP/EXE 身份和摘要已交叉验证；首次因 release 根残留 alpha.42 制品正确拒绝，旧文件移入版本化 archive 后才生成 alpha.54 证据 |
+| Windows 制品 | **PASS（精确字节）** | NSIS 190,048,220 字节 / `35078bd824a82e38bd0479cfc0b30d05bdc11e1d76728cbd1c632fa1072ab78c`；ZIP 233,887,046 字节 / `762dea0ff21b2be11b3db9560447d4bdc264dd933f017f812efa056afb8effeb`；unpacked EXE 225,449,472 字节 / `d007f78a014c8063bbc0b1fc01c3c10f5f81b91cefab303efc5aff729bed8d8c` |
+| 证据文件 | **PASS（精确字节）** | SHA256SUMS 224 字节 / `78c15c683d0562fd8918d9cf52160184ef8a92da6a68f0878b5861d8857a1fc9`；release manifest 1,170 字节 / `25a662320b8cc9bb8ec215c2694117ffa2fccb10a9a3adf0d7da2ba4357c5fc6`；smoke evidence 1,222 字节 / `786a62824d63b29b9f379eaf548d8710c4e1f0d86578cffeb4269ef7f451a937` |
+| 安装生命周期 | **PASS（只读预检）** | alpha.54 对归档 alpha.12 的九阶段输入/版本/制品证据预检 `ready_for_authorized_run=true`；`authorized=false`，未启动安装器、未写 HKCU/快捷方式，真实安装/升级/降级/卸载未执行 |
+| Authenticode | **未通过** | alpha.54 NSIS 与 win-unpacked EXE 均为 `NotSigned`；摘要和 canonical manifest 不能替代代码签名 |
+| 生产与销售门禁 | **未完成** | 真实 PKCE、正式端点、迁移/RLS、多实例、网站部署与生产账号 E2E 未运行；source/packaged sale 分别仍有 17/12 blocker，发行身份缺 12 字段 |
 
-结论：alpha.54 证明现有账号、权益、同步和网站历史组件能按“明确确认后立即发送、失败安全留队”组合为一个本地商业主流程；它不是生产账号、数据库、网站部署或可售卖发行证据。
+结论：alpha.54 证明现有账号、权益、同步和网站历史组件能按“明确确认后立即发送、失败安全留队”组合为一个本地商业主流程，并形成同版可复验 Windows 内测包；它不是生产账号、数据库、网站部署、真实安装生命周期或可售卖发行证据。
 
 ## 历史验证结论：0.1.0-alpha.53 撤回优先的标准更新与恢复入口
 

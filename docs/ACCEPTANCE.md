@@ -9,7 +9,8 @@
 - [x] Renderer 分别显示已同步、失败并安全保留、仅本机排队；登录本身不发送，暂不同步与不再询问不入队；
 - [x] 生产形状本地 E2E 贯通登录、Pro 权益、本地结果、桌面 IPC/coordinator/client、服务端独立校验与 owner 绑定、网站历史 strict parse；内容/路径/账号/token 泄露反向断言通过；
 - [x] 相关 21/21；全量 Node 700/693/0/7、Python 362/0/0/3；资源信任与隐藏 Electron source smoke 最终通过；
-- [ ] 真实 PKCE、正式端点、数据库迁移、RLS、多实例、网站部署与生产账号 E2E 未运行；alpha.54 未打包，最新 Windows 制品仍为未签名 alpha.42。
+- [x] alpha.54 Windows x64 NSIS/ZIP、实际 ASAR/production identity、9 项 fuse、packaged 资源门禁、双进程 smoke、schema v2 发布证据和对 alpha.12 的只读安装预检通过；
+- [ ] 真实 PKCE、正式端点、数据库迁移、RLS、多实例、网站部署与生产账号 E2E 未运行；Windows 制品未签名，真实安装生命周期未执行，仍不是可售卖正式版。
 
 ## 0.1.0-alpha.53 撤回优先的标准更新与恢复入口验收（2026-07-29）
 

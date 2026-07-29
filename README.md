@@ -1,6 +1,6 @@
 # 湖岸稿件（Oak Manuscript）
 
-本地优先的稿件检查与修订产品。当前源码为 `0.1.0-alpha.54`，最新真实 Windows 打包版本仍为未签名 `0.1.0-alpha.42`。已有 Electron 桌面端、Python 检查核心、离线标准包验证/项目固定/显式升级/回滚链路、用户触发且二次确认的签名在线标准更新客户端与未部署服务端固定协议、独立角色签名的追加式撤回状态机，以及内容无关撤回清单 service/HTTP/Fetch/桌面验签应用纵向链；撤回与 release 端点现已纳入同一 exact 桌面配置，并由一次明确点击固定执行“先验撤回、后查更新”。另有三模式 AI 设置与 OpenAI-compatible/Ollama/LM Studio 只读建议链、SyncRecord 明示授权/OS 加密队列、桌面系统浏览器 PKCE/OS 加密账号会话、账号/设备绑定的 Ed25519 权益客户端，以及独立的服务端签发、规范化订阅事件、账号设备管理 API 与 Postgres 契约源码。Web 临时稿件处理仍与长期结果同步分流；网站客户端源码现在既能查看和属主删除内容无关的同步历史，也能查看订阅状态、掩码设备列表并逐台确认撤销。账号、权益和标准联网配置均为 `pending_configuration`，仓库不含生产私钥、真实端点或生产公钥；真实发布源、部署、监控和后台调度尚未实现。商业正式版目标为 Windows、macOS 与 Web。按论文、纸质出版物、电子书三类目标检查稿件，提供可追溯标准依据的问题解释、集中确认的白名单机械订正、检查点恢复、修订稿与检查报告导出。
+本地优先的稿件检查与修订产品。当前源码与最新真实 Windows 打包版本均为 `0.1.0-alpha.54`；Windows 制品仍未签名，只是可验证内测检查点，不是可售卖正式版。已有 Electron 桌面端、Python 检查核心、离线标准包验证/项目固定/显式升级/回滚链路、用户触发且二次确认的签名在线标准更新客户端与未部署服务端固定协议、独立角色签名的追加式撤回状态机，以及内容无关撤回清单 service/HTTP/Fetch/桌面验签应用纵向链；撤回与 release 端点现已纳入同一 exact 桌面配置，并由一次明确点击固定执行“先验撤回、后查更新”。另有三模式 AI 设置与 OpenAI-compatible/Ollama/LM Studio 只读建议链、SyncRecord 明示授权/OS 加密队列、桌面系统浏览器 PKCE/OS 加密账号会话、账号/设备绑定的 Ed25519 权益客户端，以及独立的服务端签发、规范化订阅事件、账号设备管理 API 与 Postgres 契约源码。Web 临时稿件处理仍与长期结果同步分流；网站客户端源码现在既能查看和属主删除内容无关的同步历史，也能查看订阅状态、掩码设备列表并逐台确认撤销。账号、权益和标准联网配置均为 `pending_configuration`，仓库不含生产私钥、真实端点或生产公钥；真实发布源、部署、监控和后台调度尚未实现。商业正式版目标为 Windows、macOS 与 Web。按论文、纸质出版物、电子书三类目标检查稿件，提供可追溯标准依据的问题解释、集中确认的白名单机械订正、检查点恢复、修订稿与检查报告导出。
 
 **当前桌面核心承诺**：稿件默认只在本机处理；永不原地修改原稿（SHA-256 全程校验）；不强制注册；报告与导出不设营销门槛。
 
@@ -16,7 +16,7 @@ alpha.54 闭合账号同步商业主流程的本地生产形状证据：同步�
 
 此前两个固定 AI 组合的窄验收仍成立：Ollama 0.32.5 + qwen3:4b，以及 LM Studio headless llmster 0.0.20+1 + 同一 Qwen3 4B GGUF；这不是所有版本、模型、硬件、桌面 GUI 或稿件类型的全面兼容/质量承诺。OpenAI、Anthropic、Gemini 官方云仍未接入。账号和权益默认配置均没有网络目标，所以当前普通 APP 仍不能登录、刷新生产订阅或上传。“源码接线存在”不等于生产服务已经验收。
 
-最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.54 当前回归为 Node 700 total / 693 pass / 0 fail / 7 skip、Python 362 total / 0 failures / 0 errors / 3 skipped；隐藏 Electron 源码 smoke 在 Codex 沙箱外 PASS。alpha.54 尚未打包；最新 alpha.42 Windows 制品为 NSIS 190,025,679 字节（SHA-256 `69147b5a…8736`）和 ZIP 233,856,293 字节（`38c66dcd…72a0`）。其 schema v2 发布清单与 packaged smoke 已验证，但制品未签名、真实系统安装未执行、发行身份 `complete=false`，因此只是内测包。
+最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.54 当前回归为 Node 700 total / 693 pass / 0 fail / 7 skip、Python 362 total / 0 failures / 0 errors / 3 skipped；隐藏 Electron 源码 smoke 在 Codex 沙箱外 PASS。alpha.54 Windows NSIS、ZIP、真实 ASAR/fuse/资源门禁、双进程 packaged smoke、schema v2 发布清单与只读安装生命周期预检均已通过；精确字节数和 SHA-256 见测试报告。制品未签名、真实系统安装未执行、发行身份 `complete=false`，因此仍只是内测包。
 
 当前桌面安全边界包括：默认 Electron session 离线与固定 CSP；PDF 使用禁 JavaScript/导航/网络的非持久隔离 session；项目 schema/路径完整校验与跨进程内核写锁；创建项目在锁内以单一输入文件描述符复制到 `source`，再生成 `working`；自选导出目录逐级验证、全部目标预检和逐文件原子换入；标准包以 canonical manifest、内容寻址存储、高水位和精确回滚目标 fail-closed。已有项目不会因全局标准更新而静默换规则，必须先查看差异并显式确认，升级后强制重检。
 

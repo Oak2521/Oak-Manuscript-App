@@ -43,7 +43,7 @@
 
 打包安全另由 `scripts/electron_fuse_policy.js` 固定：必须启用 ASAR 与 embedded integrity、用顶层 `@electron/fuses 2.1.3` 显式设置 Electron 43 全部 9 项，并在 electron-builder 后从真实应用二进制读回。索引 8 已定义为 `WasmTrapHandlers`；未来未知 wire 项仍 fail-closed。alpha.10 已把 Ace 迁移到 `utilityProcess` 并固定 `RunAsNode=false`。详见 `docs/ELECTRON_FUSE_POLICY.md`。
 
-当前源码的 `resource-trust-anchor.json` 绑定应用 loose 文件（含发行身份、账号/权益/同步 exact schema、Web 作业/同步契约、AI 请求预览/审阅 schema）的 canonical 清单和目标平台四类运行锁；精确文件数、字节数与摘要以 `docs/TEST_REPORT.md` 为准。alpha.44 源码锚点已复验；最新真实 packaged 锚点、ASAR、fuse 与隐藏 smoke 仍对应 alpha.42。Windows Python/EpubCheck/JRE/Electron/builder 锁再分别绑定五类官方来源证据摘要；packaged 门禁从真实 ASAR 读取 production `package.json` 与 `oakReleaseIdentity`。
+当前源码的 `resource-trust-anchor.json` 绑定应用 loose 文件（含发行身份、账号/权益/同步 exact schema、Web 作业/同步契约、AI 请求预览/审阅 schema）的 canonical 清单和目标平台四类运行锁；精确文件数、字节数与摘要以 `docs/TEST_REPORT.md` 为准。alpha.54 源码锚点与同版真实 packaged 锚点、ASAR、fuse、资源门禁及隐藏 smoke 均已复验。Windows Python/EpubCheck/JRE/Electron/builder 锁再分别绑定五类官方来源证据摘要；packaged 门禁从真实 ASAR 读取 production `package.json` 与 `oakReleaseIdentity`。
 
 PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专用 CSP 只允许自包含 HTML 所需的内联样式和 `data:` 图片。加载报告前后核对文件身份，拒绝项目根/`exports`/报告/目标的 symlink、junction/reparse、硬链接和目录身份换入，最后同目录原子写入。
 

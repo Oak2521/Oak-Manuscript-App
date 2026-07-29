@@ -593,3 +593,14 @@ Provider 故障不得进入 Python 检查核心，也不得使已有本地项目
 - content-free audit 不含 token、API key、账号或设备实值；测试状态适配不作为可部署服务；
 - alpha.48 全量 Node 655 / Python 362 零失败，资源信任 96 文件，Web 与 Electron 隐藏源码 smoke 通过；
 - 真实 OAuth/GoTrue/Supabase、支付商 webhook、数据库迁移/RLS/并发、官网部署与生产 E2E 均未运行；没有 alpha.48 Windows/macOS 制品，目标 `1.0.0` 尚未达到。
+
+## 二十四、alpha.54 实施与 Windows packaged 检查点（2026-07-29）
+
+本节记录从 alpha.48 到 alpha.54 的方案落实和同版 Windows 内测制品，不改变发布硬门禁：
+
+- 已完成标准更新的固定 HTTPS 服务/桌面客户端、独立角色签名撤回、追加式撤回状态、内容无关撤回获取，以及一次明确点击“先验撤回、后查更新”的恢复入口；默认 release/revocation 端点和生产 trust pin 仍为空；
+- 已闭合登录、Pro 权益、本地结果、逐字段 SyncRecord 预览、用户明确选择同步、配置完整时即时发送、失败 OS 加密留队、服务端可信 owner 绑定和网站历史 strict parse 的单一匿名生产形状 E2E；登录、预览、启动或队列恢复不自动上传；
+- 已离线生成 alpha.54 Windows x64 NSIS、ZIP 与 win-unpacked，并通过实际 ASAR/production identity、Electron 43 全部 9 项 fuse、packaged 资源、强制 EpubCheck/Ace 双进程 smoke、schema v2 发布证据和对 alpha.12 的安装生命周期只读预检；
+- 首次发布证据生成因 release 根存在 alpha.42 残留而正确 fail-closed；旧制品保留进版本化 archive 后才生成 alpha.54 证据，证明门禁没有跨版本混用；
+- Windows 制品仍为 `NotSigned`，真实安装/升级/降级/卸载未执行；source/packaged sale 分别仍有 17/12 项 blocker，发行身份仍缺 12 字段；
+- 真实 OAuth/GoTrue/Supabase、支付商 webhook、数据库迁移/RLS、多实例、官网/API 部署、生产账号 E2E、macOS 构建/签名/公证和正式发布均未完成。因此该制品只能用于受控内测，目标 `1.0.0` 和“可售卖订阅正式版”尚未达到。

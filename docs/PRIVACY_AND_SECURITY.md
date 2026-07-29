@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.54` 源码已实现的桌面隐私边界、SyncRecord 服务端/API/Supabase、PKCE/加密 token-store/确认后即时同步与失败恢复、Ed25519 权益客户端、独立签发、规范化订阅事件和属主设备管理服务、三模式 AI，以及 Web 临时作业、同步历史和订阅/设备客户端源码契约。账号同步与网站撤销到桌面显式刷新降级均已用本地匿名纵向链验证，审计仍为 content-free。默认账号与权益配置没有网络目标，仓库没有生产私钥；最新 alpha.42 Windows 制品已通过 packaged 安全门禁但仍未签名，不是可售卖正式版。真实账号、支付商 webhook、数据库迁移、API/官网部署和生产隔离仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.54` 源码已实现的桌面隐私边界、SyncRecord 服务端/API/Supabase、PKCE/加密 token-store/确认后即时同步与失败恢复、Ed25519 权益客户端、独立签发、规范化订阅事件和属主设备管理服务、三模式 AI，以及 Web 临时作业、同步历史和订阅/设备客户端源码契约。账号同步与网站撤销到桌面显式刷新降级均已用本地匿名纵向链验证，审计仍为 content-free。默认账号与权益配置没有网络目标，仓库没有生产私钥；同版 alpha.54 Windows 制品已通过 packaged 安全门禁但仍未签名，不是可售卖正式版。真实账号、支付商 webhook、数据库迁移、API/官网部署和生产隔离仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -141,7 +141,7 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - Windows CPython 3.13.14 另由 provenance v1 绑定 PSF 官方 ZIP/Sigstore/SPDX、34 文件清单、33 个原字节文件、唯一 `_pth` 精确追加和原样许可证；证据原始 SHA-256 同时进入运行时 manifest 与 ASAR 资源锚点。完整 Sigstore/GPG 与具名许可签署仍待办，机器验证不能替代法律/再分发审阅。
 - Electron 桥和门禁共用固定 Python bootstrap：`-I -S -X utf8`，显式把经路径策略验证的 core 绝对目录插入 `sys.path[0]` 后用 `runpy` 执行；同时清理可注入模块或启动参数的继承环境，并始终以参数数组和 `shell=false` 启动。CPython 探针核对 `sys.implementation`、精确三段版本、`releaselevel=final` 与 `serial=0`，不只匹配宽松版本字符串。
 - 打包配置必须显式开启 ASAR、保持 embedded ASAR integrity，并注册全量 fuse `afterPack`。顶层锁定 `@electron/fuses 2.1.3`，以 `strictlyRequireAllFuses=true` 写入 Electron 43 的全部 9 项；索引 8 `WasmTrapHandlers=true`。写后立即回读，随后再独立读取真实二进制；路径逃逸、不安全父链、链接/硬链接、实际 Framework 文件身份变化、API/索引和状态漂移均拒绝。完整合同见 `ELECTRON_FUSE_POLICY.md`。
-- alpha.44 源码锚点绑定 88 个 loose 应用文件，包括账号/权益/同步配置与 schema、发行身份、Web/Sync HTTP schema 和目标平台运行锁；最新真实 packaged 门禁仍对应 alpha.42，已从实际 ASAR 读取其同版锚点与 production package 的 exact `oakReleaseIdentity` 并复验 loose 全树。读取器解析当前 raw header 并精确读满字节，不依赖路径缓存；打包启动在标准存储和窗口前复核完整资源树。Python 显式 `-B` 禁止探针写入字节码；锚点、身份和清单不读取或记录用户稿件内容。
+- alpha.54 源码锚点绑定 108 个 loose 应用文件，包括账号/权益/同步配置与 schema、发行身份、Web/Sync HTTP schema 和目标平台运行锁；同版真实 packaged 门禁已从实际 ASAR 读取锚点与 production package 的 exact `oakReleaseIdentity` 并复验 loose 全树。读取器解析当前 raw header 并精确读满字节，不依赖路径缓存；打包启动在标准存储和窗口前复核完整资源树。Python 显式 `-B` 禁止探针写入字节码；锚点、身份和清单不读取或记录用户稿件内容。
 - Java 与 Ace/Node/Electron 外部工具进程也清理类路径、模块和启动参数注入变量，并以固定参数数组、`shell=false` 启动。
 - 所有锁和清单使用 locale-independent UTF-16 code unit 排序；Ace tracked lock 同时固定 stage manifest 原始字节哈希，JSON 语义等价但字节漂移也拒绝。JRE/Ace 的候选 stage 与受版本控制锁在显式更新时事务提交，失败恢复旧目录和旧锁，避免身份撕裂。
 - Ace 的空/未知 license 声明和空许可证文件直接拒绝。现有许可证文件或生成元数据通知只满足 alpha 可追溯性；全部 236 包仍需正式逐包人工审计。

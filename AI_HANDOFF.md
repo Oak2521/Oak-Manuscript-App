@@ -4,7 +4,7 @@
 > 当前开发方：ChatGPT Codex
 > 当前版本：`0.1.0-alpha.54`
 > 当前分支：`chatgpt/commercial-v1`
-> 当前源码本地标签：`chatgpt-v0.1.0-alpha.54-account-sync-flow`；既有 `chatgpt-v0.1.0-alpha.53-standards-recovery-ui` 为撤回优先恢复检查点，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据
+> 当前本地标签：`chatgpt-v0.1.0-alpha.54-account-sync-flow`（功能源码）与 `chatgpt-v0.1.0-alpha.54-packaged`（Windows 打包检查点）；既有 `chatgpt-v0.1.0-alpha.42-packaged` 保留为历史证据
 
 ## 1. 权威入口与工作区
 
@@ -30,6 +30,15 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 2. 当前现场事实
 
+### 已完成：0.1.0-alpha.54 Windows packaged 检查点
+
+- 已离线生成 Windows x64 NSIS、便携 ZIP 与 `win-unpacked`；实际 ASAR 资源、production package identity、Electron 43 全部 9 项 fuse、双进程加密队列恢复和强制 EpubCheck/Ace 隐藏 smoke 均通过；
+- packaged smoke 为 `SMOKE-RESULT: PASS`，匿名输出树 76 文件 / 1,368,627 字节，tree SHA-256 `3e018199…a264`，运行根 `out/packaged-smoke/runs/ms629abp-11818f84be690e63/projects/`；
+- schema v2 `SHA256SUMS.txt`、canonical release manifest 与独立 packaged-smoke evidence 已互相交叉验证；精确制品字节数和 SHA-256 以 `docs/TEST_REPORT.md` 为准；
+- 首次最终证据生成因 release 根残留 alpha.42 制品按设计 fail-closed；旧制品未删除，已移至 `release/archive/0.1.0-alpha.42-residual-before-alpha.54/`，随后只针对 alpha.54 重新生成并验证；
+- alpha.54 对归档 alpha.12 的安装生命周期只读预检通过，`ready_for_authorized_run=true`；未获得系统变更授权，因而没有启动安装器、写 HKCU/快捷方式或执行九阶段安装/升级/降级/卸载；
+- NSIS 与 unpacked EXE 均为 `NotSigned`；packaged sale 门禁仍有 12 项、发行身份仍缺 12 字段。它是可复验内测包，不是可售卖正式版；本轮没有联网、真实账号、生产数据库、网站部署或推送。
+
 ### 已完成：0.1.0-alpha.54 明确确认后的即时结果同步闭环
 
 - 登录仍不等于授权：只有已登录用户导出后才生成逐字段 SyncRecord 预览；预览本身零入队、零请求，Renderer 只提交 opaque 幂等 ID 与四种固定选择，不能提交 payload、token、URL 或 transport；
@@ -38,7 +47,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - 新增单一生产形状本地 E2E，贯通 Auth 登录、Pro 权益、本地检查结果、真实账号/同步 IPC、coordinator/client、Fetch handler、服务端独立校验/owner 绑定及网站历史 strict parser；标题、正文片段、文件名、路径、账号和 token 均未进入同步记录或公开审计；
 - 相关 21/21；最终全量 `npm test`：Node 700 total / 693 pass / 0 fail / 7 skip（4.398 秒），Python 362 / 0 failures / 0 errors / 3 skipped（104.874 秒），墙钟 114.1 秒；
 - 资源信任 108 文件 / 2,171,922 字节，manifest `c0c44f26…94b09`、anchor `b0b4dc74…f0107`；隐藏 Electron source smoke 在 Codex 沙箱内两次因 GPU 子进程 DLL 载入失败退出，沙箱外隐藏重跑 PASS，输出 `out/source-smoke/runs/ms611umr-1948430f091121ac/projects/`；
-- 本轮未联网、未使用真实账号/令牌/数据库/网站，未部署、推送或打包。tracked 账号配置仍为 `pending_configuration`，普通 APP 仍不会登录或同步；最新 Windows 制品仍为未签名 alpha.42。
+- 本功能开发本身未联网、未使用真实账号/令牌/数据库/网站，也未部署或推送。随后已经形成同版 alpha.54 Windows packaged 检查点，见上节；tracked 账号配置仍为 `pending_configuration`，普通 APP 仍不会登录或同步。
 
 ### 已完成：0.1.0-alpha.53 撤回优先的标准更新与恢复入口
 
