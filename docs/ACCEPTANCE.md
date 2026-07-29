@@ -2,7 +2,20 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.36 Windows 可安装内测制品验收（2026-07-28）
+## 0.1.0-alpha.37 packaged smoke 证据绑定验收（2026-07-28）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.37`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] Windows x64 NSIS、ZIP 与 unpacked 应用真实生成；packaged 资源门禁、ASAR production identity、Electron 43 全 9 fuse 和隐藏双进程 smoke 均通过；
+- [x] canonical smoke 证据绑定实际 EXE、主 smoke/第二进程恢复唯一成功标志与四个输出摘要、匿名输出树逐文件哈希；EXE 漂移、输出漂移、伪造标志、路径/版本漂移、其他隐藏名、链接/硬链接及 schema/canonical 篡改均有拒绝测试；
+- [x] 发布 manifest schema v2 强制消费 smoke 证据文件摘要、EXE 摘要和输出树摘要；生成与独立 `--verify`/`--verify-live` 均通过，历史 schema v1 只为安装归档严格兼容；
+- [x] 当前 NSIS 190,013,357 字节 / SHA-256 `26af70e0ca533ee6dc09feae50ba420f7cb11e5dfba270f27870e1e679ece095`，ZIP 233,838,480 字节 / `e4288fbf621b837b0272c938113457928aa422573848129e46308a29a300697d`；
+- [x] 资源锁 79 文件 / 2,139,277 字节，manifest SHA-256 `4ce4810d54f180d961f644b8f5d66e7b3aba6996e1a0c5c64b75397c93ab1b97`，anchor SHA-256 `4f306d10d385c8b913b03782a8672eb66022096bab836bffed5bb9ed027bbf92`；
+- [x] `npm test` Node 523 / Python 362 全量零失败；独立隐藏源码 smoke 与 packaged smoke 均 PASS；
+- [x] alpha.37 对归档 alpha.12 的安装生命周期只读预检通过，`authorized=false`、`ready_for_authorized_run=true`，没有启动安装器或改写系统；
+- [x] 发行身份保持 `complete=false`，12 个缺失字段及 packaged 12 项 sale blocker 没有被本地哈希证据错误关闭；
+- [ ] Authenticode 或独立可信见证使 smoke 证据不可由本地写入者整体重造；真实安装/升级/降级探测/卸载、干净机、macOS、Web 部署及可售卖正式版门禁完成。
+
+## 0.1.0-alpha.36 Windows 可安装内测制品验收（历史，2026-07-28）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.36`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] Windows x64 NSIS、ZIP 与 unpacked 应用真实生成；packaged 资源门禁、ASAR production identity、Electron 43 全 9 fuse 和隐藏 smoke 均通过；

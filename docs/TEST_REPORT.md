@@ -2,25 +2,33 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.36 Windows 可安装内测制品
+## 最新验证结论：0.1.0-alpha.37 packaged smoke 证据绑定制品
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未修改官网或项目目录外内容；Electron smoke 均以隐藏进程执行。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
-| `npm test` | **PASS** | 退出码 0，墙钟 167.7 秒；Node 517 total / 510 pass / 0 fail / 7 skip（3.7388783 秒）；Python 362 total / 0 failures / 0 errors / 3 skipped（114.943 秒） |
-| 独立隐藏源码 Electron smoke | **PASS** | `SMOKE-RESULT: PASS`；版本身份 alpha.36；输出 `out/source-smoke/runs/ms5gub0l-9771bfbccfb42c60/projects/` |
-| Windows x64 electron-builder | **制品生成成功** | 生成 `win-unpacked`、NSIS、ZIP 和 blockmap；构建本体、packaged 资源、9 fuse 与隐藏 packaged smoke 均通过。初次总命令仅在最后发布证据阶段因 release 根残留 alpha.23 制品按设计退出 1；旧文件无损移入仓库内归档后，当前证据生成与复验通过 |
-| 独立隐藏 packaged Electron smoke | **PASS** | `SMOKE-RESULT: PASS`；真实执行 `release/win-unpacked/湖岸稿件 Oak Manuscript.exe`；输出 `out/packaged-smoke/runs/ms5gmh67-fb9c3ef9f1eba240/projects/` |
+| `npm test` | **PASS** | 退出码 0，墙钟 165.2 秒；Node 523 total / 516 pass / 0 fail / 7 skip（4.1144228 秒）；Python 362 total / 0 failures / 0 errors / 3 skipped（113.806 秒） |
+| packaged-smoke/发布证据定向 | **PASS** | 57 total / 55 pass / 0 fail / 2 条件跳过；覆盖合法项目锁、其他隐藏名、链接/硬链接、EXE/输出漂移、伪造标志、schema/canonical 篡改、manifest v1/v2 与联合提交 |
+| 独立隐藏源码 Electron smoke | **PASS** | `SMOKE-RESULT: PASS`；版本身份 alpha.37；输出 `out/source-smoke/runs/ms5hynmq-aba639b137d62e8b/projects/` |
+| Windows x64 electron-builder | **制品生成成功** | 生成 `win-unpacked`、NSIS、ZIP 和 blockmap；构建本体、packaged 资源与 9 fuse 均通过。首次后半段证据门禁误拒绝合法 `.oak-project-write.lock`，收窄规则并增加反向测试后只重跑 packaged smoke 与证据链通过 |
+| 独立隐藏 packaged Electron smoke | **PASS** | `SMOKE-RESULT: PASS`；真实执行 `release/win-unpacked/湖岸稿件 Oak Manuscript.exe`；输出 `out/packaged-smoke/runs/ms5ht9j7-67fece5b58d7c515/projects/`；主进程和第二进程恢复标志各唯一一次 |
 | packaged 资源与 ASAR 身份 | **PASS** | Python/JRE/EpubCheck/Ace 实际探针通过；锚点受 app.asar 保护；79 个应用资源 / 2,139,277 字节；packaged 资源门禁保留 12 项 sale blocker |
 | packaged Electron fuse | **PASS** | wire v1 索引 0—8 全部已知且精确匹配；`unknown_fuses=[]`、`blockers=[]`、`fully_known=true` |
-| 发布证据生成与独立复验 | **PASS** | NSIS 190,013,438 字节 / `fb25a52127d2d4bd2f2e1275236e54a2a9e4d6cce65707938a96364a201ce5cd`；ZIP 233,838,475 字节 / `cbdf1afc46b0d6a52f7d0ec0489096d6824a387c18819c6a93d505414b0757dc`；SHA 文件摘要 `c9183c84264ab235bc90a46403b6dca37b99ac41fd54e72735eb629b18231810` |
-| 资源信任锁更新/复验 | **PASS** | manifest `b0e85cd18ab481d5449b7d79c6c7bd6c438678d47cc892731ee7b394f22059ed`；anchor `0e2d523b37cc4acb6268288f8acf7dbacccde2c772f823dbedc0d48ec3b9a8c9` |
-| 安装生命周期只读预检 | **PASS（未改系统）** | alpha.36 当前安装器与归档 alpha.12 精确绑定；`authorized=false`、`ready_for_authorized_run=true`；未运行安装、升级、降级探测或卸载 |
+| packaged smoke canonical 证据 | **PASS** | 证据 1,222 字节 / `a90bc1c1724c6e52209dad9b1f40a9fe31f0eae2a40d1f285f36c87d171980a9`；绑定实际 EXE 225,449,472 字节 / `ff85385e47360dab567d9606b63a3d1b68abfb6071af8e9a728a6248a68aefca`，以及输出树 76 文件 / 1,368,471 字节 / `f0c9d68797d1d37953f96d18fdaaf1b30e6a91866fb8f3887e63f68f66beb334` |
+| 发布证据生成与独立复验 | **PASS** | manifest schema v2；NSIS 190,013,357 字节 / `26af70e0ca533ee6dc09feae50ba420f7cb11e5dfba270f27870e1e679ece095`；ZIP 233,838,480 字节 / `e4288fbf621b837b0272c938113457928aa422573848129e46308a29a300697d`；SHA 文件摘要 `3d4ac24633b8134b484377872ea3a6fdd8d3d8cea7ed067025d939a71fb76774` |
+| 资源信任锁更新/复验 | **PASS** | manifest `4ce4810d54f180d961f644b8f5d66e7b3aba6996e1a0c5c64b75397c93ab1b97`；anchor `4f306d10d385c8b913b03782a8672eb66022096bab836bffed5bb9ed027bbf92` |
+| 安装生命周期只读预检 | **PASS（未改系统）** | alpha.37 当前 schema v2 安装器与归档 alpha.12 schema v1 安装器精确绑定；`authorized=false`、`ready_for_authorized_run=true`；未运行安装、升级、降级探测或卸载 |
 | 发行身份 | **PASS（阻断状态正确）** | `complete=false`，法定销售主体、官方支持/隐私/条款、版权、签名主体、具名复核及 package 发行字段共 12 项缺失 |
 | Windows 签名 / 真实安装生命周期 / 干净机 / macOS / Web 部署 | **未运行** | 当前是未签名 Windows 内测制品，不是可售卖正式版；没有借 alpha 门禁通过关闭正式销售要求 |
 
-证据边界：本检查点证明 alpha.36 Windows x64 字节级制品、打包资源、ASAR/fuse、安全启动和本地端到端流程可复验；不证明签名、系统安装生命周期、干净机、macOS、生产账号/同步/AI、Web 部署或商业销售条件完成。
+证据边界：本检查点证明 alpha.37 Windows x64 字节级制品、打包资源、ASAR/fuse、安全启动、本地端到端流程及其 EXE/匿名输出树哈希绑定可复验。证据与制品同处本地仓库，在 Authenticode 或独立可信见证前可被有写权限者整体重造，不能称为不可伪造；也不证明系统安装生命周期、干净机、macOS、生产账号/同步/AI、Web 部署或商业销售条件完成。
+
+## 历史验证结论：0.1.0-alpha.36 Windows 可安装内测制品
+
+- `npm test`：Node 517 total / 510 pass / 0 fail / 7 skip；Python 362 total / 0 failures / 0 errors / 3 skipped；隐藏 source/packaged smoke PASS。
+- NSIS 190,013,438 字节 / SHA-256 `fb25a52127d2d4bd2f2e1275236e54a2a9e4d6cce65707938a96364a201ce5cd`；ZIP 233,838,475 字节 / `cbdf1afc46b0d6a52f7d0ec0489096d6824a387c18819c6a93d505414b0757dc`；旧制品与证据保存在 `release/archive/0.1.0-alpha.36-final/`。
+- alpha.36 对归档 alpha.12 安装生命周期只读预检通过；未启动安装器、未签名，也没有 canonical packaged-smoke 文件或 schema v2 发布绑定。
 
 ## 历史验证结论：0.1.0-alpha.35 AI 有界 HTTP 底座与适配路由契约
 

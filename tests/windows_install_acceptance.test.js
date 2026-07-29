@@ -75,6 +75,20 @@ function manifest(version) {
   };
 }
 
+function manifestV2(version) {
+  return {
+    ...manifest(version),
+    schema_version: 2,
+    packaged_smoke: {
+      filename: "packaged-smoke-evidence-win32-x64.json",
+      size_bytes: 1024,
+      sha256: "d".repeat(64),
+      executable_sha256: "e".repeat(64),
+      output_tree_sha256: "f".repeat(64),
+    },
+  };
+}
+
 function fixturePreflight(t) {
   const root = makeRoot(t);
   fs.writeFileSync(path.join(root, "package.json"), `${JSON.stringify({ version: CURRENT_VERSION })}\n`);
@@ -182,6 +196,10 @@ test("manifest schema is exact and rejects unknown fields, duplicate kinds and n
     expectedVersion: CURRENT_VERSION,
     label: "fixture",
   }));
+  assert.doesNotThrow(() => validateReleaseManifest(manifestV2(CURRENT_VERSION), {
+    expectedVersion: CURRENT_VERSION,
+    label: "fixture-v2",
+  }));
   const unknown = manifest(CURRENT_VERSION);
   unknown.extra = true;
   assert.throws(() => validateReleaseManifest(unknown, {
@@ -200,6 +218,12 @@ test("manifest schema is exact and rejects unknown fields, duplicate kinds and n
     expectedVersion: CURRENT_VERSION,
     label: "fixture",
   }), /制品名不匹配/);
+  const badSmoke = manifestV2(CURRENT_VERSION);
+  badSmoke.packaged_smoke.filename = "forged.json";
+  assert.throws(() => validateReleaseManifest(badSmoke, {
+    expectedVersion: CURRENT_VERSION,
+    label: "fixture-v2",
+  }), /packaged_smoke 绑定非法/);
 });
 
 test("archived release verifier binds canonical manifest, checksums, bytes and PE identity", (t) => {

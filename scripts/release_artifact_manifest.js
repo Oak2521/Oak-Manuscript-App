@@ -5,6 +5,10 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const { compareUtf16 } = require("./deterministic_compare");
+const {
+  EVIDENCE_FILENAME: PACKAGED_SMOKE_EVIDENCE_FILENAME,
+  verifyPackagedSmokeEvidence,
+} = require("./packaged_smoke_evidence");
 const { ensureSafeDirectoryChain, readSafeRegularFile } = require("./safe_tracked_file");
 const { parseJsonStrict } = require("./strict_json");
 
@@ -201,15 +205,38 @@ function checksumBytes(artifacts) {
   );
 }
 
-function manifestFor(metadata, artifacts, sumsBytes) {
+function collectPackagedSmokeEvidence(root, { requireOutputTree }) {
+  const projectRoot = path.resolve(root);
+  const evidence = verifyPackagedSmokeEvidence({
+    root: projectRoot,
+    platform: "win32",
+    arch: "x64",
+    requireOutputTree,
+  });
+  const record = readSafeRegularFile(
+    projectRoot,
+    path.join(projectRoot, "release", PACKAGED_SMOKE_EVIDENCE_FILENAME),
+    "packaged smoke evidence",
+  );
   return {
-    schema_version: 1,
+    filename: PACKAGED_SMOKE_EVIDENCE_FILENAME,
+    size_bytes: record.bytes.length,
+    sha256: sha256(record.bytes),
+    executable_sha256: evidence.executable.sha256,
+    output_tree_sha256: evidence.output_tree.sha256,
+  };
+}
+
+function manifestFor(metadata, artifacts, sumsBytes, packagedSmoke) {
+  return {
+    schema_version: 2,
     product: metadata.product,
     app_id: metadata.appId,
     version: metadata.version,
     target: { platform: "win32", arch: "x64" },
     artifacts,
     sha256sums: { filename: CHECKSUM_FILENAME, sha256: sha256(sumsBytes) },
+    packaged_smoke: packagedSmoke,
   };
 }
 
@@ -326,19 +353,25 @@ function commitEvidencePair({ root, items, verify, rename = fs.renameSync, befor
   }
 }
 
-function validateManifestSchema(manifest, metadata, artifacts, sumsBytes) {
+function validateManifestSchema(manifest, metadata, artifacts, sumsBytes, packagedSmoke) {
   exactKeys(
     manifest,
-    ["schema_version", "product", "app_id", "version", "target", "artifacts", "sha256sums"],
+    ["schema_version", "product", "app_id", "version", "target", "artifacts", "sha256sums", "packaged_smoke"],
     "发布 manifest",
   );
   exactKeys(manifest.target, ["platform", "arch"], "发布 manifest.target");
   exactKeys(manifest.sha256sums, ["filename", "sha256"], "发布 manifest.sha256sums");
-  if (manifest.schema_version !== 1 || manifest.product !== metadata.product ||
+  exactKeys(
+    manifest.packaged_smoke,
+    ["filename", "size_bytes", "sha256", "executable_sha256", "output_tree_sha256"],
+    "发布 manifest.packaged_smoke",
+  );
+  if (manifest.schema_version !== 2 || manifest.product !== metadata.product ||
       manifest.app_id !== metadata.appId || manifest.version !== metadata.version ||
       manifest.target.platform !== "win32" || manifest.target.arch !== "x64" ||
       manifest.sha256sums.filename !== CHECKSUM_FILENAME ||
-      manifest.sha256sums.sha256 !== sha256(sumsBytes)) {
+      manifest.sha256sums.sha256 !== sha256(sumsBytes) ||
+      JSON.stringify(manifest.packaged_smoke) !== JSON.stringify(packagedSmoke)) {
     throw new Error("发布 manifest 顶层身份或 SHA256SUMS 绑定不一致");
   }
   if (!Array.isArray(manifest.artifacts) || manifest.artifacts.length !== artifacts.length) {
@@ -357,6 +390,7 @@ function verifyReleaseEvidence({ root = PROJECT_ROOT, platform = "win32", arch =
   const projectRoot = path.resolve(root);
   const metadata = readProjectMetadata(projectRoot);
   const artifacts = collectArtifacts(projectRoot, metadata);
+  const packagedSmoke = collectPackagedSmokeEvidence(projectRoot, { requireOutputTree: false });
   const expectedSums = checksumBytes(artifacts);
   const releaseDir = path.join(projectRoot, "release");
   const sumsRecord = readSafeRegularFile(
@@ -371,7 +405,7 @@ function verifyReleaseEvidence({ root = PROJECT_ROOT, platform = "win32", arch =
     "发布 manifest",
   );
   const manifest = parseJsonStrict(manifestRecord.bytes.toString("utf8"), "发布 manifest");
-  validateManifestSchema(manifest, metadata, artifacts, sumsRecord.bytes);
+  validateManifestSchema(manifest, metadata, artifacts, sumsRecord.bytes, packagedSmoke);
   if (!manifestRecord.bytes.equals(manifestBytes(manifest))) {
     throw new Error("发布 manifest 不是 canonical UTF-8/LF 序列化");
   }
@@ -392,8 +426,9 @@ function generateReleaseEvidence({
   const projectRoot = path.resolve(root);
   const metadata = readProjectMetadata(projectRoot);
   const artifacts = collectArtifacts(projectRoot, metadata);
+  const packagedSmoke = collectPackagedSmokeEvidence(projectRoot, { requireOutputTree: true });
   const sums = checksumBytes(artifacts);
-  const manifest = manifestFor(metadata, artifacts, sums);
+  const manifest = manifestFor(metadata, artifacts, sums, packagedSmoke);
   const releaseDir = path.join(projectRoot, "release");
   commitEvidencePair({
     root: projectRoot,
@@ -415,7 +450,7 @@ function clearReleaseEvidence({ root = PROJECT_ROOT, platform = "win32", arch = 
     create: true,
     label: "发布目录",
   });
-  const targets = [CHECKSUM_FILENAME, MANIFEST_FILENAME].map((filename) => ({
+  const targets = [CHECKSUM_FILENAME, MANIFEST_FILENAME, PACKAGED_SMOKE_EVIDENCE_FILENAME].map((filename) => ({
     filename,
     target: path.join(releaseDir, filename),
   }));
@@ -480,6 +515,7 @@ if (require.main === module) {
 module.exports = {
   CHECKSUM_FILENAME,
   MANIFEST_FILENAME,
+  PACKAGED_SMOKE_EVIDENCE_FILENAME,
   clearReleaseEvidence,
   collectArtifacts,
   generateReleaseEvidence,

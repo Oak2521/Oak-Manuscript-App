@@ -4,6 +4,10 @@ const fs = require("fs");
 const path = require("path");
 const { randomBytes } = require("crypto");
 const { spawnSync } = require("child_process");
+const {
+  safeFileDigest,
+  writePackagedSmokeEvidence,
+} = require("./packaged_smoke_evidence");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const PRODUCT_EXE = "湖岸稿件 Oak Manuscript.exe";
@@ -305,6 +309,7 @@ function runPackagedSmoke({
     verifyWindowsX64Executable(paths.executable);
     return fs.realpathSync.native(paths.executable);
   })();
+  const executableBefore = safeFileDigest(paths.projectRoot, paths.executable, "打包冒烟 EXE");
   const expectedVersion = readExpectedAppVersion(paths.projectRoot);
   const rootReal = fs.realpathSync.native(paths.projectRoot);
   if (!isInside(rootReal, executableReal)) {
@@ -366,6 +371,11 @@ function runPackagedSmoke({
     failMarker: SYNC_RECOVERY_FAIL_MARKER,
     label: "打包 EXE 同步队列重启恢复冒烟",
   });
+  const executableAfter = safeFileDigest(paths.projectRoot, paths.executable, "打包冒烟后 EXE");
+  if (executableBefore.size_bytes !== executableAfter.size_bytes ||
+      executableBefore.sha256 !== executableAfter.sha256) {
+    throw new Error("打包 EXE 在冒烟运行期间发生字节变化");
+  }
 
   return {
     ok: true,
@@ -374,6 +384,10 @@ function runPackagedSmoke({
     runId,
     smokeRoot: paths.smokeRoot,
     outputRoot: paths.projectOutput,
+    executableDigest: {
+      size_bytes: executableAfter.size_bytes,
+      sha256: executableAfter.sha256,
+    },
     stdout: first.stdout,
     stderr: first.stderr,
     syncRecoveryStdout: second.stdout,
@@ -384,9 +398,12 @@ function runPackagedSmoke({
 if (require.main === module) {
   try {
     const result = runPackagedSmoke();
+    const evidence = writePackagedSmokeEvidence({ root: PROJECT_ROOT, smokeResult: result });
     process.stdout.write(`${PASS_MARKER}\n`);
     process.stdout.write(`打包 EXE：${result.executable}\n`);
     process.stdout.write(`冒烟输出：${result.outputRoot}\n`);
+    process.stdout.write(`冒烟证据：${path.join(PROJECT_ROOT, "release", "packaged-smoke-evidence-win32-x64.json")}\n`);
+    process.stdout.write(`冒烟输出树 SHA-256：${evidence.output_tree.sha256}\n`);
   } catch (error) {
     process.stderr.write(`${error.message}\n`);
     process.exitCode = 1;

@@ -1,12 +1,12 @@
 # 湖岸稿件（Oak Manuscript）
 
-本地优先的稿件检查与修订产品。当前开发版本为 `0.1.0-alpha.36`，已有 Electron 桌面端、Python 检查核心、经真实 packaged 门禁和隐藏烟测验证的 alpha.36 Windows x64 NSIS/ZIP 制品、离线标准包验证/项目固定/显式升级/回滚链路、三模式 AI 设置、OS 加密用户凭据、单条问题完整发送预览、建议人工审阅与尚未接入生产的有界 HTTP 底座，以及 Web 临时作业状态机、同源 HTTPS handler、GoTrue 验证、Fetch 适配、首个未部署工作台、Netlify Blobs 临时对象存储、Supabase/Postgres 持久任务状态、私有原子领取队列、上传结构/主动内容前置门禁、固定 Python 子进程处理、一次性结果领取及有界双清扫协调源码；商业正式版目标为 Windows、macOS 与 Web。按论文、纸质出版物、电子书三类目标检查稿件，提供可追溯标准依据的问题解释、集中确认的白名单机械订正、检查点恢复、修订稿与检查报告导出。
+本地优先的稿件检查与修订产品。当前开发版本为 `0.1.0-alpha.37`，已有 Electron 桌面端、Python 检查核心、经真实 packaged 门禁和隐藏烟测验证的 alpha.37 Windows x64 NSIS/ZIP 制品、离线标准包验证/项目固定/显式升级/回滚链路、三模式 AI 设置、OS 加密用户凭据、单条问题完整发送预览、建议人工审阅与尚未接入生产的有界 HTTP 底座，以及 Web 临时作业状态机、同源 HTTPS handler、GoTrue 验证、Fetch 适配、首个未部署工作台、Netlify Blobs 临时对象存储、Supabase/Postgres 持久任务状态、私有原子领取队列、上传结构/主动内容前置门禁、固定 Python 子进程处理、一次性结果领取及有界双清扫协调源码；商业正式版目标为 Windows、macOS 与 Web。按论文、纸质出版物、电子书三类目标检查稿件，提供可追溯标准依据的问题解释、集中确认的白名单机械订正、检查点恢复、修订稿与检查报告导出。
 
 **当前桌面核心承诺**：稿件默认只在本机处理；永不原地修改原稿（SHA-256 全程校验）；不强制注册；报告与导出不设营销门槛。
 
-`0.1.0-alpha.36` 沿用 alpha.35 的供应商无关有界 HTTP 客户端和适配路由，覆盖 HTTPS/loopback、禁重定向/代理头/Cookie、请求与响应容量、超时、JSON、凭据回显和错误净化。当前没有注册任何真实供应商适配器，主进程仍为 `transport:null`，确认按钮硬禁用，因此本版本仍不能调用真实模型；网络底座测试通过不等于供应商已接通。
+`0.1.0-alpha.37` 沿用 alpha.35 的供应商无关有界 HTTP 客户端和适配路由，覆盖 HTTPS/loopback、禁重定向/代理头/Cookie、请求与响应容量、超时、JSON、凭据回显和错误净化。当前没有注册任何真实供应商适配器，主进程仍为 `transport:null`，确认按钮硬禁用，因此本版本仍不能调用真实模型；网络底座测试通过不等于供应商已接通。
 
-最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.36 全量回归为 Node 517 total / 510 pass / 0 fail / 7 skip、Python 362 total / 0 failures / 0 errors / 3 skipped；独立隐藏源码及 packaged Electron smoke 均 PASS。最新 Windows 制品：NSIS 190,013,438 字节（SHA-256 `fb25a521…e5cd`），ZIP 233,838,475 字节（`cbdf1afc…57dc`）。真实安装生命周期尚未执行；制品仍未签名，发行身份契约 `complete=false`，packaged 资源门禁保留 12 项 sale blocker。
+最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.37 全量回归为 Node 523 total / 516 pass / 0 fail / 7 skip、Python 362 total / 0 failures / 0 errors / 3 skipped；独立隐藏源码及 packaged Electron smoke 均 PASS。最新 Windows 制品：NSIS 190,013,357 字节（SHA-256 `26af70e0…e095`），ZIP 233,838,480 字节（`e4288fbf…697d`）。发布清单 schema v2 已绑定 canonical smoke 证据、实际 EXE 和匿名输出树；这仍不是代码签名。真实安装生命周期尚未执行；制品仍未签名，发行身份契约 `complete=false`，packaged 资源门禁保留 12 项 sale blocker。
 
 当前桌面安全边界包括：默认 Electron session 离线与固定 CSP；PDF 使用禁 JavaScript/导航/网络的非持久隔离 session；项目 schema/路径完整校验与跨进程内核写锁；创建项目在锁内以单一输入文件描述符复制到 `source`，再生成 `working`；自选导出目录逐级验证、全部目标预检和逐文件原子换入；标准包以 canonical manifest、内容寻址存储、高水位和精确回滚目标 fail-closed。已有项目不会因全局标准更新而静默换规则，必须先查看差异并显式确认，升级后强制重检。
 

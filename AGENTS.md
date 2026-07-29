@@ -56,4 +56,4 @@ release/     # 发布产物（不入库）
 
 ## 6. 里程碑与当前阶段
 
-当前开发版本为 `0.1.0-alpha.36`。P0、离线标准可信链、Windows builder 独立全树锁、真实 NSIS/ZIP、packaged ASAR/9-fuse/资源门禁、统一账号/Free-Pro/`SyncRecord v1` 离线契约、Ace 受控 `utilityProcess` 链路，以及尚未接入生产的三模式 AI 安全底座已经实现。alpha.36 Windows x64 安装包、ZIP、发布摘要、packaged 资源/fuse 与隐藏 smoke 已复验；制品仍未签名且不是可售卖正式版。来源/许可证人工审计、自带浏览器、OS 级网络隔离、真实安装生命周期、生产账号/同步/AI、macOS 和 Web 部署仍未完成。普通 build/test 永不联网；任何重新下载仍须用户明确批准。具体事实必须以代码、`npm test` 和 `docs/DEVELOPMENT_STATUS.md` 交叉核对。
+当前开发版本为 `0.1.0-alpha.37`。P0、离线标准可信链、Windows builder 独立全树锁、真实 NSIS/ZIP、packaged ASAR/9-fuse/资源门禁、统一账号/Free-Pro/`SyncRecord v1` 离线契约、Ace 受控 `utilityProcess` 链路，以及尚未接入生产的三模式 AI 安全底座已经实现。alpha.37 Windows x64 安装包、ZIP、发布摘要、packaged 资源/fuse 与隐藏 smoke 已复验；发布清单 schema v2 额外绑定 canonical packaged-smoke 证据、实际 EXE 和匿名输出树。制品仍未签名且不是可售卖正式版；该本地哈希证据不是不可伪造签名。来源/许可证人工审计、自带浏览器、OS 级网络隔离、真实安装生命周期、生产账号/同步/AI、macOS 和 Web 部署仍未完成。普通 build/test 永不联网；任何重新下载仍须用户明确批准。具体事实必须以代码、`npm test` 和 `docs/DEVELOPMENT_STATUS.md` 交叉核对。

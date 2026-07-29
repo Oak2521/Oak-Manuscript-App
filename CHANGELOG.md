@@ -4,6 +4,18 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.37（ChatGPT packaged smoke 证据绑定检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.37`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未部署或修改官网；生成的是未签名 Windows x64 内测制品，不是可售卖正式版。
+
+- 新增 canonical `packaged-smoke-evidence-win32-x64.json`，绑定实际打包 EXE、唯一主 smoke PASS、第二进程 SyncRecord 加密队列恢复结果和匿名项目输出树；EXE 在两次进程前后重新取证，发生字节漂移即拒绝；
+- 输出树逐文件执行路径、常规文件、单链接、读取前后身份、数量/容量/深度和 SHA-256 门禁；只允许应用协议中合法保留的 `.oak-project-write.lock`，其他隐藏名及链接/reparse 继续 fail-closed；
+- 发布 manifest 升级为 schema v2，强制消费 smoke 证据文件摘要、EXE 摘要和输出树摘要；安装生命周期验证器保留历史 schema v1 归档兼容，同时严格验证当前 schema v2；
+- 资源清单仍为 79 文件 / 2,139,277 字节，manifest SHA-256 `4ce4810d54f180d961f644b8f5d66e7b3aba6996e1a0c5c64b75397c93ab1b97`，ASAR 锚点 `4f306d10d385c8b913b03782a8672eb66022096bab836bffed5bb9ed027bbf92`；
+- Windows x64 NSIS 190,013,357 字节 / SHA-256 `26af70e0ca533ee6dc09feae50ba420f7cb11e5dfba270f27870e1e679ece095`；ZIP 233,838,480 字节 / `e4288fbf621b837b0272c938113457928aa422573848129e46308a29a300697d`；SHA 文件摘要 `3d4ac24633b8134b484377872ea3a6fdd8d3d8cea7ed067025d939a71fb76774`；
+- smoke 证据 1,222 字节 / SHA-256 `a90bc1c1724c6e52209dad9b1f40a9fe31f0eae2a40d1f285f36c87d171980a9`，绑定实际 EXE SHA-256 `ff85385e47360dab567d9606b63a3d1b68abfb6071af8e9a728a6248a68aefca` 与输出树 76 文件 / 1,368,471 字节 / SHA-256 `f0c9d68797d1d37953f96d18fdaaf1b30e6a91866fb8f3887e63f68f66beb334`；
+- 最终 `npm test` 165.2 秒：Node 523 total / 516 pass / 0 fail / 7 skip（4.1144228 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（113.806 秒）；隐藏源码与 packaged smoke、发布证据复验及 alpha.37→alpha.12 安装生命周期只读预检均 PASS。哈希证据可检测本地漂移，但在 Authenticode/可信见证前不是不可伪造证明。
+
 ### 2026-07-28 — 0.1.0-alpha.36（ChatGPT Windows 可安装内测制品检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.36`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未部署或修改官网；生成的是未签名 Windows x64 内测制品，不是可售卖正式版。

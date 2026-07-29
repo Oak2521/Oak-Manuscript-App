@@ -9,11 +9,13 @@ const path = require("node:path");
 const {
   CHECKSUM_FILENAME,
   MANIFEST_FILENAME,
+  PACKAGED_SMOKE_EVIDENCE_FILENAME,
   clearReleaseEvidence,
   generateReleaseEvidence,
   parseArgs,
   verifyReleaseEvidence,
 } = require("../scripts/release_artifact_manifest");
+const { writePackagedSmokeEvidence } = require("../scripts/packaged_smoke_evidence");
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 
@@ -69,7 +71,24 @@ function fixture(t, version = "9.8.7-alpha.1") {
   const prefix = `Oak-Manuscript-${version}-Windows-x64`;
   const installer = write(root, `release/${prefix}.exe`, fakePe());
   const archive = write(root, `release/${prefix}.zip`, fakeZip());
-  return { root, version, prefix, installer, archive };
+  const executable = write(root, "release/win-unpacked/湖岸稿件 Oak Manuscript.exe", Buffer.alloc(4096, 9));
+  const runId = "release-fixture";
+  const outputRoot = path.join(root, "out", "packaged-smoke", "runs", runId, "projects");
+  write(root, `out/packaged-smoke/runs/${runId}/projects/ui-smoke-docx/project.json`, "{\"ok\":true}\n");
+  writePackagedSmokeEvidence({
+    root,
+    smokeResult: {
+      executable,
+      expectedVersion: version,
+      runId,
+      outputRoot,
+      stdout: "SMOKE-RESULT: PASS\n",
+      stderr: "",
+      syncRecoveryStdout: "SYNC-RECOVERY-RESULT: PASS\n",
+      syncRecoveryStderr: "",
+    },
+  });
+  return { root, version, prefix, installer, archive, executable, outputRoot };
 }
 
 test("release evidence CLI requires exactly one explicit action and fixed Windows target", () => {
@@ -114,12 +133,16 @@ test("generation writes deterministic SHA256SUMS and a cross-bound canonical man
   assert.equal(firstChecksums.toString("utf8"), expectedLines);
 
   const manifest = JSON.parse(firstManifest.toString("utf8"));
-  assert.equal(manifest.schema_version, 1);
+  assert.equal(manifest.schema_version, 2);
   assert.equal(manifest.product, "湖岸稿件 Oak Manuscript");
   assert.equal(manifest.app_id, "com.oakbylake.manuscript");
   assert.deepEqual(manifest.target, { platform: "win32", arch: "x64" });
   assert.equal(manifest.sha256sums.filename, CHECKSUM_FILENAME);
   assert.equal(manifest.sha256sums.sha256, sha256(firstChecksums));
+  assert.equal(manifest.packaged_smoke.filename, PACKAGED_SMOKE_EVIDENCE_FILENAME);
+  assert.match(manifest.packaged_smoke.sha256, /^[a-f0-9]{64}$/u);
+  assert.match(manifest.packaged_smoke.executable_sha256, /^[a-f0-9]{64}$/u);
+  assert.match(manifest.packaged_smoke.output_tree_sha256, /^[a-f0-9]{64}$/u);
   assert.deepEqual(verifyReleaseEvidence({ root: data.root }), manifest);
 
   generateReleaseEvidence({ root: data.root, platform: "win32", arch: "x64" });
@@ -196,13 +219,18 @@ test("two-file commit rolls back the first replacement when the second rename fa
   assert.deepEqual(fs.readFileSync(manifestPath), oldManifest);
 
   const cleared = clearReleaseEvidence({ root: data.root });
-  assert.deepEqual(cleared.removed, [CHECKSUM_FILENAME, MANIFEST_FILENAME]);
+  assert.deepEqual(cleared.removed, [
+    CHECKSUM_FILENAME,
+    MANIFEST_FILENAME,
+    PACKAGED_SMOKE_EVIDENCE_FILENAME,
+  ]);
   assert.equal(fs.existsSync(checksumPath), false);
   assert.equal(fs.existsSync(manifestPath), false);
+  assert.equal(fs.existsSync(path.join(data.root, "release", PACKAGED_SMOKE_EVIDENCE_FILENAME)), false);
   assert.deepEqual(clearReleaseEvidence({ root: data.root }).removed, []);
 });
 
-test("verification detects artifact tampering and clear preflights both evidence files", (t) => {
+test("verification detects artifact tampering and clear preflights every evidence file", (t) => {
   const tampered = fixture(t);
   generateReleaseEvidence({ root: tampered.root });
   fs.appendFileSync(tampered.archive, "tampered");

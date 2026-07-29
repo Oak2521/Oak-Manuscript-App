@@ -32,6 +32,6 @@
 
 Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零污染创建、锁内单 FD 输入、OneDrive/reparse 来源、精确失败清理和安全原子导出覆盖在 `python/tests/test_project_validation.py` 与 `python/tests/test_project_write_lock.py`。
 
-真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。alpha.23 packaged smoke 强制通过受控链路运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言；缺失或陈旧 EXE 不得复用。
+真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。当前 packaged smoke 强制通过受控链路运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言；缺失或陈旧 EXE 不得复用。
 
-alpha.23 最终隐藏 packaged smoke 为 **SMOKE + SYNC-RECOVERY PASS**，运行根为 `out/packaged-smoke/runs/ms536bic-c319680eda532edb/projects/`；源码 smoke 根为 `out/source-smoke/runs/ms53795z-b2585a5fb6c1720a/projects/`。DOCX/EPUB 均先确认引用计划，各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，且 EPUB 外部工具确实运行；两个 runner 都用第二进程恢复同一 safeStorage 队列。实际安装生命周期仍未运行。
+alpha.37 最终隐藏 packaged smoke 为 **SMOKE + SYNC-RECOVERY PASS**，运行根为 `out/packaged-smoke/runs/ms5ht9j7-67fece5b58d7c515/projects/`；源码 smoke 根为 `out/source-smoke/runs/ms5hynmq-aba639b137d62e8b/projects/`。DOCX/EPUB 均先确认引用计划，各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，且 EPUB 外部工具确实运行；两个 runner 都用第二进程恢复同一 safeStorage 队列。canonical smoke 证据把实际 EXE、双进程结果摘要和匿名输出树绑定进 schema v2 发布清单；它不是代码签名。实际安装生命周期仍未运行。

@@ -201,14 +201,33 @@ function compareSemver(leftValue, rightValue) {
 }
 
 function validateReleaseManifest(manifest, { expectedVersion, label }) {
-  exactKeys(manifest, ["schema_version", "product", "app_id", "version", "target", "artifacts", "sha256sums"], label);
+  if (!manifest || ![1, 2].includes(manifest.schema_version)) {
+    throw new Error(`${label} schema_version 不受支持`);
+  }
+  const topKeys = ["schema_version", "product", "app_id", "version", "target", "artifacts", "sha256sums"];
+  if (manifest.schema_version === 2) topKeys.push("packaged_smoke");
+  exactKeys(manifest, topKeys, label);
   exactKeys(manifest.target, ["platform", "arch"], `${label}.target`);
   exactKeys(manifest.sha256sums, ["filename", "sha256"], `${label}.sha256sums`);
-  if (manifest.schema_version !== 1 || manifest.product !== PRODUCT || manifest.app_id !== APP_ID ||
+  if (manifest.product !== PRODUCT || manifest.app_id !== APP_ID ||
       manifest.version !== expectedVersion || manifest.target.platform !== "win32" ||
       manifest.target.arch !== "x64" || manifest.sha256sums.filename !== CHECKSUM_NAME ||
       !HASH_RE.test(manifest.sha256sums.sha256)) {
     throw new Error(`${label} 身份、版本或目标不匹配`);
+  }
+  if (manifest.schema_version === 2) {
+    exactKeys(
+      manifest.packaged_smoke,
+      ["filename", "size_bytes", "sha256", "executable_sha256", "output_tree_sha256"],
+      `${label}.packaged_smoke`,
+    );
+    if (manifest.packaged_smoke.filename !== "packaged-smoke-evidence-win32-x64.json" ||
+        !Number.isSafeInteger(manifest.packaged_smoke.size_bytes) ||
+        manifest.packaged_smoke.size_bytes <= 0 ||
+        ![manifest.packaged_smoke.sha256, manifest.packaged_smoke.executable_sha256,
+          manifest.packaged_smoke.output_tree_sha256].every((item) => HASH_RE.test(item))) {
+      throw new Error(`${label} packaged_smoke 绑定非法`);
+    }
   }
   if (!Array.isArray(manifest.artifacts) || manifest.artifacts.length !== 2) {
     throw new Error(`${label} 必须恰好包含 NSIS 与 ZIP 两项制品`);

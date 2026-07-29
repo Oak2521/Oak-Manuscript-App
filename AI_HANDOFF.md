@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.36`
+> 当前版本：`0.1.0-alpha.37`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.36`（未签名 Windows x64 NSIS/ZIP、packaged 资源/fuse/隐藏 smoke 与发布摘要检查点）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.37`（未签名 Windows x64 NSIS/ZIP、packaged 资源/fuse、哈希绑定 smoke 证据与发布摘要检查点）
 
 ## 1. 权威入口与工作区
 
@@ -30,14 +30,14 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 2. 当前现场事实
 
-### 已完成：0.1.0-alpha.36 Windows 可安装内测制品检查点
+### 已完成：0.1.0-alpha.37 packaged smoke 哈希证据检查点
 
-- APP、Python core、桌面/Web lockfile 统一为 alpha.36；资源信任清单 79 文件 / 2,139,277 字节，manifest SHA-256 `b0e85cd18ab481d5449b7d79c6c7bd6c438678d47cc892731ee7b394f22059ed`，ASAR 锚点 `0e2d523b37cc4acb6268288f8acf7dbacccde2c772f823dbedc0d48ec3b9a8c9`；
-- Windows x64 NSIS 190,013,438 字节 / SHA-256 `fb25a52127d2d4bd2f2e1275236e54a2a9e4d6cce65707938a96364a201ce5cd`；ZIP 233,838,475 字节 / `cbdf1afc46b0d6a52f7d0ec0489096d6824a387c18819c6a93d505414b0757dc`；`SHA256SUMS.txt` 摘要 `c9183c84264ab235bc90a46403b6dca37b99ac41fd54e72735eb629b18231810`；
-- 真实 packaged 资源/ASAR production identity、Python/JRE/EpubCheck/Ace 探针、Electron 43 wire v1 全 9 fuse 与隐藏 packaged smoke 均 PASS；独立隐藏源码 smoke 也 PASS；
-- 初次 `build:win` 已生成并验证应用，但最后证据生成因 release 根混有 alpha.23 制品按设计退出 1；三份旧文件无损移入 `release/archive/0.1.0-alpha.23-residual-before-alpha.36/` 后，当前发布证据生成与复验通过；
-- 安装生命周期 alpha.36 对归档 alpha.12 只读预检 PASS，`authorized=false`、`ready_for_authorized_run=true`；没有启动安装器或改写系统。发行身份仍 `complete=false`、缺 12 项，packaged 资源门禁保留 12 项 sale blocker；
-- 最终 `npm test` 167.7 秒：Node 517 total / 510 pass / 0 fail / 7 skip（3.7388783 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（114.943 秒）。本轮未联网、未调用模型、未使用真实密钥、未部署、未修改官网或仓库外内容。
+- APP、Python core、桌面/Web lockfile 统一为 alpha.37；资源信任清单 79 文件 / 2,139,277 字节，manifest SHA-256 `4ce4810d54f180d961f644b8f5d66e7b3aba6996e1a0c5c64b75397c93ab1b97`，ASAR 锚点 `4f306d10d385c8b913b03782a8672eb66022096bab836bffed5bb9ed027bbf92`；
+- Windows x64 NSIS 190,013,357 字节 / SHA-256 `26af70e0ca533ee6dc09feae50ba420f7cb11e5dfba270f27870e1e679ece095`；ZIP 233,838,480 字节 / `e4288fbf621b837b0272c938113457928aa422573848129e46308a29a300697d`；`SHA256SUMS.txt` 摘要 `3d4ac24633b8134b484377872ea3a6fdd8d3d8cea7ed067025d939a71fb76774`；
+- 新增 canonical `packaged-smoke-evidence-win32-x64.json`：固定 alpha.37 实际 EXE 225,449,472 字节 / SHA-256 `ff85385e47360dab567d9606b63a3d1b68abfb6071af8e9a728a6248a68aefca`，绑定主 smoke、第二进程加密队列恢复和匿名输出树 76 文件 / 1,368,471 字节 / SHA-256 `f0c9d68797d1d37953f96d18fdaaf1b30e6a91866fb8f3887e63f68f66beb334`；发布 manifest 升级为 schema v2 并绑定该证据文件摘要 `a90bc1c1724c6e52209dad9b1f40a9fe31f0eae2a40d1f285f36c87d171980a9`；
+- 真实 packaged 资源/ASAR production identity、Python/JRE/EpubCheck/Ace 探针、Electron 43 wire v1 全 9 fuse、隐藏 packaged smoke 和独立隐藏源码 smoke 均 PASS。构建第一次只因证据清单误拒绝合法 `.oak-project-write.lock` 而在打包后退出；收窄到唯一已知锁名并保留其他隐藏文件拒绝后，定向回归、smoke、证据生成与独立复验均通过；
+- 安装生命周期 alpha.37 对归档 alpha.12 只读预检 PASS，`authorized=false`、`ready_for_authorized_run=true`；没有启动安装器或改写系统。发行身份仍 `complete=false`、缺 12 项，packaged 资源门禁保留 12 项 sale blocker；
+- 最终 `npm test` 165.2 秒：Node 523 total / 516 pass / 0 fail / 7 skip（4.1144228 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（113.806 秒）。本轮未联网、未调用模型、未使用真实密钥、未部署、未修改官网或仓库外内容。哈希绑定证据可检测漂移，但在 Authenticode/可信见证前不是不可伪造证明。
 
 ### 已完成：0.1.0-alpha.35 AI 有界 HTTP 底座与适配路由契约（历史）
 
@@ -522,8 +522,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.36 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
-- Windows：alpha.36 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
+- 打包版 Ace：alpha.37 已有真实 packaged utilityProcess/loopback Chrome 功能证据，并由发布清单消费 EXE、输出树与双进程结果的 canonical 哈希证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、代码签名/可信见证和正式人工许可审计；
+- Windows：alpha.37 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke、schema v2 发布证据，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：exact 作业 schema、内存参考状态机、同源 HTTPS、GoTrue、Fetch、工作台、Netlify Blobs 内容适配/清扫、Supabase/Postgres 持久任务/幂等迁移、上传结构/主动内容门禁、service-role-only 私有原子领取、身份最小化 worker、固定 Python 共享核心子进程与一次性结果领取已实现；生产环境/真实账号与 Blobs/Postgres E2E、病毒库/平台扫描、容器/OS 禁网与资源隔离、计费、结果同步和官网嵌入尚未实现；
 - 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览、按账户隔离的 OS 加密队列和重启恢复已实现；生产 Supabase、登录凭据存储、签名授权、支付、网络 transport 和网站后台未连接；
@@ -533,7 +533,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ### Windows sale 门禁的当前明确阻断
 
-源码资源门禁现列 17 项（builder 独立全树锁已成立）；真实 alpha.36 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 12 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
+源码资源门禁现列 17 项（builder 独立全树锁已成立）；真实 alpha.37 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 12 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
 
 以下机器码来自当前 `verify_packaged_resources.js` 与实测 sale 输出，不得合并或省略：
 
@@ -545,7 +545,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 6. `ELECTRON_RUNTIME_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`：官方 ZIP、GitHub digest、SHASUMS256、npm checksums 和 75/75 运行时文件已机器复验；许可、Chromium 第三方通知、商标和再分发仍待具名签核；
 7. `BUILDER_TOOLCHAIN_PROVENANCE_HUMAN_SIGNOFF_REQUIRED`：三份官方归档、固定选择逻辑和 385 文件重组树已机器复验；旧 release 无 digest/签名且部分所选载荷无具名许可证文件，仍待具名签核；
 8. `ACE_FULL_LICENSE_AUDIT_REQUIRED`：Ace 全部生产依赖闭包的正式人工审计；
-9. `ACE_CONTROLLED_HELPER_PENDING`：packaged 功能已实测，但门禁尚未消费签名绑定的 smoke 证明；
+9. `ACE_CONTROLLED_HELPER_PENDING`：packaged 功能已实测，发布清单已消费 EXE/输出树/重启恢复哈希证据；代码签名前仍不是不可伪造或签名绑定的正式验收证明；
 10. `ACE_BROWSER_RUNTIME_PENDING`；
 11. `ACE_OS_NETWORK_ISOLATION_PENDING`；
 12. `WINDOWS_CODE_SIGNING_PENDING`。
@@ -554,9 +554,9 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划，按 v2.0 方案继续：
 
-1. 已完成 Windows 安装生命周期编排器与 alpha.36 对归档 alpha.12 的只读预检；下一步须单独取得系统写入授权后，真实执行 alpha.12 → alpha.36 安装/升级/降级探测/卸载，核对 HKCU 与快捷方式并保留 canonical 证据；若历史安装器确实回退，必须把它记为产品 blocker，不能修改证据口径；
+1. 已完成 Windows 安装生命周期编排器与 alpha.37 对归档 alpha.12 的只读预检；下一步须单独取得系统写入授权后，真实执行 alpha.12 → alpha.37 安装/升级/降级探测/卸载，核对 HKCU 与快捷方式并保留 canonical 证据；若历史安装器确实回退，必须把它记为产品 blocker，不能修改证据口径；
 2. CPython、EpubCheck、Temurin/JRE、Electron 与 builder 的机器来源证据已完成；下一步必须由具名人员完成许可、商标、第三方通知、签名边界与再分发签核，再完成 Windows 代码签名方案并逐项关闭相应 packaged sale blocker；代码不能替代该签署；
-3. Ace 的 provenance/全闭包许可证、自带浏览器、OS 级网络隔离及与制品哈希绑定的不可伪造 smoke 证明仍未完成；任何需扩大 Ace 证明范围的实现先确认验收口径；
+3. Ace 的 provenance/全闭包许可证、自带浏览器、OS 级网络隔离及签名/可信见证仍未完成；alpha.37 已完成本地哈希绑定 smoke 证据，但不得称为不可伪造证明；
 4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
 5. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
 6. 在现有 Auth / License / Sync 离线契约和 OS 加密持久队列上实现生产登录凭据与独立网络 transport，再经授权连接 Supabase、支付和网站后台；

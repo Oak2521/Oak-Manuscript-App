@@ -2,9 +2,9 @@
 
 > 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.36）
+## Provider 一览（当前 alpha.37）
 
-alpha.36 沿用未接入生产的桌面 AI 有界 HTTP 客户端和适配路由；生产模型 transport 仍为 `null`，适配器注册表为空，没有改变 Web 作业、网站或生产服务。数据库/store 仍是 Fake/静态检查，没有执行真实迁移、连接 Supabase/Netlify 或部署计划任务，也没有容器/OS 无网隔离证据。商业仓库没有复制真实 service-role key 或 AI key、没有修改网站或部署 worker、签名权益/计费、同步 transport、AI transport 或网站后台。
+alpha.37 只增强 Windows packaged-smoke 与发布证据绑定；未改变账号、同步、AI 或 Web 生产能力。桌面 AI 有界 HTTP 客户端和适配路由仍未接入生产；模型 transport 为 `null`，适配器注册表为空。数据库/store 仍是 Fake/静态检查，没有执行真实迁移、连接 Supabase/Netlify 或部署计划任务，也没有容器/OS 无网隔离证据。商业仓库没有复制真实 service-role key 或 AI key、没有修改网站或部署 worker、签名权益/计费、同步 transport、AI transport 或网站后台。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|

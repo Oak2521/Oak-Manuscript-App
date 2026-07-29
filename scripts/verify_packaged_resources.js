@@ -1753,7 +1753,7 @@ function addCurrentReleaseBlockers(platform, arch, releaseTier, blockers, errors
     }] : []),
     {
       code: "ACE_CONTROLLED_HELPER_PENDING",
-      message: "Ace utilityProcess 已通过 alpha packaged smoke，但正式门禁尚未消费与制品哈希绑定且不可伪造的功能/安全验收证据",
+      message: "Ace utilityProcess 已通过 alpha packaged smoke；构建可生成并让发布清单消费 EXE、输出树与重启恢复哈希证据，但代码签名前仍不是不可伪造或签名绑定的正式验收证据",
     },
     {
       code: "ACE_BROWSER_RUNTIME_PENDING",

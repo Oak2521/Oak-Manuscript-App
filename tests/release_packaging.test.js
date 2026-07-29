@@ -658,8 +658,15 @@ test("electron-builder config is valid and pins the current Windows installer po
     false,
   );
   assert.match(packageJson.scripts["build:win"], /^npm run release:evidence:clear:win .*stage:jre:win .*stage:ace .*verify:resources:win/);
-  assert.match(packageJson.scripts["build:win"], /verify:packaged:win .*smoke:packaged:win .*release:evidence:win$/);
+  assert.match(
+    packageJson.scripts["build:win"],
+    /verify:packaged:win .*smoke:packaged:win .*verify:packaged:smoke-evidence:win .*release:evidence:win$/,
+  );
   assert.equal(packageJson.scripts["smoke:packaged:win"], "node scripts/run_packaged_smoke.js");
+  assert.equal(
+    packageJson.scripts["verify:packaged:smoke-evidence:win"],
+    "node scripts/packaged_smoke_evidence.js --verify-live --platform win32 --arch x64",
+  );
   assert.equal(
     packageJson.scripts["release:evidence:win"],
     "node scripts/release_artifact_manifest.js --generate --platform win32 --arch x64",
