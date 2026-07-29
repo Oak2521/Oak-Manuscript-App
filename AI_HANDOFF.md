@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-29
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.47`
+> 当前版本：`0.1.0-alpha.48`
 > 当前分支：`chatgpt/commercial-v1`
-> 当前源码本地标签：`chatgpt-v0.1.0-alpha.47-web-license-account`；既有 `chatgpt-v0.1.0-alpha.46-subscription-devices` 为设备服务检查点，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据
+> 当前源码本地标签：`chatgpt-v0.1.0-alpha.48-revoke-refresh-e2e`；既有 `chatgpt-v0.1.0-alpha.47-web-license-account` 为网站客户端检查点，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,16 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.48 网站撤销到桌面刷新匿名纵向闭环
+
+- 新增 `subscription_revoke_desktop_refresh_e2e.test.js`，让同一匿名有状态数据库适配同时支撑生产形状账号设备 runtime 与权益签发 runtime；链路真实经过 GoTrue verifier、service-role repository、HTTP/Fetch、网站控制器、Ed25519 signer、桌面 `LicenseHttpClient`、验签和缓存状态机；
+- 桌面首次显式刷新取得真实签名 active 权益并缓存为 Pro；网站读取同一设备、经确认撤销后，桌面在再次刷新前继续使用旧的已签名 active 缓存，不发生远程静默改写；
+- 桌面第二次显式刷新取得同一服务端私钥签名的 revoked 权益，严格验签后原子替换缓存并降为 Free；缓存 revision 由 1 → 2 → 3，device ID 稳定，`localProjectsLocked=false` 始终成立；
+- content-free audit 共 4 项且不含 token、公开/service-role key、账号或设备实值。该测试首次运行即通过，说明现有组件可组合，未新增第二套 fake 业务服务；匿名状态适配仅存在于测试；
+- 相关跨端/账号/权益链 46/46；最终 `npm test`：Node 655 total / 648 pass / 0 fail / 7 skip（4.450 秒），Python 362 / 0 failures / 0 errors / 3 skipped（103.755 秒），墙钟 113.9 秒；
+- 资源信任 96 文件 / 2,158,481 字节，manifest `267db60a…fc06`，anchor `e1f4718d…36d5`；隐藏 Web smoke 仍为 HTTP(S) 0 请求，隐藏 Electron smoke PASS，输出 `out/source-smoke/runs/ms5vtmj9-ac64d9c05c87e6de/projects/`；
+- 本轮未联网、未读取或写入真实账号/支付/数据库，未执行 SQL、部署、修改官网、推送或重新打包。真实迁移、RLS/并发、支付商适配、账号联调和生产撤销刷新仍未证明。
 
 ### 已完成：0.1.0-alpha.47 网站订阅与设备管理客户端源码
 
@@ -653,8 +663,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划。近期直接闭合“账号 → 权益 → 检查 → 明确同步”主链：
 
-1. alpha.47 已完成网站账号后台的订阅状态、掩码设备列表和逐台确认撤销客户端；下一项把账号 → 订阅状态 → 网站撤销设备 → 桌面刷新权益串成一组无真实秘密的仓库内纵向测试，不把 fake service 写成线上可用；
-2. 该纵向链必须复用真实服务端签名和桌面验签/缓存状态机，验证撤销后桌面降为 Free 且本地项目不锁定；浏览器、服务和桌面之间只传协议允许的 content-free 数据；
+1. alpha.48 已完成账号 → 订阅状态 → 网站撤销设备 → 桌面显式刷新降为 Free 的匿名纵向链；下一项转向标准更新 transport 的离线契约与假响应闭环，保持默认零网络、候选字节先验签和项目版本不静默升级；
+2. 具体支付商 webhook 验签实现必须等用户授权联网并选定平台后，依据官方协议单独开发；当前规范化事件入口继续只接受上游已经验签的 content-free 快照；
 3. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，才填充 `desktop-auth.json` / `desktop-license.json`，执行真实 PKCE、数据库迁移、RLS、签发刷新、撤销和网站后台 E2E；
 4. OpenAI、Anthropic、Gemini 官方云适配仍必须先核对当前官方协议；不得套用 compatible 形状或凭记忆猜测，但不排在账号/订阅主线之前；
 5. 其后关闭发行门禁：具名许可/再分发签核、发行身份、Ace 自带浏览器/OS 隔离、Windows Authenticode/真实安装生命周期、macOS 双架构签名/公证/实机、Web 生产零留存；经联网授权后再核验标准官方来源和签名更新 transport。

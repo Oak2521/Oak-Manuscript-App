@@ -1,6 +1,6 @@
 # Signed Entitlement v1 — 桌面订阅权益契约
 
-> 状态：`0.1.0-alpha.47` 已在桌面端严格配置、Ed25519 验签、账号/设备绑定、OS 加密缓存、显式刷新和失败关闭之上，实现独立服务端 signer、规范化订阅事件、当前账号权益/设备列表与属主撤销 HTTP/runtime、对应 Supabase SQL 源码，以及未部署的网站订阅/掩码设备客户端。仓库默认配置为 `pending_configuration`，没有生产端点、公钥或私钥，不会发起权益网络请求。支付商 webhook 适配、真实迁移/部署和联调尚未实现。
+> 状态：`0.1.0-alpha.48` 已在桌面端严格配置、Ed25519 验签、账号/设备绑定、OS 加密缓存、显式刷新和失败关闭之上，实现独立服务端 signer、规范化订阅事件、当前账号权益/设备列表与属主撤销 HTTP/runtime、对应 Supabase SQL 源码，以及未部署的网站订阅/掩码设备客户端。网站撤销 → 桌面显式刷新 revoked envelope → 降 Free/本地不锁定已由匿名同状态纵向链证明。仓库默认配置为 `pending_configuration`，没有生产端点、公钥或私钥，不会发起权益网络请求。支付商 webhook 适配、真实迁移/部署和联调尚未实现。
 
 ## 1. 目的与边界
 
@@ -73,7 +73,7 @@
 
 无效或攻击性响应不得覆盖上一次有效缓存。退出登录不会把缓存冒充为当前权益；重新登录后仍须按当前账号、设备和时间重新验证。
 
-## 5. alpha.45—alpha.47 服务端与网站客户端源码边界
+## 5. alpha.45—alpha.48 服务端、网站与桌面纵向边界
 
 `web/entitlement-runtime.js` 组合 GoTrue verifier、Bearer session resolver、Supabase entitlement repository、service、独立 Ed25519 signer、HTTP handler 与 Fetch adapter。私钥、公开 API key、service-role key 和 audit sink 只能由服务端部署环境分别注入；runtime 不读取环境变量，仓库没有默认秘密。
 
@@ -84,6 +84,8 @@
 alpha.46 新增 `subscription-event-runtime.js`，由部署层固定 `providerId`，只接受上游已验证的规范化订阅快照。事件只含 provider event ID、账号/权益 ID、`purchase|renewal|cancellation|refund|chargeback|manual`、`active|revoked` 与五个规范时间；canonical JSON 的 SHA-256 是内容指纹。同一 provider/event 同指纹为重放，不同指纹为冲突，较旧 `occurred_at` 为 stale 且不覆盖较新权益。原始 webhook、签名、金额、支付资料和客户 PII 不进入该契约。
 
 alpha.47 新增网站账号后台 consumer。`client-contract.js` exact parse public overview/revoke，`license-account-controller.js` 只显示 content-free 状态和 device ID 后缀；每台有效设备撤销前必须明确确认。失败保留错误和重试能力，退出清空且旧响应失效。客户端不持久化权益/设备、不接收账号 ID 或稿件字段；当前只通过匿名假服务浏览器 smoke，未连接真实 API。
+
+alpha.48 用单一匿名设备状态把账号 runtime 与签发 runtime 串联：撤销前桌面缓存 active 签名权益；网站确认撤销后缓存保持不变；只有用户再次显式刷新，桌面才取得并验证 revoked 签名权益、原子替换缓存并降为 Free。三个阶段 `localProjectsLocked=false`。该证据不含真实 token/key/账号/设备审计值，也不替代真实迁移和部署。
 
 账号后台服务固定提供 `GET /manuscript/api/v1/account/license` 与 `POST /manuscript/api/v1/account/license/devices/:device_id/revoke`。两者只接受 GoTrue Bearer owner；POST 另要求 exact same-origin。概览最多返回 20 台设备；公开权益删除内部 ID/revision；外来设备与不存在设备都返回同一 404。`004_subscription_events_and_devices.sql` 的事件 apply、overview 与 revoke RPC 仅授予 `service_role`，但尚未在真实 PostgreSQL/Supabase 执行。
 

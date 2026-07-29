@@ -1,6 +1,6 @@
 # Web 作业契约与同源 HTTP handler（alpha）
 
-`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.38 以独立服务/API/Supabase/runtime 实现长期 SyncRecord，alpha.44 为 `client/` 增加当前账号历史列表/刷新/属主删除；alpha.45 实现未部署的签名权益签发链；alpha.46 以 `subscription-event-*`、`license-account-*` 和 `supabase/004_subscription_events_and_devices.sql` 增加规范化订阅事件及当前账号设备管理服务；alpha.47 为 `client/` 增加订阅状态、掩码设备列表与逐台确认撤销。源码可本机测试，但临时作业、长期同步与订阅权益均不是已上线生产服务。
+`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.38 以独立服务/API/Supabase/runtime 实现长期 SyncRecord，alpha.44 为 `client/` 增加当前账号历史列表/刷新/属主删除；alpha.45—alpha.47 实现签发、订阅/设备服务及网站管理客户端；alpha.48 用同一匿名状态验证网站撤销到桌面显式刷新 signed revoked 权益的纵向链。源码可本机测试，但临时作业、长期同步与订阅权益均不是已上线生产服务。
 
 Web 服务端依赖与 Electron 桌面依赖隔离：
 

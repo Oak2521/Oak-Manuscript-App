@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.47` 源码架构与最新 alpha.42 Windows packaged 证据：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、桌面 PKCE/加密 token-store、账号/设备绑定的 Ed25519 权益客户端、独立签发、规范化订阅事件与属主设备管理服务，以及三模式 AI/OS 加密凭据/单条预览/建议审阅。Web 临时作业保持独立零留存源码边界，网站客户端已能查看/删除同步历史并管理订阅状态与掩码设备。默认账号与权益配置无端点/密钥，仓库无生产私钥；alpha.47 源码与 alpha.42 Windows x64 ASAR/fuse/资源/smoke 分别验证。真实账号、支付商 webhook、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.48` 源码架构与最新 alpha.42 Windows packaged 证据：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、桌面 PKCE/加密 token-store、账号/设备绑定的 Ed25519 权益客户端、独立签发、规范化订阅事件与属主设备管理服务，以及三模式 AI/OS 加密凭据/单条预览/建议审阅。Web 临时作业保持独立零留存源码边界，网站客户端已能查看/删除同步历史并管理订阅状态与掩码设备；网站撤销到桌面显式刷新降级已由同一匿名状态纵向链证明。默认账号与权益配置无端点/密钥，仓库无生产私钥；alpha.48 源码与 alpha.42 Windows x64 ASAR/fuse/资源/smoke 分别验证。真实账号、支付商 webhook、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
 
 ## 1. 总体分层
 
@@ -158,6 +158,8 @@ alpha.46 在 signer 上游增加 provider-bound 的规范化订阅快照 ingesto
 同一迁移增加账号权益概览与属主设备撤销 RPC；`license-account-runtime.js` 组合 GoTrue、service-role repository、service 和固定 HTTP/Fetch 边界。GET 只返回当前账号的公开权益时间窗与最多 20 台设备，POST 只撤销 URL 指定且归属当前账号的设备；状态变更强制 exact same-origin。公开响应和 audit 均删除账号、权益 ID、revision 与实际设备路由值。SQL 尚未真实迁移。
 
 alpha.47 的 `web/client/license-account-controller.js` 通过既有同源 Bearer API 消费上述路由。浏览器再次 exact parse，按桌面同一 `valid_until` / `grace_until` 边界派生显示态，只把设备 ID 末尾掩码交给 DOM；撤销必须逐台原生确认。控制器用 busy 状态阻止并发修改，用 generation token 使退出后的旧请求失效，失败不修改本地列表。它不持久化权益或设备，也不接触稿件内容；当前隐藏浏览器证据使用匿名内存假服务，不代表真实部署。
+
+alpha.48 只增加纵向组合证据，不复制业务实现：同一测试内存状态经两个生产形状 runtime 分别服务网站账号 API 与桌面签发 API。桌面先验签并缓存 active envelope；网站撤销只改变服务端设备真相，不推送修改桌面缓存；桌面再次显式刷新后才验签 revoked envelope 并原子换入。该时序同时保证离线缓存可解释、撤销最终生效和本地项目永不锁定。测试适配器不是可部署 repository，真实数据库/RLS/并发仍须预生产验证。
 
 ### AD-018 Web 临时任务必须“可信主体—单任务同意—内容/元数据分道—删除失败可见”（2026-07-28，冻结）
 

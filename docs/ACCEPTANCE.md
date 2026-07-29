@@ -2,6 +2,19 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.48 网站撤销到桌面刷新纵向闭环验收（2026-07-29）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.48`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 同一匿名状态贯通生产形状 GoTrue、service-role repository、账号 HTTP、Web controller、entitlement HTTP、服务端 signer、桌面 client、验签与缓存，而非分别断言互不关联的 fixture；
+- [x] 桌面首次显式刷新取得真实 Ed25519 签名 active 权益，严格验签后成为 Pro；
+- [x] 网站显示同一设备并经明确确认撤销；桌面旧缓存不会被远程静默修改，仍在用户再次刷新前保持 active；
+- [x] 桌面第二次显式刷新取得真实签名 revoked 权益，原子替换缓存并降为 Free；revision 单调递增、device ID 稳定；
+- [x] active、撤销后刷新前及 revoked 三个阶段均 `localProjectsLocked=false`；
+- [x] 四项 content-free audit 不含 token、公开/service-role key、账号或设备实值；匿名数据库适配仅存在于测试；
+- [x] 相关链 46/46；全量 Node 655/648/0/7、Python 362/0/0/3；Web 与 Electron 隐藏源码 smoke 通过；
+- [ ] 真实 GoTrue/Supabase/支付商、迁移/RLS/并发、官网部署和生产撤销刷新 E2E 已完成；当前均未运行；
+- [ ] alpha.48 Windows/macOS 安装包、代码签名、公证、真实安装生命周期与可售卖正式版门禁完成；最新 packaged 证据仍为未签名 alpha.42。
+
 ## 0.1.0-alpha.47 网站订阅与设备管理客户端验收（2026-07-29）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.47`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；

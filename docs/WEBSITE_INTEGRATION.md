@@ -2,14 +2,14 @@
 
 > 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.47 源码）
+## Provider 一览（当前 alpha.48 源码）
 
-alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI；alpha.44 增加桌面签名权益验证和网站同步历史客户端；alpha.45 增加独立签发链；alpha.46 增加规范化订阅事件和当前账号设备管理 API/runtime/SQL；alpha.47 增加网站订阅状态、掩码设备列表和逐台确认撤销客户端。受信账号与权益配置仍为 `pending_configuration` 且端点/key/公钥为空；数据库迁移未执行、API 与客户端未部署，因此普通 APP 仍不登录、刷新订阅或同步。商业仓库没有真实 service-role key、OAuth 配置、权益私钥或 AI key。
+alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI；alpha.44 增加桌面签名权益验证和网站同步历史客户端；alpha.45 增加独立签发链；alpha.46 增加规范化订阅事件和当前账号设备管理 API/runtime/SQL；alpha.47 增加网站订阅状态、掩码设备列表和逐台确认撤销客户端；alpha.48 以同一匿名状态验证网站撤销后桌面显式刷新 signed revoked 权益并安全降级。受信账号与权益配置仍为 `pending_configuration` 且端点/key/公钥为空；数据库迁移未执行、API 与客户端未部署，因此普通 APP 仍不登录、刷新订阅或同步。商业仓库没有真实 service-role key、OAuth 配置、权益私钥或 AI key。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
 | `AuthProvider` | 系统浏览器 Authorization Code + PKCE S256/state、固定 Windows/macOS 深链、safeStorage token-store、刷新身份复核已完成离线源码/注入测试；默认配置为空时返回 `configuration_required`，不打开页面、不联网 | 在获准预生产环境核对正式 OAuth/OIDC、nonce/ID-token 取舍、真实刷新/退出/撤销、邮箱与 Google OAuth |
-| `LicenseProvider` | alpha.44 已实现桌面受信配置/验签/加密缓存；alpha.45 已实现独立签发；alpha.46 已实现规范化订阅事件与账号设备服务；alpha.47 已实现未部署的网站管理客户端；默认配置为空，仓库无生产私钥 | 选择支付商并实现原始 webhook 验签适配、私钥托管/轮换，执行迁移、部署客户端并填充生产配置完成真实 E2E；价格未拍板 |
+| `LicenseProvider` | alpha.44—alpha.47 已实现桌面权益、签发、订阅/设备服务和网站客户端；alpha.48 已完成匿名撤销传播纵向链；默认配置为空，仓库无生产私钥 | 选择支付商并实现原始 webhook 验签适配、私钥托管/轮换，执行迁移、部署客户端并填充生产配置完成真实 E2E；价格未拍板 |
 | `EvaluationProvider` | 用户点击后返回固定湖岸 HTTPS 评估页 URL，由主进程白名单校验并交给系统浏览器打开；APP 不在该 Provider 中生成或上传摘要 | 用户确认后提交脱敏摘要（§8.3–§8.4） |
 | `SyncProvider` | 可信 Python 来源 → exact 校验 → 完整预览 → 四选一确认 → 按账户 OS 加密队列；服务/API/Supabase、桌面 client/coordinator 和网站列表/属主删除 client 已有源码；默认无端点，迁移/服务/页面未部署 | 填充受信正式配置，完成预生产迁移、真实 E2E 与官网账号后台部署 |
 | `StandardsProvider` | 离线验证内置 release；本地签名包预览/安装/全局回滚、项目固定版本与显式升级已实现；生产 trust pin 缺失时导入禁用 | 用户主动触发的在线检查/下载、签名与撤回分发、可观测回滚；绝不上传稿件 |

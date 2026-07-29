@@ -4,6 +4,16 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.48（ChatGPT 网站撤销到桌面刷新纵向闭环）
+
+> 仓库内匿名纵向证据；本轮未联网、未使用真实账号/数据库、未执行迁移、未部署或打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。
+
+- 新增单状态跨端测试：生产形状 GoTrue → service-role repository → 账号 HTTP → Web controller 撤销，与 entitlement HTTP → Ed25519 signer → 桌面 HTTP client → 验签/缓存共享同一匿名设备状态；
+- 证明桌面先缓存真实签名 active 权益；网站逐台确认撤销后，桌面在用户显式刷新前不被远程静默改写，刷新后取得真实签名 revoked 权益并降为 Free；
+- 证明整个过程 `localProjectsLocked=false`、设备 ID 不变、缓存 revision 递增、审计不含 token/API key/账号/设备实值；
+- 相关跨端链 46/46；全量回归 Node 655/648/0/7、Python 362/0/0/3；资源信任 96 文件 / 2,158,481 字节，manifest `267db60a…fc06`，anchor `e1f4718d…36d5`；Web 与 Electron 隐藏源码 smoke PASS；
+- 真实 GoTrue/Supabase/支付商/官网部署和生产端到端仍未运行；销售资源门禁仍按设计保留 17 项，发行身份仍缺 12 个字段。
+
 ### 2026-07-29 — 0.1.0-alpha.47（ChatGPT 网站订阅与设备管理客户端）
 
 > 源码检查点；本轮未联网、未使用真实账号或数据库、未执行迁移、未部署或打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。

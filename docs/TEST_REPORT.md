@@ -2,7 +2,26 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.47 网站订阅与设备管理客户端源码
+## 最新验证结论：0.1.0-alpha.48 网站撤销到桌面刷新匿名纵向闭环
+
+验证日期：2026-07-29。本轮未联网、未调用真实账号/支付或数据库服务，未执行 SQL、部署、修改官网、推送或重新打包。
+
+| 项目 | 结果 | 证据与边界 |
+|---|---|---|
+| 单状态跨端链 | **PASS（匿名状态适配）** | GoTrue verifier、service-role repository、账号 HTTP、Web controller、entitlement HTTP、真实 Ed25519 signer、桌面 HTTP client、验签与缓存状态机共享同一设备状态；不是两套互不相干的 fixture |
+| active 初次刷新 | **PASS** | 桌面显式刷新取得服务端签名 active 权益，验签后缓存 revision 1 → 2，状态 Pro/active；本地项目不锁定 |
+| 网站明确撤销 | **PASS** | 网站读取同一设备并经确认调用 owner revoke；设备状态变为 revoked，UI 无可操作撤销按钮；桌面旧缓存没有被远程静默修改 |
+| revoked 二次刷新 | **PASS** | 桌面再次显式刷新取得同一 signer 签名的 revoked 权益，验签后缓存 revision 2 → 3，device ID 稳定，状态 Free/revoked，`localProjectsLocked=false` |
+| content-free 审计 | **PASS** | 四项审计不含 token、公开/service-role key、账号或设备实值；匿名状态只在测试内存中存在 |
+| 相关链 | **PASS** | 跨端、账号、权益、HTTP/runtime 与网站客户端相关测试 46/46 |
+| 全量测试 | **PASS** | `npm test` 退出码 0；Node 655 total / 648 pass / 0 fail / 7 skip，4.450 秒；Python 362 / 0 failures / 0 errors / 3 skipped，103.755 秒；墙钟 113.9 秒 |
+| 隐藏源码 smoke | **PASS** | Web 实际页面匿名假服务 HTTP(S) 0 请求；Electron Renderer sandbox 保持，输出 `out/source-smoke/runs/ms5vtmj9-ac64d9c05c87e6de/projects/` |
+| 资源与运行时门禁 | **PASS（alpha）** | loose 96 文件 / 2,158,481 字节；manifest `267db60af4df868d2377ee8c148b9210459ebf2a9c63c89a998921c882fbfc06`，anchor `e1f4718d81979793e12153e9164293b18bb092d0823b156f834c5d28ab9c36d5`；Windows alpha、fuse、Electron runtime 和发行身份结构通过 |
+| 生产与销售门禁 | **未运行/未完成** | 真实 GoTrue/Supabase/支付商/官网部署未联调；source sale 仍有 17 项 blocker，发行身份仍缺 12 字段；alpha.48 未打包，最新 Windows 制品仍为未签名 alpha.42 |
+
+结论：alpha.48 证明已有生产形状组件能形成正确的撤销传播语义，并保持“显式刷新”和“本地文件不锁定”承诺；它不是生产数据库、支付商、OAuth 或官网联调证据。
+
+## 历史验证结论：0.1.0-alpha.47 网站订阅与设备管理客户端源码
 
 验证日期：2026-07-29。本轮未联网、未调用真实账号/支付或数据库服务，未执行 SQL、部署、修改官网、推送或重新打包。
 

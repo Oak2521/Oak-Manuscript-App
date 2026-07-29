@@ -1,13 +1,13 @@
 # tests/ — Node 契约、发布资源与打包验证
 
-`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.47 统一结果为 Node **654 total / 647 pass / 0 fail / 7 skip / 4.091 秒**，Python **362 项 / 0 失败 / 0 错误 / 3 跳过 / 102.510 秒**，墙钟约 111 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
+`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.48 统一结果为 Node **655 total / 648 pass / 0 fail / 7 skip / 4.450 秒**，Python **362 项 / 0 失败 / 0 错误 / 3 跳过 / 103.755 秒**，墙钟 113.9 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
 
 本目录覆盖：
 
 - sandboxed preload、固定 IPC、Renderer 批量计划/确认和检查点 UI 契约；
 - 默认引用解析 IPC/UI 的计划—确认顺序、六种体例参数白名单、packaged smoke 同契约，以及切换稿件/项目时清空旧 session；
 - 三模式 AI、OS 加密凭据、单条完整发送预览、一次确认、内存建议审阅、有界 HTTP/Router，以及 OpenAI-compatible/Ollama/LM Studio 固定非流式请求、唯一文本响应、七类安全故障、失败后重新预览和真实 `127.0.0.1` HTTP/连接重置纵向链；Ollama 与 LM Studio 各有显式运行的单组合匿名窄验收脚本，后者覆盖响应 model 精确核对、空工具数组、静默替换拒绝与超时；官方云和其他真实上游产品不冒充通过；
-- Auth 登录/退出/过期/撤销、SyncRecord/持久状态 exact schema、反内容泄露、可信来源 IPC、四选一授权、safeStorage、账户隔离、revision/原子故障、重启恢复、幂等队列与安全 UI；alpha.44 覆盖桌面 Ed25519 权益/加密缓存/显式刷新和网站同步历史，alpha.45 覆盖独立签发链，alpha.46 覆盖 provider-bound 订阅事件与设备服务，alpha.47 覆盖网站订阅状态 exact parse、掩码设备、逐台确认撤销、失败恢复和退出竞态；
+- Auth 登录/退出/过期/撤销、SyncRecord/持久状态 exact schema、反内容泄露、可信来源 IPC、四选一授权、safeStorage、账户隔离、revision/原子故障、重启恢复、幂等队列与安全 UI；alpha.44—alpha.47 覆盖桌面权益、独立签发、订阅/设备服务与网站客户端，alpha.48 用同一匿名状态贯通网站撤销、真实签名 revoked envelope、桌面显式刷新降 Free 与本地项目不锁定；
 - Electron 默认 session 离线 switches/网络请求拦截、Renderer CSP、源码 smoke 的 `out/source-smoke/` 路径边界；
 - ASAR/integrity、顶层 2.1.3 afterPack 全 9 fuse 严格写入/回读、未来未知 fuse 的 alpha/sale fail-closed、实际 Framework 文件身份和构建顺序；
 - ASAR 内资源锚点、96 文件应用 loose 清单、四类平台锁绑定、真实 `app.asar` raw header/精确读取、同路径重建、loose 伪锚点拒绝、启动前验证及 5 个可信根 blocker 的严格关闭条件；
@@ -35,4 +35,4 @@ Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零�
 
 真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。当前 packaged smoke 强制通过受控链路运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言；缺失或陈旧 EXE 不得复用。
 
-alpha.47 Web 客户端隐藏 Chromium smoke 为 **PASS**，证据在 `out/web-client-smoke/`，匿名假服务期间 HTTP(S) 请求为 0；当前源码隐藏 Electron smoke 也为 **PASS**，运行根为 `out/source-smoke/runs/ms5vaowt-9d9cd8ae2b355871/projects/`。最新隐藏 packaged smoke 仍属于 alpha.42，为 **SMOKE + SYNC-RECOVERY PASS**，运行根为 `out/packaged-smoke/runs/ms5nicav-edc12e1b32aaafed/projects/`；其 canonical 证据把实际 EXE、双进程结果摘要和匿名输出树绑定进 schema v2 发布清单。哈希不是代码签名，实际系统安装生命周期仍未运行。
+alpha.48 Web 客户端隐藏 Chromium smoke 为 **PASS**，证据在 `out/web-client-smoke/`，匿名假服务期间 HTTP(S) 请求为 0；当前源码隐藏 Electron smoke 也为 **PASS**，运行根为 `out/source-smoke/runs/ms5vtmj9-ac64d9c05c87e6de/projects/`。最新隐藏 packaged smoke 仍属于 alpha.42，为 **SMOKE + SYNC-RECOVERY PASS**，运行根为 `out/packaged-smoke/runs/ms5nicav-edc12e1b32aaafed/projects/`；其 canonical 证据把实际 EXE、双进程结果摘要和匿名输出树绑定进 schema v2 发布清单。哈希不是代码签名，实际系统安装生命周期仍未运行。
