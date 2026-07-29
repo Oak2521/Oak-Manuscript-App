@@ -28,6 +28,7 @@ const state = {
   rulepackUpgradeApplying: false,
   authStatus: null,
   licenseStatus: null,
+  aiStatus: null,
   syncPreview: null,
   syncConfirming: false,
   syncQueue: [],
@@ -1248,6 +1249,93 @@ function renderAccountStatus() {
   }
 }
 
+function selectedAiMode() {
+  const selected = document.querySelector('input[name="ai-mode"]:checked');
+  return selected ? selected.value : "off";
+}
+
+function updateAiEndpointInput({ providerChanged = false } = {}) {
+  const provider = $("#ai-provider-select").value;
+  const fixedCloud = ["openai", "anthropic", "google"].includes(provider);
+  const input = $("#ai-base-url-input");
+  input.disabled = fixedCloud;
+  if (providerChanged && fixedCloud) input.value = "";
+  input.placeholder = fixedCloud
+    ? "官方端点固定；如需自定义地址请选择 OpenAI-compatible"
+    : "远程地址必须为 HTTPS；本机服务可使用回环 HTTP";
+}
+
+function renderAiSettings() {
+  const status = state.aiStatus;
+  if (!status) return;
+  const radio = document.querySelector(`input[name="ai-mode"][value="${status.mode}"]`);
+  if (radio) radio.checked = true;
+  const byo = status.mode === "byo";
+  $("#ai-byo-fields").classList.toggle("hidden", !byo);
+  if (status.provider) $("#ai-provider-select").value = status.provider;
+  $("#ai-model-input").value = status.model || "";
+  $("#ai-base-url-input").value = status.base_url || "";
+  updateAiEndpointInput();
+  $("#ai-credential-input").value = "";
+  $("#btn-clear-ai-credential").disabled = !status.has_credential;
+  const persistenceReady = status.persistence && status.persistence.state === "ready" &&
+    status.persistence.encrypted === true;
+  $("#btn-save-ai-settings").disabled = !persistenceReady;
+  const pro = state.licenseStatus && state.licenseStatus.effectiveTier === "pro";
+  const entitlement = byo && !pro ? " 我的 AI 需要有效 Pro 权益。" : "";
+  $("#ai-status-text").textContent = `${status.message}${entitlement}`;
+}
+
+async function refreshAiStatus() {
+  const response = unwrap(await window.oak.aiStatus());
+  state.aiStatus = response.status;
+  renderAiSettings();
+  return state.aiStatus;
+}
+
+async function saveAiSettings() {
+  const mode = selectedAiMode();
+  let payload = {
+    mode,
+    provider: null,
+    model: null,
+    base_url: null,
+    credential_action: "clear",
+    credential: null,
+  };
+  if (mode === "byo") {
+    const provider = $("#ai-provider-select").value;
+    const model = $("#ai-model-input").value.trim();
+    const baseUrl = $("#ai-base-url-input").value.trim() || null;
+    const credential = $("#ai-credential-input").value;
+    const sameProvider = state.aiStatus && state.aiStatus.mode === "byo" &&
+      state.aiStatus.provider === provider;
+    const sameAddress = baseUrl === null || (state.aiStatus && state.aiStatus.base_url === baseUrl.replace(/\/+$/u, ""));
+    payload = {
+      mode,
+      provider,
+      model,
+      base_url: baseUrl,
+      credential_action: credential ? "replace" :
+        (sameProvider && sameAddress && state.aiStatus.has_credential ? "keep" : "clear"),
+      credential: credential || null,
+    };
+  }
+  const response = unwrap(await window.oak.configureAi(payload));
+  state.aiStatus = response.status;
+  renderAiSettings();
+  toast("AI 设置已由主进程保存；当前没有模型网络请求。", 4200);
+  return state.aiStatus;
+}
+
+async function clearAiCredential() {
+  const response = unwrap(await window.oak.clearAiCredential());
+  state.aiStatus = response.status;
+  renderAiSettings();
+  toast("已清除本机保存的 AI 凭据。", 3600);
+  return state.aiStatus;
+}
+
 function renderSyncQueue() {
   const root = $("#sync-queue-list");
   const persistence = state.syncPersistence;
@@ -1314,13 +1402,16 @@ async function handleSyncQueueAction(action, queueId) {
 }
 
 async function refreshAccountStatus() {
-  const [auth, license] = await Promise.all([
+  const [auth, license, ai] = await Promise.all([
     window.oak.authStatus(),
     window.oak.licenseStatus(),
+    window.oak.aiStatus(),
   ]);
   state.authStatus = unwrap(auth);
   state.licenseStatus = unwrap(license);
+  state.aiStatus = unwrap(ai).status;
   renderAccountStatus();
+  renderAiSettings();
   await refreshSyncQueue();
   return { auth: state.authStatus, license: state.licenseStatus };
 }
@@ -1442,6 +1533,15 @@ document.addEventListener("DOMContentLoaded", () => {
     toggleAccountAuth().catch((error) => toast(String(error.message || error), 5000)));
   $("#btn-login-export").addEventListener("click", () =>
     toggleAccountAuth().catch((error) => toast(String(error.message || error), 5000)));
+  $$('input[name="ai-mode"]').forEach((input) => input.addEventListener("change", () => {
+    $("#ai-byo-fields").classList.toggle("hidden", selectedAiMode() !== "byo");
+  }));
+  $("#ai-provider-select").addEventListener("change", () =>
+    updateAiEndpointInput({ providerChanged: true }));
+  $("#btn-save-ai-settings").addEventListener("click", () =>
+    saveAiSettings().catch((error) => toast(String(error.message || error), 6000)));
+  $("#btn-clear-ai-credential").addEventListener("click", () =>
+    clearAiCredential().catch((error) => toast(String(error.message || error), 6000)));
   $("#btn-sync-once").addEventListener("click", () =>
     actions.confirmSync("sync_once").catch((error) => toast(String(error.message || error), 5000)));
   $("#btn-sync-ask-each-time").addEventListener("click", () =>

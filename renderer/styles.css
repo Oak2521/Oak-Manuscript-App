@@ -255,6 +255,19 @@ dialog.modal::backdrop { background: rgba(20, 29, 25, .58); }
 }
 .sync-queue-meta { min-width: 0; font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
 .sync-queue-actions { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+.ai-mode-grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 12px;
+  margin: 10px 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 7px;
+}
+.ai-mode-grid legend { padding: 0 5px; font-weight: 600; color: var(--oak-dark); }
+.ai-mode-grid label { display: flex; align-items: center; gap: 7px; }
+.ai-byo-fields {
+  display: grid; grid-template-columns: minmax(150px, 190px) minmax(0, 1fr);
+  gap: 9px 12px; align-items: center; margin: 12px 0;
+}
+.ai-byo-fields > label { font-weight: 600; }
+.ai-byo-fields input, .ai-byo-fields select { width: 100%; min-width: 0; }
+.ai-byo-fields .muted { grid-column: 1 / -1; margin: 0; }
 .upgrade-diff-section { margin: 0 22px 16px; }
 .upgrade-diff-section h3 { margin: 0 0 7px; color: var(--oak-dark); font-size: 15px; }
 .upgrade-diff-list {
@@ -288,4 +301,6 @@ dialog.modal::backdrop { background: rgba(20, 29, 25, .58); }
   .sync-preview-fields li { grid-template-columns: 1fr; gap: 4px; }
   .sync-queue-item { grid-template-columns: 1fr; }
   .sync-queue-actions { justify-content: flex-start; }
+  .ai-mode-grid, .ai-byo-fields { grid-template-columns: 1fr; }
+  .ai-byo-fields .muted { grid-column: auto; }
 }

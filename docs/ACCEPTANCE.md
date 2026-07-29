@@ -2,7 +2,18 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.31 Web 有界双清扫验收（2026-07-28）
+## 0.1.0-alpha.32 三模式 AI 设置与加密凭据验收（2026-07-28）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.32`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 无 AI / 湖岸 AI / 我的 AI 三模式与六类供应商可在设置页选择；我的 AI 要求 Pro，且明确不消耗湖岸 AI 配额；
+- [x] 非本机服务强制 HTTPS，本机 HTTP 只接受精确 loopback；供应商或地址改变后不能静默沿用旧凭据；
+- [x] 凭据只在主进程 OS 加密存储中持久化，状态、配置导出、Renderer、同步与错误响应均不回读；篡改、revision 冲突、硬链接和不安全根 fail-closed；
+- [x] 关闭或切换湖岸 AI 会清除 BYO 配置；失败不静默回退，AI 输出政策固定为建议且禁止自动写回；
+- [x] AI 定向 26/26、Node 492、Python 357 全量零失败；独立隐藏源码 Electron smoke PASS；资源锁 79 文件 / 2,136,323 字节；
+- [ ] 模型 transport、逐次请求预览、建议审阅、Web 会话凭据、湖岸 AI 服务和真实供应商兼容性已实现并验收；当前明确不会发起网络请求；
+- [ ] alpha.32 Windows/macOS packaged、签名、安装生命周期与干净机证据完成；最新真实 Windows 制品仍是 alpha.23。
+
+## 0.1.0-alpha.31 Web 有界双清扫验收（历史，2026-07-28）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.31`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] 第八个固定 RPC 只授予 `service_role`，优先列出所有 `deletion_pending`，再列出已到期任务；删除失败可在 TTL 前被计划清扫重试；

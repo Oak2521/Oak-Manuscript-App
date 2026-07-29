@@ -2,13 +2,15 @@
 
 ## 桌面应用（推荐）
 
-当前开发版本为 `0.1.0-alpha.31`；最新已打包版本仍是未签名的 alpha.23 Windows x64 NSIS/ZIP，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.31 保持标准包 2.0.0、默认引用解析、Ace 受控 utilityProcess、Electron 43 全部 9 项 fuse、按账户隔离的 OS 加密同步队列、Supabase/Postgres 持久任务、上传前结构/主动内容门禁、私有 worker 和一次性结果领取源码，并新增有界双清扫协调；普通测试、启动和构建不会触发联网下载。
+当前开发版本为 `0.1.0-alpha.32`；最新已打包版本仍是未签名的 alpha.23 Windows x64 NSIS/ZIP，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.32 保持标准包 2.0.0、默认引用解析、加密同步队列及 alpha.31 的 Web 有界双清扫，并新增三模式 AI 设置和 OS 加密用户凭据；普通测试、启动和构建不会触发联网下载。
 
-**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.31 最终统一结果为 Node 474/467/0/7、Python 357/0 failures/0 errors/3 skipped，墙钟 153.3 秒；跳过项不计作通过。最新真实 source/packaged 双阶段 smoke 仍来自 alpha.23；本轮没有借用它证明 alpha.31 制品。
+**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.32 最终统一结果为 Node 492/485/0/7、Python 357/0 failures/0 errors/3 skipped，墙钟 117.636 秒；跳过项不计作通过。alpha.32 独立隐藏源码 smoke 已通过，但最新真实 packaged smoke 仍来自 alpha.23，不能借用源码证据证明新制品。
 
 **Web 状态**：`web/client/` 已提供可本地渲染的工作台，保留湖岸账号登录/注册，包含“默认”引用体例、本次临时处理同意、创建/上传/轮询/取消/一次性领取；服务端另有 GoTrue、Fetch、Netlify Blobs 内容适配/有界清扫、Supabase/Postgres 持久任务迁移、上传结构/主动内容检查、私有原子领取、固定 Python 共享核心子进程及任务—对象—任务协调器。结果在 15 分钟 TTL 内只能通过同源已认证 POST 领取一次；服务先删除临时副本再返回，因此传输或本机保存失败后必须重新检查。它尚未部署，SQL 未在真实 Supabase 执行，计划清扫也未上线；本地 `cycle_clear` 不等于平台零留存。结构门禁不是病毒库扫描，本机进程隔离也不等于生产容器或 OS 禁网。结果同步按钮按设计禁用，计费未接通。用户不要把稿件交给任何声称基于该 alpha 的线上地址；正式地址只能在官网联调、隐私文本和生产零留存验收后公布。
 
 **账号与结果同步（当前边界）**：欢迎页、导出页和设置页保留湖岸账号入口。由于生产认证尚未配置，点击登录只会明确显示 `configuration_required`，不会打开浏览器或联网；真实登录状态只在自动化测试实例中模拟。登录用户导出后才会看到 SyncRecord v1 的逐字段预览，并可选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。确认项进入由系统安全存储加密的本机 `pending_transport` 队列，重启后可恢复；设置页只显示当前账号项，并可取消、重试或删除。当前没有网络 transport，绝未上传到网站；系统加密不可用时同步安全停止，本地稿件功能不受影响。
+
+**AI 设置（当前边界）**：设置页提供“无 AI”“湖岸 AI”“我的 AI”。我的 AI 支持 OpenAI、Anthropic、Google Gemini、OpenAI-compatible、Ollama 和 LM Studio，属于 Pro 权益且不消耗湖岸 AI 配额；三个官方云供应商固定使用官方端点，自定义地址必须选择 OpenAI-compatible；远程地址必须使用 HTTPS，本机 HTTP 只接受 loopback。凭据提交后不会回填到界面、状态或配置导出，也不会进入结果同步；供应商或地址变化时必须重新提供凭据。切换到无 AI 或湖岸 AI 会清除旧 BYO 配置。当前模型 transport 尚未实现，保存设置不会调用任何模型；失败也不会改用湖岸 AI。后续开放调用时，AI 结果只能进入建议审阅，不能直接写回稿件或混入机械批量修复。
 
 流程：欢迎页（隐私说明）→ 选稿件或匿名样本 → 选项目目录 → 选检查目标与引用体例 → 查看默认解析计划 → 确认后检查 →
 问题页可逐条接受/拒绝/暂不处理；选择“预览批量自动修复”时，APP 在一个可滚动窗口集中列出全部白名单机械修改的标题、位置和修改前/后预览。只有点击一次“确认批量修复 N 项”才执行整批写入；取消不写入。修复后可在“撤销与检查点”中撤销上一次批量修复或恢复选定检查点 → 导出中心（修订稿、三种报告、PDF 样张、基础 EPUB 预览、脱敏评估摘要）→ 验证完整性。
@@ -160,7 +162,7 @@ npm run verify:release-identity
 npm run release:evidence:verify:win
 ```
 
-验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。当前源码是 alpha.31 且没有对应制品，因此该命令会按设计拒绝；最新通过的 alpha.23 六项证据已归档在 `release/archive/0.1.0-alpha.23-final/`，不能替代 alpha.31。
+验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。当前源码是 alpha.32 且没有对应制品，因此该命令会按设计拒绝；最新通过的 alpha.23 六项证据已归档在 `release/archive/0.1.0-alpha.23-final/`，不能替代 alpha.32。
 
 安装生命周期验收器默认只读、不启动安装器，并要求当前源码版本存在精确制品。alpha.31 尚未打包，所以当前运行会因缺制品而失败；最近一次成功只读预检是 alpha.23 对归档 alpha.12：
 

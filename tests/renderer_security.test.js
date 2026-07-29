@@ -43,3 +43,14 @@ test("renderer CSP blocks active embedded content and contains no inline styles"
   assert.doesNotMatch(html, /\sstyle\s*=/i);
   assert.doesNotMatch(APP_SOURCE, /\sstyle\s*=/i);
 });
+
+test("AI settings render status as text and never restore a credential into the DOM", () => {
+  const start = APP_SOURCE.indexOf("function renderAiSettings()");
+  const end = APP_SOURCE.indexOf("async function refreshAiStatus()", start);
+  assert.notEqual(start, -1);
+  assert.ok(end > start);
+  const renderer = APP_SOURCE.slice(start, end);
+  assert.match(renderer, /ai-status-text"\)\.textContent/);
+  assert.match(renderer, /ai-credential-input"\)\.value = ""/);
+  assert.doesNotMatch(renderer, /innerHTML/);
+});

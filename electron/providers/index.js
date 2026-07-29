@@ -4,6 +4,7 @@
 "use strict";
 
 const { randomUUID } = require("node:crypto");
+const { AIProvider } = require("../ai-provider");
 
 const SYNC_CHOICES = Object.freeze([
   "sync_once",
@@ -383,6 +384,7 @@ const FREE_CAPABILITIES = Object.freeze({
   completeExports: false,
   enhancedCheckpoints: false,
   fullSyncHistory: false,
+  bringYourOwnAi: false,
 });
 const PRO_CAPABILITIES = Object.freeze(Object.fromEntries(
   Object.keys(FREE_CAPABILITIES).map((key) => [key, true]),
@@ -690,6 +692,7 @@ class SyncProvider {
 const authProvider = new AuthProvider();
 const licenseProvider = new LicenseProvider();
 const syncProvider = new SyncProvider({ requirePersistence: true });
+const aiProvider = new AIProvider({ requirePersistence: true });
 
 const EvaluationProvider = {
   evaluationUrl() {
@@ -701,6 +704,7 @@ module.exports = {
   AuthProvider,
   LicenseProvider,
   SyncProvider,
+  AIProvider,
   buildSyncRecordV1,
   validateSyncRecordV1,
   validateStoredQueueItem,
@@ -709,5 +713,6 @@ module.exports = {
   authProvider,
   licenseProvider,
   syncProvider,
+  aiProvider,
   EvaluationProvider,
 };

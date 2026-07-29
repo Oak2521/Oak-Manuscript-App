@@ -4,6 +4,15 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.32（ChatGPT 三模式 AI 设置与加密凭据检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.32`。本轮未联网、未调用模型、未使用真实 AI 密钥、未部署、未修改官网或重新打包；最新真实 Windows 制品仍为 alpha.23。
+
+- 正式方案补入用户已批准的六项 AI 决定；新增无 AI / 湖岸 AI / 我的 AI 三模式及 OpenAI、Anthropic、Google Gemini、OpenAI-compatible、Ollama、LM Studio 配置；
+- 新增主进程 `AIProvider`、固定 IPC 与 Electron `safeStorage` 加密持久化。我的 AI 受 Pro 权益门禁；凭据不回读、不导出、不同步，供应商/地址变化禁止复用；非 loopback 服务强制 HTTPS；关闭/切换湖岸 AI 清除 BYO 凭据；
+- 设置页新增模式、供应商、模型、地址和一次性凭据输入。当前模型 transport 故意未实现，状态固定无静默回退、只输出建议、禁止自动写回，并明确不会发起网络请求；
+- 定向 26/26；最终 `npm test` 117.636 秒：Node 492 total / 485 pass / 0 fail / 7 skip（3.573 秒），Python 357 total / 0 failures / 0 errors / 3 skipped（109.596 秒）；独立隐藏源码 Electron smoke PASS；资源清单 79 文件 / 2,136,323 字节，manifest SHA-256 `012f9bc6fcce4a330d618b33e475405cf52b16aa6adcca5f7bae10f2fef3a3c7`，锚点 SHA-256 `58d24d83e1d045a0cf26eca46202adfaf98e6a109760d82b7af52dcadf651758`。
+
 ### 2026-07-28 — 0.1.0-alpha.31（ChatGPT Web 有界双清扫检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.31`。本轮未联网、未部署、未修改官网、未执行真实 Supabase/Netlify E2E，也未重新打包。最新真实 Windows 制品仍为 alpha.23。

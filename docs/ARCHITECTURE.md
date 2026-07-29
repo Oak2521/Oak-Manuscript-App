@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.31` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、Web 状态机、同源 HTTPS、Supabase/GoTrue、Fetch、未部署工作台、Netlify Blobs 临时内容、Supabase/Postgres 持久任务、上传结构/主动内容门禁、私有原子领取、固定 Python 子进程共享核心、一次性结果领取和有界双清扫边界，以及 alpha.23 已验证的 Windows packaged 安全链。真实数据库迁移、平台计划任务/生命周期、病毒/信誉扫描、容器与 OS 无网隔离、网络同步、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.32` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、三模式 AI 设置与 OS 加密用户凭据、Web 状态机、同源 HTTPS、Supabase/GoTrue、Fetch、未部署工作台、Netlify Blobs 临时内容、Supabase/Postgres 持久任务、上传结构/主动内容门禁、私有原子领取、固定 Python 子进程共享核心、一次性结果领取和有界双清扫边界，以及 alpha.23 已验证的 Windows packaged 安全链。模型 transport、真实数据库迁移、平台计划任务/生命周期、病毒/信誉扫描、容器与 OS 无网隔离、网络同步、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -21,6 +21,7 @@ Electron Main
   ├─ AuthProvider / LicenseProvider：离线状态机、PKCE 固定契约与 Free/Pro 权益矩阵
   ├─ account-sync-ipc / SyncProvider：可信来源负载、逐字段预览、四选一授权、账户隔离队列
   ├─ sync-store / safeStorage：canonical 状态、revision CAS、原子加密持久化与重启恢复
+  ├─ AIProvider / ai-settings-store：三模式、Pro 门禁、供应商边界与 OS 加密凭据；模型 transport 关闭
   ├─ external-validation-ipc：项目路径 → 受绑定 plan/prepare/finalize；Renderer 不提交工具状态
   ├─ chrome-controller：固定隐藏 Chrome + 独立 profile + 随机 loopback DevTools
   ├─ ace-utility-runner：固定 utilityProcess 入口/参数/环境/超时/输出上限
@@ -183,6 +184,12 @@ alpha.31 增加仅 `service_role` 可调用的 `oak_manuscript_web_job_list_clea
 周期报告只保留规范起止时间、阶段状态、扫描/删除/pending/非法键计数与截断信号，不得包含主体、任务 ID、对象键、异常文本或稿件元数据。只有三个阶段均完成、pending/非法键为零且对象扫描未截断时，当前周期才是 `cycle_clear`；这仍只是应用层本地证据，所以 `production_zero_retention_verified` 必须固定为 false。只有真实计划任务、告警、Supabase/Blobs 故障演练、复制/备份生命周期及三路删除证据另行完成后，才能在生产验收文档中作更强结论。
 
 `AuthProvider` 当前固定未来生产形态为系统浏览器 PKCE，但未配置服务时只返回 `configuration_required` 且不打开页面；登录/过期/撤销仅能由测试专用实例模拟。`LicenseProvider` 已固定 Free/Pro 能力矩阵、有效期和离线宽限语义；签名订阅凭证、服务端设备管理与计费尚未实现。当前 `safeStorage` 只保护待发送队列，不等于生产 token 凭据层。生产 transport 上线时必须保持默认 Electron session 离线，使用独立最小权限网络通道，并在不改变 SyncRecord v1 最小字段边界的前提下另行威胁建模。
+
+### AD-024 AI 设置与模型 transport 必须分层（2026-07-28，冻结）
+
+`AIProvider` 只拥有无 AI / 湖岸 AI / 我的 AI 状态、Pro 权益、规范 provider/model/base URL、凭据存在性和输出政策。Renderer 通过三个固定 IPC 查询、配置或清除，永远不能读回凭据。`EncryptedAISettingsStore` 使用 Electron `safeStorage`、canonical JSON、revision CAS、单链接/路径身份检查、候选文件 `fsync`、原子替换和提交后复验；系统加密不可用时拒绝持久化，但不影响本地稿件能力。非 loopback 服务强制 HTTPS，provider 或地址变化禁止复用凭据。
+
+alpha.32 没有注册模型 transport，状态固定 `transport_configured=false`、`fallback_mode=none`、`output_policy=suggestion_only` 和 `automatic_writeback=false`。后续 transport 必须是独立最小权限主进程通道，逐次展示发送范围并由用户触发；错误不能泄露凭据或静默回退，响应只能进入建议审阅，不能进入 Python 确定性结论或自动写回。Web 凭据只能保留当前会话，不得复用桌面加密文件或进入账号同步。
 
 ### AD-014 Electron fuses 必须“显式固定—构建后读回—未知项失败关闭”（2026-07-28，冻结）
 

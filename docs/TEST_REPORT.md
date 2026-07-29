@@ -2,7 +2,24 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.31 Web 有界双清扫
+## 最新验证结论：0.1.0-alpha.32 三模式 AI 设置与加密凭据
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用模型、未使用真实 AI 密钥、未修改官网、未部署或生成 alpha.32 安装包。
+
+| 验证 | 结果 | 证据 |
+|---|---|---|
+| AI Provider / IPC / 加密存储 / UI 定向 | **PASS** | 26/26：三模式、六类供应商、Pro 门禁、凭据不回读、换绑禁复用、官方标签固定端点、HTTPS/精确 loopback、OS 加密持久化、篡改/revision/硬链接拒绝、IPC 错误净化、CSP/安全渲染和 transport 缺席 |
+| `npm test` | **PASS** | 退出码 0，墙钟 117.636 秒；Node 492 total / 485 pass / 0 fail / 7 skip（3.573 秒）；Python 357 total / 0 failures / 0 errors / 3 skipped（109.596 秒） |
+| 源码 Electron smoke（受限运行器） | **FAIL（环境限制，未采信为产品失败）** | Electron ready、同步/AI 加密存储就绪、标准验证完成并创建窗口后，GPU 子进程以 `0xC0000135` 重复退出，Renderer `ERR_FAILED`，进程退出 2147483651 |
+| 源码 Electron smoke（独立隐藏窗口） | **PASS** | `SMOKE-RESULT: PASS`；真实 Electron 源码链启动，未显示干扰用户的窗口；输出留在仓库 `out/source-smoke/runs/` |
+| 资源信任锁更新/复验 | **PASS** | 79 文件 / 2,136,323 字节；manifest SHA-256 `012f9bc6fcce4a330d618b33e475405cf52b16aa6adcca5f7bae10f2fef3a3c7`；anchor SHA-256 `58d24d83e1d045a0cf26eca46202adfaf98e6a109760d82b7af52dcadf651758` |
+| 发行身份只读复验 | **PASS（阻断状态正确）** | `complete=false`，12 个 Windows 完备性字段仍缺失 |
+| 模型 transport / 建议审阅 / Web 会话凭据 | **未实现、未运行** | 当前状态固定 `transport_configured=false`、`fallback_mode=none`、`output_policy=suggestion_only`、`automatic_writeback=false`；不会发起网络请求 |
+| alpha.32 Windows packaged / 安装生命周期 / macOS / Web 部署 | **未运行** | 最新可复验 Windows 制品仍是 alpha.23；不得借源码 smoke 声称新包或跨平台通过 |
+
+证据边界：本轮证明用户可安全选择三种 AI 模式、在 Pro 权益下保存自己的供应商/模型/地址和 OS 加密凭据，并且 Renderer、状态、导出、同步和错误响应均不会回读凭据。它不证明任何模型可用、建议质量、请求隐私、供应商兼容性、湖岸 AI 服务、Web 会话凭据或生产配额。实际模型请求必须作为后续独立里程碑实现和验收。
+
+## 历史验证结论：0.1.0-alpha.31 Web 有界双清扫
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网，没有使用真实密钥、执行 Supabase 迁移、连接 Netlify Blobs、修改官网、部署计划任务/容器、启动 Electron/安装器或生成 alpha.31 安装包。
 

@@ -31,6 +31,9 @@ test("sandboxed preload exposes only bounded account and sync operations", async
   await api.beginLogin();
   await api.logout();
   await api.licenseStatus();
+  await api.aiStatus();
+  await api.configureAi({ mode: "off" });
+  await api.clearAiCredential();
   await api.syncPreference();
   await api.syncPreview("C:\\projects\\oak", "export", true);
   await api.syncConfirm("idem-1", "sync_once");
@@ -44,6 +47,9 @@ test("sandboxed preload exposes only bounded account and sync operations", async
     { channel: "provider:auth-begin" },
     { channel: "provider:auth-logout" },
     { channel: "provider:license-status" },
+    { channel: "provider:ai-status" },
+    { channel: "provider:ai-configure", payload: { mode: "off" } },
+    { channel: "provider:ai-clear-credential" },
     { channel: "provider:sync-preference", payload: {} },
     {
       channel: "provider:sync-preview",

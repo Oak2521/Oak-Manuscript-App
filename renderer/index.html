@@ -182,6 +182,39 @@
           <button id="btn-project-standard-change" disabled>查看差异并采用当前默认版本</button>
         </div>
       </div>
+      <h3>AI 与模型</h3>
+      <div class="callout ai-settings-card">
+        <p id="ai-status-text">正在读取 AI 设置…</p>
+        <fieldset class="ai-mode-grid">
+          <legend>使用方式</legend>
+          <label><input type="radio" name="ai-mode" value="off" checked> 不使用 AI</label>
+          <label><input type="radio" name="ai-mode" value="oak"> 湖岸 AI</label>
+          <label><input type="radio" name="ai-mode" value="byo"> 我的 AI（Pro）</label>
+        </fieldset>
+        <div id="ai-byo-fields" class="ai-byo-fields hidden">
+          <label for="ai-provider-select">供应商 / 接口</label>
+          <select id="ai-provider-select">
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic</option>
+            <option value="google">Google Gemini</option>
+            <option value="openai_compatible">OpenAI-compatible 自定义接口</option>
+            <option value="ollama">Ollama</option>
+            <option value="lm_studio">LM Studio</option>
+          </select>
+          <label for="ai-model-input">模型标识</label>
+          <input id="ai-model-input" type="text" maxlength="128" spellcheck="false" autocomplete="off" placeholder="例如 gpt-5-mini 或 qwen3:8b">
+          <label for="ai-base-url-input">服务地址</label>
+          <input id="ai-base-url-input" type="url" maxlength="2048" spellcheck="false" autocomplete="off" placeholder="官方供应商可留空；自定义远程地址必须为 HTTPS">
+          <label for="ai-credential-input">API Key / 凭据</label>
+          <input id="ai-credential-input" type="password" maxlength="4096" autocomplete="new-password" aria-describedby="ai-credential-help" placeholder="留空则保留当前同一供应商凭据">
+          <p id="ai-credential-help" class="muted">凭据只交给 Electron 主进程，并使用 Windows DPAPI 或 macOS Keychain 加密；不会进入项目、报告、日志、同步记录或配置导出。远程 HTTP 被拒绝，仅本机回环地址可使用 HTTP。</p>
+        </div>
+        <div class="actions compact-actions">
+          <button id="btn-save-ai-settings">保存 AI 设置</button>
+          <button id="btn-clear-ai-credential" class="ghost" disabled>清除已保存凭据</button>
+        </div>
+        <p class="muted">AI 永远只是建议层：不能改变确定性检查结论，不能静默写回稿件，也不会在失败时自动切换到湖岸 AI。当前检查点尚未接入任何模型 transport，保存设置不会联网。</p>
+      </div>
       <h3>订正参考标准</h3>
       <table id="standards-table"><thead>
         <tr><th>标准</th><th>类型</th><th>版本</th><th>状态</th><th>适用范围</th></tr>

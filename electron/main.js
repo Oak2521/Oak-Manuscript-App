@@ -11,6 +11,7 @@ const {
 const pathPolicy = require("./path-policy");
 const bridge = require("./python-bridge");
 const providers = require("./providers");
+const { registerAIIpc } = require("./ai-ipc");
 const { registerAccountSyncIpc } = require("./account-sync-ipc");
 const { createAceUtilityRunner } = require("./ace-utility-runner");
 const { registerExternalValidationIpc } = require("./external-validation-ipc");
@@ -19,6 +20,7 @@ const { registerCoreIpc } = require("./core-ipc");
 const { registerStandardsIpc } = require("./standards-ipc");
 const { StandardsProvider } = require("./standards-provider");
 const { EncryptedSyncStore } = require("./sync-store");
+const { EncryptedAISettingsStore } = require("./ai-settings-store");
 const { createStandardBoundCore } = require("./standard-bound-core");
 const { readCoreCommandResult, toFailureResponse } = require("./core-result");
 const { createPdfPreview } = require("./pdf-preview");
@@ -173,6 +175,12 @@ registerAccountSyncIpc({
     if (platform === null) throw new Error("当前平台尚未进入同步契约支持范围");
     return providers.buildSyncRecordV1({ ...data, platform }, { includeIssues });
   },
+});
+
+registerAIIpc({
+  ipcMain,
+  aiProvider: providers.aiProvider,
+  licenseProvider: providers.licenseProvider,
 });
 
 registerExternalValidationIpc({
@@ -378,6 +386,18 @@ app.whenReady().then(async () => {
     providers.syncProvider.disablePersistence(error);
     // Sync remains fail-closed while all local manuscript functions stay available.
     console.error("[sync] encrypted local queue unavailable:", error && error.message);
+  }
+  try {
+    if (!safeStorage.isEncryptionAvailable()) throw new Error("当前系统安全存储不可用");
+    providers.aiProvider.configurePersistence(new EncryptedAISettingsStore({
+      rootDir: path.join(app.getPath("userData"), "ai"),
+      protect: (plaintext) => safeStorage.encryptString(plaintext),
+      unprotect: (ciphertext) => safeStorage.decryptString(ciphertext),
+    }));
+    console.log("[ai] encrypted local settings ready; transport disabled");
+  } catch (error) {
+    providers.aiProvider.disablePersistence();
+    console.error("[ai] encrypted local settings unavailable:", error && error.message);
   }
   if (SYNC_RECOVERY_SMOKE) {
     try {

@@ -2,9 +2,9 @@
 
 > 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.31）
+## Provider 一览（当前 alpha.32）
 
-alpha.31 在一次性结果领取上增加有界双清扫：删除待办可在 TTL 前恢复，对象扫描返回上限截断，私有协调器按任务—对象—任务运行并只产出计数级报告。本机真实 TXT 检查烟测已通过，但结构门禁不是病毒库或平台信誉扫描；数据库/store 仍是 Fake/静态检查，没有执行真实迁移、连接 Supabase/Netlify 或部署计划任务，也没有容器/OS 无网隔离证据。商业仓库没有复制真实 service-role key、没有修改网站或部署 worker、签名权益/计费、同步 transport 或网站后台。
+alpha.32 在 alpha.31 Web 有界双清扫之上增加桌面三模式 AI 设置和 OS 加密用户凭据；没有模型 transport，也没有改变 Web 作业、网站或生产服务。数据库/store 仍是 Fake/静态检查，没有执行真实迁移、连接 Supabase/Netlify 或部署计划任务，也没有容器/OS 无网隔离证据。商业仓库没有复制真实 service-role key 或 AI key、没有修改网站或部署 worker、签名权益/计费、同步 transport、AI transport 或网站后台。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
@@ -15,6 +15,7 @@ alpha.31 在一次性结果领取上增加有界双清扫：删除待办可在 T
 | `StandardsProvider` | 离线验证内置 release；本地签名包预览/安装/全局回滚、项目固定版本与显式升级已实现；生产 trust pin 缺失时导入禁用 | 用户主动触发的在线检查/下载、签名与撤回分发、可观测回滚；绝不上传稿件 |
 | `UpdateProvider` | 尚未实现或导出 | 签名应用更新 |
 | `FeedbackProvider` | 尚未实现或导出 | 用户主动发送不含正文的规则反馈 |
+| `AIProvider` | 无 AI/湖岸 AI/我的 AI、六类供应商、Pro 门禁与桌面 safeStorage 已实现；凭据不回读/不同步，失败不回退；模型 transport 关闭 | 湖岸 AI 服务、用户逐次请求预览、建议审阅；Web 的用户凭据只限当前会话，绝不进入账号同步或长期网站存储 |
 
 ## 当前离线边界与硬性验收（对应 §20.1 / §21）
 

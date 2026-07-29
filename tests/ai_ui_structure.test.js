@@ -1,0 +1,50 @@
+"use strict";
+
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const html = fs.readFileSync(path.resolve(__dirname, "../renderer/index.html"), "utf8");
+const app = fs.readFileSync(path.resolve(__dirname, "../renderer/app.js"), "utf8");
+const preload = fs.readFileSync(path.resolve(__dirname, "../electron/preload.js"), "utf8");
+const main = fs.readFileSync(path.resolve(__dirname, "../electron/main.js"), "utf8");
+
+test("settings page exposes the three approved AI modes and six provider families", () => {
+  for (const mode of ["off", "oak", "byo"]) {
+    assert.match(html, new RegExp(`name=["']ai-mode["'][^>]*value=["']${mode}["']`));
+  }
+  for (const provider of ["openai", "anthropic", "google", "openai_compatible", "ollama", "lm_studio"]) {
+    assert.match(html, new RegExp(`value=["']${provider}["']`));
+  }
+  for (const id of [
+    "ai-status-text", "ai-provider-select", "ai-model-input", "ai-base-url-input",
+    "ai-credential-input", "btn-save-ai-settings", "btn-clear-ai-credential",
+  ]) assert.match(html, new RegExp(`id=["']${id}["']`));
+  assert.match(html, /不能静默写回稿件/);
+  assert.match(html, /不会在失败时自动切换到湖岸 AI/);
+  assert.match(html, /保存设置不会联网/);
+  assert.match(app, /\["openai", "anthropic", "google"\]\.includes\(provider\)/);
+  assert.match(app, /input\.disabled = fixedCloud/);
+});
+
+test("credential crosses one fixed IPC and is never populated or rendered from status", () => {
+  assert.match(html, /id="ai-credential-input" type="password"/);
+  assert.match(preload, /configureAi: \(config\) => ipcRenderer\.invoke\("provider:ai-configure", config\)/);
+  assert.match(preload, /clearAiCredential: \(\) => ipcRenderer\.invoke\("provider:ai-clear-credential"\)/);
+  const renderer = app.slice(app.indexOf("function renderAiSettings()"),
+    app.indexOf("async function refreshAiStatus()"));
+  assert.match(renderer, /ai-credential-input"\)\.value = ""/);
+  assert.match(renderer, /ai-status-text"\)\.textContent/);
+  assert.doesNotMatch(renderer, /credential[^\n]*textContent/);
+  assert.doesNotMatch(renderer, /innerHTML/);
+});
+
+test("main process owns OS-encrypted AI persistence and registers no model transport", () => {
+  assert.match(main, /new EncryptedAISettingsStore/);
+  assert.match(main, /safeStorage\.encryptString/);
+  assert.match(main, /safeStorage\.decryptString/);
+  assert.match(main, /registerAIIpc/);
+  assert.match(main, /\[ai\] encrypted local settings ready; transport disabled/);
+  assert.doesNotMatch(main, /provider:ai-(?:request|complete|stream)/);
+});

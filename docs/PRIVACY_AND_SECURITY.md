@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.30` 已实现的桌面隐私边界及 Web 作业/同源 HTTP/Bearer/GoTrue/Fetch/临时对象存储/持久任务/上传门禁/私有领取、固定 Python 子进程与一次性结果领取源码契约。现有 alpha.23 Windows 制品未签名，不是可售卖正式版。统一账号、Free/Pro、SyncRecord v1、OS 加密持久队列、Web 状态机/handler、GoTrue、工作台、Netlify Blobs 内容适配、Supabase/Postgres 持久状态、结构/主动内容检查、本机共享核心 worker 和返回前清理已实现；真实迁移、生产病毒扫描、容器/OS 隔离、同步 transport、计费和官网发布仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.32` 已实现的桌面隐私边界、三模式 AI 设置/OS 加密凭据，以及 Web 作业/同源 HTTP/Bearer/GoTrue/Fetch/临时对象存储/持久任务/上传门禁/私有领取、固定 Python 子进程、一次性结果领取和有界双清扫源码契约。现有 alpha.23 Windows 制品未签名，不是可售卖正式版。真实模型 transport、数据库迁移、生产病毒扫描、容器/OS 隔离、同步 transport、计费和官网发布仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -50,7 +50,15 @@
 - `pending_transport` 仍只表示“已在本机加密等待”，当前没有网络传输、后台自动发送或网站写入。“已入队”不得显示或记录为“已上传/已同步”；
 - 生产认证仍必须实现系统浏览器 PKCE 与独立 token 凭据存储；生产同步必须使用独立最小权限 transport、幂等服务端和云端删除/撤销机制，且不能解除 default session 离线门禁。现有队列加密不等于这些生产能力已完成。
 
-### 4.3 Web 临时作业的零留存与同源 HTTP 契约
+### 4.3 AI 配置与凭据边界
+
+- 默认“无 AI”；AIProvider 故障、权益失效或系统加密不可用不得影响确定性检查、机械修复、恢复或导出；
+- “我的 AI”凭据只通过固定 IPC 一次性交给主进程，并在 OS `safeStorage` 加密后写入 `userData/ai/settings-v1.enc`；状态、配置导出、Renderer、项目、报告、日志和 SyncRecord 只允许暴露“是否存在凭据”，绝不返回密文或明文；
+- 加密状态使用 exact schema、canonical JSON、长度上限、revision CAS、单链接/路径身份检查、候选文件 `fsync`、原子替换和提交后解密复验；篡改、硬链接、路径逃逸或系统加密不可用一律 fail-closed；
+- OpenAI、Anthropic 和 Google 官方标签绑定固定官方 HTTPS 端点；自定义远程地址只能使用 OpenAI-compatible HTTPS，本机 HTTP 仅限精确 loopback；provider 或地址变化后不得沿用旧凭据；
+- alpha.32 没有任何模型请求 IPC 或 transport，不会联网。后续 transport 必须逐次由用户触发并预览发送范围；凭据永不同步，Web 凭据只限当前会话；失败不得静默回退湖岸 AI，响应只能作为建议且不能自动写回稿件。
+
+### 4.4 Web 临时作业的零留存与同源 HTTP 契约
 
 - 机器可读权威为三份 `web-job-*-v1.schema.json` 及 `web-http-error-v1.schema.json`、`web-http-audit-v1.schema.json`，参考状态机为 `web/job-contract.js`，同源请求处理边界为 `web/http-handler.js`；创建请求只能含幂等键、单任务处理同意、隐私版本和最小文档枚举/字节数；
 - 可信账号/匿名主体由上游会话层独立传入，请求不能自报主体或携带 token。公开状态与观察事件不含主体 ID、文件名、路径、正文、片段、上传字节或内容哈希；

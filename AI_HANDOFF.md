@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.31`
+> 当前版本：`0.1.0-alpha.32`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.31`（源码、本机子进程与离线仿真检查点；最新未签名 Windows 制品仍是 alpha.23）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.32`（源码、本机隐藏 Electron 与离线配置检查点；最新未签名 Windows 制品仍是 alpha.23）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,16 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.32 三模式 AI 设置与加密凭据检查点
+
+- 已按用户逐项批准的六项决定把 AI 契约写入 v2.0 ChatGPT 正式方案：无 AI / 湖岸 AI / 我的 AI；云 API、自托管 OpenAI-compatible 与 Ollama/LM Studio；凭据永不同步且 Web 仅会话；只给建议不自动写稿；我的 AI 属于 Pro 且不消耗湖岸 AI 配额；失败不静默回退；
+- Electron 主进程新增 `AIProvider`、固定 AI IPC 与 `safeStorage` 加密设置存储。支持 OpenAI、Anthropic、Google Gemini、OpenAI-compatible、Ollama、LM Studio；云/自托管非 loopback 地址强制 HTTPS；供应商或地址变化时禁止沿用旧凭据；状态、导出和 Renderer 均不回读凭据；
+- 设置页可选择三种模式并保存/清除“我的 AI”配置。无 AI / 湖岸 AI 会清除旧 BYO 凭据；系统加密存储不可用时 fail-closed，但不影响本地项目、确定性检查、机械修复或导出；
+- 当前没有模型 transport，界面与状态明确显示不会发起网络请求；`fallback_mode=none`、`output_policy=suggestion_only`、`automatic_writeback=false` 固定。不要把“设置已保存”写成“AI 已可调用”；
+- 定向 26/26；最终 `npm test` 117.636 秒：Node 492 total / 485 pass / 0 fail / 7 skip（3.573 秒），Python 357 total / 0 failures / 0 errors / 3 skipped（109.596 秒）；
+- 受限运行器源码 smoke 因 GPU 子进程 `0xC0000135` 退出；在独立隐藏、非受限 Electron 窗口重跑 `SMOKE-RESULT: PASS`。资源锁 79 文件 / 2,136,323 字节，manifest SHA-256 `012f9bc6fcce4a330d618b33e475405cf52b16aa6adcca5f7bae10f2fef3a3c7`，锚点 SHA-256 `58d24d83e1d045a0cf26eca46202adfaf98e6a109760d82b7af52dcadf651758`；
+- 本轮未联网、未调用任何模型、未使用真实 AI 密钥、未修改官网、未部署或打包。发行身份仍 `complete=false`，12 项缺失；最新可复验 Windows 制品仍为 alpha.23。
 
 ### 已完成：0.1.0-alpha.31 Web 有界双清扫检查点
 
@@ -469,7 +479,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 6. 同步只允许检查结果和必要元数据，不同步稿件、正文、摘录、文件名、路径或哈希；登录用户必须明确选择是否同步；
 7. 引用体例保留“默认”，由确定性映射自动选择，并在报告中说明；
 8. 标准文件需要签名清单、下载校验、版本固定、回滚和升级提示；已有项目不得被静默换规则；
-9. “接入用户自己的 AI”已确认六项设计：无 AI / 湖岸 AI / 我的 AI 三模式；支持云 API、自托管 OpenAI-compatible 服务和 Ollama/LM Studio；凭据永不同步且 Web 仅会话保存；AI 只给建议、绝不静默改稿；属于 Pro 且不消耗湖岸 AI 配额；失败时不静默回退。用户尚未明确批准把它写入 v2.0 方案或开始实现，当前不得擅自扩展范围；
+9. “接入用户自己的 AI”六项设计已由用户明确批准并写入 v2.0 方案；alpha.32 已实现桌面三模式设置、Pro 门禁和 OS 加密凭据存储，但模型 transport、请求预览、响应建议审阅与 Web 会话凭据仍未实现；
 10. 不进行 AI 语义改写，自动修复仍只限冻结白名单机械操作。
 
 ## 4. 已核实但尚未解决的缺口

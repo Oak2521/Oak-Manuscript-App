@@ -62,6 +62,9 @@ const api = {
   syncRetry: (queueId) => ipcRenderer.invoke("provider:sync-retry", { queueId }),
   syncDelete: (queueId) => ipcRenderer.invoke("provider:sync-delete", { queueId }),
   licenseStatus: () => ipcRenderer.invoke("provider:license-status"),
+  aiStatus: () => ipcRenderer.invoke("provider:ai-status"),
+  configureAi: (config) => ipcRenderer.invoke("provider:ai-configure", config),
+  clearAiCredential: () => ipcRenderer.invoke("provider:ai-clear-credential"),
   openEvaluation: () => ipcRenderer.invoke("provider:open-evaluation"),
   appInfo: () => ipcRenderer.invoke("app:info"),
 };
