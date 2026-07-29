@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/desktop-standards-update-v1.schema.json",
+  "title": "Oak Manuscript desktop standards update configuration v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "config_type", "status", "update_endpoint"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "config_type": { "const": "oak_manuscript_standards_update" },
+    "status": { "enum": ["pending_configuration", "configured"] },
+    "update_endpoint": {
+      "anyOf": [
+        { "type": "null" },
+        { "type": "string", "minLength": 9, "maxLength": 2048, "pattern": "^https://" }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "pending_configuration" } } },
+      "then": { "properties": { "update_endpoint": { "type": "null" } } }
+    },
+    {
+      "if": { "properties": { "status": { "const": "configured" } } },
+      "then": { "properties": { "update_endpoint": { "type": "string" } } }
+    }
+  ]
+}

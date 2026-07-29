@@ -1355,9 +1355,12 @@ async function renderStandardsPage() {
       : "当前没有可用的标准包。";
     $("#standards-update-text").textContent = standardStatus.error
       ? `标准库核验失败：${standardStatus.error.message}`
-      : standardStatus.trust_configured
-        ? "本地签名包导入已启用；自动联网更新保持关闭。"
+      : standardStatus.network_updates_enabled
+        ? "签名更新已启用；仅在您点击“检查在线更新”后联网。"
+        : standardStatus.trust_configured
+          ? "本地签名包导入已启用；正式在线更新地址尚未配置。"
         : "签名校验与回滚机制已启用，但正式 release 公钥尚未配置；当前只能使用摘要固定的内置标准包。";
+    $("#btn-check-standards").disabled = !standardStatus.network_updates_enabled;
     $("#btn-install-standards").disabled = !standardStatus.local_signed_import_enabled;
     $("#btn-rollback-standards").disabled = !standardStatus.previous;
     const info = unwrap(await window.oak.appInfo());
@@ -1367,6 +1370,7 @@ async function renderStandardsPage() {
   } catch (err) {
     $("#standards-active-text").textContent = "标准库不可用（已安全停止，不会回退到未核验规则）。";
     $("#standards-update-text").textContent = String(err.message || err);
+    $("#btn-check-standards").disabled = true;
     $("#btn-install-standards").disabled = true;
     $("#btn-rollback-standards").disabled = true;
     $("#btn-project-standard-change").disabled = true;
@@ -1811,6 +1815,22 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await window.oak.installStandardUpdate();
       if (!response.ok) { toast(response.error, 6000); return; }
       if (response.canceled) { toast("未安装标准更新"); return; }
+      toast(`标准包已更新为 ${response.result.active.version}；已有项目尚未改变。`, 5000);
+    } catch (error) {
+      toast(String(error.message || error), 6000);
+    } finally {
+      await renderStandardsPage();
+    }
+  });
+  $("#btn-check-standards").addEventListener("click", async () => {
+    const button = $("#btn-check-standards");
+    if (button.disabled) return;
+    button.disabled = true;
+    try {
+      const response = await window.oak.checkStandardUpdates();
+      if (!response.ok) { toast(response.error, 6000); return; }
+      if (response.current) { toast("当前标准包已是最新版本。", 4200); return; }
+      if (response.canceled) { toast("未安装在线标准更新"); return; }
       toast(`标准包已更新为 ${response.result.active.version}；已有项目尚未改变。`, 5000);
     } catch (error) {
       toast(String(error.message || error), 6000);

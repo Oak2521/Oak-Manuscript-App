@@ -30,8 +30,10 @@ const { loadDesktopAuthConfig } = require("./desktop-auth-config");
 const { AuthHttpClient } = require("./auth-http-client");
 const { DesktopAuthProvider } = require("./desktop-auth-provider");
 const { loadDesktopLicenseConfig } = require("./desktop-license-config");
+const { loadDesktopStandardsUpdateConfig } = require("./desktop-standards-update-config");
 const { ProductionLicenseProvider } = require("./license-entitlement");
 const { LicenseHttpClient } = require("./license-http-client");
+const { StandardsUpdateHttpClient } = require("./standards-update-http-client");
 const { EncryptedLicenseStore } = require("./license-store");
 const { SyncHttpClient } = require("./sync-http-client");
 const { SyncTransportCoordinator } = require("./sync-transport-coordinator");
@@ -550,10 +552,26 @@ app.whenReady().then(async () => {
   }
   const standardsStoreRoot = path.join(app.getPath("userData"), "standards");
   bridge.configureStandardsStoreRoot(standardsStoreRoot);
+  let standardsUpdateClient = null;
+  try {
+    const standardsUpdateConfig = loadDesktopStandardsUpdateConfig(pathPolicy.configDir());
+    if (standardsUpdateConfig.status === "configured") {
+      standardsUpdateClient = new StandardsUpdateHttpClient({
+        endpoint: standardsUpdateConfig.update_endpoint,
+      });
+      console.log("[standards] signed update transport ready; checks remain user-triggered");
+    } else {
+      console.log("[standards] online update endpoint pending; offline standards remain available");
+    }
+  } catch (error) {
+    // Invalid or partial configuration must never weaken bundled/local verification.
+    console.error("[standards] online update transport unavailable:", error && error.message);
+  }
   standardsProvider = new StandardsProvider({
     rootDir: standardsStoreRoot,
     configDir: pathPolicy.configDir(),
     appVersion: app.getVersion(),
+    updateClient: standardsUpdateClient,
   });
   standardBoundCore = createStandardBoundCore({ bridge, provider: standardsProvider });
   registerStandardsIpc({

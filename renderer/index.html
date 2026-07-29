@@ -173,10 +173,11 @@
         <p id="standards-active-text">正在核验本地标准包…</p>
         <p id="standards-update-text" class="muted"></p>
         <div class="actions compact-actions">
+          <button id="btn-check-standards">检查在线更新</button>
           <button id="btn-install-standards">导入湖岸签名更新包…</button>
           <button id="btn-rollback-standards">切换到上一稳定版本</button>
         </div>
-        <p class="muted">本版本不会自行联网。只有您主动选择签名更新包后才会读取该本地文件；安装后仅新建项目自动采用新版本，已有项目不会静默改变，必须先查看完整差异并另行确认。</p>
+        <p class="muted">本版本不会后台联网。只有您主动点击检查，且正式更新地址与签名公钥均已配置时，APP 才会发送当前 APP/标准版本信息；不发送稿件、项目路径或账号信息。也可手动选择本地签名包。安装后仅新建项目自动采用新版本，已有项目不会静默改变，必须先查看完整差异并另行确认。</p>
         <div class="project-standard-panel">
           <p id="project-standard-text" class="muted">打开项目后，可在这里比较该项目固定的规则包与当前默认版本。</p>
           <button id="btn-project-standard-change" disabled>查看差异并采用当前默认版本</button>

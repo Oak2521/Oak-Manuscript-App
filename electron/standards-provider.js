@@ -6,6 +6,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const crypto = require("node:crypto");
 
 const {
   DEFAULT_LIMITS,
@@ -39,6 +40,8 @@ const BUNDLED_STANDARD_RELEASE = Object.freeze({
 });
 
 const SHA256_RE = /^[0-9a-f]{64}$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const REMOTE_PLAN_TTL_MS = 10 * 60 * 1000;
 
 class StandardsProviderError extends Error {
   constructor(code, message, details = undefined) {
@@ -163,6 +166,9 @@ class StandardsProvider {
     bundledRelease = BUNDLED_STANDARD_RELEASE,
     fsImpl = fs,
     storeClass = StandardsStore,
+    updateClient = null,
+    clock = () => new Date(),
+    planIdFactory = crypto.randomUUID,
   }) {
     if (typeof rootDir !== "string" || !path.isAbsolute(rootDir) ||
         typeof configDir !== "string" || !path.isAbsolute(configDir)) {
@@ -175,6 +181,15 @@ class StandardsProvider {
     this.bundledRelease = Object.freeze({ ...bundledRelease });
     this.trustStoreInput = trustStore;
     this.storeClass = storeClass;
+    if (updateClient !== null && (!updateClient || typeof updateClient.check !== "function")) {
+      throw new TypeError("标准更新 transport 必须提供 check");
+    }
+    if (typeof clock !== "function" || typeof planIdFactory !== "function") {
+      throw new TypeError("标准更新计划时钟或 ID 生成器非法");
+    }
+    this.updateClient = updateClient;
+    this.clock = clock;
+    this.planIdFactory = planIdFactory;
     this.paths = null;
     this.trustConfigured = false;
     this.store = null;
@@ -182,6 +197,8 @@ class StandardsProvider {
     this.initializationError = null;
     this._initializing = null;
     this._preparing = null;
+    this._checkingRemote = false;
+    this._remotePlan = null;
   }
 
   _validateBundledRelease() {
@@ -302,9 +319,127 @@ class StandardsProvider {
       highest_seen_sequence: state?.highest_seen_sequence || null,
       trust_configured: this.trustConfigured,
       local_signed_import_enabled: this.trustConfigured,
-      network_updates_enabled: false,
+      network_updates_enabled: this.trustConfigured && this.updateClient !== null,
       error: this.initializationError,
     };
+  }
+
+  _remoteNow() {
+    let value;
+    try { value = this.clock(); } catch {
+      fail("STANDARD_UPDATE_CLOCK_INVALID", "标准更新时间不可用");
+    }
+    const date = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(date.getTime())) fail("STANDARD_UPDATE_CLOCK_INVALID", "标准更新时间不可用");
+    return date;
+  }
+
+  async checkForRemoteUpdate() {
+    const { state: current } = await this._requireReady({ allowMigrationSource: true });
+    if (!this.trustConfigured || this.updateClient === null) {
+      fail("STANDARD_UPDATE_NETWORK_DISABLED", "标准更新联网配置或生产签名公钥尚未就绪");
+    }
+    if (this._checkingRemote) fail("STANDARD_UPDATE_BUSY", "标准更新检查正在进行");
+    this._checkingRemote = true;
+    this._remotePlan = null;
+    try {
+      const result = await this.updateClient.check({
+        appVersion: this.appVersion,
+        bundleId: current.active.bundle_id,
+        currentReleaseSequence: current.active.release_sequence,
+        currentManifestSha256: current.active.manifest_sha256,
+      });
+      if (result && typeof result === "object" && !Array.isArray(result) &&
+          Object.keys(result).length === 1 && result.outcome === "current") {
+        return { outcome: "current", active: current.active };
+      }
+      if (!result || typeof result !== "object" || Array.isArray(result) ||
+          Object.keys(result).sort().join("\0") !== ["envelopeBytes", "outcome"].sort().join("\0") ||
+          result.outcome !== "update" || !Buffer.isBuffer(result.envelopeBytes)) {
+        fail("STANDARD_UPDATE_RESPONSE_INVALID", "标准更新 transport 返回了非法候选");
+      }
+      const bytes = Buffer.from(result.envelopeBytes);
+      const verified = await this.store.verifyEnvelope(bytes, {
+        enforceCompatibility: true,
+        enforceExpiry: true,
+        runPayloadValidation: true,
+      });
+      if (verified.manifest.bundle_id !== current.active.bundle_id ||
+          verified.manifest.release_sequence <= current.highest_seen_sequence) {
+        fail("STANDARD_UPDATE_NOT_NEWER", "在线标准候选不是当前标准库的更高 release_sequence");
+      }
+      const planId = this.planIdFactory();
+      if (typeof planId !== "string" || !UUID_RE.test(planId)) {
+        fail("STANDARD_UPDATE_PLAN_INVALID", "标准更新计划 ID 生成失败");
+      }
+      const now = this._remoteNow();
+      const expiresAt = new Date(now.getTime() + REMOTE_PLAN_TTL_MS).toISOString();
+      this._remotePlan = Object.freeze({
+        planId,
+        expiresAt,
+        expectedActiveManifestSha256: current.active.manifest_sha256,
+        envelopeSha256: sha256(bytes),
+        manifestSha256: verified.manifestSha256,
+        bytes,
+      });
+      return {
+        outcome: "update_available",
+        plan_id: planId,
+        expires_at: expiresAt,
+        envelope_sha256: this._remotePlan.envelopeSha256,
+        manifest_sha256: verified.manifestSha256,
+        expected_active_manifest_sha256: current.active.manifest_sha256,
+        bundle_id: verified.manifest.bundle_id,
+        release_sequence: verified.manifest.release_sequence,
+        version: verified.manifest.version,
+        released_at: verified.manifest.released_at,
+        change_summary: [...verified.manifest.change_summary],
+      };
+    } finally {
+      this._checkingRemote = false;
+    }
+  }
+
+  async installRemoteUpdate(planId) {
+    if (typeof planId !== "string" || !UUID_RE.test(planId) ||
+        this._remotePlan === null || this._remotePlan.planId !== planId) {
+      fail("STANDARD_UPDATE_PLAN_STALE", "在线标准更新计划不存在或已失效，请重新检查");
+    }
+    const plan = this._remotePlan;
+    this._remotePlan = null;
+    const now = this._remoteNow();
+    if (now.getTime() > Date.parse(plan.expiresAt)) {
+      fail("STANDARD_UPDATE_PLAN_STALE", "在线标准更新计划已过期，请重新检查");
+    }
+    const { state: current } = await this._requireReady({ allowMigrationSource: true });
+    if (current.active.manifest_sha256 !== plan.expectedActiveManifestSha256 ||
+        sha256(plan.bytes) !== plan.envelopeSha256) {
+      fail("STANDARD_UPDATE_PLAN_STALE", "标准库或候选包在确认前发生变化，请重新检查");
+    }
+    const verified = await this.store.verifyEnvelope(plan.bytes, {
+      enforceCompatibility: true,
+      enforceExpiry: true,
+      runPayloadValidation: true,
+    });
+    if (verified.manifestSha256 !== plan.manifestSha256) {
+      fail("STANDARD_UPDATE_PLAN_STALE", "标准更新候选与预览不一致，请重新检查");
+    }
+    const state = await this.store.install(plan.bytes);
+    const active = await this.store.verifyActive();
+    return {
+      active: state.active,
+      previous: state.previous,
+      change_summary: [...active.verified.manifest.change_summary],
+    };
+  }
+
+  cancelRemoteUpdate(planId) {
+    if (typeof planId !== "string" || !UUID_RE.test(planId) ||
+        this._remotePlan === null || this._remotePlan.planId !== planId) {
+      fail("STANDARD_UPDATE_PLAN_STALE", "在线标准更新计划不存在或已失效，请重新检查");
+    }
+    this._remotePlan = null;
+    return { canceled: true };
   }
 
   async listStandards() {

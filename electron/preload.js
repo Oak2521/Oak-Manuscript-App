@@ -37,6 +37,7 @@ const api = {
   listSamples: () => ipcRenderer.invoke("app:list-samples"),
   getStandards: () => ipcRenderer.invoke("standards:list"),
   standardsStatus: () => ipcRenderer.invoke("standards:status"),
+  checkStandardUpdates: () => ipcRenderer.invoke("standards:check-online"),
   installStandardUpdate: () => ipcRenderer.invoke("standards:install-local"),
   rollbackStandardDefault: () => ipcRenderer.invoke("standards:rollback-global"),
   projectStandardStatus: (project) =>

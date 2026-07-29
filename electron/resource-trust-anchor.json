@@ -3,9 +3,9 @@
   "anchor_type": "oak-packaged-resource-trust-root",
   "app_resources": {
     "manifest": "config/tool-manifests/app-resources-v1.json",
-    "sha256": "267db60af4df868d2377ee8c148b9210459ebf2a9c63c89a998921c882fbfc06",
-    "file_count": 96,
-    "total_bytes": 2158481
+    "sha256": "9fbc2d02267027fc1cc707768f45d8010e9ded2f4a25fe55bf859c7bd4a10103",
+    "file_count": 98,
+    "total_bytes": 2159692
   },
   "targets": [
     {

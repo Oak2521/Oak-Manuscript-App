@@ -48,6 +48,46 @@ function registerStandardsIpc({
     }
   });
 
+  ipcMain.handle("standards:check-online", async () => {
+    try {
+      const status = await provider.verifiedStatus();
+      if (!status.network_updates_enabled) {
+        const error = new Error("标准在线更新尚未配置，本版本不会联网检查");
+        error.code = "STANDARDS_UPDATE_DISABLED";
+        throw error;
+      }
+      const checked = await provider.checkForRemoteUpdate();
+      if (checked.outcome === "current") {
+        return ok({ canceled: false, current: true });
+      }
+      if (checked.outcome !== "update_available") {
+        const error = new Error("标准更新检查结果非法");
+        error.code = "STANDARDS_UPDATE_INVALID_RESPONSE";
+        throw error;
+      }
+      const preview = checked;
+      const confirmation = await dialog.showMessageBox(getWindow(), {
+        type: "warning",
+        title: "确认安装在线标准更新",
+        message: `安装标准与规则包 ${preview.version}（序列 ${preview.release_sequence}）？`,
+        detail: `${summarizeChanges(preview.change_summary)}\n\n`
+          + "候选包已通过签名、哈希、模式与兼容性核验。安装后，新建项目自动使用此版本；已有项目继续固定原版本，须另行查看差异并确认升级。",
+        buttons: ["安装更新", "取消"],
+        defaultId: 1,
+        cancelId: 1,
+        noLink: true,
+      });
+      if (confirmation.response !== 0) {
+        provider.cancelRemoteUpdate(preview.plan_id);
+        return ok({ canceled: true });
+      }
+      const result = await provider.installRemoteUpdate(preview.plan_id);
+      return ok({ canceled: false, current: false, result });
+    } catch (error) {
+      return toFailureResponse(error);
+    }
+  });
+
   ipcMain.handle("standards:install-local", async () => {
     try {
       const status = await provider.verifiedStatus();

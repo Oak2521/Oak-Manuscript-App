@@ -35,6 +35,9 @@ function createProvider(t, options = {}) {
     bundledRelease: options.bundledRelease || BUNDLED_STANDARD_RELEASE,
     ...(options.fsImpl ? { fsImpl: options.fsImpl } : {}),
     ...(options.storeClass ? { storeClass: options.storeClass } : {}),
+    ...(options.updateClient ? { updateClient: options.updateClient } : {}),
+    ...(options.clock ? { clock: options.clock } : {}),
+    ...(options.planIdFactory ? { planIdFactory: options.planIdFactory } : {}),
   };
   if (Object.hasOwn(options, "trustStore")) providerOptions.trustStore = options.trustStore;
   return new StandardsProvider(providerOptions);
@@ -344,4 +347,145 @@ test("provider rejects linked or incorrectly named local update files", async (t
     throw error;
   }
   await assert.rejects(provider.importPackage(linked), /单链接普通文件/);
+});
+
+test("explicit remote check verifies signed bytes before an opaque one-shot install plan", async (t) => {
+  const signing = signingFixture();
+  const envelopeBytes = updateEnvelope(signing.privateKey, signing.keyid);
+  const calls = [];
+  const provider = createProvider(t, {
+    trustStore: signing.trustStore,
+    updateClient: {
+      async check(input) {
+        calls.push(input);
+        return { outcome: "update", envelopeBytes };
+      },
+    },
+    clock: () => new Date("2026-07-29T12:00:00.000Z"),
+    planIdFactory: () => "40000000-0000-4000-8000-000000000004",
+  });
+  await provider.initialize();
+  const before = await provider.verifiedActiveIdentity();
+  assert.equal(provider.status().network_updates_enabled, true);
+
+  const preview = await provider.checkForRemoteUpdate();
+  assert.equal(preview.outcome, "update_available");
+  assert.equal(preview.plan_id, "40000000-0000-4000-8000-000000000004");
+  assert.equal(preview.release_sequence, 3);
+  assert.equal(preview.expected_active_manifest_sha256, before.manifest_sha256);
+  assert.equal((await provider.verifiedActiveIdentity()).release_sequence, 2, "preview must not install");
+  assert.deepEqual(calls, [{
+    appVersion: "0.1.0-alpha.5",
+    bundleId: "oak-standards",
+    currentReleaseSequence: 2,
+    currentManifestSha256: before.manifest_sha256,
+  }]);
+
+  const installed = await provider.installRemoteUpdate(preview.plan_id);
+  assert.equal(installed.active.release_sequence, 3);
+  assert.equal(installed.previous.release_sequence, 2);
+  assert.deepEqual(await provider.verifyReleaseIdentity(before), before, "existing project pin remains verifiable");
+  await assert.rejects(
+    () => provider.installRemoteUpdate(preview.plan_id),
+    (error) => error && error.code === "STANDARD_UPDATE_PLAN_STALE",
+  );
+});
+
+test("remote update stays disabled without trust/transport and current or invalid candidates never create a plan", async (t) => {
+  const offline = createProvider(t, { trustStore: null });
+  await offline.initialize();
+  assert.equal(offline.status().network_updates_enabled, false);
+  await assert.rejects(
+    () => offline.checkForRemoteUpdate(),
+    (error) => error && error.code === "STANDARD_UPDATE_NETWORK_DISABLED",
+  );
+
+  const signing = signingFixture();
+  const current = createProvider(t, {
+    trustStore: signing.trustStore,
+    updateClient: { async check() { return { outcome: "current" }; } },
+  });
+  await current.initialize();
+  assert.deepEqual(await current.checkForRemoteUpdate(), {
+    outcome: "current",
+    active: current.status().active,
+  });
+
+  const invalid = createProvider(t, {
+    trustStore: signing.trustStore,
+    updateClient: { async check() { return { outcome: "update", envelopeBytes: Buffer.from("{}") }; } },
+  });
+  await invalid.initialize();
+  await assert.rejects(() => invalid.checkForRemoteUpdate(), /envelope|标准更新|结构|canonical/i);
+  await assert.rejects(
+    () => invalid.installRemoteUpdate("40000000-0000-4000-8000-000000000004"),
+    (error) => error && error.code === "STANDARD_UPDATE_PLAN_STALE",
+  );
+});
+
+test("remote update plans expire, are consumed on failure, and concurrent checks fail closed", async (t) => {
+  const signing = signingFixture();
+  const envelopeBytes = updateEnvelope(signing.privateKey, signing.keyid);
+  let now = new Date("2026-07-29T12:00:00.000Z");
+  const expiring = createProvider(t, {
+    trustStore: signing.trustStore,
+    updateClient: { async check() { return { outcome: "update", envelopeBytes }; } },
+    clock: () => now,
+    planIdFactory: () => "50000000-0000-4000-8000-000000000005",
+  });
+  await expiring.initialize();
+  const preview = await expiring.checkForRemoteUpdate();
+  now = new Date("2026-07-29T12:10:00.001Z");
+  await assert.rejects(
+    () => expiring.installRemoteUpdate(preview.plan_id),
+    (error) => error && error.code === "STANDARD_UPDATE_PLAN_STALE",
+  );
+  await assert.rejects(
+    () => expiring.installRemoteUpdate(preview.plan_id),
+    (error) => error && error.code === "STANDARD_UPDATE_PLAN_STALE",
+  );
+
+  let releaseCheck;
+  let enteredCheck;
+  const entered = new Promise((resolve) => { enteredCheck = resolve; });
+  const held = new Promise((resolve) => { releaseCheck = resolve; });
+  const concurrent = createProvider(t, {
+    trustStore: signing.trustStore,
+    updateClient: {
+      async check() {
+        enteredCheck();
+        await held;
+        return { outcome: "current" };
+      },
+    },
+  });
+  await concurrent.initialize();
+  const first = concurrent.checkForRemoteUpdate();
+  await entered;
+  await assert.rejects(
+    () => concurrent.checkForRemoteUpdate(),
+    (error) => error && error.code === "STANDARD_UPDATE_BUSY",
+  );
+  releaseCheck();
+  assert.equal((await first).outcome, "current");
+});
+
+test("canceling a remote update immediately destroys its one-shot plan", async (t) => {
+  const signing = signingFixture();
+  const provider = createProvider(t, {
+    trustStore: signing.trustStore,
+    updateClient: {
+      async check() {
+        return { outcome: "update", envelopeBytes: updateEnvelope(signing.privateKey, signing.keyid) };
+      },
+    },
+    planIdFactory: () => "60000000-0000-4000-8000-000000000006",
+  });
+  await provider.initialize();
+  const preview = await provider.checkForRemoteUpdate();
+  assert.deepEqual(provider.cancelRemoteUpdate(preview.plan_id), { canceled: true });
+  await assert.rejects(
+    () => provider.installRemoteUpdate(preview.plan_id),
+    (error) => error && error.code === "STANDARD_UPDATE_PLAN_STALE",
+  );
 });

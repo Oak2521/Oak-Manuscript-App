@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 96,
-  "total_bytes": 2158481,
+  "file_count": 98,
+  "total_bytes": 2159692,
   "files": [
     {
       "path": "config/app-config.json",
@@ -26,6 +26,11 @@
       "path": "config/desktop-license.json",
       "size_bytes": 230,
       "sha256": "957384c22ea95599ff87f9483019f3ce5ce4323560ac644abf253ea02ff512d0"
+    },
+    {
+      "path": "config/desktop-standards-update.json",
+      "size_bytes": 146,
+      "sha256": "32ccb7bebb66f0045a948bebd827f022f195f28238cbf1903ca391dbb26c5ad1"
     },
     {
       "path": "config/provenance/cpython-3.13.14-win32-x64.json",
@@ -91,6 +96,11 @@
       "path": "config/schemas/desktop-license-v1.schema.json",
       "size_bytes": 1505,
       "sha256": "06f9531def60cb5728e5ec74c03f3f9d4225600c0b574a4ebc4f2c935d845aff"
+    },
+    {
+      "path": "config/schemas/desktop-standards-update-v1.schema.json",
+      "size_bytes": 1065,
+      "sha256": "2ddb617a5bd0d0a09e6fcbc34008f7061f9dfee31ed6bc9c8ecd454523f20288"
     },
     {
       "path": "config/schemas/electron-provenance-v1.schema.json",
@@ -260,7 +270,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "6ab7f9a6b5bd1467d309b4f6b2403d87953517c658dcaa93629631ef04b69ec7"
+      "sha256": "5fd9c718214d7f3411a4bf9b6df32fe0dfb7d25f86b2391657631ee91fc3bbf9"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

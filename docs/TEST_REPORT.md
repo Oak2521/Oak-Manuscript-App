@@ -2,7 +2,27 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.48 网站撤销到桌面刷新匿名纵向闭环
+## 最新验证结论：0.1.0-alpha.49 标准在线升级受控链路
+
+验证日期：2026-07-29。本轮未联网、未注入生产公钥或真实更新地址，全部 transport 使用本地伪响应；未部署、推送或重新打包。
+
+| 项目 | 结果 | 证据与边界 |
+|---|---|---|
+| 默认零网络配置 | **PASS** | tracked 配置为 exact `pending_configuration` / null endpoint；只有完整 HTTPS 地址且生产 trust pin 同时存在才报告启用；状态读取不触发请求 |
+| 内容无关请求 | **PASS** | 一次用户点击只发送 APP 版本、bundle ID、当前 release sequence 与 manifest SHA-256；不含稿件、项目/文件路径、账号、token 或任意 renderer payload |
+| 有界 HTTP transport | **PASS（注入响应）** | 固定 POST、无 Cookie/凭据/重定向/缓存；只接受 204 或 exact signed-package media；拒绝压缩、状态/媒体漂移、超长声明/流、网络错误与上游正文反射；候选上限 24 MiB |
+| 候选验证 | **PASS** | 真实 Ed25519 测试签名进入现有 store 验证，覆盖 canonical manifest、全文件哈希、schema、allowlist、APP 兼容性、bundle 身份和 release 高水位；非法候选不生成计划 |
+| 确认与安装权限 | **PASS** | 主进程生成 10 分钟、一次性内存计划并用原生对话框显示版本/序列/变更；renderer 无地址、候选字节或 plan ID。取消、超时、并发、重放、状态漂移均不安装 |
+| 项目版本语义 | **PASS** | 安装使用既有原子 CAS/store；只切换新建项目默认标准，旧 release 保留可验证；已有项目继续固定原版本并须走差异、明确确认与强制重检链 |
+| 相关专项 | **PASS** | `standards_provider`、`standards_ipc`、`standards_update_transport` 共 28 项：27 pass / 0 fail / 1 Windows symlink `EPERM` 条件跳过 |
+| 全量测试 | **PASS** | `npm test` 退出码 0；Node 666 total / 659 pass / 0 fail / 7 skip，3.862 秒；Python 362 / 0 failures / 0 errors / 3 skipped，102.404 秒；墙钟 110.7 秒 |
+| 隐藏源码 smoke | **PASS** | 最终 Electron Renderer sandbox 保持，输出 `out/source-smoke/runs/ms5ww99a-62e72c834adc1ea4/projects/`；默认更新配置为空。Web 客户端 smoke 也 PASS，HTTP(S) 请求 0 |
+| 资源与运行时门禁 | **PASS（alpha）** | loose 98 文件 / 2,159,692 字节；manifest `9fbc2d02267027fc1cc707768f45d8010e9ded2f4a25fe55bf859c7bd4a10103`，anchor `d2dca0272b9d574ca2f7f715bf04d310839f658f58fce12157e2366071f16558`；标准、Windows alpha、fuse、Electron runtime 与发行身份结构检查退出 0 |
+| 生产与销售门禁 | **未运行/未完成** | 真实更新服务/TLS/代理、生产 trust pin/密钥治理、签名撤回与部署未验证；source sale 仍有 17 项 blocker，发行身份仍缺 12 字段；alpha.49 未打包，最新 Windows 制品仍为未签名 alpha.42 |
+
+结论：alpha.49 证明桌面端可以在用户明确触发后安全检查、预览并安装一个受信标准更新，同时保持默认零网络和已有项目版本固定；它不是生产更新服务或线上密钥体系的证据。
+
+## 历史验证结论：0.1.0-alpha.48 网站撤销到桌面刷新匿名纵向闭环
 
 验证日期：2026-07-29。本轮未联网、未调用真实账号/支付或数据库服务，未执行 SQL、部署、修改官网、推送或重新打包。
 

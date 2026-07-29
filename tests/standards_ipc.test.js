@@ -13,6 +13,7 @@ function fixture({ trustConfigured = true } = {}) {
     active: { version: "1.0.0", release_sequence: 1, manifest_sha256: "a".repeat(64) },
     previous: null,
     local_signed_import_enabled: trustConfigured,
+    network_updates_enabled: trustConfigured,
   };
   const activeIdentity = {
     name: "oak-rules",
@@ -61,6 +62,26 @@ function fixture({ trustConfigured = true } = {}) {
     async importPackage(file, expected) {
       calls.push(["import", file, expected]);
       return { active: { version: "1.0.1" } };
+    },
+    async checkForRemoteUpdate() {
+      calls.push(["check-remote"]);
+      return {
+        outcome: "update_available",
+        plan_id: "11111111-1111-4111-8111-111111111111",
+        version: "1.0.2",
+        release_sequence: 3,
+        manifest_sha256: "d".repeat(64),
+        envelope_sha256: "e".repeat(64),
+        change_summary: ["在线变更一", "在线变更二"],
+      };
+    },
+    async installRemoteUpdate(planId) {
+      calls.push(["install-remote", planId]);
+      return { active: { version: "1.0.2", release_sequence: 3 } };
+    },
+    cancelRemoteUpdate(planId) {
+      calls.push(["cancel-remote", planId]);
+      return { canceled: true };
     },
     async previewRollback() { calls.push(["preview-rollback"]); return rollbackPreview; },
     async rollback(expected) {
@@ -172,6 +193,50 @@ test("local standard install previews all changes and binds confirmation to the 
   assert.match(confirmation.detail, /已有项目继续固定原版本/);
   assert.equal(confirmation.defaultId, 1);
   assert.equal(confirmation.cancelId, 1);
+});
+
+test("online standard update is one user-triggered check followed by one native confirmation", async () => {
+  const { calls, handlers } = fixture();
+  const response = await handlers.get("standards:check-online")();
+  assert.equal(response.ok, true);
+  assert.equal(response.canceled, false);
+  assert.equal(response.result.active.version, "1.0.2");
+  assert.deepEqual(calls.find((call) => call[0] === "install-remote"), [
+    "install-remote", "11111111-1111-4111-8111-111111111111",
+  ]);
+  const confirmation = calls.find((call) => call[0] === "confirm-dialog")[1];
+  assert.match(confirmation.detail, /已有项目继续固定原版本/);
+  assert.match(confirmation.detail, /在线变更一/);
+  assert.equal(confirmation.defaultId, 1);
+  assert.equal(confirmation.cancelId, 1);
+});
+
+test("online update cancellation, current result, and disabled transport never install", async () => {
+  const canceled = fixture();
+  canceled.dialogState.confirm = { response: 1 };
+  assert.deepEqual(await canceled.handlers.get("standards:check-online")(), {
+    ok: true,
+    canceled: true,
+  });
+  assert.equal(canceled.calls.some((call) => call[0] === "install-remote"), false);
+  assert.deepEqual(canceled.calls.find((call) => call[0] === "cancel-remote"), [
+    "cancel-remote", "11111111-1111-4111-8111-111111111111",
+  ]);
+
+  const current = fixture();
+  current.provider.checkForRemoteUpdate = async () => ({ outcome: "current" });
+  assert.deepEqual(await current.handlers.get("standards:check-online")(), {
+    ok: true,
+    canceled: false,
+    current: true,
+  });
+  assert.equal(current.calls.some((call) => call[0] === "confirm-dialog"), false);
+
+  const disabled = fixture({ trustConfigured: false });
+  const result = await disabled.handlers.get("standards:check-online")();
+  assert.equal(result.ok, false);
+  assert.equal(result.code, "STANDARDS_UPDATE_DISABLED");
+  assert.equal(disabled.calls.some((call) => call[0] === "check-remote"), false);
 });
 
 test("canceling either package picker or confirmation never installs", async () => {

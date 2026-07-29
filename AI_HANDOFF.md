@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-29
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.48`
+> 当前版本：`0.1.0-alpha.49`
 > 当前分支：`chatgpt/commercial-v1`
-> 当前源码本地标签：`chatgpt-v0.1.0-alpha.48-revoke-refresh-e2e`；既有 `chatgpt-v0.1.0-alpha.47-web-license-account` 为网站客户端检查点，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据
+> 当前源码本地标签：`chatgpt-v0.1.0-alpha.49-standards-update-transport`；既有 `chatgpt-v0.1.0-alpha.48-revoke-refresh-e2e` 为跨端撤销检查点，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,16 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.49 标准在线升级受控链路
+
+- 新增 exact `desktop-standards-update.json` 与 schema；默认 `pending_configuration` 且地址为 null，只有完整 HTTPS 配置和生产 trust pin 同时存在时才启用，普通启动与状态读取不会联网；
+- 新增主进程 `StandardsUpdateHttpClient`：一次用户点击只 POST APP 版本、bundle、当前发布序列与 manifest SHA-256，不含稿件、项目路径、文件名、账号或 token；拒绝重定向、Cookie、压缩、错误媒体类型、超长声明/流和上游正文反射，候选上限 24 MiB；
+- `StandardsProvider` 对候选原始字节重新执行签名、canonical manifest、哈希、schema、allowlist、APP 兼容性与高水位验证；只在内存保存 10 分钟、一次性计划，取消、过期、并发、重放、状态漂移或安装故障均不替换旧标准；
+- IPC 在主进程原生对话框集中显示版本/序列/变更摘要并二次确认，渲染层没有地址、候选字节或 plan ID。安装只影响新建项目默认标准；已有项目继续固定旧版并须走既有差异/确认/重检链；
+- 新增及相关专项 28 项：27 通过、0 失败、1 条件跳过。最终 `npm test`：Node 666 total / 659 pass / 0 fail / 7 skip（3.862 秒），Python 362 / 0 failures / 0 errors / 3 skipped（102.404 秒），墙钟 110.7 秒；
+- 资源信任 98 文件 / 2,159,692 字节，manifest `9fbc2d02…0103`，anchor `d2dca027…f558`；Windows alpha 资源、标准、fuse、Electron runtime 与发行身份结构门禁通过；Web smoke HTTP(S) 0，最终 Electron 隐藏源码 smoke PASS，输出 `out/source-smoke/runs/ms5ww99a-62e72c834adc1ea4/projects/`；
+- 本轮未联网、未注入生产公钥或真实地址、未调用真实更新服务、未部署、推送或打包。服务端发布/撤回协议、真实 TLS/代理/更新联调和生产密钥治理仍未证明；销售门禁仍有 17 项、发行身份仍缺 12 字段。
 
 ### 已完成：0.1.0-alpha.48 网站撤销到桌面刷新匿名纵向闭环
 
@@ -637,7 +647,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - 账号/订阅/同步：离线 Provider/Free+Pro、逐字段确认、OS 加密队列和重启恢复、桌面 PKCE/加密 token-store/条件 main 接线、SyncRecord 服务链、签名权益、规范化订阅事件、属主设备管理服务及网站订阅/掩码设备客户端源码已实现；默认账号/权益配置仍为空，生产私钥不存在，真实 PKCE/刷新、支付商 webhook 验签适配、Supabase 迁移/部署和网站后台未连接；
 - AI：Ollama 0.32.5 + qwen3:4b 与 LM Studio llmster 0.0.20+1 + 同一 Qwen3 4B GGUF 已分别通过一个匿名连续空格问题的窄范围验收；其他版本/模型/硬件、多模型语义、多规则/真实稿件质量、官方云、远程 TLS 与湖岸 AI 仍未验收；
 - 标准库：治理结构和引用解析政策已完成，13 项标准、35 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
-- 标准升级：本地验证、签名包导入/回滚骨架、项目固定与显式升级已编码；生产 trust pin、在线获取/下载、签名撤回分发与联网自动更新未实现；
+- 标准升级：本地验证、签名包导入/回滚、项目固定/显式升级和用户触发的在线客户端已编码；默认地址与生产 trust pin 为空，服务端发布/撤回、真实网络联调和后台自动检查未实现；
 - 正式发布仍缺隐私/条款最终文本、证书、生产密钥、人工内测、macOS 硬件和网站联调。
 
 ### Windows sale 门禁的当前明确阻断
@@ -663,11 +673,11 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划。近期直接闭合“账号 → 权益 → 检查 → 明确同步”主链：
 
-1. alpha.48 已完成账号 → 订阅状态 → 网站撤销设备 → 桌面显式刷新降为 Free 的匿名纵向链；下一项转向标准更新 transport 的离线契约与假响应闭环，保持默认零网络、候选字节先验签和项目版本不静默升级；
+1. alpha.49 已完成标准更新桌面 transport、候选验签与原生确认闭环；下一项可在不联网前提下实现固定服务端发布响应契约与同进程假服务端到桌面 E2E，仍保持默认零网络、无生产私钥、已有项目不静默升级；
 2. 具体支付商 webhook 验签实现必须等用户授权联网并选定平台后，依据官方协议单独开发；当前规范化事件入口继续只接受上游已经验签的 content-free 快照；
 3. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，才填充 `desktop-auth.json` / `desktop-license.json`，执行真实 PKCE、数据库迁移、RLS、签发刷新、撤销和网站后台 E2E；
 4. OpenAI、Anthropic、Gemini 官方云适配仍必须先核对当前官方协议；不得套用 compatible 形状或凭记忆猜测，但不排在账号/订阅主线之前；
-5. 其后关闭发行门禁：具名许可/再分发签核、发行身份、Ace 自带浏览器/OS 隔离、Windows Authenticode/真实安装生命周期、macOS 双架构签名/公证/实机、Web 生产零留存；经联网授权后再核验标准官方来源和签名更新 transport。
+5. 其后关闭发行门禁：具名许可/再分发签核、发行身份、Ace 自带浏览器/OS 隔离、Windows Authenticode/真实安装生命周期、macOS 双架构签名/公证/实机、Web 生产零留存；经联网授权后再核验标准官方来源并执行真实更新服务联调。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。
 
