@@ -34,7 +34,8 @@
 | `smoke.js` | 在隐藏窗口走 DOCX/EPUB 真 UI闭环、AI 单条发送预览零 transport，并核对版本与打包身份 |
 | `ai-request.js` | 绑定可信单条上下文的请求预览/一次确认、注入式建议响应与内存态人工审阅；采纳只经核心记录问题状态，永不直接改稿 |
 | `ai-http-client.js` | 未接线的供应商无关 POST/JSON 客户端；固定 HTTPS/loopback、禁重定向/代理转发/Cookie，限制头、请求、响应和超时 |
-| `ai-transport-router.js` | 未接线的 exact 适配器路由；拒绝未知 provider、配置漂移、凭据 URL/响应回显和未净化适配错误 |
+| `ai-transport-router.js` | exact 适配器路由；拒绝未知 provider、配置漂移、凭据 URL/响应回显和未净化适配错误 |
+| `ai-openai-compatible-adapter.js` | 只注册 OpenAI-compatible/Ollama/LM Studio 的固定非流式 Chat Completions 请求与唯一文本响应 |
 
 安全基线：`contextIsolation=true`、`sandbox=true`、`nodeIntegration=false`、固定 CSP/IPC、导航和新窗口拦截。默认 session 在正常启动时永久离线；未来获授权联网能力必须用独立受限通道，不能解除该基线。完整说明见 `docs/PRIVACY_AND_SECURITY.md`。
 
@@ -49,5 +50,7 @@ PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专�
 `app:info` 返回 `appVersion`、经当前存储重新验证的七字段 `standardIdentity` 和 `packaged=app.isPackaged`。smoke 必须先通过 Renderer 规划并确认引用解析，再读取本次创建的 `project.json` 及其引用报告，核对 Python core 版本、check ID、`citation_resolution`，以及 APP/项目/检查/报告的完整标准身份；条件外部 smoke 还要求 EpubCheck/Ace 确实运行，打包 smoke 强制 `packaged=true`。打包态 Python、JRE 或 Ace stage 失配时必须失败关闭，不得回退用户环境中的同名代码资源；Electron 43.1.0 `win32-x64` 自身仍由受版本控制的全树锁固定：2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `f5c2c915633c1917bc37377f8232bde4259588eb138bc4072a3c7df976e27486`，并绑定官方 ZIP/SHASUMS256/npm checksums provenance。当前 Ace 浏览器运行时仍依赖用户系统 Chrome。
 
 账号与同步 IPC 不接受 Renderer 自带的负载、token、URL 或 transport；主进程通过固定 `sync-source` 命令取值并重建 SyncRecord v1。alpha.39 只在受信账号配置完整且 safeStorage 可用时实例化系统浏览器 PKCE、token/user client 与 Sync coordinator；默认 `pending_configuration` 没有任何网络目标。Renderer 只能查询状态、发起登录或逐项发送/重试，令牌/verifier 永不跨 preload。远端创建或幂等重放后才删除本机队列，失败和账号切换保留记录。详见 `docs/SYNC_RECORD_V1.md`。
+
+AI transport 不接受 Renderer 自报 URL、凭据或任意负载。`AIProvider` 从 OS 加密设置生成绑定，`AIRequestCoordinator` 从受信 Python core 读取单条问题并公开完整发送预览；只有一次确认后才把绑定与同一语义请求交给 Router。alpha.41 只注册 OpenAI-compatible、Ollama、LM Studio；官方云和湖岸 AI 仍不可用。注入测试不替代真实服务兼容或质量验收。
 
 当次全量 Node/Python、source/packaged smoke、safeStorage 队列恢复、真实 fuse/ASAR/资源/production package identity、provenance 与发布证据，以仓库 `docs/TEST_REPORT.md` 为唯一事实来源；本文件不在 ASAR 中固化易过期的运行根、计数或制品哈希。完整发行身份、五类运行/构建资源人工签署、代码签名和其余 packaged sale blocker 在对应门禁关闭前始终有效。

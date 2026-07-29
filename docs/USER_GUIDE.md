@@ -2,7 +2,7 @@
 
 ## 桌面应用（推荐）
 
-当前开发版本为 `0.1.0-alpha.40`，最新已打包版本仍为 `0.1.0-alpha.37`；Windows x64 NSIS/ZIP 未签名，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.40 在 SyncRecord 服务/API/Postgres 契约之上加入桌面 PKCE、加密账号会话、逐项显式发送和失败幂等恢复；默认账号配置仍为空，普通测试、启动和构建不会触发账号联网或下载。
+当前开发版本为 `0.1.0-alpha.41`，最新已打包版本仍为 `0.1.0-alpha.37`；Windows x64 NSIS/ZIP 未签名，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.41 已包含桌面 PKCE/加密账号会话/同步失败恢复，以及 OpenAI-compatible、Ollama、LM Studio 的逐条 AI 建议链；默认账号配置仍为空，普通测试、启动和构建不会触发账号联网或下载。
 
 **开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.39 当前结果为 Node 576/569/0/7、Python 362/0 failures/0 errors/3 skipped；跳过项不计作通过。alpha.39 独立隐藏源码 smoke 已通过，但本轮未打包；alpha.37 packaged smoke 历史证据仍有效，不能冒充 alpha.39 制品证据。
 
@@ -12,9 +12,9 @@
 
 **AI 设置与发送预览（当前边界）**：设置页提供“无 AI”“湖岸 AI”“我的 AI”。我的 AI 支持 OpenAI、Anthropic、Google Gemini、OpenAI-compatible、Ollama 和 LM Studio，属于 Pro 权益且不消耗湖岸 AI 配额；三个官方云供应商固定使用官方端点，自定义地址必须选择 OpenAI-compatible；远程地址必须使用 HTTPS，本机 HTTP 只接受 loopback。凭据不会回填到界面、报告或同步，供应商/地址变化后必须重新提供。
 
-选择湖岸 AI 或完成我的 AI 设置后，可在某条检查问题详情填写可选要求并点击“预览将发送给 AI 的内容”。APP 只读提取这一条问题，完整展示目的地、有效期、会发送/不会发送清单和请求 JSON；不包含完整稿件、其他问题、文件名、路径、项目/账号标识、哈希或凭据。预览十分钟有效且只能确认一次；问题、working、检查或 AI 配置变化后必须重新预览。当前生产 transport 尚未实现，确认按钮显示“模型 transport 尚未接入”并保持禁用，保存设置和生成/取消预览均不会联网。
+选择湖岸 AI 或完成我的 AI 设置后，可在某条检查问题详情填写可选要求并点击“预览将发送给 AI 的内容”。APP 只读提取这一条问题，完整展示目的地、有效期、会发送/不会发送清单和请求 JSON；不包含完整稿件、其他问题、文件名、路径、项目/账号标识、哈希或凭据。预览十分钟有效且只能确认一次；问题、working、检查或 AI 配置变化后必须重新预览。在有效 Pro 权益并成功保存 compatible 配置时，OpenAI-compatible、Ollama、LM Studio 的确认按钮可用；保存、生成预览或取消均不联网，只有点击“确认发送一次”才请求配置的服务。当前默认权益仍为 Free，生产订阅尚未接入；OpenAI、Anthropic、Gemini 和湖岸 AI 也继续禁用确认。
 
-真实 transport 日后返回建议时，界面提供“采纳为人工处理参考”和“放弃这条建议”。采纳会再次核对当前问题，只把问题状态标为“接受”，仍需用户人工修改；模型文本不会保存到项目或写回稿件。放弃或直接关闭只删除当前内存建议，不会把规则问题标为“拒绝”。建议审阅 30 分钟有效且只能处理一次。
+compatible transport 返回建议后，界面提供“采纳为人工处理参考”和“放弃这条建议”。采纳会再次核对当前问题，只把问题状态标为“接受”，仍需用户人工修改；模型文本不会保存到项目或写回稿件。放弃或直接关闭只删除当前内存建议，不会把规则问题标为“拒绝”。建议审阅 30 分钟有效且只能处理一次。当前只完成源码和注入测试；没有真实模型服务兼容或输出质量保证。
 
 alpha.37 已具备供应商无关的固定 POST/JSON、HTTPS/本机 loopback、禁重定向/Cookie/代理转发、容量/超时和错误净化底座，但它没有接入主进程，也没有任何真实供应商适配器。界面仍不能发送；不得通过开发者工具、修改配置或把本地 HTTP 服务暴露到公网来绕开该状态。
 
@@ -168,7 +168,7 @@ npm run verify:release-identity
 npm run release:evidence:verify:win
 ```
 
-验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。当前源码已是 alpha.40 且本轮未打包，因此该命令不会拿 alpha.37 冒充当前制品。alpha.37 的 NSIS、ZIP、SHA 文件与 schema v2 canonical manifest 历史证据已通过交叉验证；manifest 另绑定对应 packaged-smoke、实际 unpacked EXE 与匿名输出树摘要。
+验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。当前源码已是 alpha.41 且本轮未打包，因此该命令不会拿 alpha.37 冒充当前制品。alpha.37 的 NSIS、ZIP、SHA 文件与 schema v2 canonical manifest 历史证据已通过交叉验证；manifest 另绑定对应 packaged-smoke、实际 unpacked EXE 与匿名输出树摘要。
 
 安装生命周期验收器默认只读、不启动安装器，并要求当前源码版本存在精确制品；所以 alpha.39 尚不能运行该预检。历史 alpha.37 对归档 alpha.12 的只读预检已经通过：
 

@@ -2,6 +2,15 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.41 OpenAI-compatible“我的 AI”纵向链验收（2026-07-29）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.41`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 只注册 `openai_compatible`、`ollama`、`lm_studio`；固定 `/chat/completions`、系统/用户双消息和 `stream:false`；远程 HTTPS、本机 loopback、容量/超时/媒体/禁重定向/Cookie/代理门禁继续成立；
+- [x] 可选 Bearer 凭据不进入 URL、请求 JSON、Renderer、项目、同步或响应；唯一非空 assistant 字符串之外的多结果、工具调用、错误角色和数组内容均拒绝；
+- [x] 保存/预览/取消零请求；只有用户完整预览后确认一次才可发送；建议仅内存展示，接受/放弃均不把模型文本写回稿件或项目；
+- [x] 聚焦 34/34；`npm test` Node 586 / Python 362 全量零失败；资源清单 84 文件 / 2,145,925 字节；独立隐藏 alpha.41 源码 smoke PASS；
+- [ ] 真实 OpenAI-compatible/Ollama/LM Studio 服务兼容和建议质量未验收；OpenAI/Anthropic/Gemini 官方云未实现；alpha.41 未打包，最新真实 Windows 制品仍为 alpha.37。
+
 ## 0.1.0-alpha.40 登录故障恢复与同步幂等收敛验收（2026-07-29）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.40`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；

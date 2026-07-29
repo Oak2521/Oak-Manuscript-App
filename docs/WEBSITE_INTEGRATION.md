@@ -2,7 +2,7 @@
 
 > 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.40 源码）
+## Provider 一览（当前 alpha.41 源码）
 
 alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI。受信配置仍为 `pending_configuration` 且全部端点/key 为空；数据库迁移未执行、API 未部署、网站后台未修改，因此普通 APP 仍不联网也不声称同步成功。桌面 AI transport 仍为 `null`，适配器注册表为空。商业仓库没有真实 service-role key、OAuth 配置或 AI key。
 
@@ -15,7 +15,7 @@ alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；al
 | `StandardsProvider` | 离线验证内置 release；本地签名包预览/安装/全局回滚、项目固定版本与显式升级已实现；生产 trust pin 缺失时导入禁用 | 用户主动触发的在线检查/下载、签名与撤回分发、可观测回滚；绝不上传稿件 |
 | `UpdateProvider` | 尚未实现或导出 | 签名应用更新 |
 | `FeedbackProvider` | 尚未实现或导出 | 用户主动发送不含正文的规则反馈 |
-| `AIProvider` / `AIRequestCoordinator` / HTTP 底座 | 三模式、Pro/safeStorage、单条请求计划、完整披露、建议审阅，以及固定 POST/JSON、HTTPS/loopback、容量/超时/媒体/错误门禁与适配路由已实现；无生产适配器，transport=`null` | 按官方协议实现六类适配器、真实 TLS/代理/证书测试、湖岸 AI 服务和建议质量验收；Web 用户凭据只限当前会话，绝不进入账号同步或长期网站存储 |
+| `AIProvider` / `AIRequestCoordinator` / compatible transport | 三模式、Pro/safeStorage、单条预览/确认/审阅和有界 HTTP 已实现；桌面只注册 OpenAI-compatible/Ollama/LM Studio，保存/预览零请求，建议不持久化或写稿 | OpenAI/Anthropic/Gemini 官方协议、真实 compatible 服务与质量验收、湖岸 AI 服务仍待完成；Web 用户凭据只限当前会话，绝不进入账号同步或长期网站存储 |
 
 ## 当前离线边界与硬性验收（对应 §20.1 / §21）
 

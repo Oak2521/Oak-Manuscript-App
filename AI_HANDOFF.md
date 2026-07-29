@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-29
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.40`
+> 当前版本：`0.1.0-alpha.41`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.40`（提交后建立；登录故障恢复与同步幂等收敛源码检查点）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.41`（提交后建立；OpenAI-compatible“我的 AI”纵向链源码检查点）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,15 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.41 OpenAI-compatible“我的 AI”纵向链
+
+- APP、Python core、桌面/Web lockfile 统一为 alpha.41；资源信任清单保持 84 文件 / 2,145,925 字节，manifest SHA-256 `81bc2c6007f4387e5c0800db654dc38524fc8a4287be39c23b2bc29850d58cae`，源码锚点 `3ae02dc996458dacf6b077616f08f705c4e6cc082ee78a15a06bb1b5610fdf23`；标准包/规则/fixer 未变化；
+- 新增 `ai-openai-compatible-adapter.js`，只为 `openai_compatible`、`ollama`、`lm_studio` 构造固定 `/chat/completions` 非流式请求；请求由现有 HTTPS/loopback、容量、超时、媒体、禁重定向/Cookie/代理和凭据回显门禁执行；
+- 响应只接受唯一 choice 的非空 assistant 字符串，工具调用、多结果、错误角色、数组内容和空文本 fail-closed。主进程已接线，设置页只把这三个接口标为可用；OpenAI、Anthropic、Gemini 官方云 transport 继续禁用；
+- 保存设置、生成预览或取消均不请求；只有完整展示单条问题发送内容并由用户确认一次后才会调用 transport。建议仅内存展示，接受只记录人工问题状态，不保存模型文本或修改稿件；
+- 聚焦 AI 链 34/34；最终 `npm test`：Node 586 total / 579 pass / 0 fail / 7 skip（3.811 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（104.514 秒），墙钟 112.8 秒；隐藏源码 Electron smoke PASS，输出 `out/source-smoke/runs/ms5m1hzg-4e5a85d9dc0932c5/projects/`；
+- 本轮未联网、未调用真实模型、未使用真实密钥、未部署、未修改官网或重新打包。协议形状只由注入测试验证，不证明任一真实 Ollama/LM Studio/OpenAI-compatible 服务兼容或建议质量；最新真实 Windows 制品仍为 alpha.37。
 
 ### 已完成：0.1.0-alpha.40 登录故障恢复与同步幂等收敛
 
@@ -545,7 +554,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 6. 同步只允许检查结果和必要元数据，不同步稿件、正文、摘录、文件名、路径或哈希；登录用户必须明确选择是否同步；
 7. 引用体例保留“默认”，由确定性映射自动选择，并在报告中说明；
 8. 标准文件需要签名清单、下载校验、版本固定、回滚和升级提示；已有项目不得被静默换规则；
-9. “接入用户自己的 AI”六项设计已由用户明确批准并写入 v2.0 方案；alpha.32—alpha.34 已完成桌面模式/加密凭据、单条请求预览和建议审阅，alpha.35 新增尚未接入生产的有界 HTTP 客户端与适配路由；六类官方协议适配、真实供应商响应质量与 Web 会话凭据仍未实现；
+9. “接入用户自己的 AI”六项设计已由用户明确批准并写入 v2.0 方案；alpha.32—alpha.35 完成桌面设置、加密凭据、单条预览/建议审阅和有界网络底座，alpha.41 接入 OpenAI-compatible/Ollama/LM Studio；OpenAI、Anthropic、Gemini 官方协议、真实供应商质量验收与 Web 会话凭据仍未实现；
 10. 不进行 AI 语义改写，自动修复仍只限冻结白名单机械操作。
 
 ## 4. 已核实但尚未解决的缺口
@@ -582,11 +591,11 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划。近期直接闭合“账号 → 权益 → 检查 → 明确同步”主链：
 
-1. alpha.40 已离线闭合浏览器失败、登录/回调并发、pending 跨重启、回调单次消费、refresh 暂时失败和远端成功/本地提交失败的幂等重试语义；下一步不再扩写模拟认证层；
-2. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，才填充 `desktop-auth.json` 并执行真实 PKCE/刷新/退出/撤销、`002_sync_records.sql`、GoTrue/RLS/多实例/备份/删除 E2E 和网站账号后台联调；当前不得连接生产系统；
-3. 真实联调前确定 OIDC nonce/ID-token 验证或纯 OAuth user endpoint 的正式协议，不在未知服务契约上伪造 nonce 已完成；
-4. 若预生产资料尚未具备，转回本地产品主链，优先实现一个用户可见、可独立验收的完整功能，不继续横向堆叠账号契约；
-5. 其后关闭发行门禁：具名许可/再分发签核、发行身份、Ace 自带浏览器/OS 隔离、Windows Authenticode/真实安装生命周期、macOS 双架构签名/公证/实机，以及临时作业的生产恶意软件扫描与三路零留存；经联网授权后再核验标准官方来源和签名更新 transport。
+1. alpha.41 已完成 OpenAI-compatible/Ollama/LM Studio 的源码纵向链；下一步先补用户可理解的连接失败提示与受控真实本机服务验收，不把注入测试写成兼容性证明；
+2. OpenAI、Anthropic、Gemini 官方云适配必须先取得联网查阅官方文档的授权并核对当前协议，再实现；不得套用兼容协议或凭记忆猜测；
+3. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，才填充 `desktop-auth.json` 并执行真实 PKCE/刷新/退出/撤销、Supabase 迁移和网站账号后台联调；
+4. 真实账号联调前确定 OIDC nonce/ID-token 验证或纯 OAuth user endpoint 的正式协议，不在未知服务契约上伪造 nonce 已完成；
+5. 其后关闭发行门禁：具名许可/再分发签核、发行身份、Ace 自带浏览器/OS 隔离、Windows Authenticode/真实安装生命周期、macOS 双架构签名/公证/实机、Web 生产零留存；经联网授权后再核验标准官方来源和签名更新 transport。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。
 

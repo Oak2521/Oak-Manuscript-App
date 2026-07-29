@@ -47,16 +47,21 @@ test("credential crosses one fixed IPC and is never populated or rendered from s
   assert.doesNotMatch(renderer, /innerHTML/);
 });
 
-test("main process owns OS-encrypted AI persistence and registers no model transport", () => {
+test("main process owns OS-encrypted AI persistence and enables only the compatible transport family", () => {
   assert.match(main, /new EncryptedAISettingsStore/);
   assert.match(main, /safeStorage\.encryptString/);
   assert.match(main, /safeStorage\.decryptString/);
   assert.match(main, /registerAIIpc/);
   assert.match(main, /new AIRequestCoordinator/);
   assert.match(main, /reviewSink:[\s\S]*?"--status", "accepted"/);
-  assert.match(main, /transport: null/);
+  assert.match(main, /new AITransportRouter/);
+  assert.match(main, /new BoundedAIHttpClient/);
+  assert.match(main, /createOpenAICompatibleAdapters/);
+  assert.match(main, /configureTransport\(aiTransport\)/);
+  assert.match(main, /transport: aiTransport/);
   assert.match(main, /\{ ok: _ok, \.\.\.context \} = data/);
-  assert.match(main, /\[ai\] encrypted local settings ready; transport disabled/);
+  assert.match(main, /OpenAI-compatible transport available/);
+  assert.doesNotMatch(main, /transport: null/);
   assert.doesNotMatch(main, /provider:ai-(?:request|complete|stream)/);
 });
 
@@ -75,5 +80,6 @@ test("AI request preview and suggestion use text-only rendering and disable unav
   assert.match(app, /reviewAiSuggestion\("rejected"\)/);
   assert.match(app, /问题状态已标记为接受，但建议未写入稿件或项目文件/);
   assert.match(app, /规则问题状态和稿件均未改变/);
+  assert.match(html, /OpenAI-compatible 自定义接口、Ollama 和 LM Studio 已接入/);
   assert.doesNotMatch(html, /on(?:click|change|submit)=/i);
 });

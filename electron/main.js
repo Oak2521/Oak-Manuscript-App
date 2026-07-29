@@ -13,6 +13,9 @@ const bridge = require("./python-bridge");
 const providers = require("./providers");
 const { registerAIIpc } = require("./ai-ipc");
 const { AIRequestCoordinator } = require("./ai-request");
+const { BoundedAIHttpClient } = require("./ai-http-client");
+const { AITransportRouter } = require("./ai-transport-router");
+const { createOpenAICompatibleAdapters } = require("./ai-openai-compatible-adapter");
 const { registerAccountSyncIpc } = require("./account-sync-ipc");
 const { createAceUtilityRunner } = require("./ace-utility-runner");
 const { registerExternalValidationIpc } = require("./external-validation-ipc");
@@ -202,6 +205,12 @@ registerAccountSyncIpc({
   },
 });
 
+const aiTransport = new AITransportRouter({
+  httpClient: new BoundedAIHttpClient(),
+  adapters: createOpenAICompatibleAdapters(),
+});
+providers.aiProvider.configureTransport(aiTransport);
+
 const aiRequests = new AIRequestCoordinator({
   aiProvider: providers.aiProvider,
   licenseProvider: providers.licenseProvider,
@@ -216,9 +225,9 @@ const aiRequests = new AIRequestCoordinator({
   reviewSink: async ({ project, issueId }) => {
     await core(["issue", "--project", project, "--id", issueId, "--status", "accepted"]);
   },
-  // Production model transport is deliberately absent until provider protocols,
-  // request isolation, timeout/response limits and explicit network tests pass.
-  transport: null,
+  // Only the explicitly supported OpenAI-compatible family is enabled. Official
+  // cloud providers remain unavailable until their current protocols are verified.
+  transport: aiTransport,
 });
 
 registerAIIpc({
@@ -486,7 +495,7 @@ app.whenReady().then(async () => {
       protect: (plaintext) => safeStorage.encryptString(plaintext),
       unprotect: (ciphertext) => safeStorage.decryptString(ciphertext),
     }));
-    console.log("[ai] encrypted local settings ready; transport disabled");
+    console.log("[ai] encrypted local settings ready; OpenAI-compatible transport available");
   } catch (error) {
     providers.aiProvider.disablePersistence();
     console.error("[ai] encrypted local settings unavailable:", error && error.message);

@@ -39,6 +39,26 @@ test("AI provider defaults to no AI and publishes the frozen safety contract", (
   assert.equal(Object.isFrozen(status.persistence), true);
 });
 
+test("provider reports ready only when the configured BYO family has a real transport", () => {
+  const provider = new AIProvider();
+  provider.configureTransport({
+    supports: (binding) => ["openai_compatible", "ollama", "lm_studio"].includes(binding.provider),
+    request: async () => ({ text: "unused" }),
+  });
+  let status = provider.configure(config({
+    provider: "ollama", model: "qwen3:8b", base_url: null,
+    credential_action: "clear", credential: null,
+  }), PRO);
+  assert.equal(status.configuration_state, "ready");
+  assert.equal(status.transport_configured, true);
+  assert.match(status.message, /预览内容并确认一次/u);
+
+  status = provider.configure(config(), PRO);
+  assert.equal(status.configuration_state, "transport_unavailable");
+  assert.equal(status.transport_configured, false);
+  assert.throws(() => provider.configureTransport({ supports: () => true }), /transport/u);
+});
+
 test("my AI is Pro-only and a rejected configuration changes no state", () => {
   const provider = new AIProvider();
   assert.throws(() => provider.configure(config(), FREE), /Pro 功能/u);

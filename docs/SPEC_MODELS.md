@@ -1,6 +1,6 @@
 # SPEC_MODELS — 问题 / 规则 / 标准模型
 
-> 问题与规则模型仍为 v1.0；标准注册表为治理 schema 2.0。同步负载于 2026-07-26 按商业方案 v2.0 改为“结果与元数据白名单”，废止旧文件级同步占位；`0.1.0-alpha.8` 实现 SyncRecord v1 客户端离线契约，`0.1.0-alpha.38` 增加独立服务验证与 HTTP/Supabase 持久边界，`0.1.0-alpha.39` 增加桌面 PKCE/token-store 和条件主进程 transport 接线，`0.1.0-alpha.40` 增加登录故障恢复与同步幂等失败收敛。`0.1.0-alpha.5` 引入规则包 2.0.0 与向后兼容的 `citation_resolution` 模型；机器可读定义以 `config/` 下 JSON 和核心严格校验器为准，本文件为语义规范。
+> 问题与规则模型仍为 v1.0；标准注册表为治理 schema 2.0。同步负载于 2026-07-26 按商业方案 v2.0 改为“结果与元数据白名单”，废止旧文件级同步占位；`0.1.0-alpha.8` 实现 SyncRecord v1 客户端离线契约，alpha.38—alpha.40 增加独立服务/持久边界、桌面 PKCE/transport 和故障恢复；`0.1.0-alpha.41` 增加 compatible AI 的非流式请求/唯一文本响应适配。`0.1.0-alpha.5` 引入规则包 2.0.0 与向后兼容的 `citation_resolution` 模型；机器可读定义以 `config/` 下 JSON 和核心严格校验器为准，本文件为语义规范。
 
 ## 1. 问题模型（Issue，方案 §6.3）
 

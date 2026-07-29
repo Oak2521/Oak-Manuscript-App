@@ -4,6 +4,16 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.41（ChatGPT OpenAI-compatible“我的 AI”纵向链）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.41`（提交后建立）。本轮未联网、未调用真实模型、未使用真实 AI 凭据、未部署、未修改官网，也未重新打包；最新真实 Windows 制品仍为 alpha.37。
+
+- 新增 OpenAI-compatible 非流式 Chat Completions 适配器，并仅注册 `openai_compatible`、`ollama`、`lm_studio`；OpenAI、Anthropic、Gemini 官方云 transport 继续禁用，未用兼容协议冒充；
+- 主进程接入既有 `BoundedAIHttpClient` / `AITransportRouter`；远程只允许 HTTPS，本机 HTTP 只允许 loopback，固定 `/chat/completions`、双消息、`stream:false`，可选 Bearer 凭据不进入 URL/JSON/UI；
+- 响应只接受唯一 choice 的非空 assistant 字符串，拒绝多结果、工具调用、错误角色、数组内容和空文本；结果保持 `suggestion_only`、`memory_only`，不自动写稿、不持久化模型文本、不回退湖岸 AI；
+- 设置页明确标识三个已接入接口；保存和预览零请求，只有用户逐条查看完整发送内容并确认一次后才允许主进程发出请求；
+- 聚焦 AI 链 34/34；最终 `npm test`：Node 586 total / 579 pass / 0 fail / 7 skip（3.811 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（104.514 秒），墙钟 112.8 秒；隐藏源码 Electron smoke PASS，输出 `out/source-smoke/runs/ms5m1hzg-4e5a85d9dc0932c5/projects/`；资源清单 84 文件 / 2,145,925 字节，manifest SHA-256 `81bc2c6007f4387e5c0800db654dc38524fc8a4287be39c23b2bc29850d58cae`，anchor SHA-256 `3ae02dc996458dacf6b077616f08f705c4e6cc082ee78a15a06bb1b5610fdf23`。
+
 ### 2026-07-29 — 0.1.0-alpha.40（ChatGPT 登录故障恢复与同步幂等收敛）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.40`（提交后建立）。本轮未联网、未使用真实账号或端点、未迁移数据库、未部署、未修改官网，也未重新打包；最新真实 Windows 制品仍为 alpha.37。

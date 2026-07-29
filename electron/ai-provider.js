@@ -154,9 +154,26 @@ class AIProvider {
     this.requirePersistence = requirePersistence === true;
     this.state = defaultState();
     this.store = null;
+    this.transport = null;
     this.persistence = this.requirePersistence
       ? { state: "not_configured", encrypted: false, persistent: false }
       : { state: "memory_only", encrypted: false, persistent: false };
+  }
+
+  configureTransport(transport) {
+    if (!transport || typeof transport.supports !== "function" ||
+        typeof transport.request !== "function") {
+      throw new TypeError("AI transport 非法");
+    }
+    this.transport = transport;
+    return this.status();
+  }
+
+  _transportConfigured() {
+    if (this.state.mode !== "byo" || !this.transport) return false;
+    try {
+      return this.transport.supports({ mode: "byo", provider: this.state.provider }) === true;
+    } catch { return false; }
   }
 
   configurePersistence(store) {
@@ -245,20 +262,23 @@ class AIProvider {
     const proEligible = licenseStatus ? licenseStatus.effectiveTier === "pro" : null;
     const hasCredential = this.state.credential !== null;
     const needsCredential = this.state.mode === "byo" && spec.credential_required && !hasCredential;
+    const transportConfigured = !needsCredential && this._transportConfigured();
     const configurationState = this.state.mode === "off"
       ? "disabled"
       : this.state.mode === "oak"
         ? "oak_transport_unavailable"
         : needsCredential
           ? "credential_required"
-          : "transport_unavailable";
+          : transportConfigured ? "ready" : "transport_unavailable";
     const message = this.state.mode === "off"
       ? "当前不使用 AI；确定性检查、机械修复与导出均可正常使用。"
       : this.state.mode === "oak"
         ? "已选择湖岸 AI，但生产模型服务尚未配置；不会发起网络请求。"
         : needsCredential
           ? "我的 AI 配置已保存，但该供应商仍需要凭据；当前不会发起网络请求。"
-          : "我的 AI 配置与凭据已由主进程保存；模型 transport 尚未实现，当前不会发起网络请求。";
+          : transportConfigured
+            ? "我的 AI 已就绪；只有在你预览内容并确认一次后才会发送请求。"
+            : "我的 AI 配置与凭据已由主进程保存；该供应商 transport 尚未实现，当前不会发起网络请求。";
     return Object.freeze({
       schema_version: "1.0",
       mode: this.state.mode,
@@ -272,7 +292,7 @@ class AIProvider {
       persistence: Object.freeze({ ...this.persistence }),
       pro_eligible: proEligible,
       configuration_state: configurationState,
-      transport_configured: false,
+      transport_configured: transportConfigured,
       fallback_mode: "none",
       output_policy: "suggestion_only",
       automatic_writeback: false,

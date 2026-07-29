@@ -2,7 +2,23 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.40 登录故障恢复与同步幂等收敛
+## 最新验证结论：0.1.0-alpha.41 OpenAI-compatible“我的 AI”纵向链
+
+验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实 AI 凭据、未部署或修改官网，也未读写项目目录外内容。源码 Electron smoke 在独立隐藏进程执行；没有重新打包，最新真实 Windows 制品保持 alpha.37。
+
+| 验证 | 结果 | 证据 |
+|---|---|---|
+| AI compatible focused | **PASS** | 34/34；覆盖三 provider 注册、固定请求/可选 Bearer、唯一文本响应、工具/多结果拒绝、provider ready 状态、Router、Ollama 配置→预览→明确发送→只读审阅纵向链、UI/main 接线 |
+| 最终顺序 `npm test` | **PASS** | 退出码 0，墙钟 112.8 秒；Node 586 total / 579 pass / 0 fail / 7 skip（3.8110044 秒）；Python 362 total / 0 failures / 0 errors / 3 skipped（104.514 秒） |
+| 资源信任复验 | **PASS** | 84 文件 / 2,145,925 字节，manifest SHA-256 `81bc2c6007f4387e5c0800db654dc38524fc8a4287be39c23b2bc29850d58cae`，anchor SHA-256 `3ae02dc996458dacf6b077616f08f705c4e6cc082ee78a15a06bb1b5610fdf23` |
+| 独立隐藏源码 Electron smoke | **PASS** | `SMOKE-RESULT: PASS`；输出 `out/source-smoke/runs/ms5m1hzg-4e5a85d9dc0932c5/projects/`；未配置 AI、未产生模型请求 |
+| 真实 OpenAI-compatible / Ollama / LM Studio | **未运行** | 没有连接本机或远端模型服务；请求/响应只由注入式 fake 验证，不能证明具体服务器版本、模型质量或故障行为 |
+| OpenAI / Anthropic / Gemini 官方云 | **未实现/未运行** | 三个 provider 未注册 adapter，计划确认按钮保持禁用；未联网核对当前官方协议，不用 compatible 契约冒充 |
+| alpha.41 packaged / Windows 安装 / macOS | **未运行** | 最新真实 NSIS/ZIP 与 packaged smoke 仍为 alpha.37；源码测试不能代表 alpha.41 制品或 macOS 通过 |
+
+证据边界：本轮证明三个 compatible provider 的主进程源码链、显式用户确认和本地安全边界闭合；不证明任一真实模型服务兼容、输出质量、云端隐私或商业发行完成。
+
+## 历史验证结论：0.1.0-alpha.40 登录故障恢复与同步幂等收敛
 
 验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未使用真实账号/端点/API key、未执行数据库迁移、未部署或修改官网，也未读写项目目录外内容。源码 Electron smoke 在独立隐藏进程执行；没有重新打包，最新真实 Windows 制品保持 alpha.37。
 

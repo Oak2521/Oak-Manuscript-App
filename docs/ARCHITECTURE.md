@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.40` 源码架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、独立服务端/API/Supabase 持久层，以及条件接线的桌面 PKCE/OS 加密 token-store/显式 transport 与失败幂等恢复，三模式 AI/OS 加密凭据/单条问题发送预览/建议人工审阅/未接线有界 HTTP 底座，以及 Web 临时作业的零留存源码边界。默认账号配置无端点；最新真实 Windows 制品仍为 alpha.37，其 schema v2 发布清单已绑定 packaged-smoke 哈希证据。真实账号与 Sync API 部署、真实模型适配、数据库迁移、平台计划任务/生命周期、病毒/信誉扫描、容器与 OS 无网隔离、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.41` 源码架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、独立服务端/API/Supabase 持久层、桌面 PKCE/加密 token-store/同步失败恢复，以及三模式 AI/OS 加密凭据/单条预览/建议审阅和 OpenAI-compatible/Ollama/LM Studio 主进程 transport。Web 临时作业保持独立零留存源码边界。默认账号配置无端点；最新真实 Windows 制品仍为 alpha.37。真实账号/Sync API、官方云 AI、真实模型兼容性、数据库迁移、生产隔离、联网标准获取、发行身份、签名、安装生命周期和 macOS 仍待验收。
 
 ## 1. 总体分层
 
@@ -22,9 +22,9 @@ Electron Main
   ├─ account-sync-ipc / SyncProvider：可信来源负载、逐字段预览、四选一授权、账户隔离队列
   ├─ sync-store / safeStorage：canonical 状态、revision CAS、原子加密持久化与重启恢复
   ├─ SyncTransportCoordinator / SyncHttpClient：配置完整时实例化的 Bearer 发送、幂等回放与本地提交协调
-  ├─ AIProvider / ai-settings-store：三模式、Pro 门禁、供应商边界与 OS 加密凭据；模型 transport 关闭
+  ├─ AIProvider / ai-settings-store：三模式、Pro 门禁、供应商边界、OS 加密凭据与 transport 可用性
   ├─ AIRequestCoordinator：可信单条上下文 → 完整披露 → 10 分钟一次性确认 → 只读建议
-  ├─ AI HTTP / transport router：未接线的固定 POST/JSON、HTTPS/loopback、容量/超时/媒体/适配门禁
+  ├─ AI HTTP / transport router：固定 POST/JSON、HTTPS/loopback、容量/超时/媒体门禁；仅注册 compatible 三类
   ├─ external-validation-ipc：项目路径 → 受绑定 plan/prepare/finalize；Renderer 不提交工具状态
   ├─ chrome-controller：固定隐藏 Chrome + 独立 profile + 随机 loopback DevTools
   ├─ ace-utility-runner：固定 utilityProcess 入口/参数/环境/超时/输出上限
@@ -206,9 +206,9 @@ alpha.33 新增严格只读 Python `ai-context` 和内存态 `AIRequestCoordinat
 
 alpha.34 在同一协调器内新增最多 8 个、30 分钟有效、一次处理的建议审阅会话。采纳前重新读取并 exact 比较完整本地 context binding，随后只通过可信 core `issue` 命令把对应问题设为 `accepted`；不保存模型文本、不改 working。放弃或关闭只删除内存建议，不调用状态写入，因此不会把“拒绝模型措辞”混同为“拒绝规则问题”。Renderer 只提交 opaque review ID 与固定决定，项目路径和问题 ID 仍由主进程保有。
 
-alpha.35 新增供应商无关但未接入生产的 `BoundedAIHttpClient` 与 `AITransportRouter`。客户端使用 Node 原生 `http/https`、单次连接、固定 POST/JSON，不读取代理环境；远程地址必须 HTTPS，本机 HTTP 仅限精确 loopback，且拒绝 URL 凭据/查询/片段、重定向、Cookie、代理/转发/hop-by-hop 头、压缩响应、媒体/长度漂移和超限。路由只接受 exact provider 配置与语义请求、已注册适配器和 exact 文本结果，并拒绝凭据进入 URL或被上游精确回显。生产主进程仍固定 `transport:null`，适配器注册表未实例化；该模块不是独立 OS 沙箱进程，也不证明任何官方协议兼容。
+alpha.35 新增供应商无关的 `BoundedAIHttpClient` 与 `AITransportRouter`。客户端使用 Node 原生 `http/https`、单次连接、固定 POST/JSON，不读取代理环境；远程地址必须 HTTPS，本机 HTTP 仅限精确 loopback，且拒绝 URL 凭据/查询/片段、重定向、Cookie、代理/转发/hop-by-hop 头、压缩响应、媒体/长度漂移和超限。路由只接受 exact provider 配置与语义请求、已注册适配器和 exact 文本结果，并拒绝凭据进入 URL或被上游精确回显。
 
-生产模型 transport 仍为 `null`，状态保持 `transport_configured=false`、`fallback_mode=none`、`output_policy=suggestion_only` 和 `automatic_writeback=false`。后续 transport 必须是独立最小权限主进程通道，按官方协议固定目标、方法、头、请求/响应 schema、超时和重试；错误不能泄露凭据或静默回退，响应不能进入 Python 确定性结论或自动写回。Web 凭据只能保留当前会话，不得复用桌面加密文件或进入账号同步。
+alpha.41 新增 `ai-openai-compatible-adapter.js`，只为 `openai_compatible`、`ollama`、`lm_studio` 注册固定 `{base_url}/chat/completions`：系统/用户双消息、`stream:false`、可选 Bearer，响应只接受唯一 choice 的非空 assistant 字符串并拒绝工具调用。`AIRequestCoordinator` 只在完整预览后的一次确认中调用 Router；状态仅对这三类报告 `transport_configured=true`。OpenAI、Anthropic、Gemini 和湖岸 AI 继续不可用；模块不是独立 OS 沙箱，也没有真实上游兼容/质量证据。所有模式保持 `fallback_mode=none`、`output_policy=suggestion_only` 和 `automatic_writeback=false`；Web 凭据只能保留当前会话。
 
 ### AD-014 Electron fuses 必须“显式固定—构建后读回—未知项失败关闭”（2026-07-28，冻结）
 

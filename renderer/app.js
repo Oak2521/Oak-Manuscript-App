@@ -1422,7 +1422,7 @@ function renderAiRequestPlan(plan) {
   confirm.textContent = plan.transport_available ? "确认发送一次" : "模型 transport 尚未接入";
   $("#ai-plan-transport").textContent = plan.transport_available
     ? "尚未发送。点击确认后只发送上面显示的同一份内容；计划只能使用一次。"
-    : "当前检查点没有模型 transport；本预览不会联网，确认按钮保持禁用。";
+    : "当前供应商没有可用的模型 transport；本预览不会联网，确认按钮保持禁用。";
 }
 
 function updateAiEndpointInput({ providerChanged = false } = {}) {
@@ -1499,7 +1499,7 @@ async function saveAiSettings() {
   const response = unwrap(await window.oak.configureAi(payload));
   state.aiStatus = response.status;
   renderAiSettings();
-  toast("AI 设置已由主进程保存；当前没有模型网络请求。", 4200);
+  toast("AI 设置已由主进程保存；保存本身不会发起模型请求。", 4200);
   return state.aiStatus;
 }
 

@@ -197,9 +197,9 @@
             <option value="openai">OpenAI</option>
             <option value="anthropic">Anthropic</option>
             <option value="google">Google Gemini</option>
-            <option value="openai_compatible">OpenAI-compatible 自定义接口</option>
-            <option value="ollama">Ollama</option>
-            <option value="lm_studio">LM Studio</option>
+            <option value="openai_compatible">OpenAI-compatible 自定义接口（已接入）</option>
+            <option value="ollama">Ollama（已接入）</option>
+            <option value="lm_studio">LM Studio（已接入）</option>
           </select>
           <label for="ai-model-input">模型标识</label>
           <input id="ai-model-input" type="text" maxlength="128" spellcheck="false" autocomplete="off" placeholder="例如 gpt-5-mini 或 qwen3:8b">
@@ -213,7 +213,7 @@
           <button id="btn-save-ai-settings">保存 AI 设置</button>
           <button id="btn-clear-ai-credential" class="ghost" disabled>清除已保存凭据</button>
         </div>
-        <p class="muted">AI 永远只是建议层：不能改变确定性检查结论，不能静默写回稿件，也不会在失败时自动切换到湖岸 AI。当前检查点尚未接入任何模型 transport，保存设置不会联网。</p>
+        <p class="muted">AI 永远只是建议层：不能改变确定性检查结论，不能静默写回稿件，也不会在失败时自动切换到湖岸 AI。OpenAI-compatible 自定义接口、Ollama 和 LM Studio 已接入；保存设置不会联网，只有逐条预览并确认后才发送。</p>
       </div>
       <h3>订正参考标准</h3>
       <table id="standards-table"><thead>

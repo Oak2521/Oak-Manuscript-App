@@ -56,4 +56,4 @@ release/     # 发布产物（不入库）
 
 ## 6. 里程碑与当前阶段
 
-当前开发版本为 `0.1.0-alpha.40`。P0、离线标准可信链、Windows builder 独立全树锁、统一账号/Free-Pro/`SyncRecord v1` 明示授权与加密队列、同步服务端/API，以及桌面系统浏览器 PKCE/OS 加密 token-store/账号绑定 transport 主进程接线和离线故障恢复源码已经实现；受信配置仍为 `pending_configuration`，所以真实登录、同步迁移和部署尚未接通，普通 APP 保持零账号网络请求。最新真实 Windows 制品仍为 alpha.37：NSIS/ZIP、packaged ASAR/9-fuse/资源门禁和哈希绑定 smoke 证据已复验，但未签名且不是可售卖正式版。本地哈希证据不是不可伪造签名。来源/许可证人工审计、自带浏览器、OS 级网络隔离、真实安装生命周期、生产账号/订阅/同步/AI、macOS 和 Web 部署仍未完成。普通 build/test 永不联网；任何重新下载仍须用户明确批准。具体事实必须以代码、`npm test` 和 `docs/DEVELOPMENT_STATUS.md` 交叉核对。
+当前开发版本为 `0.1.0-alpha.41`。P0、离线标准可信链、Windows builder 独立全树锁、统一账号/Free-Pro/`SyncRecord v1`、桌面 PKCE/加密 token-store/同步失败恢复，以及 OpenAI-compatible/Ollama/LM Studio 的逐条预览确认与只读 AI 建议源码已经实现；账号受信配置仍为 `pending_configuration`，官方云 AI 与真实模型兼容性也未验收。最新真实 Windows 制品仍为 alpha.37：NSIS/ZIP、packaged ASAR/9-fuse/资源门禁和哈希绑定 smoke 证据已复验，但未签名且不是可售卖正式版。本地哈希证据不是不可伪造签名。来源/许可证人工审计、自带浏览器、OS 级网络隔离、真实安装生命周期、生产账号/订阅/同步/湖岸 AI、macOS 和 Web 部署仍未完成。普通 build/test 永不联网；任何重新下载仍须用户明确批准。具体事实必须以代码、`npm test` 和 `docs/DEVELOPMENT_STATUS.md` 交叉核对。
