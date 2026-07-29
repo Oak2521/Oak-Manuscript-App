@@ -2,6 +2,15 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.52 标准撤回固定获取链验收（2026-07-29）
+
+- [x] 固定公开 POST 请求只含 schema、请求类型、APP 版本和 bundle；不含账号、设备、项目、稿件、路径、当前 manifest、既有撤回集合或凭据；
+- [x] HTTPS、唯一 Content-Length、exact JSON、固定 Accept/响应媒体受门禁；重复 framing、Transfer-Encoding、凭据、未知字段、重定向、压缩、范围、Cookie、大小/媒体/长度漂移和超时均 fail-closed；
+- [x] 发布源记录 exact 绑定 bundle、payload/envelope SHA-256 和原始 envelope；无记录、投毒、摘要漂移或源异常均为 bounded `SERVICE_UNAVAILABLE`，不能暗示“无撤回”；
+- [x] 真实测试 Ed25519 revocation envelope 经假发布源 → service → HTTP → Fetch → 桌面客户端 → 独立角色验签 → 追加式原子状态完整通过；并发刷新拒绝；
+- [x] 专项 11/11；全量 Node 693/686/0/7、Python 362/0/0/3；资源、标准、fuse、Electron runtime、Windows alpha 与发行身份结构门禁通过；隐藏 Electron source smoke 通过；
+- [ ] 生产发布存储/revocation trust pin、密钥托管/多人签署、桌面受信配置、main/IPC/UI、调度/缓存、紧急手册、告警/监控、真实网络与部署未完成；alpha.52 未打包，最新 Windows 制品仍为未签名 alpha.42。
+
 ## 0.1.0-alpha.51 标准签名撤回状态机验收（2026-07-29）
 
 - [x] trust store `1.0` 保持 release-only；`1.1` 精确要求 `release` + 独立 `revocation` 门槛签名角色。版本/角色漂移、未配置、未知 key、重复 key、无效签名和阈值不足均 fail-closed；

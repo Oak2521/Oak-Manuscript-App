@@ -1,6 +1,6 @@
 # Web 作业契约与同源 HTTP handler（alpha）
 
-`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.38 以独立服务/API/Supabase/runtime 实现长期 SyncRecord，alpha.44—alpha.48 实现账号历史、签名权益、设备管理和匿名撤销传播链；alpha.50 增加公开标准更新 service/HTTP/Fetch 契约，并以真实测试签名包贯通桌面验证与安装。alpha.51 的独立角色签名撤回目前只完成桌面本地可信状态语义，尚无 Web 获取端点。源码可本机测试，但临时作业、长期同步、订阅权益和标准更新服务均未部署。
+`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.38 以独立服务/API/Supabase/runtime 实现长期 SyncRecord，alpha.44—alpha.48 实现账号历史、签名权益、设备管理和匿名撤销传播链；alpha.50 增加公开标准更新 service/HTTP/Fetch 契约，并以真实测试签名包贯通桌面验证与安装；alpha.51—alpha.52 增加独立角色签名撤回状态和固定 `POST /manuscript/standards/v1/revocations` 获取链。源码可本机测试，但临时作业、长期同步、订阅权益和标准更新/撤回服务均未部署。
 
 Web 服务端依赖与 Electron 桌面依赖隔离：
 

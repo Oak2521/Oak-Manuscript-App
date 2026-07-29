@@ -1,6 +1,6 @@
 # STANDARDS_UPDATE_V1 — 标准更新服务契约
 
-> 状态：`0.1.0-alpha.50` 源码契约与本地纵向测试通过；alpha.51 的独立签名撤回本地语义见 `STANDARDS_REVOCATION_V1.md`。生产发布/撤回源、密钥、域名配置和部署尚未完成。
+> 状态：`0.1.0-alpha.50` 更新源码契约与本地纵向测试通过；alpha.51—alpha.52 的独立签名撤回本地状态与固定获取链见 `STANDARDS_REVOCATION_V1.md`。生产发布/撤回源、密钥、域名配置和部署尚未完成。
 
 ## 1. 固定路由
 
@@ -86,4 +86,4 @@
 
 `tests/web_standards_update_http.test.js` 已用真实测试 Ed25519 密钥和签名包贯通：内存发布源 → 服务 → Node HTTP handler → Fetch runtime → 桌面 HTTP client → `StandardsProvider` 验签/哈希/schema/兼容性 → 原子安装与历史 release 复验。
 
-这证明源码组件可组合，不证明生产域名、TLS、对象存储、CDN、密钥托管、发布审批、撤回清单 HTTP 获取、限流、监控或真实网络代理环境已经完成。
+这证明源码组件可组合，不证明生产域名、TLS、对象存储、CDN、密钥托管、发布审批、撤回清单真实发布/桌面接线、限流、监控或真实网络代理环境已经完成。

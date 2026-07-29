@@ -4,6 +4,16 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.52（ChatGPT 标准撤回固定获取纵向链）
+
+> 未部署源码检查点；本轮未联网、未配置生产 release/revocation key、未接入真实发布源、主进程配置、IPC/UI 或调度，未推送、未打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。
+
+- 新增固定公开 `POST /manuscript/standards/v1/revocations`；exact 请求只含 APP 版本与 bundle，不接受账号凭据/Cookie，也不发送设备、项目、稿件、路径、当前 manifest 或本地撤回集合；
+- 新增 revocation service/HTTP/Fetch runtime：注入式发布源记录精确绑定 bundle、payload/envelope SHA-256 和原始 signed bytes；无记录、投毒、摘要漂移与异常统一 bounded `SERVICE_UNAVAILABLE`；
+- 新增有界桌面客户端：固定 HTTPS 路径、10 秒超时、1 MiB 上限，拒绝重定向、压缩、范围、Cookie 与 framing/媒体/长度漂移；Provider 只在独立角色验签后追加式原子应用，并拒绝并发刷新；
+- 真实测试 Ed25519 清单贯通假发布源 → service → HTTP → Fetch → 桌面验证/应用；专项 11/11，全量 Node 693/686/0/7、Python 362/0/0/3；资源信任 107 文件 / 2,170,426 字节，manifest `f0451d61…ead0`、anchor `7735e13e…70c4`；隐藏 Electron source smoke PASS；
+- 生产撤回发布存储、trust pin/密钥治理、桌面 main/IPC/UI、调度/缓存、紧急手册、监控、真实网络和部署仍未完成；销售门禁仍 17 项，发行身份仍缺 12 字段。
+
 ### 2026-07-29 — 0.1.0-alpha.51（ChatGPT 标准签名撤回本地状态机）
 
 > 本地可信状态检查点；本轮未联网、未配置生产 release/revocation key、未实现撤回 HTTP 获取或 UI 告警、未部署、未推送、未打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。

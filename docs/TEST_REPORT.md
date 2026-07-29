@@ -2,7 +2,26 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.51 标准签名撤回本地状态机
+## 最新验证结论：0.1.0-alpha.52 标准撤回固定获取纵向链
+
+验证日期：2026-07-29。本轮未联网、未注入生产 release/revocation 公钥或私钥；测试使用进程内 Fetch 适配器、匿名本地文件和运行时生成的 Ed25519 密钥。未接入 main/IPC/UI、调度或真实发布源，未部署、推送或重新打包。
+
+| 项目 | 结果 | 证据与边界 |
+|---|---|---|
+| 内容无关请求 | **PASS** | 固定 `POST /manuscript/standards/v1/revocations`；exact JSON 只含 schema/type、APP 版本和 bundle，不含账号、设备、项目、稿件、路径、当前 manifest、撤回集合或凭据 |
+| HTTP/客户端门禁 | **PASS** | HTTPS、唯一 Content-Length、固定 Accept/响应 media；拒绝重复 framing、Transfer-Encoding、凭据、重定向、压缩、范围、Cookie、大小/媒体/长度漂移；默认 10 秒、最大 1 MiB，异常不反射上游正文 |
+| 发布源 | **PASS（源码/注入）** | exact 记录绑定 bundle、payload/envelope SHA-256 与原始 signed bytes；无记录、外加字段、摘要漂移、bundle 漂移和异常均 bounded `SERVICE_UNAVAILABLE`，audit 不含请求值或摘要 |
+| 纵向 E2E | **PASS** | 运行时生成的真实 Ed25519 revocation envelope 经假发布源 → service → Node HTTP → Fetch adapter → 桌面 client → Provider 独立角色验签 → 追加式原子状态；active 命中后 ready=false；无真实网络 |
+| 并发/默认离线 | **PASS** | 无 transport 时 `network_revocations_enabled=false` 且刷新拒绝；同一 Provider 并发刷新返回 `STANDARD_REVOCATION_BUSY`；普通 APP 尚未接入该 client，因此不会自动联网 |
+| 新增专项 | **PASS 11/11** | `node --test tests/web_standards_revocation_http.test.js`；正常链、Schema、发布源/摘要投毒、framing/凭据/媒体/容量/超时、错误净化、并发与真实签名应用均通过 |
+| 全量测试 | **PASS** | `npm test` 退出码 0；Node 693 total / 686 pass / 0 fail / 7 skip，3.920 秒；Python 362 / 0 failures / 0 errors / 3 skipped，103.018 秒；墙钟 111.4 秒 |
+| 隐藏源码 smoke | **PASS** | alpha.52 在独立隐藏窗口保持 Renderer sandbox，未用 `--no-sandbox`；输出 `out/source-smoke/runs/ms5zavai-97713132217de2fd/projects/`；默认配置没有标准更新/撤回、账号、权益或 AI 网络 |
+| 资源与运行时门禁 | **PASS（alpha）** | loose 107 文件 / 2,170,426 字节；manifest `f0451d6199724261e583d050994e60d463bd2074a76785204de06fb16e10ead0`，anchor `7735e13eeb34e989867b47db918ed0dbaf0cdc54c7e0a6a32472547d0a6270c4`；标准、Windows alpha、fuse、Electron runtime 与发行身份结构检查退出 0 |
+| 生产与销售门禁 | **未运行/未完成** | 生产发布存储/revocation trust pin、密钥托管/多人签署、桌面受信配置、main/IPC/UI、调度/缓存、紧急手册、告警/监控、真实网络和部署未验证；source sale 仍 17 blocker、发行身份缺 12 字段；alpha.52 未打包，最新 Windows 制品仍为未签名 alpha.42 |
+
+结论：alpha.52 证明固定内容无关撤回获取协议可把原始签名清单交给桌面独立验签并原子应用；它不是生产撤回源、桌面联网接线或线上运维系统的证据。
+
+## 历史验证结论：0.1.0-alpha.51 标准签名撤回本地状态机
 
 验证日期：2026-07-29。本轮未联网、未注入生产 release/revocation 公钥或私钥；测试使用运行时生成的 Ed25519 密钥和匿名本地文件。未部署、推送或重新打包。
 

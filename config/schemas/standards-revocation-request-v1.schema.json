@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/standards-revocation-request-v1.schema.json",
+  "title": "Oak Manuscript standards revocation fetch request v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "request_type", "app_version", "bundle_id"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "request_type": { "const": "oak_manuscript_standard_revocation_fetch" },
+    "app_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "bundle_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" }
+  }
+}

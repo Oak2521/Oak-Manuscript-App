@@ -171,7 +171,9 @@ alpha.50 增加公开固定 `POST /manuscript/standards/v1/check`、`StandardsUp
 
 alpha.51 保持 trust store `1.0` 为 release-only，并以 exact `1.1` 同时要求 `release` 与独立 `revocation` 门槛签名角色；未配置该角色时不能借用 `release` 权限。撤回 envelope 与 list payload 都必须是 canonical JSON，绑定 bundle、有效时间窗及排序去重的 manifest SHA-256 集合。已持久化撤回项只能增加；即使后续清单签名有效，也不能删除旧项或把已撤回候选重新激活。
 
-应用清单使用既有跨进程 pending transaction、前后态摘要和原子恢复。active 被撤回后，普通 active/项目业务验证 fail-closed；受控 migration-source 验证仍可读取完整身份，以安装更高且未撤回的 release。远程更新响应或候选验签完成后、创建预览计划前必须重新读取可信状态；途中落地的撤回优先，不能因旧快照生成可安装计划。撤回不清理 CAS、项目 pin、既有检查 JSON 或已生成 `exports/`；重新生成报告属于新操作，必须等待可信 active 恢复。完整协议见 `STANDARDS_REVOCATION_V1.md`。alpha.51 没有生产撤回密钥、HTTP 获取、调度或 UI 告警，不能写成线上撤回系统已完成。
+应用清单使用既有跨进程 pending transaction、前后态摘要和原子恢复。active 被撤回后，普通 active/项目业务验证 fail-closed；受控 migration-source 验证仍可读取完整身份，以安装更高且未撤回的 release。远程更新响应或候选验签完成后、创建预览计划前必须重新读取可信状态；途中落地的撤回优先，不能因旧快照生成可安装计划。撤回不清理 CAS、项目 pin、既有检查 JSON 或已生成 `exports/`；重新生成报告属于新操作，必须等待可信 active 恢复。
+
+alpha.52 增加独立公开 `POST /manuscript/standards/v1/revocations`。请求只含 APP 版本和 bundle，不含账号、设备、项目、稿件、当前 manifest 或撤回集合；服务从注入式不可变发布源复算 payload/envelope 摘要并返回原始 signed bytes，没有记录必须失败而非暗示“无撤回”。桌面有界客户端固定路径/媒体/容量/超时，最终信任仍由 Provider 的 revocation 角色验签与追加式事务决定。该链只经进程内 Fetch 适配器验证，尚未进入受信桌面配置、main/IPC/UI、调度或真实部署。完整协议见 `STANDARDS_REVOCATION_V1.md`；不能写成线上撤回系统已完成。
 
 ### AD-018 Web 临时任务必须“可信主体—单任务同意—内容/元数据分道—删除失败可见”（2026-07-28，冻结）
 

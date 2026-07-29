@@ -167,6 +167,7 @@ class StandardsProvider {
     fsImpl = fs,
     storeClass = StandardsStore,
     updateClient = null,
+    revocationClient = null,
     clock = () => new Date(),
     planIdFactory = crypto.randomUUID,
   }) {
@@ -184,10 +185,15 @@ class StandardsProvider {
     if (updateClient !== null && (!updateClient || typeof updateClient.check !== "function")) {
       throw new TypeError("标准更新 transport 必须提供 check");
     }
+    if (revocationClient !== null &&
+        (!revocationClient || typeof revocationClient.fetch !== "function")) {
+      throw new TypeError("标准撤回 transport 必须提供 fetch");
+    }
     if (typeof clock !== "function" || typeof planIdFactory !== "function") {
       throw new TypeError("标准更新计划时钟或 ID 生成器非法");
     }
     this.updateClient = updateClient;
+    this.revocationClient = revocationClient;
     this.clock = clock;
     this.planIdFactory = planIdFactory;
     this.paths = null;
@@ -198,6 +204,7 @@ class StandardsProvider {
     this._initializing = null;
     this._preparing = null;
     this._checkingRemote = false;
+    this._refreshingRevocations = false;
     this._remotePlan = null;
   }
 
@@ -320,6 +327,7 @@ class StandardsProvider {
       trust_configured: this.trustConfigured,
       local_signed_import_enabled: this.trustConfigured,
       network_updates_enabled: this.trustConfigured && this.updateClient !== null,
+      network_revocations_enabled: this.trustConfigured && this.revocationClient !== null,
       error: this.initializationError,
     };
   }
@@ -462,6 +470,30 @@ class StandardsProvider {
     }
     this._remotePlan = null;
     return { canceled: true };
+  }
+
+  async refreshRemoteRevocations() {
+    const { state: current } = await this._requireReady({ allowMigrationSource: true });
+    if (!this.trustConfigured || this.revocationClient === null) {
+      fail("STANDARD_REVOCATION_NETWORK_DISABLED", "标准撤回联网配置或生产签名公钥尚未就绪");
+    }
+    if (this._refreshingRevocations) {
+      fail("STANDARD_REVOCATION_BUSY", "标准撤回清单获取正在进行");
+    }
+    this._refreshingRevocations = true;
+    try {
+      const result = await this.revocationClient.fetch({
+        appVersion: this.appVersion,
+        bundleId: current.active.bundle_id,
+      });
+      if (!result || typeof result !== "object" || Array.isArray(result) ||
+          Object.keys(result).length !== 1 || !Buffer.isBuffer(result.envelopeBytes)) {
+        fail("STANDARD_REVOCATION_RESPONSE_INVALID", "标准撤回 transport 返回了非法签名清单");
+      }
+      return await this.applyRevocationEnvelope(Buffer.from(result.envelopeBytes));
+    } finally {
+      this._refreshingRevocations = false;
+    }
   }
 
   async applyRevocationEnvelope(envelopeBytes) {

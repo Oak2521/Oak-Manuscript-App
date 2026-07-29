@@ -2,9 +2,9 @@
 
 > 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.51 源码）
+## Provider 一览（当前 alpha.52 源码）
 
-alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI；alpha.44—alpha.48 完成签名权益、网站账号设备客户端与匿名撤销传播链；alpha.49—alpha.50 完成用户触发的标准更新桌面 transport、公开服务端契约与真实测试签名本地纵向链；alpha.51 增加独立角色签名、追加式标准撤回本地状态机。受信账号、权益与标准更新配置仍为 `pending_configuration` 且端点/key/公钥为空；数据库迁移、更新/撤回发布源、API 与客户端均未部署，因此普通 APP 仍不登录、刷新订阅、同步或在线检查标准。商业仓库没有真实 service-role key、OAuth 配置、权益/标准私钥或 AI key。
+alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI；alpha.44—alpha.48 完成签名权益、网站账号设备客户端与匿名撤销传播链；alpha.49—alpha.50 完成用户触发的标准更新桌面 transport、公开服务端契约与真实测试签名本地纵向链；alpha.51 增加独立角色签名、追加式标准撤回本地状态机；alpha.52 增加未部署的撤回 service/HTTP/Fetch/桌面客户端与原子应用 E2E。受信账号、权益与标准更新配置仍为 `pending_configuration` 且端点/key/公钥为空；撤回客户端尚未接入 main/IPC/UI。数据库迁移、更新/撤回发布源、API 与客户端均未部署，因此普通 APP 仍不登录、刷新订阅、同步或在线检查标准。商业仓库没有真实 service-role key、OAuth 配置、权益/标准私钥或 AI key。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
@@ -34,7 +34,7 @@ alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；al
 
 服务端以 204 表示当前版本，以 200 和 `application/vnd.oak.standard-package+json` 原始字节返回更高序列候选。服务只复核发布记录结构与 envelope SHA-256，不替代桌面的签名、payload、schema、兼容性和防降级验证。生产运行时必须注入发布源与 content-free audit sink；当前没有对象存储、CDN、真实域名配置或生产密钥。完整接入、错误码和运维边界见 `STANDARDS_UPDATE_V1.md`。
 
-alpha.51 的撤回清单合同见 `STANDARDS_REVOCATION_V1.md`。当前只实现本地验签与状态语义；固定 HTTPS 获取路由、发布存储、生产 revocation key、调度和告警仍未实现，不能由 alpha.50 的普通候选响应冒充。
+alpha.51—alpha.52 的撤回清单合同见 `STANDARDS_REVOCATION_V1.md`。固定 `POST /manuscript/standards/v1/revocations` 只接受内容无关 exact 请求并返回原始 signed envelope；不存在受信发布记录按服务不可用处理。当前只完成源码/进程内 Fetch 纵向证据；真实发布存储、生产 revocation key、桌面受信配置与入口、调度、告警和部署仍未实现，不能由 alpha.50 的普通候选响应冒充。
 
 ## SyncRecord 长期结果 API v1（alpha.39，未部署）
 

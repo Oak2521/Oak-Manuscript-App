@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 104,
-  "total_bytes": 2167094,
+  "file_count": 107,
+  "total_bytes": 2170426,
   "files": [
     {
       "path": "config/app-config.json",
@@ -183,9 +183,24 @@
       "sha256": "e5c671bbdc8e99a72e8ab9dea8c277d97f54eacb4b3a9b47862c3a167c39bbc5"
     },
     {
+      "path": "config/schemas/standards-revocation-http-audit-v1.schema.json",
+      "size_bytes": 1484,
+      "sha256": "f2a929bf0173007aa373e33a5394c47748ec2bd14c580123e8fb7d7dc46ffc87"
+    },
+    {
+      "path": "config/schemas/standards-revocation-http-error-v1.schema.json",
+      "size_bytes": 1175,
+      "sha256": "688c97319e955b794e0f057777dd23b529baf03c2fc4bc138c2d9e2662c04588"
+    },
+    {
       "path": "config/schemas/standards-revocation-list-v1.schema.json",
       "size_bytes": 939,
       "sha256": "351beb2596e3ac1f338b9c0b11cf3015ad3326bd5e19dfa1b50b15c2d23aed44"
+    },
+    {
+      "path": "config/schemas/standards-revocation-request-v1.schema.json",
+      "size_bytes": 673,
+      "sha256": "339f3dd3f1a7a2c107be8e4c0fb3e28e5a8cf53f22f56d005e58675ec56bef1c"
     },
     {
       "path": "config/schemas/standards-trust-v1.1.schema.json",
@@ -300,7 +315,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "9242290467ee7cc81925dcbebbacf8864c8ecd0cfa1f22ed537ddb181fb78355"
+      "sha256": "baafd3c4cf57a173f6747ff71f6b1be23435d41c0cc5c01d0ab2f6ca801b6830"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

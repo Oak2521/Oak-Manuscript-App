@@ -1,6 +1,6 @@
 # tests/ — Node 契约、发布资源与打包验证
 
-`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.51 统一结果为 Node **682 total / 675 pass / 0 fail / 7 skip / 4.049 秒**，Python **362 项 / 0 失败 / 0 错误 / 3 跳过 / 103.218 秒**，墙钟 111.7 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
+`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.52 统一结果为 Node **693 total / 686 pass / 0 fail / 7 skip / 3.920 秒**，Python **362 项 / 0 失败 / 0 错误 / 3 跳过 / 103.018 秒**，墙钟 111.4 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
 
 本目录覆盖：
 
@@ -12,6 +12,7 @@
 - 标准在线升级 exact 配置/HTTPS transport、24 MiB 有界候选、签名与兼容性复验、10 分钟一次性计划、原生确认、并发/超时/重放拒绝，以及 renderer 无地址/字节/安装权限；
 - 标准更新公开 service/HTTP/Fetch exact 契约、内容无关审计、发布源投毒/摘要/分帧拒绝，以及真实测试 Ed25519 包到桌面验签/原子安装 E2E；
 - 标准撤回独立签名角色、canonical list/envelope、时间窗/排序/阈值、追加式防回退、原子故障恢复、active/候选/回滚拒绝、检查途中并发撤回优先、安全前进恢复，以及 CAS/历史报告不变；
+- 标准撤回固定内容无关请求、发布源 payload/envelope 摘要绑定、HTTP/Fetch framing/凭据/媒体/容量/超时门禁、有界桌面 client、并发刷新拒绝，以及真实测试 signed list 到桌面原子应用；
 - ASAR/integrity、顶层 2.1.3 afterPack 全 9 fuse 严格写入/回读、未来未知 fuse 的 alpha/sale fail-closed、实际 Framework 文件身份和构建顺序；
 - ASAR 内资源锚点、104 文件应用 loose 清单、四类平台锁绑定、真实 `app.asar` raw header/精确读取、同路径重建、loose 伪锚点拒绝、启动前验证及 5 个可信根 blocker 的严格关闭条件；
 - Ace 外部验证 IPC 的可信项目来源、Python plan/prepare/finalize 绑定、固定 utilityProcess、注入环境清理、输出/时间上限、受控 loopback Chrome、精确 child/profile 清理及路径换入拒绝；
@@ -38,4 +39,4 @@ Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零�
 
 真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。当前 packaged smoke 强制通过受控链路运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言；缺失或陈旧 EXE 不得复用。
 
-alpha.51 Web 客户端隐藏 Chromium smoke 为 **PASS**，证据在 `out/web-client-smoke/`，匿名假服务期间 HTTP(S) 请求为 0；最终 trust 1.1 源码隐藏 Electron smoke 也为 **PASS**，运行根为 `out/source-smoke/runs/ms5yuwmk-11a2ad804c9bde10/projects/`。两次文件系统沙箱内 GPU `0xC0000135` 退出只作诊断、不计通过；最终证据未使用 `--no-sandbox`。最新隐藏 packaged smoke 仍属于 alpha.42，为 **SMOKE + SYNC-RECOVERY PASS**，运行根为 `out/packaged-smoke/runs/ms5nicav-edc12e1b32aaafed/projects/`；其 canonical 证据把实际 EXE、双进程结果摘要和匿名输出树绑定进 schema v2 发布清单。哈希不是代码签名，实际系统安装生命周期仍未运行。
+最新 Web 客户端隐藏 Chromium smoke 仍为 alpha.51 **PASS**，证据在 `out/web-client-smoke/`，匿名假服务期间 HTTP(S) 请求为 0；alpha.52 未修改 Web UI，新增撤回服务由 Node E2E 覆盖。alpha.52 源码隐藏 Electron smoke 为 **PASS**，运行根为 `out/source-smoke/runs/ms5zavai-97713132217de2fd/projects/`，未使用 `--no-sandbox`。最新隐藏 packaged smoke 仍属于 alpha.42，为 **SMOKE + SYNC-RECOVERY PASS**，运行根为 `out/packaged-smoke/runs/ms5nicav-edc12e1b32aaafed/projects/`；其 canonical 证据把实际 EXE、双进程结果摘要和匿名输出树绑定进 schema v2 发布清单。哈希不是代码签名，实际系统安装生命周期仍未运行。

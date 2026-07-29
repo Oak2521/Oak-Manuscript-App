@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-29
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.51`
+> 当前版本：`0.1.0-alpha.52`
 > 当前分支：`chatgpt/commercial-v1`
-> 当前源码本地标签：`chatgpt-v0.1.0-alpha.51-standards-revocation-state`；既有 `chatgpt-v0.1.0-alpha.50-standards-update-service-e2e` 为发布服务检查点，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据
+> 当前源码本地标签：`chatgpt-v0.1.0-alpha.52-standards-revocation-http-e2e`；既有 `chatgpt-v0.1.0-alpha.51-standards-revocation-state` 为本地撤回状态检查点，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,16 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.52 标准撤回固定获取纵向链
+
+- 新增固定公开 `POST /manuscript/standards/v1/revocations`；exact 请求只含 schema/type、APP 版本和 bundle，不含账号、设备、项目、稿件、路径、当前 manifest、本地撤回集合或凭据；
+- HTTPS、唯一 Content-Length、固定 JSON/Accept/响应 media 和 2 KiB 请求上限在读取发布源前门禁；重复 framing、Transfer-Encoding、未知字段和凭据均拒绝。桌面客户端另固定同一路径、10 秒超时与 1 MiB 响应上限，并拒绝重定向、压缩、范围、Cookie、媒体/长度漂移；
+- 注入式发布源 exact 记录绑定 bundle、payload/envelope SHA-256 与原始 signed bytes；无记录、外加字段、bundle/摘要漂移和异常统一 bounded `SERVICE_UNAVAILABLE`，不能把“没有受信清单”解释为“没有撤回”；
+- 真实测试 Ed25519 revocation envelope 贯通假发布源 → service → Node HTTP → Fetch adapter → 桌面 client → Provider 独立角色验签 → 追加式原子状态；active 命中后停止普通业务，并发刷新拒绝；全链未使用真实网络；
+- 新增专项 11/11。全量 `npm test`：Node 693 total / 686 pass / 0 fail / 7 skip（3.920 秒），Python 362 / 0 failures / 0 errors / 3 skipped（103.018 秒），墙钟 111.4 秒；
+- 资源信任 107 文件 / 2,170,426 字节，manifest `f0451d61…ead0`、anchor `7735e13e…70c4`；标准、Windows alpha、fuse、Electron runtime 与发行身份结构门禁通过；隐藏 Electron source smoke PASS，输出 `out/source-smoke/runs/ms5zavai-97713132217de2fd/projects/`；
+- 本轮未联网、未配置生产 key/发布源，未接入桌面受信配置、main/IPC/UI 或调度，未部署、推送或打包；销售门禁仍 17 项、发行身份缺 12 字段，最新 Windows 制品仍为未签名 alpha.42。
 
 ### 已完成：0.1.0-alpha.51 标准签名撤回本地状态机
 
@@ -668,7 +678,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - 账号/订阅/同步：离线 Provider/Free+Pro、逐字段确认、OS 加密队列和重启恢复、桌面 PKCE/加密 token-store/条件 main 接线、SyncRecord 服务链、签名权益、规范化订阅事件、属主设备管理服务及网站订阅/掩码设备客户端源码已实现；默认账号/权益配置仍为空，生产私钥不存在，真实 PKCE/刷新、支付商 webhook 验签适配、Supabase 迁移/部署和网站后台未连接；
 - AI：Ollama 0.32.5 + qwen3:4b 与 LM Studio llmster 0.0.20+1 + 同一 Qwen3 4B GGUF 已分别通过一个匿名连续空格问题的窄范围验收；其他版本/模型/硬件、多模型语义、多规则/真实稿件质量、官方云、远程 TLS 与湖岸 AI 仍未验收；
 - 标准库：治理结构和引用解析政策已完成，13 项标准、35 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
-- 标准升级：本地验证、签名包导入/回滚、项目固定/显式升级、用户触发桌面客户端、服务端 fixed HTTP/Fetch 契约、本地真实签名 E2E，以及独立角色签名撤回的本地拒绝/恢复语义已编码；默认地址与生产 trust pin 为空，生产发布/撤回源、撤回 HTTP 获取/调度、密钥治理、真实网络联调和后台自动检查未实现；
+- 标准升级：本地验证、签名包导入/回滚、项目固定/显式升级、用户触发桌面客户端、服务端 fixed HTTP/Fetch 契约、本地真实签名 E2E，以及独立角色签名撤回的本地拒绝/恢复和固定获取纵向链已编码；默认地址与生产 trust pin 为空，撤回 client 尚未接入 main/IPC/UI，生产发布/撤回源、调度、密钥治理、真实网络联调和后台自动检查未实现；
 - 正式发布仍缺隐私/条款最终文本、证书、生产密钥、人工内测、macOS 硬件和网站联调。
 
 ### Windows sale 门禁的当前明确阻断
@@ -694,7 +704,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划。近期直接闭合“账号 → 权益 → 检查 → 明确同步”主链：
 
-1. alpha.51 已完成签名撤回清单离线 exact 契约、客户端拒绝/安全前进恢复与历史结果保留；下一项在不联网前提下实现固定 content-free 撤回清单 HTTP 获取契约，并贯通假服务端 → 桌面应用撤回的 E2E；
+1. alpha.52 已完成固定 content-free 撤回获取协议和假服务端 → 桌面验签/原子应用 E2E；下一项在不联网前提下把 release/revocation 两个端点纳入同一 exact 桌面受信配置，并以一次用户触发动作固定“先刷新撤回、再检查更新”的 main/IPC/UI 顺序与告警状态；
 2. 具体支付商 webhook 验签实现必须等用户授权联网并选定平台后，依据官方协议单独开发；当前规范化事件入口继续只接受上游已经验签的 content-free 快照；
 3. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，才填充 `desktop-auth.json` / `desktop-license.json`，执行真实 PKCE、数据库迁移、RLS、签发刷新、撤销和网站后台 E2E；
 4. OpenAI、Anthropic、Gemini 官方云适配仍必须先核对当前官方协议；不得套用 compatible 形状或凭记忆猜测，但不排在账号/订阅主线之前；

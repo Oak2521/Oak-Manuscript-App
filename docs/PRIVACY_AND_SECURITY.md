@@ -161,7 +161,8 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - alpha.49 已实现用户点击触发的桌面 HTTPS transport；请求只含 APP/标准版本身份，Renderer 不持有端点、候选字节或安装计划。alpha.50 增加公开服务端固定路由，明确拒绝 Authorization、Cookie、稿件/项目字段和未知字段；错误不反射正文，audit 只含请求 ID、时间、方法、路由模板、状态和错误码。
 - 服务端只返回经内部 envelope 摘要复核的候选，不能设置“已验证”；桌面仍独立执行 Ed25519、canonical manifest、全文件哈希、schema、白名单、兼容性和高水位验证。
 - alpha.51 增加独立 `revocation` 角色签名的 canonical 撤回清单。清单只含 bundle、时间窗和 manifest 摘要；持久集合只增不减，active/候选/回滚目标命中即 fail-closed。撤回只改变可信使用状态，不删除 CAS、项目身份、既有检查结果或已生成导出；恢复必须前进到更高且未撤回的签名 release；
-- 默认配置继续零网络，生产发布源、release/revocation trust pin、密钥治理、撤回清单 HTTP 获取、限流/监控和真实网络尚未完成。
+- alpha.52 的固定撤回获取请求只含 APP 版本和标准 bundle，不发送账号、设备、项目、稿件、路径、当前 manifest 或本地撤回集合；服务 audit 只含请求 ID、时间、方法、固定路由、状态和错误码。测试 Fetch 为进程内适配，不是实际联网；
+- 默认配置继续零网络。生产发布源、release/revocation trust pin、密钥治理、主进程配置/IPC/UI、调度、限流/监控和真实网络尚未完成。
 
 ### Windows 安装生命周期的授权与数据边界
 
