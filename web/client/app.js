@@ -28,7 +28,25 @@
     syncHistoryStatus: document.getElementById("sync-history-status"),
     syncHistoryList: document.getElementById("sync-history-list"),
     refreshSyncHistory: document.getElementById("refresh-sync-history"),
+    licenseAccountPanel: document.getElementById("license-account-panel"),
+    licenseAccountStatus: document.getElementById("license-account-status"),
+    licenseDeviceList: document.getElementById("license-device-list"),
+    refreshLicenseAccount: document.getElementById("refresh-license-account"),
   };
+
+  var licenseAccount = window.OakLicenseAccountController.createLicenseAccountController({
+    contract: contract,
+    api: api,
+    document: document,
+    nodes: {
+      panel: nodes.licenseAccountPanel,
+      status: nodes.licenseAccountStatus,
+      list: nodes.licenseDeviceList,
+      refresh: nodes.refreshLicenseAccount,
+    },
+    confirmAction: window.confirm.bind(window),
+    clock: function () { return new Date(); },
+  });
 
   function setControls(enabled) {
     [nodes.file, nodes.manuscriptType, nodes.checkConfig, nodes.citationStyle, nodes.consent]
@@ -68,6 +86,7 @@
       setControls(false);
       nodes.syncHistoryPanel.hidden = true;
       nodes.syncHistoryList.replaceChildren();
+      licenseAccount.clear();
       return;
     }
     nodes.accountState.textContent = "已登录湖岸账号";
@@ -77,7 +96,7 @@
     nodes.loginRequired.hidden = true;
     setControls(currentJobId === null);
     nodes.syncHistoryPanel.hidden = false;
-    await loadSyncHistory();
+    await Promise.all([loadSyncHistory(), licenseAccount.show()]);
   }
 
   async function api(path, options) {

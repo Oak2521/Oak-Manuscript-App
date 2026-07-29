@@ -2,6 +2,19 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.47 网站订阅与设备管理客户端验收（2026-07-29）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.47`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 网站客户端固定消费 `GET /manuscript/api/v1/account/license` 与 owner revoke 路由，继续使用同源 Bearer/`credentials:"omit"`，不允许页面自报账号、套餐或设备归属；
+- [x] overview/revoke 响应使用 exact parser；拒绝未知字段、重复/超量设备和非规范时间，显示状态与桌面 valid/grace 边界一致；
+- [x] 页面只展示设备 ID 后缀；每台有效设备必须经过原生确认才能撤销，失败保持可见并恢复操作，不在客户端伪造成功；
+- [x] 登录加载订阅/设备，退出立即隐藏并清空；旧异步响应不能在退出后回填；无 `innerHTML`、浏览器持久化、稿件/路径/文件身份字段；
+- [x] 新增/相关客户端专项 12/12、较宽客户端/服务链 57/57；全量 Node 654/647/0/7、Python 362/0/0/3；
+- [x] 隐藏 Chromium 实际页面匿名假服务 smoke 通过：HTTP(S) 0 请求、无完整 device ID、桌面/移动布局与撤销前后状态通过；
+- [x] 隐藏 Electron 源码 smoke、Windows alpha 资源、fuse config、发行身份结构和 Electron 运行时门禁通过；资源锚为 manifest `098e520b…e8f` / anchor `d9bf27a9…7f9`；
+- [ ] 真实账号/API/数据库迁移/RLS/并发、支付商 webhook、网站部署、撤销后桌面刷新纵向 E2E 已完成；当前全部未运行；
+- [ ] alpha.47 Windows/macOS 安装包、代码签名、公证、真实安装生命周期与可售卖正式版门禁完成；最新 packaged 证据仍为未签名 alpha.42。
+
 ## 0.1.0-alpha.46 规范化订阅事件与设备管理服务源码验收（2026-07-29）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.46`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；

@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.46` 源码已实现的桌面隐私边界、SyncRecord 服务端/API/Supabase、PKCE/加密 token-store/同步失败恢复、Ed25519 权益客户端、独立签发、规范化订阅事件和属主设备管理服务、三模式 AI，以及 Web 临时作业和同步历史客户端源码契约。默认账号与权益配置没有网络目标，仓库没有生产私钥；最新 alpha.42 Windows 制品已通过 packaged 安全门禁但仍未签名，不是可售卖正式版。真实账号、支付商 webhook、数据库迁移、API/官网部署和生产隔离仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.47` 源码已实现的桌面隐私边界、SyncRecord 服务端/API/Supabase、PKCE/加密 token-store/同步失败恢复、Ed25519 权益客户端、独立签发、规范化订阅事件和属主设备管理服务、三模式 AI，以及 Web 临时作业、同步历史和订阅/设备客户端源码契约。默认账号与权益配置没有网络目标，仓库没有生产私钥；最新 alpha.42 Windows 制品已通过 packaged 安全门禁但仍未签名，不是可售卖正式版。真实账号、支付商 webhook、数据库迁移、API/官网部署和生产隔离仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -61,6 +61,8 @@
 alpha.45 的服务端请求只接受 GoTrue 验证后的 Bearer account principal 与 device ID；账号、套餐、时间和状态不能由客户端自报。权益/设备表不允许稿件、文件名、路径、哈希、token 或私钥字段，浏览器角色无表/RPC 权限。Signer、public API key、service-role key 和 audit sink 分别注入；成功响应发送前再次 exact 校验，固定错误与审计不记录账号、设备、token、请求头、稿件或上游正文。当前仅有 SQL 静态契约和注入测试，不能据此宣称生产秘密隔离或 RLS 已验证。
 
 alpha.46 的订阅事件核心不接收原始 webhook、价格、币种、订单、付款工具、邮箱、姓名或账单地址；只保留 provider/event 标识、账号/权益标识、原因、状态、规范时间窗、canonical 指纹和处理结果。真实支付商适配器必须先独立验证签名和来源，再调用绑定固定 provider 的 ingestor，不能把原始载荷存入该表。账号设备 API 只向已验证属主返回公开状态；响应删除 account/entitlement ID 与 revision，审计把设备路由归一化为占位符，不记录实际 device ID。该边界目前只有静态/注入证据。
+
+alpha.47 的网站账号客户端只接收上述公开权益时间窗和设备状态。完整 device ID 仅在内存中用于固定撤销 URL，页面只显示末尾掩码；客户端不把权益或设备写入 localStorage/sessionStorage/IndexedDB，不使用 `innerHTML`，退出登录立即清空节点。每次有效设备撤销都要求原生确认；busy 与 generation 状态分别阻止并发提交和退出后的旧响应回填。隐藏浏览器冒烟阻断全部 HTTP(S) 并使用匿名假数据，所以只证明本地客户端边界，不证明生产传输。
 
 ### 4.3 AI 配置与凭据边界
 

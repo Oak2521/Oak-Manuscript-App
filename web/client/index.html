@@ -108,6 +108,20 @@
       <p id="sync-history-status" class="notice" role="status" aria-live="polite"></p>
       <div id="sync-history-list" class="sync-history-list"></div>
     </section>
+
+    <section id="license-account-panel" class="license-account-panel" aria-labelledby="license-account-title" hidden>
+      <div class="section-heading">
+        <div>
+          <p class="step">账号后台</p>
+          <h2 id="license-account-title">订阅与设备</h2>
+        </div>
+        <button id="refresh-license-account" class="secondary" type="button">刷新状态</button>
+      </div>
+      <p>这里只显示订阅有效期和登记设备，不读取或显示稿件、项目、文件名、路径、内容哈希或 AI 设置。</p>
+      <p class="privacy-note">撤销设备必须逐台确认。撤销不会删除该设备上的本地项目或导出；设备之后刷新权益时不再获得 Pro 权限。</p>
+      <p id="license-account-status" class="notice" role="status" aria-live="polite"></p>
+      <div id="license-device-list" class="license-device-list"></div>
+    </section>
   </main>
 
   <footer>
@@ -119,6 +133,7 @@
   <script defer src="/assets/js/config.js"></script>
   <script defer src="/assets/js/auth.js"></script>
   <script defer src="./client-contract.js"></script>
+  <script defer src="./license-account-controller.js"></script>
   <script defer src="./app.js"></script>
 </body>
 </html>

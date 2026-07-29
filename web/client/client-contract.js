@@ -35,6 +35,8 @@
     "document", "citation", "versions", "counts", "external_validation", "export_state",
     "created_at", "authorized_at",
   ]);
+  var LICENSE_ACCOUNT_PATH = "/manuscript/api/v1/account/license";
+  var DEVICE_PATTERN = /^device-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
   function includes(list, value) { return list.indexOf(value) !== -1; }
 
@@ -237,12 +239,103 @@
     return Object.freeze({ idempotencyId: input.idempotency_id });
   }
 
+  function parseLicenseDevice(input, expectedState) {
+    if (!exactKeys(input, ["device_id", "device_state", "first_seen_at", "last_seen_at", "revoked_at"]) ||
+        typeof input.device_id !== "string" || !DEVICE_PATTERN.test(input.device_id) ||
+        !includes(["active", "revoked"], input.device_state) ||
+        (expectedState && input.device_state !== expectedState) ||
+        !canonicalTime(input.first_seen_at) || !canonicalTime(input.last_seen_at) ||
+        Date.parse(input.first_seen_at) > Date.parse(input.last_seen_at) ||
+        (input.device_state === "active" ? input.revoked_at !== null :
+          (!canonicalTime(input.revoked_at) || Date.parse(input.revoked_at) < Date.parse(input.first_seen_at)))) {
+      throw new TypeError("网站订阅与设备响应非法");
+    }
+    return Object.freeze({
+      deviceId: input.device_id,
+      deviceState: input.device_state,
+      firstSeenAt: input.first_seen_at,
+      lastSeenAt: input.last_seen_at,
+      revokedAt: input.revoked_at,
+    });
+  }
+
+  function parseLicenseEntitlement(input) {
+    if (input === null) return null;
+    if (!exactKeys(input, ["entitlement_state", "not_before", "valid_until", "grace_until"]) ||
+        !includes(["active", "revoked"], input.entitlement_state) ||
+        !canonicalTime(input.not_before) || !canonicalTime(input.valid_until) ||
+        !canonicalTime(input.grace_until) ||
+        Date.parse(input.not_before) > Date.parse(input.valid_until) ||
+        Date.parse(input.valid_until) > Date.parse(input.grace_until)) {
+      throw new TypeError("网站订阅与设备响应非法");
+    }
+    return Object.freeze({
+      entitlementState: input.entitlement_state,
+      notBefore: input.not_before,
+      validUntil: input.valid_until,
+      graceUntil: input.grace_until,
+    });
+  }
+
+  function parseLicenseAccountOverview(input) {
+    if (!exactKeys(input, ["schema_version", "account_type", "entitlement", "devices", "truncated"]) ||
+        input.schema_version !== "1.0" || input.account_type !== "oak_manuscript_license_account" ||
+        !Array.isArray(input.devices) || input.devices.length > 20 || typeof input.truncated !== "boolean") {
+      throw new TypeError("网站订阅与设备响应非法");
+    }
+    var devices = input.devices.map(function (item) { return parseLicenseDevice(item); });
+    if (new Set(devices.map(function (item) { return item.deviceId; })).size !== devices.length) {
+      throw new TypeError("网站订阅与设备响应非法");
+    }
+    return Object.freeze({
+      entitlement: parseLicenseEntitlement(input.entitlement),
+      devices: Object.freeze(devices),
+      truncated: input.truncated,
+    });
+  }
+
+  function licenseDisplayState(overview, nowInput) {
+    if (!overview || typeof overview !== "object" || !Object.prototype.hasOwnProperty.call(overview, "entitlement")) {
+      throw new TypeError("订阅状态输入非法");
+    }
+    if (overview.entitlement === null) return "free";
+    var now = nowInput instanceof Date ? nowInput : new Date(nowInput);
+    if (Number.isNaN(now.getTime())) throw new TypeError("订阅状态时间非法");
+    var entitlement = overview.entitlement;
+    if (entitlement.entitlementState === "revoked") return "revoked";
+    if (now.getTime() < Date.parse(entitlement.notBefore)) return "not_yet_valid";
+    if (now.getTime() <= Date.parse(entitlement.validUntil)) return "active";
+    if (now.getTime() <= Date.parse(entitlement.graceUntil)) return "grace";
+    return "expired";
+  }
+
+  function buildLicenseDeviceRevokePayload() {
+    return Object.freeze({ schema_version: "1.0", action: "revoke_device" });
+  }
+
+  function licenseDeviceRevokePath(deviceId) {
+    if (typeof deviceId !== "string" || !DEVICE_PATTERN.test(deviceId)) throw new TypeError("设备标识非法");
+    return LICENSE_ACCOUNT_PATH + "/devices/" + deviceId + "/revoke";
+  }
+
+  function parseLicenseDeviceRevokeResponse(input) {
+    if (!exactKeys(input, ["schema_version", "outcome", "device"]) || input.schema_version !== "1.0" ||
+        input.outcome !== "revoked") throw new TypeError("网站设备撤销响应非法");
+    return Object.freeze({ outcome: "revoked", device: parseLicenseDevice(input.device, "revoked") });
+  }
+
   return Object.freeze({
     MAX_BYTES: MAX_BYTES,
     buildCreatePayload: buildCreatePayload,
     formatFromFilename: formatFromFilename,
     mediaTypeForFormat: mediaTypeForFormat,
     parseJobStatus: parseJobStatus,
+    LICENSE_ACCOUNT_PATH: LICENSE_ACCOUNT_PATH,
+    buildLicenseDeviceRevokePayload: buildLicenseDeviceRevokePayload,
+    licenseDeviceRevokePath: licenseDeviceRevokePath,
+    licenseDisplayState: licenseDisplayState,
+    parseLicenseAccountOverview: parseLicenseAccountOverview,
+    parseLicenseDeviceRevokeResponse: parseLicenseDeviceRevokeResponse,
     parseSyncDeleteResponse: parseSyncDeleteResponse,
     parseSyncRecordList: parseSyncRecordList,
     syncRecordPath: syncRecordPath,

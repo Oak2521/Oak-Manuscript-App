@@ -2,7 +2,24 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.46 规范化订阅事件与设备管理服务源码
+## 最新验证结论：0.1.0-alpha.47 网站订阅与设备管理客户端源码
+
+验证日期：2026-07-29。本轮未联网、未调用真实账号/支付或数据库服务，未执行 SQL、部署、修改官网、推送或重新打包。
+
+| 项目 | 结果 | 证据与边界 |
+|---|---|---|
+| 客户端 TDD | **PASS** | 初始因 `license-account-controller.js` 不存在按预期失败；实现后加入“撤销失败错误不得被重绘覆盖”回归并先复现失败；最终新增/相关专项 12/12，较宽客户端/服务链 57/57 |
+| exact 数据边界 | **PASS** | overview/revoke 严格拒绝未知字段、非法/重复/超量设备、非规范时间与服务端自报账号字段；撤销固定路径和 `{}` JSON，不显示完整 device ID |
+| 客户端状态机 | **PASS** | active/revoked 卡片、逐台原生确认、失败可见/按钮恢复、成功 exact 消费、退出清空、旧异步响应 generation 隔离均覆盖 |
+| Web 客户端隐藏 smoke | **PASS（匿名假服务）** | 实际 `web/client/index.html`；桌面 1440 与移动 390 截图在 `out/web-client-smoke/`；HTTP(S) 请求 0，完整设备 ID 未泄露，撤销前有效按钮 1、撤销后 0 |
+| 全量测试 | **PASS** | `npm test` 退出码 0；Node 654 total / 647 pass / 0 fail / 7 skip，4.091 秒；Python 362 / 0 failures / 0 errors / 3 skipped，102.510 秒；墙钟约 111 秒 |
+| 源码 Electron smoke | **PASS** | 独立隐藏运行，Renderer sandbox 保持；`out/source-smoke/runs/ms5vaowt-9d9cd8ae2b355871/projects/`；未配置账号/权益/AI 网络目标 |
+| 资源与运行时门禁 | **PASS（alpha）** | loose 96 文件 / 2,158,481 字节；manifest `098e520b793a041036313fbda532f41cd435d732a2ba7cb03840b4f0093e3e8f`，anchor `d9bf27a96d61ffe5d30a077a280ebfa7349f3d6a836367c02bdcf7f04d2af7f9`；Windows alpha、fuse config、Electron 43.1.0 runtime 与发行身份结构通过 |
+| 生产账号/订阅与发行 | **未运行/未完成** | 浏览器只使用匿名内存假服务；未迁移/部署；撤销后桌面刷新纵向链未完成；alpha.47 未打包，最新 Windows 制品仍为未签名 alpha.42 |
+
+结论：alpha.47 证明网站客户端能安全消费既有账号权益/设备 API，并完成明确撤销交互；它不证明真实 GoTrue、Supabase、支付商、官网部署或桌面撤销刷新已经联调。
+
+## 历史验证结论：0.1.0-alpha.46 规范化订阅事件与设备管理服务源码
 
 验证日期：2026-07-29。本轮未联网、未调用真实账号/支付或数据库服务，未选择支付商、验证真实 webhook、注入生产秘密、执行 SQL、部署、修改官网、推送或重新打包。
 

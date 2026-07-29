@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-29
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.46`
+> 当前版本：`0.1.0-alpha.47`
 > 当前分支：`chatgpt/commercial-v1`
-> 当前源码本地标签：`chatgpt-v0.1.0-alpha.46-subscription-devices`；既有 `chatgpt-v0.1.0-alpha.45-entitlement-issuer` 为服务端签发检查点，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据
+> 当前源码本地标签：`chatgpt-v0.1.0-alpha.47-web-license-account`；既有 `chatgpt-v0.1.0-alpha.46-subscription-devices` 为设备服务检查点，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,16 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.47 网站订阅与设备管理客户端源码
+
+- `web/client/` 新增订阅状态与设备列表控制器，消费 alpha.46 固定 owner 路由；public overview 必须通过 exact schema、唯一/最多 20 台设备、规范时间与顺序校验，显示状态沿用桌面 `valid_until` / `grace_until` 边界；
+- 页面只显示设备 ID 末尾掩码。每台有效设备撤销前强制 `window.confirm`，只发送固定空对象 JSON；成功仅消费 exact revoke 响应，失败保留错误并重新启用按钮，不在前端猜测服务端状态；
+- 登录成功后并行读取 SyncRecord 与订阅设备；退出登录立即隐藏并清空账号数据，generation token 阻止过期请求回填。客户端不持久化权益/设备，不使用 `innerHTML`，不接受或显示稿件、路径、文件身份字段；
+- 新增 6 项 Node 客户端契约测试；最终 `npm test`：Node 654 total / 647 pass / 0 fail / 7 skip（4.091 秒），Python 362 / 0 failures / 0 errors / 3 skipped（102.510 秒），墙钟约 111 秒。相关客户端/服务 57/57，新增文件专项 12/12；
+- 隐藏 Chromium 使用实际 `web/client/index.html` 与匿名内存假服务完成桌面/移动布局和撤销流程，阻断并确认 HTTP(S) 请求 0、完整 device ID 未出现在页面；证据在 `out/web-client-smoke/desktop.png` 与 `mobile.png`。隐藏 Electron 源码 smoke PASS，输出 `out/source-smoke/runs/ms5vaowt-9d9cd8ae2b355871/projects/`；
+- 资源信任仍为 96 文件 / 2,158,481 字节，manifest `098e520b…e8f`，anchor `d9bf27a9…7f9`；Windows alpha/运行时/fuse/发行身份结构门禁通过，销售门禁仍保留既有阻断；
+- 本轮未联网，未读取或写入真实账号/支付/数据库，未执行 SQL、部署、修改官网、推送或重新打包。当前页面只是未部署源码；支付商 webhook、真实迁移/API/账号联调和撤销后桌面刷新纵向 E2E 仍未完成。
 
 ### 已完成：0.1.0-alpha.46 规范化订阅事件与设备管理服务源码
 
@@ -614,7 +624,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - Windows：alpha.37 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke、schema v2 发布证据，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：临时作业链保持；alpha.38 另实现 SyncRecord 独立服务验证、同源 API、GoTrue/runtime、Supabase repository/002 迁移源码。生产环境/真实账号与 Blobs/Postgres E2E、病毒库/平台扫描、容器/OS 禁网与资源隔离、计费和官网嵌入仍未实现；
-- 账号/订阅/同步：离线 Provider/Free+Pro、逐字段确认、OS 加密队列和重启恢复、桌面 PKCE/加密 token-store/条件 main 接线、SyncRecord 服务链、签名权益、规范化订阅事件及属主设备管理服务源码已实现；默认账号/权益配置仍为空，生产私钥不存在，真实 PKCE/刷新、支付商 webhook 验签适配、网站设备 UI、Supabase 迁移/部署和网站后台未连接；
+- 账号/订阅/同步：离线 Provider/Free+Pro、逐字段确认、OS 加密队列和重启恢复、桌面 PKCE/加密 token-store/条件 main 接线、SyncRecord 服务链、签名权益、规范化订阅事件、属主设备管理服务及网站订阅/掩码设备客户端源码已实现；默认账号/权益配置仍为空，生产私钥不存在，真实 PKCE/刷新、支付商 webhook 验签适配、Supabase 迁移/部署和网站后台未连接；
 - AI：Ollama 0.32.5 + qwen3:4b 与 LM Studio llmster 0.0.20+1 + 同一 Qwen3 4B GGUF 已分别通过一个匿名连续空格问题的窄范围验收；其他版本/模型/硬件、多模型语义、多规则/真实稿件质量、官方云、远程 TLS 与湖岸 AI 仍未验收；
 - 标准库：治理结构和引用解析政策已完成，13 项标准、35 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
 - 标准升级：本地验证、签名包导入/回滚骨架、项目固定与显式升级已编码；生产 trust pin、在线获取/下载、签名撤回分发与联网自动更新未实现；
@@ -643,8 +653,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划。近期直接闭合“账号 → 权益 → 检查 → 明确同步”主链：
 
-1. alpha.46 已完成规范化订阅/退款/宽限事件摄入与属主设备列表/撤销服务源码；下一项直接补网站账号后台的订阅状态、设备列表和确认撤销客户端，保持稿件内容、文件身份与权益数据物理分离；
-2. 网站客户端完成后，把账号 → 订阅状态 → 设备撤销 → 桌面刷新权益串成一组无真实秘密的纵向 UI 测试，不把 fake service 写成线上可用；
+1. alpha.47 已完成网站账号后台的订阅状态、掩码设备列表和逐台确认撤销客户端；下一项把账号 → 订阅状态 → 网站撤销设备 → 桌面刷新权益串成一组无真实秘密的仓库内纵向测试，不把 fake service 写成线上可用；
+2. 该纵向链必须复用真实服务端签名和桌面验签/缓存状态机，验证撤销后桌面降为 Free 且本地项目不锁定；浏览器、服务和桌面之间只传协议允许的 content-free 数据；
 3. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，才填充 `desktop-auth.json` / `desktop-license.json`，执行真实 PKCE、数据库迁移、RLS、签发刷新、撤销和网站后台 E2E；
 4. OpenAI、Anthropic、Gemini 官方云适配仍必须先核对当前官方协议；不得套用 compatible 形状或凭记忆猜测，但不排在账号/订阅主线之前；
 5. 其后关闭发行门禁：具名许可/再分发签核、发行身份、Ace 自带浏览器/OS 隔离、Windows Authenticode/真实安装生命周期、macOS 双架构签名/公证/实机、Web 生产零留存；经联网授权后再核验标准官方来源和签名更新 transport。

@@ -1,13 +1,14 @@
 {
   "name": "oak-manuscript",
   "productName": "湖岸稿件 Oak Manuscript",
-  "version": "0.1.0-alpha.46",
+  "version": "0.1.0-alpha.47",
   "private": true,
   "description": "本地优先的稿件检查与修订桌面应用（Electron 壳 + Python 零依赖检查核心）",
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
     "smoke": "node scripts/run_source_smoke.js",
+    "smoke:web-client": "node scripts/run_web_client_smoke.js",
     "test": "npm run test:node && npm run test:python",
     "test:node": "node --test \"tests/*.test.js\"",
     "test:python": "python scripts/run_tests.py",

@@ -1,6 +1,6 @@
 # Web 作业契约与同源 HTTP handler（alpha）
 
-`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.38 以独立服务/API/Supabase/runtime 实现长期 SyncRecord，alpha.44 为 `client/` 增加当前账号历史列表/刷新/属主删除；alpha.45 实现未部署的签名权益签发链；alpha.46 以 `subscription-event-*`、`license-account-*` 和 `supabase/004_subscription_events_and_devices.sql` 增加规范化订阅事件及当前账号设备管理服务。源码可本机测试，但临时作业、长期同步与订阅权益均不是已上线生产服务。
+`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.38 以独立服务/API/Supabase/runtime 实现长期 SyncRecord，alpha.44 为 `client/` 增加当前账号历史列表/刷新/属主删除；alpha.45 实现未部署的签名权益签发链；alpha.46 以 `subscription-event-*`、`license-account-*` 和 `supabase/004_subscription_events_and_devices.sql` 增加规范化订阅事件及当前账号设备管理服务；alpha.47 为 `client/` 增加订阅状态、掩码设备列表与逐台确认撤销。源码可本机测试，但临时作业、长期同步与订阅权益均不是已上线生产服务。
 
 Web 服务端依赖与 Electron 桌面依赖隔离：
 
@@ -47,7 +47,14 @@ alpha.46 订阅事件与设备管理固定：
 - 事件以 canonical JSON SHA-256 和 provider event ID 实现 `applied|replayed|stale|conflict`，旧事件不能覆盖较新权益；支付商签名验证仍属于尚未实现的独立适配器；
 - 账号路由固定为 `GET /manuscript/api/v1/account/license` 与 `POST /manuscript/api/v1/account/license/devices/:device_id/revoke`；HTTPS/Bearer 必需，POST 另要求 exact same-origin；
 - overview 只返回公开权益时间窗与最多 20 台设备；撤销只作用于当前 owner，不存在/外来设备统一 404；错误与 audit 不含账号、设备实值、token 或稿件；
-- `supabase-entitlement-repository.js` 只允许四个 RPC；004 migration 增加 content-free event table、来源元数据、事件 apply、账号 overview 和 owner revoke。当前只有静态/注入验证，没有真实 PostgreSQL/Supabase 执行或网站客户端。
+- `supabase-entitlement-repository.js` 只允许四个 RPC；004 migration 增加 content-free event table、来源元数据、事件 apply、账号 overview 和 owner revoke。当前只有静态/注入验证，没有真实 PostgreSQL/Supabase 执行；alpha.47 客户端也尚未部署。
+
+alpha.47 网站订阅与设备客户端固定：
+
+- `client/client-contract.js` exact parse public overview/revoke，拒绝未知/重复/超量设备与非规范时间，显示状态沿用桌面 valid/grace 边界；
+- `client/license-account-controller.js` 只显示 device ID 末尾掩码；每台有效设备撤销前要求原生确认，固定 POST `{}`，失败保持可见并允许重试；
+- 登录后与 SyncRecord 并行加载；退出立即清空，generation token 阻止旧请求回填；不持久化权益/设备、不接触稿件内容；
+- `npm run smoke:web-client` 使用隐藏 Chromium、实际页面与匿名内存假服务，阻断 HTTP(S)；截图写入仓库忽略的 `out/web-client-smoke/`。它不证明真实账号、API 或部署。
 
 alpha.23—alpha.31 固定：
 

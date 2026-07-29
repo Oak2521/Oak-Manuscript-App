@@ -2,14 +2,14 @@
 
 > 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.46 源码）
+## Provider 一览（当前 alpha.47 源码）
 
-alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI；alpha.44 增加桌面签名权益验证和网站同步历史客户端；alpha.45 增加独立签发链；alpha.46 增加规范化订阅事件和当前账号设备管理 API/runtime/SQL。受信账号与权益配置仍为 `pending_configuration` 且端点/key/公钥为空；数据库迁移未执行、API 与客户端未部署，因此普通 APP 仍不登录、刷新订阅或同步。商业仓库没有真实 service-role key、OAuth 配置、权益私钥或 AI key。
+alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI；alpha.44 增加桌面签名权益验证和网站同步历史客户端；alpha.45 增加独立签发链；alpha.46 增加规范化订阅事件和当前账号设备管理 API/runtime/SQL；alpha.47 增加网站订阅状态、掩码设备列表和逐台确认撤销客户端。受信账号与权益配置仍为 `pending_configuration` 且端点/key/公钥为空；数据库迁移未执行、API 与客户端未部署，因此普通 APP 仍不登录、刷新订阅或同步。商业仓库没有真实 service-role key、OAuth 配置、权益私钥或 AI key。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
 | `AuthProvider` | 系统浏览器 Authorization Code + PKCE S256/state、固定 Windows/macOS 深链、safeStorage token-store、刷新身份复核已完成离线源码/注入测试；默认配置为空时返回 `configuration_required`，不打开页面、不联网 | 在获准预生产环境核对正式 OAuth/OIDC、nonce/ID-token 取舍、真实刷新/退出/撤销、邮箱与 Google OAuth |
-| `LicenseProvider` | alpha.44 已实现桌面受信配置/验签/加密缓存；alpha.45 已实现独立签发；alpha.46 已实现规范化订阅事件与账号设备列表/撤销服务；默认配置为空，仓库无生产私钥 | 选择支付商并实现原始 webhook 验签适配、网站设备管理 UI、私钥托管/轮换，执行迁移并填充生产配置完成真实 E2E；价格未拍板 |
+| `LicenseProvider` | alpha.44 已实现桌面受信配置/验签/加密缓存；alpha.45 已实现独立签发；alpha.46 已实现规范化订阅事件与账号设备服务；alpha.47 已实现未部署的网站管理客户端；默认配置为空，仓库无生产私钥 | 选择支付商并实现原始 webhook 验签适配、私钥托管/轮换，执行迁移、部署客户端并填充生产配置完成真实 E2E；价格未拍板 |
 | `EvaluationProvider` | 用户点击后返回固定湖岸 HTTPS 评估页 URL，由主进程白名单校验并交给系统浏览器打开；APP 不在该 Provider 中生成或上传摘要 | 用户确认后提交脱敏摘要（§8.3–§8.4） |
 | `SyncProvider` | 可信 Python 来源 → exact 校验 → 完整预览 → 四选一确认 → 按账户 OS 加密队列；服务/API/Supabase、桌面 client/coordinator 和网站列表/属主删除 client 已有源码；默认无端点，迁移/服务/页面未部署 | 填充受信正式配置，完成预生产迁移、真实 E2E 与官网账号后台部署 |
 | `StandardsProvider` | 离线验证内置 release；本地签名包预览/安装/全局回滚、项目固定版本与显式升级已实现；生产 trust pin 缺失时导入禁用 | 用户主动触发的在线检查/下载、签名与撤回分发、可观测回滚；绝不上传稿件 |
@@ -52,7 +52,7 @@ alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；al
 
 网站同源账号后台可调用 `GET /manuscript/api/v1/account/license` 获取 content-free 权益状态和最多 20 台设备，调用 `POST /manuscript/api/v1/account/license/devices/:device_id/revoke` 明确撤销一台属主设备。两条路由都要求 HTTPS 与 GoTrue Bearer，POST 另要求 exact same-origin；不存在和外来设备不可区分。浏览器 bundle 不持有 service-role key，公开响应不返回账号、权益 ID 或 revision。
 
-`web/supabase/004_subscription_events_and_devices.sql` 增加事件表、权益来源列和三个 service-role-only RPC。它必须在 001—003 之后执行。当前 SQL 未在真实 PostgreSQL/Supabase 解析或运行，网站 client 也尚未加入订阅/设备界面，因此不能称为设备自助后台已完成。
+`web/supabase/004_subscription_events_and_devices.sql` 增加事件表、权益来源列和三个 service-role-only RPC。它必须在 001—003 之后执行。alpha.47 的 `client-contract.js` 与 `license-account-controller.js` 已加入订阅状态、最多 20 台设备、设备 ID 末尾掩码和逐台原生确认撤销；退出会清空，失败允许重试，旧响应不能在退出后回填。当前 SQL 未在真实 PostgreSQL/Supabase 解析或运行，客户端也未部署，因此不能称为线上设备自助后台已完成。
 
 ## Web 作业契约 v1、HTTP/GoTrue/Fetch/Blobs/Postgres/inspection/worker/result/cleanup 与账号适配（alpha.31）
 
@@ -90,7 +90,7 @@ alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；al
 | `POST` | `/manuscript/api/v1/jobs/:job_id/cancel` | 明确取消并触发删除 | 200 |
 | `DELETE` | `/manuscript/api/v1/jobs/:job_id` | 删除任务内容并取得回执 | 200 |
 
-部署必须用服务端环境分别注入 Supabase origin、GoTrue 所需 API key 和仅供 repository 使用的 service-role key；任何 service-role 值都不得进入浏览器、客户端 bundle、日志、错误、inspector 或 processor。不能本地无验签解码 JWT，也不能把请求正文、普通代理头或浏览器自报角色映射为 principal。Cookie 部署则返回带 `csrf_token` 的 cookie session。反向代理只能从受信基础设施信息判断 HTTPS，不能直接信任客户端 `X-Forwarded-Proto`。Blobs store 必须为站点级强一致配置，私有计划任务应调用 `ZeroRetentionSweeper.runCycle()` 并对失败、pending、非法键和截断告警；metadata 本身不是自动 TTL。本地报告固定不宣称生产零留存。`web/client/` 已有登录/注册、默认引用、单任务同意、创建/上传/轮询/取消/一次性领取，以及 SyncRecord 列表/刷新/属主删除 UI；当前仍没有生产迁移/容器部署、OS 级禁网、病毒库/平台恶意软件扫描、订阅计费、真实生命周期证明或官网部署。
+部署必须用服务端环境分别注入 Supabase origin、GoTrue 所需 API key 和仅供 repository 使用的 service-role key；任何 service-role 值都不得进入浏览器、客户端 bundle、日志、错误、inspector 或 processor。不能本地无验签解码 JWT，也不能把请求正文、普通代理头或浏览器自报角色映射为 principal。Cookie 部署则返回带 `csrf_token` 的 cookie session。反向代理只能从受信基础设施信息判断 HTTPS，不能直接信任客户端 `X-Forwarded-Proto`。Blobs store 必须为站点级强一致配置，私有计划任务应调用 `ZeroRetentionSweeper.runCycle()` 并对失败、pending、非法键和截断告警；metadata 本身不是自动 TTL。本地报告固定不宣称生产零留存。`web/client/` 已有登录/注册、默认引用、单任务同意、创建/上传/轮询/取消/一次性领取、SyncRecord 列表/刷新/属主删除，以及订阅状态/掩码设备/逐台确认撤销 UI；当前仍没有生产迁移/容器部署、OS 级禁网、病毒库/平台恶意软件扫描、订阅计费、真实生命周期证明或官网部署。
 
 ## 网站侧待建页面
 

@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.47（ChatGPT 网站订阅与设备管理客户端）
+
+> 源码检查点；本轮未联网、未使用真实账号或数据库、未执行迁移、未部署或打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。
+
+- 网站账号后台新增 content-free 订阅状态和设备列表；客户端 strict parser 拒绝未知字段、重复/超量设备与非规范时间，并按桌面相同边界计算 `free|not_yet_valid|active|grace|expired|revoked`；
+- 设备卡片只显示设备 ID 后缀；每台有效设备撤销前强制原生明确确认，固定同源 Bearer POST，成功消费 exact 响应，失败保持错误可见并恢复按钮；
+- 退出登录立即清空订阅/设备区域，generation token 阻止旧异步响应回填；不使用 `innerHTML`、浏览器持久化或稿件/文件字段；
+- 新增 6 项客户端契约测试与隐藏 Chromium 页面冒烟；冒烟使用匿名内存假服务并阻断全部 HTTP(S)，桌面/移动布局均通过，撤销前后状态与完整设备 ID 不泄露均通过；
+- APP/Python core/桌面与 Web lockfile 升至 alpha.47；全量回归 Node 654/647/0/7、Python 362/0/0/3；资源信任 96 文件 / 2,158,481 字节，manifest `098e520b…e8f`，anchor `d9bf27a9…7f9`；隐藏 Electron 源码 smoke PASS；
+- 支付商 webhook 验签适配、真实 PostgreSQL/Supabase 迁移/RLS/并发、生产账号/API/网站部署、网站撤销后桌面刷新纵向链和新安装包仍未完成。
+
 ### 2026-07-29 — 0.1.0-alpha.46（ChatGPT 规范化订阅事件与设备管理服务源码）
 
 > 源码检查点；本轮未联网、未接真实支付商、未执行迁移、未部署或打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。
