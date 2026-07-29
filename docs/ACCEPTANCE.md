@@ -2,6 +2,17 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.43 LM Studio headless 窄验收与模型身份拒绝（2026-07-29）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.43`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] LM Studio 官方安装脚本固定 `llmster 0.0.20-1`；full ZIP 881,662,805 字节且官方 SHA-512 匹配；ZIP 路径审计通过；没有执行安装脚本或修改真实用户 PATH/启动项；
+- [x] HOME/APPDATA/TEMP、bootstrap、模型硬链接、日志和证据全部在仓库 `out/`；API 只绑定 `127.0.0.1:12400`，测试后模型/API/daemon 已停止且源 GGUF SHA-256 不变；
+- [x] 固定 `llmster 0.0.20+1` / SHA-256 `a39c907b…9c43` 与 Qwen3 4B Q4_K_M / 2,497,280,480 字节 / `3e4cb141…4e4f`；原生和 compatible 模型清单均确认固定 API identifier；
+- [x] 真实成功路径证明预览 0 请求、确认后 1 请求、`memory_only`、不自动写回，人工接受不改稿、不保存建议正文；100 ms 超时映射 `AI_SERVICE_TIMEOUT` 且 plan 不可重放；
+- [x] 真实发现未知 model 会被服务端静默替换；alpha.43 强制 LM Studio 响应 model 与请求一致，替换映射 `AI_SERVICE_INCOMPATIBLE`；普通文本只允许精确空 `tool_calls: []`，非空/非数组工具调用仍拒绝；
+- [x] canonical 证据 1,661 字节 / SHA-256 `a5f1fb5b…b3e9`，不含建议正文；完整回归 Node 599 / Python 362 零失败；独立隐藏 alpha.43 源码 smoke PASS；
+- [ ] `llmster.exe` 无 Authenticode 签名；桌面 GUI、其他版本/模型/硬件、多模型语义、macOS、远程 TLS、宽泛质量与再分发许可仍未验收；最新 Windows 安装包仍为未签名 alpha.42。
+
 ## 0.1.0-alpha.42 真实 Ollama 外部兼容补充验收（2026-07-29）
 
 - [x] 官方 Windows standalone ZIP 固定为 Ollama `0.32.5`，1,457,824,795 字节及 SHA-256 与 release asset digest 一致；服务 `/api/version` 精确返回 `0.32.5`；

@@ -35,13 +35,13 @@
 | `ai-request.js` | 绑定可信单条上下文的请求预览/一次确认、稳定故障分类、失败后重新预览与内存态人工审阅；采纳只经核心记录问题状态，永不直接改稿 |
 | `ai-http-client.js` | compatible 三类已接线的供应商无关 POST/JSON 客户端；固定 HTTPS/loopback、禁重定向/代理转发/Cookie，限制头、请求、响应和超时 |
 | `ai-transport-router.js` | exact 适配器路由；拒绝未知 provider、配置漂移、凭据 URL/响应回显和未净化适配错误 |
-| `ai-openai-compatible-adapter.js` | 只注册 OpenAI-compatible/Ollama/LM Studio 的固定非流式 Chat Completions 请求与唯一文本响应 |
+| `ai-openai-compatible-adapter.js` | 只注册 OpenAI-compatible/Ollama/LM Studio 的固定非流式 Chat Completions；LM Studio 额外核对响应 model，只允许空工具数组或唯一文本响应 |
 
 安全基线：`contextIsolation=true`、`sandbox=true`、`nodeIntegration=false`、固定 CSP/IPC、导航和新窗口拦截。默认 session 在正常启动时永久离线；未来获授权联网能力必须用独立受限通道，不能解除该基线。完整说明见 `docs/PRIVACY_AND_SECURITY.md`。
 
 打包安全另由 `scripts/electron_fuse_policy.js` 固定：必须启用 ASAR 与 embedded integrity、用顶层 `@electron/fuses 2.1.3` 显式设置 Electron 43 全部 9 项，并在 electron-builder 后从真实应用二进制读回。索引 8 已定义为 `WasmTrapHandlers`；未来未知 wire 项仍 fail-closed。alpha.10 已把 Ace 迁移到 `utilityProcess` 并固定 `RunAsNode=false`。详见 `docs/ELECTRON_FUSE_POLICY.md`。
 
-当前源码的 `resource-trust-anchor.json` 绑定应用 loose 文件（含发行身份、同步队列、Web 作业/同步 HTTP 错误与审计 exact schema、AI 请求预览/审阅 schema）的 canonical 清单和目标平台四类运行锁；精确文件数、字节数与摘要以 `docs/TEST_REPORT.md` 为准。alpha.42 已生成并通过真实 packaged 锚点、ASAR、fuse 与隐藏 smoke 复验。Windows Python/EpubCheck/JRE/Electron/builder 锁再分别绑定五类官方来源证据摘要；packaged 门禁从真实 ASAR 读取 production `package.json` 与 `oakReleaseIdentity`。
+当前源码的 `resource-trust-anchor.json` 绑定应用 loose 文件（含发行身份、同步队列、Web 作业/同步 HTTP 错误与审计 exact schema、AI 请求预览/审阅 schema）的 canonical 清单和目标平台四类运行锁；精确文件数、字节数与摘要以 `docs/TEST_REPORT.md` 为准。alpha.43 源码锚点已复验；最新真实 packaged 锚点、ASAR、fuse 与隐藏 smoke 仍对应 alpha.42。Windows Python/EpubCheck/JRE/Electron/builder 锁再分别绑定五类官方来源证据摘要；packaged 门禁从真实 ASAR 读取 production `package.json` 与 `oakReleaseIdentity`。
 
 PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专用 CSP 只允许自包含 HTML 所需的内联样式和 `data:` 图片。加载报告前后核对文件身份，拒绝项目根/`exports`/报告/目标的 symlink、junction/reparse、硬链接和目录身份换入，最后同目录原子写入。
 
@@ -51,6 +51,6 @@ PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专�
 
 账号与同步 IPC 不接受 Renderer 自带的负载、token、URL 或 transport；主进程通过固定 `sync-source` 命令取值并重建 SyncRecord v1。alpha.39 只在受信账号配置完整且 safeStorage 可用时实例化系统浏览器 PKCE、token/user client 与 Sync coordinator；默认 `pending_configuration` 没有任何网络目标。Renderer 只能查询状态、发起登录或逐项发送/重试，令牌/verifier 永不跨 preload。远端创建或幂等重放后才删除本机队列，失败和账号切换保留记录。详见 `docs/SYNC_RECORD_V1.md`。
 
-AI transport 不接受 Renderer 自报 URL、凭据或任意负载。`AIProvider` 从 OS 加密设置生成绑定，`AIRequestCoordinator` 从受信 Python core 读取单条问题并公开完整发送预览；只有一次确认后才把绑定与同一语义请求交给 Router。alpha.41 只注册 OpenAI-compatible、Ollama、LM Studio；alpha.42 把净化后的底层失败收敛为七类安全用户错误，失败消费旧计划并要求重新预览/再次确认。真实 `127.0.0.1` HTTP 测试证明请求和连接重置路径，但不替代真实产品兼容或质量验收；官方云和湖岸 AI 仍不可用。
+AI transport 不接受 Renderer 自报 URL、凭据或任意负载。`AIProvider` 从 OS 加密设置生成绑定，`AIRequestCoordinator` 从受信 Python core 读取单条问题并公开完整发送预览；只有一次确认后才把绑定与同一语义请求交给 Router。alpha.41 只注册 OpenAI-compatible、Ollama、LM Studio；alpha.42 收敛七类安全错误并强制失败后重新预览；alpha.43 进一步拒绝 LM Studio 静默模型替换，只允许文本响应中的精确空 `tool_calls` 数组。Ollama 与 LM Studio 各一固定组合有窄证据，但官方云、其他组合和湖岸 AI 仍不可用或未验收。
 
 当次全量 Node/Python、source/packaged smoke、safeStorage 队列恢复、真实 fuse/ASAR/资源/production package identity、provenance 与发布证据，以仓库 `docs/TEST_REPORT.md` 为唯一事实来源；本文件不在 ASAR 中固化易过期的运行根、计数或制品哈希。完整发行身份、五类运行/构建资源人工签署、代码签名和其余 packaged sale blocker 在对应门禁关闭前始终有效。

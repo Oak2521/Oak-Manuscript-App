@@ -8,7 +8,7 @@ P0 批量修复界面遵循“计划—集中预览—一次确认”：Renderer
 
 账号入口保留在欢迎页、导出页和设置页。生产认证未配置时，界面明确说明不联网；测试模拟状态不暴露给生产 Renderer。只有登录用户导出后才出现 SyncRecord v1 逐字段预览；四个选择通过 opaque 幂等 ID 确认，Renderer 不能提交任意负载。负载和队列使用 `textContent`/`replaceChildren` 渲染，不插入 HTML；设置页只显示当前账号的 OS 加密本机队列，可取消、重试、删除。只有主进程报告 transport 已配置时才显示逐项“发送到网站/确认重试并发送”，从不因登录自动发送。
 
-`app.js` 中的 `window.__oakActions` 是按钮与自动化 smoke 共用的业务动作层，不是额外特权接口。当次 source/packaged 隐藏 smoke 必须通过真实 Renderer → preload → IPC → 固定 Python bootstrap 完成 DOCX/EPUB 的引用计划确认、检查、湖岸 AI 单条发送预览/transport 缺席禁用/取消零发送、集中修复、恢复、重新修复、导出与验证，并用第二进程恢复同一 OS 加密队列。compatible 三类可在逐条确认后返回建议；alpha.42 失败时保留安全提示，把旧计划清除并只允许重新生成零请求预览，再次确认前不会重发。Renderer 提供采纳/放弃审阅，采纳只记录问题 `accepted` 状态，放弃不改变规则问题，两者均不保存模型文本或改稿。动态版本、计数和运行根不写入 ASAR，准确证据以仓库 `docs/TEST_REPORT.md` 为准。
+`app.js` 中的 `window.__oakActions` 是按钮与自动化 smoke 共用的业务动作层，不是额外特权接口。当次 source/packaged 隐藏 smoke 必须通过真实 Renderer → preload → IPC → 固定 Python bootstrap 完成 DOCX/EPUB 的引用计划确认、检查、湖岸 AI 单条发送预览/transport 缺席禁用/取消零发送、集中修复、恢复、重新修复、导出与验证，并用第二进程恢复同一 OS 加密队列。compatible 三类可在逐条确认后返回建议；失败时保留安全提示，把旧计划清除并只允许重新生成零请求预览，再次确认前不会重发。alpha.43 的 LM Studio 响应模型核对完全位于主进程，不把上游响应或模型选择权交给 Renderer。采纳/放弃均不保存模型文本或改稿。动态版本、计数和运行根不写入 ASAR，准确证据以仓库 `docs/TEST_REPORT.md` 为准。
 
 标准资源页会分别显示项目固定版本与当前全局版本。已有项目只有在用户打开完整差异并一次确认后才会升级；目标由主进程选择，Renderer 不能提交任意 digest。升级成功后清空旧问题状态并自动重检。界面提供本地签名包安装与全局回滚入口，但当前构建没有生产信任根，因此本地导入默认禁用；没有联网自动下载。这些源码闭环不等于打包版或可售卖发行证据；生产账号/订阅、已部署 Web UI/服务与 macOS 仍未实现。alpha.39 的账号和同步网络只存在于条件主进程边界，不进入 Renderer 或 default session；默认配置下界面继续把队列标为未上传。
 

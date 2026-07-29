@@ -2,7 +2,33 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.42 真实 Ollama 0.32.5 / qwen3:4b 窄范围兼容验收
+## 最新验证结论：0.1.0-alpha.43 LM Studio llmster 0.0.20+1 / Qwen3 4B 窄范围兼容验收
+
+验证日期：2026-07-29。用户已批准下载。只从 LM Studio 官方域名下载固定安装脚本、SHA-512 和 headless full ZIP；没有执行官方安装脚本。运行时、HOME/APPDATA/TEMP、模型链接、日志和证据全部位于仓库 `out/external-validation/lm-studio/llmster-0.0.20-1/`，API 只监听 `127.0.0.1:12400`。没有读取用户稿件、项目、账号或 AI 凭据，没有部署、推送、修改官网或系统 PATH/启动项。
+
+| 项目 | 结果 | 证据 |
+|---|---|---|
+| 官方 headless ZIP | **PASS** | `0.0.20-1-win32-x64.full.zip` 881,662,805 字节；官方 SHA-512 与本地完全一致；3,614 条目/展开 1,826,613,053 字节，无绝对路径、`..`、冒号或重复路径 |
+| 运行时身份 | **PASS（签名边界保留）** | `llmster --version` 为 `0.0.20+1`；`llmster.exe` SHA-256 `a39c907b…9c43`；Authenticode `NotSigned`，不能把官方下载摘要冒充二进制签名或再分发批准 |
+| 模型身份 | **PASS** | `qwen3-4b` / `oak-qwen3-4b` / qwen3 / Q4_K_M / 2,497,280,480 字节 / SHA-256 `3e4cb141…4e4f`；4,096 context；仓库内硬链接复用已固定 GGUF |
+| 真实成功路径 | **PASS** | 预览 0 请求；确认后 1 请求；推理 18,956 ms；`memory_only`、`automatic_writeback=false`；人工接受不改稿、不持久化建议 |
+| 静默模型替换 | **发现并修复，PASS** | LM Studio 对未知 model 返回 200 并改用已加载模型；alpha.43 精确核对响应 model，映射 `AI_SERVICE_INCOMPATIBLE`；旧 plan 重放为 `AI_PLAN_STALE`，无第二请求 |
+| 空工具数组兼容 | **PASS** | 普通文本响应的精确 `tool_calls: []` 被接受；非空、非数组或 `finish_reason=tool_calls` 继续 fail-closed |
+| 真实超时 | **PASS** | 100 ms client timeout 映射 `AI_SERVICE_TIMEOUT`；旧 plan 重放为 `AI_PLAN_STALE`，无第二请求 |
+| 建议质量窄判据 | **PASS** | 98 字节；识别空格问题、提出规则一致修正、不声称已改稿；只存 SHA-256 `4e71b383…8f0`，不存正文 |
+| canonical 证据 | **PASS** | `compatibility-evidence.json` 1,661 字节 / SHA-256 `a5f1fb5b7b9e610362d87c60aa2d1521934b57618c48ab4b19b8944291e4b3e9`；绑定 APP 0.1.0-alpha.43、规则包、真实规则/fixer、脚本、运行时和模型摘要 |
+| 完整 `npm test` | **PASS** | 退出码 0，墙钟 114.5 秒；Node 599 total / 592 pass / 0 fail / 7 skip（3.987 秒）；Python 362 / 0 failures / 0 errors / 3 skipped（102.521 秒） |
+| 独立隐藏源码 smoke | **PASS** | `SMOKE-RESULT: PASS`；`out/source-smoke/runs/ms5qdhf2-dd22990533467ecf/projects/`；未配置 AI、未产生模型请求 |
+| alpha.43 loose-resource 信任 | **PASS** | 84 文件 / 2,145,925 字节；manifest `9f514ae8c4c3ecf52a213ef729359c408ef34cc3f621b8baf20830751ac1c2a6`；anchor `3583f05b1e7f8b8177f45a707a695226d31f6128ab9a50ea2b996d3c4408150d` |
+| 静态打包门禁 | **PASS（alpha tier）** | `verify:resources:win`、`verify:fuses:config`、`verify:release-identity` 退出 0；发行身份 `complete=false`，17 项 source sale blocker 保留，不构成正式发布通过 |
+| 进程与源模型清理 | **PASS** | 模型卸载、API 停止、daemon down；隔离根下无残留进程；源 GGUF SHA-256 复核不变 |
+| Windows package | **未重构建** | 生产适配器和版本已变化，不能沿用 alpha.42 字节冒充 alpha.43；最新已验证 NSIS/ZIP 仍为下文 alpha.42 未签名制品 |
+
+本次真实产品验证纠正了两个 fake 无法发现的前提：LM Studio 单模型状态下不会按未知 model 返回 4xx，而会静默路由；普通文本响应固定含空 `tool_calls` 数组。最终门禁据真实行为修正为“应用拒绝模型替换”，不是伪造上游拒绝。完整下载链、命令、摘要和边界见 `docs/audits/LM_STUDIO_LLMSTER_0.0.20-1_QWEN3_4B_COMPATIBILITY.md`。
+
+证据边界：只证明 Windows 11、headless llmster 0.0.20+1、一个 Qwen3 4B GGUF、当前 alpha.43 源码和一个匿名连续空格问题；不证明 LM Studio 桌面 GUI、其他版本/模型/硬件、多模型语义、macOS、远程 TLS、真实稿件、宽泛质量、再分发许可或可售卖正式版。
+
+## 前一验证结论：0.1.0-alpha.42 真实 Ollama 0.32.5 / qwen3:4b 窄范围兼容验收
 
 验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已明确批准下载；本轮只从 Ollama 官方文档、官方 GitHub release 和官方模型库取得公开运行包/模型。没有使用用户稿件、项目、账号、AI 凭据或生产端点，没有部署、修改官网或改写系统安装状态。运行包、模型、HOME/状态、临时目录、日志和证据全部隔离在仓库 `out/external-validation/ollama/v0.32.5/`；服务只监听 `127.0.0.1:11435`，结束后已确认进程退出且端口关闭。
 

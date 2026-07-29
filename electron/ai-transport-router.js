@@ -137,7 +137,7 @@ class AITransportRouter {
       }
     }
     let parsed;
-    try { parsed = adapter.parseResponse(upstream); }
+    try { parsed = adapter.parseResponse(upstream, configuration); }
     catch { throw new AITransportRouterError("ADAPTER_FAILED", "AI 供应商响应适配失败"); }
     const result = exactKeys(parsed, RESULT_KEYS, "AI transport 结果");
     if (typeof result.text !== "string" || result.text.length < 1 ||

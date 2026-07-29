@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.43（ChatGPT LM Studio headless 窄验收与模型身份拒绝）
+
+> 源码检查点；最新已验证 Windows NSIS/ZIP 仍为 alpha.42，本轮未重构建或改称 alpha.43 制品。
+
+- 在仓库隔离目录下载并按官方 SHA-512 验证 LM Studio headless `llmster 0.0.20-1` full ZIP；不执行安装脚本，不修改真实用户 PATH/启动项，API 只绑定 `127.0.0.1:12400`。复用已固定 SHA-256 的 Qwen3 4B GGUF 硬链接，测试结束后卸载模型并关闭全部相关进程。
+- 真实服务发现 LM Studio 在单 LLM 已加载时会把未知 `model` 静默路由到已加载模型。新增 LM Studio 专属响应模型核对，替换行为 fail-closed 为 `AI_SERVICE_INCOMPATIBLE`；旧 plan 不可重放。
+- compatible parser 允许普通文本响应的精确空 `tool_calls: []`，但非空/非数组工具调用和 `finish_reason=tool_calls` 继续拒绝。
+- 新增 `scripts/run_lm_studio_compatibility.js`、3 项脚本边界测试和真实成功/替换拒绝/100 ms 超时/不落盘验收。最终 canonical 证据 1,661 字节 / SHA-256 `a5f1fb5b…b3e9`，建议正文未落证据；详见 `docs/audits/LM_STUDIO_LLMSTER_0.0.20-1_QWEN3_4B_COMPATIBILITY.md`。
+- APP、Python core、桌面/Web lockfile 升至 alpha.43；loose-resource manifest 为 84 文件 / 2,145,925 字节 / `9f514ae8…c1c2a6`，anchor `3583f05b…8150d`。完整回归 Node 599/592/0/7、Python 362/0/0/3；隐藏源码 Electron smoke PASS。
+- 没有读取用户稿件、账号或 AI 凭据，没有部署、推送或修改官网。该窄验收不是 LM Studio 桌面 GUI、其他版本/模型/硬件或产品级支持矩阵，也未完成再分发许可审计。
+
 ### 2026-07-29 — 0.1.0-alpha.42（ChatGPT compatible AI 故障恢复与真实 loopback 验收）
 
 > 本地源码标签：`chatgpt-v0.1.0-alpha.42`；最终 Windows 打包证据标签：`chatgpt-v0.1.0-alpha.42-packaged`。随后在用户批准下载后增加真实 Ollama 窄范围外部验收；未使用真实用户稿件、账号或 AI 凭据，未部署或修改官网。

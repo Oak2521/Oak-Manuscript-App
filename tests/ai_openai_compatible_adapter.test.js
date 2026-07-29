@@ -7,6 +7,7 @@ const {
   SUPPORTED_PROVIDERS,
   buildRequest,
   createOpenAICompatibleAdapters,
+  parseLmStudioResponse,
   parseResponse,
 } = require("../electron/ai-openai-compatible-adapter");
 const { AITransportRouter } = require("../electron/ai-transport-router");
@@ -60,16 +61,49 @@ test("compatible parser accepts one assistant string and rejects ambiguous or to
     id: "response-1",
     choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant", content: "建议删除一个空格。" } }],
   }), { text: "建议删除一个空格。" });
+  assert.deepEqual(parseResponse({
+    choices: [{
+      finish_reason: "stop",
+      message: { role: "assistant", content: "LM Studio 文本建议", tool_calls: [] },
+    }],
+  }), { text: "LM Studio 文本建议" });
   for (const value of [
     {},
     { choices: [] },
     { choices: [{ message: { role: "assistant", content: "one" } }, { message: { role: "assistant", content: "two" } }] },
     { choices: [{ finish_reason: "tool_calls", message: { role: "assistant", content: "call", tool_calls: [] } }] },
+    { choices: [{ finish_reason: "stop", message: { role: "assistant", content: "call", tool_calls: [{}] } }] },
+    { choices: [{ finish_reason: "stop", message: { role: "assistant", content: "call", tool_calls: {} } }] },
     { choices: [{ finish_reason: "length", message: { role: "assistant", content: "truncated" } }] },
     { choices: [{ message: { role: "user", content: "wrong role" } }] },
     { choices: [{ message: { role: "assistant", content: "   " } }] },
     { choices: [{ message: { role: "assistant", content: [{ type: "text", text: "array" }] } }] },
   ]) assert.throws(() => parseResponse(value), /响应/u);
+});
+
+test("LM Studio parser rejects silent server-side model substitution", async () => {
+  const response = {
+    model: "oak-qwen3-4b",
+    choices: [{
+      finish_reason: "stop",
+      message: { role: "assistant", content: "建议删除一个空格。" },
+    }],
+  };
+  assert.deepEqual(parseLmStudioResponse(response, {
+    model: "oak-qwen3-4b",
+  }), { text: "建议删除一个空格。" });
+  assert.throws(() => parseLmStudioResponse(response, {
+    model: "missing-model",
+  }), /模型标识/u);
+
+  const router = new AITransportRouter({
+    adapters: createOpenAICompatibleAdapters(),
+    httpClient: { requestJson: async () => response },
+  });
+  await assert.rejects(router.request({
+    configuration: configuration("lm_studio", { model: "missing-model" }),
+    request,
+  }), (error) => error && error.code === "ADAPTER_FAILED");
 });
 
 test("router exposes only the compatible family and returns a bounded text-only result", async () => {

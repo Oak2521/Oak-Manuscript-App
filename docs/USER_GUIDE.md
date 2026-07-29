@@ -2,9 +2,9 @@
 
 ## 桌面应用（推荐）
 
-当前开发与最新已打包版本均为 `0.1.0-alpha.42`；Windows x64 NSIS/ZIP 未签名，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.42 已包含桌面 PKCE/加密账号会话/同步失败恢复，以及 OpenAI-compatible、Ollama、LM Studio 的逐条 AI 建议、失败提示与重新预览恢复；默认账号配置仍为空，普通启动和构建不会触发账号联网或下载。
+当前开发源码为 `0.1.0-alpha.43`；最新已打包 Windows x64 NSIS/ZIP 仍是未签名 alpha.42，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.43 已包含桌面 PKCE/加密账号会话/同步失败恢复，以及 OpenAI-compatible、Ollama、LM Studio 的逐条 AI 建议、失败恢复和 LM Studio 响应模型核对；默认账号配置仍为空，普通启动和构建不会触发账号联网或下载。
 
-**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.42 在增加真实 Ollama 验收工具后的结果为 Node 595/588/0/7、Python 362/0 failures/0 errors/3 skipped；跳过项不计作通过。alpha.42 独立隐藏源码与 packaged smoke 均已通过；packaged 证据还绑定第二进程加密队列恢复、实际 EXE 和匿名输出树。
+**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.43 结果为 Node 599/592/0/7、Python 362/0 failures/0 errors/3 skipped；跳过项不计作通过。alpha.43 独立隐藏源码 smoke 通过；packaged smoke、第二进程加密队列恢复、实际 EXE 和匿名输出树证据仍对应 alpha.42。
 
 **Web 状态**：`web/client/` 已提供可本地渲染的临时处理工作台，保留湖岸账号登录/注册，包含“默认”引用体例、本次临时处理同意、创建/上传/轮询/取消/一次性领取；服务端另有 GoTrue、Fetch、Netlify Blobs 内容适配/有界清扫、Supabase/Postgres 持久任务迁移、上传结构/主动内容检查、私有原子领取、固定 Python 共享核心子进程及任务—对象—任务协调器。alpha.38 又提供独立 `/manuscript/api/v1/sync-records` 源码边界，用于已确认的长期结果记录创建/重放、列表、读取与删除；它不接收稿件文件。两条 SQL 均未在真实 Supabase 执行，API/计划任务也未部署；本地注入测试不等于平台零留存或线上可用。网站工作台的结果同步按钮仍禁用，计费未接通。用户不要把稿件交给任何声称基于该 alpha 的线上地址；正式地址只能在官网联调、隐私文本和生产验收后公布。
 
@@ -14,9 +14,9 @@
 
 选择湖岸 AI 或完成我的 AI 设置后，可在某条检查问题详情填写可选要求并点击“预览将发送给 AI 的内容”。APP 只读提取这一条问题，完整展示目的地、有效期、会发送/不会发送清单和请求 JSON；不包含完整稿件、其他问题、文件名、路径、项目/账号标识、哈希或凭据。预览十分钟有效且只能确认一次；问题、working、检查或 AI 配置变化后必须重新预览。在有效 Pro 权益并成功保存 compatible 配置时，OpenAI-compatible、Ollama、LM Studio 的确认按钮可用；保存、生成预览或取消均不联网，只有点击“确认发送一次”才请求配置的服务。当前默认权益仍为 Free，生产订阅尚未接入；OpenAI、Anthropic、Gemini 和湖岸 AI 也继续禁用确认。
 
-**真实兼容证据边界**：当前开发快照已用官方 Ollama 0.32.5 和 qwen3:4b 对一个匿名“连续空格”问题完成成功、缺失模型、100 ms 超时、失败计划不可重放、不落盘和不改稿验证。该结果不是通用 Ollama 兼容承诺；LM Studio、其他 Ollama 版本/模型/硬件、远程 HTTPS、macOS 和宽泛稿件质量尚未实测。开发者复验命令、下载物摘要和失败判据纠正见 `audits/OLLAMA_0.32.5_QWEN3_4B_COMPATIBILITY.md`。用户自己的模型请求仍可能把预览中明确列出的单条内容发送给其所配置的服务，必须以每次发送预览为准。
+**真实兼容证据边界**：当前开发快照已分别用官方 Ollama 0.32.5 与 LM Studio headless llmster 0.0.20+1、同一 Qwen3 4B GGUF，对一个匿名“连续空格”问题完成窄验收。LM Studio 实测会在单模型状态下静默替换未知 model，alpha.43 已强制核对响应 model；100 ms 超时、失败计划不可重放、不落盘和不改稿均通过。结果不是通用兼容承诺；桌面 GUI、其他版本/模型/硬件、多模型语义、远程 HTTPS、macOS 和宽泛稿件质量尚未实测。开发者证据见 `audits/OLLAMA_0.32.5_QWEN3_4B_COMPATIBILITY.md` 与 `audits/LM_STUDIO_LLMSTER_0.0.20-1_QWEN3_4B_COMPATIBILITY.md`。用户自己的请求仍会把预览中明确列出的单条内容发送给其配置的服务，必须以每次预览为准。
 
-compatible transport 返回建议后，界面提供“采纳为人工处理参考”和“放弃这条建议”。采纳会再次核对当前问题，只把问题状态标为“接受”，仍需用户人工修改；模型文本不会保存到项目或写回稿件。放弃或直接关闭只删除当前内存建议，不会把规则问题标为“拒绝”。建议审阅 30 分钟有效且只能处理一次。当前有真实 `127.0.0.1` HTTP 协议夹具证据，但没有真实模型产品兼容或输出质量保证。
+compatible transport 返回建议后，界面提供“采纳为人工处理参考”和“放弃这条建议”。采纳会再次核对当前问题，只把问题状态标为“接受”，仍需用户人工修改；模型文本不会保存到项目或写回稿件。放弃或直接关闭只删除当前内存建议，不会把规则问题标为“拒绝”。建议审阅 30 分钟有效且只能处理一次。当前有 Ollama/LM Studio 各一个固定组合的真实窄证据，但没有产品级兼容矩阵或宽泛输出质量保证。
 
 如果发送失败，界面会区分“无法连接”“超时”“服务拒绝”“重定向”“响应不兼容”“响应过大”或“响应回显凭据”。请按提示检查服务是否启动、基础地址、模型名称和凭据。本次发送计划已经用完；点击“重新生成发送预览（不发送）”只会重新显示内容，不会立即联网，必须再次点击确认才会重发。应用不会自动重试或改用湖岸 AI。不要为排障把只监听本机的模型服务暴露到公网。
 
@@ -170,9 +170,9 @@ npm run verify:release-identity
 npm run release:evidence:verify:win
 ```
 
-验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。alpha.42 的 NSIS、ZIP、SHA 文件与 schema v2 canonical manifest 已通过交叉验证；manifest 另绑定对应 packaged-smoke、实际 unpacked EXE 与匿名输出树摘要，不会扫描其他版本替代当前制品。
+验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest；不会扫描其他版本替代当前制品。alpha.42 的 NSIS、ZIP、SHA 文件与 schema v2 canonical manifest 已通过交叉验证；当前源码已升 alpha.43 且尚无对应制品，因此运行 alpha.43 发布验证应按设计拒绝缺失，不能复用 alpha.42 字节。
 
-安装生命周期验收器默认只读、不启动安装器，并要求当前源码版本存在精确制品。alpha.42 对归档 alpha.12 的只读预检已经通过：
+安装生命周期验收器默认只读、不启动安装器，并要求当前源码版本存在精确制品。alpha.42 对归档 alpha.12 的只读预检已经通过；当前 alpha.43 未构建，因此不具备 alpha.43 预检输入：
 
 ```powershell
 npm run verify:install-lifecycle:win
@@ -188,7 +188,7 @@ alpha.42 已执行并通过默认只读安装生命周期预检，`authorized=fa
 
 macOS 分架构入口为 `npm run verify:resources:mac:x64` / `:arm64` 和 `npm run build:mac:x64` / `:arm64`，必须分别在对应原生 runner 执行。`npm run build:mac` 只选择当前 Mac 的原生架构；`npm run verify:resources:mac` 是显式 `--no-runtime-probe` 的跨架构静态聚合，不算探针或构建通过。当前仍缺 x64/arm64 Python/JRE 资源与锁、构建、签名、公证和实机证据。
 
-打包 smoke 从源码 `package.json` 读取期望版本，通过 `appInfo` 核对七字段标准身份和 `app.isPackaged=true`，同时由资源门禁独立核对 ASAR production package identity，再执行引用解析确认和项目闭环。alpha.12 起 packaged runner 强制 EpubCheck/Ace，调用者不能静默降级；alpha.42 source/packaged 真实运行均已通过，并各自用同一隔离 `userData` 第二次启动恢复加密队列。packaged runner 另在 EXE 启动前后复核字节摘要，并把双进程输出摘要和匿名项目输出树写入 canonical 证据；该证据不含稿件正文，但与制品同处本地时仍不等于签名。项目、标准 store、临时目录、用户数据、缓存和崩溃目录按运行 ID 隔离在仓库 `out/`，窗口保持隐藏。
+打包 smoke 从源码 `package.json` 读取期望版本，通过 `appInfo` 核对七字段标准身份和 `app.isPackaged=true`，同时由资源门禁独立核对 ASAR production package identity，再执行引用解析确认和项目闭环。alpha.12 起 packaged runner 强制 EpubCheck/Ace，调用者不能静默降级；alpha.43 source smoke 与 alpha.42 source/packaged 历史运行均已通过，packaged 证据只属于 alpha.42。packaged runner 在 EXE 启动前后复核字节摘要，并把双进程输出摘要和匿名项目输出树写入 canonical 证据；该证据不含稿件正文，但与制品同处本地时仍不等于签名。项目、标准 store、临时目录、用户数据、缓存和崩溃目录按运行 ID 隔离在仓库 `out/`，窗口保持隐藏。
 
 自选导出目录会逐级拒绝链接、目录联接和非常规目录；若选择项目内部目录，只允许 `exports/` 下。全部输出目标先统一预检，已有链接或硬链接目标不会被覆盖；每个文件在同目录完整暂存并原子换入。PDF 样张另在禁 JavaScript、导航和网络的非持久隔离 session 中生成。
 

@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.42` 源码与 Windows packaged 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、独立服务端/API/Supabase 持久层、桌面 PKCE/加密 token-store/同步失败恢复，以及三模式 AI/OS 加密凭据/单条预览/建议审阅、OpenAI-compatible/Ollama/LM Studio 主进程 transport 和失败后重新预览恢复。Web 临时作业保持独立零留存源码边界。默认账号配置无端点；alpha.42 Windows x64 NSIS/ZIP、ASAR/fuse/资源与隐藏 smoke 已验证。真实账号/Sync API、官方云 AI、真实模型兼容性、数据库迁移、生产隔离、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.43` 源码架构与最新 alpha.42 Windows packaged 证据：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、独立服务端/API/Supabase 持久层、桌面 PKCE/加密 token-store/同步失败恢复，以及三模式 AI/OS 加密凭据/单条预览/建议审阅、compatible transport、失败恢复和 LM Studio 模型身份拒绝。Web 临时作业保持独立零留存源码边界。默认账号配置无端点；alpha.43 源码与 alpha.42 Windows x64 ASAR/fuse/资源/smoke 分别验证。真实账号/Sync API、官方云 AI、产品级模型矩阵、数据库迁移、生产隔离、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待验收。
 
 ## 1. 总体分层
 
@@ -208,11 +208,13 @@ alpha.34 在同一协调器内新增最多 8 个、30 分钟有效、一次处�
 
 alpha.35 新增供应商无关的 `BoundedAIHttpClient` 与 `AITransportRouter`。客户端使用 Node 原生 `http/https`、单次连接、固定 POST/JSON，不读取代理环境；远程地址必须 HTTPS，本机 HTTP 仅限精确 loopback，且拒绝 URL 凭据/查询/片段、重定向、Cookie、代理/转发/hop-by-hop 头、压缩响应、媒体/长度漂移和超限。路由只接受 exact provider 配置与语义请求、已注册适配器和 exact 文本结果，并拒绝凭据进入 URL或被上游精确回显。
 
-alpha.41 新增 `ai-openai-compatible-adapter.js`，只为 `openai_compatible`、`ollama`、`lm_studio` 注册固定 `{base_url}/chat/completions`：系统/用户双消息、`stream:false`、可选 Bearer，响应只接受唯一 choice 的非空 assistant 字符串并拒绝工具调用。`AIRequestCoordinator` 只在完整预览后的一次确认中调用 Router；状态仅对这三类报告 `transport_configured=true`。OpenAI、Anthropic、Gemini 和湖岸 AI 继续不可用；模块不是独立 OS 沙箱，也没有真实上游兼容/质量证据。所有模式保持 `fallback_mode=none`、`output_policy=suggestion_only` 和 `automatic_writeback=false`；Web 凭据只能保留当前会话。
+alpha.41 新增 `ai-openai-compatible-adapter.js`，只为 `openai_compatible`、`ollama`、`lm_studio` 注册固定 `{base_url}/chat/completions`：系统/用户双消息、`stream:false`、可选 Bearer，响应只接受唯一 choice 的非空 assistant 字符串并拒绝真实工具调用。`AIRequestCoordinator` 只在完整预览后的一次确认中调用 Router；状态仅对这三类报告 `transport_configured=true`。OpenAI、Anthropic、Gemini 和湖岸 AI 继续不可用。所有模式保持 `fallback_mode=none`、`output_policy=suggestion_only` 和 `automatic_writeback=false`；Web 凭据只能保留当前会话。
 
 alpha.42 在协调层把净化后的 transport code 收敛为七类用户故障：不可达、超时、服务拒绝、重定向、响应不兼容、响应超限、凭据回显拒绝；未知错误只返回通用失败，不携带上游异常。发送计划在进入确认时先删除，因此成功或失败都不能原样重放。Renderer 失败后清除旧计划，只允许用户重新生成完整预览；该动作零请求，新的确认才允许再次联网。真实 loopback 测试使用临时 `127.0.0.1` Node HTTP 服务验证 socket/HTTP 路径和连接重置，不解除默认 session 离线，也不构成任一第三方服务兼容证明。
 
 alpha.42 的外部验收补充用官方 Ollama 0.32.5 standalone 和 qwen3:4b 在隔离仓库目录运行 `scripts/run_ollama_compatibility.js`。验收器固定版本、模型 manifest digest、loopback `/v1` 与匿名单问题，复用生产 `BoundedAIHttpClient`、compatible adapter、Router、Provider 和 Coordinator；证据仅保留判据、耗时和响应摘要，不保留建议正文。该结果证明一个具体组合的成功、缺失模型、超时、不落盘和不改稿路径，不改变 production app 的默认离线、分发资源或可支持矩阵。
+
+alpha.43 用同一生产纵向链验证 LM Studio 官方 headless `llmster 0.0.20+1` 与固定 Qwen3 4B GGUF。运行时和模型只在仓库隔离目录，API 仅绑定 loopback。真实服务在单 LLM 已加载时会忽略未知 `model` 并返回实际已加载标识，因此 LM Studio adapter 必须精确比较响应 `model` 与配置 model，漂移按不兼容失败关闭；普通文本响应允许精确 `tool_calls: []`，非空/非数组或工具结束原因仍拒绝。该证据只覆盖一个 headless 组合，不代表桌面 GUI、多模型语义或产品级支持矩阵。
 
 ### AD-014 Electron fuses 必须“显式固定—构建后读回—未知项失败关闭”（2026-07-28，冻结）
 

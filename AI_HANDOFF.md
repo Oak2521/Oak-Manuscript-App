@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-29
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.42`
+> 当前版本：`0.1.0-alpha.43`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.42`（源码功能检查点）、`chatgpt-v0.1.0-alpha.42-packaged`（最终 Windows 打包证据）；真实 Ollama 补充验收提交另标 `chatgpt-v0.1.0-alpha.42-ollama-e2e`
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.43-lmstudio-e2e`（当前源码/LM Studio 窄验收）、`chatgpt-v0.1.0-alpha.42-packaged`（最新 Windows 打包证据）；真实 Ollama 补充验收为 `chatgpt-v0.1.0-alpha.42-ollama-e2e`
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,16 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.43 LM Studio headless 窄验收与模型身份拒绝
+
+- APP、Python core、桌面/Web lockfile 统一升至 alpha.43；标准包仍为 2.0.0 / 35 条规则 / 6 个 fixer。loose-resource manifest 保持 84 文件 / 2,145,925 字节，SHA-256 `9f514ae8…c1c2a6`，anchor `3583f05b…8150d`；
+- 用户已批准下载后，只从 LM Studio 官方域名取得安装脚本、SHA-512 与 `0.0.20-1-win32-x64.full.zip`。ZIP 881,662,805 字节，官方 SHA-512 精确匹配；未执行安装脚本，HOME/APPDATA/TEMP 全部重定向到仓库 `out/`，API 只绑定 `127.0.0.1:12400`，测试结束后模型/API/daemon 全部停止；
+- 固定 headless `llmster 0.0.20+1` / 二进制 SHA-256 `a39c907b…9c43`，复用固定 Qwen3 4B Q4_K_M GGUF / 2,497,280,480 字节 / SHA-256 `3e4cb141…4e4f`。该对象不是 LM Studio 桌面 GUI 0.4.x，且 llmster 本身无 Authenticode 签名；
+- 真实服务发现未知 `model` 会在单 LLM 已加载时静默路由到已加载模型。alpha.43 为 LM Studio 增加响应模型精确核对，替换行为映射为 `AI_SERVICE_INCOMPATIBLE`；同时只允许普通文本响应中的精确空 `tool_calls: []`，非空/非数组工具调用仍拒绝；
+- 最终真实闭环通过：预览 0 请求；成功一次请求、18,956 ms、建议 `memory_only`；人工接受不改稿/不持久化；静默模型替换与 100 ms 超时各消费一次 plan，重放均为 `AI_PLAN_STALE`；质量四项 PASS。canonical 证据 1,661 字节 / SHA-256 `a5f1fb5b…b3e9`，不含建议正文；
+- `npm test`：Node 599 total / 592 pass / 0 fail / 7 skip（3.987 秒），Python 362 / 0 failures / 0 errors / 3 skipped（102.521 秒），墙钟 114.5 秒。独立隐藏源码 Electron smoke PASS，输出 `out/source-smoke/runs/ms5qdhf2-dd22990533467ecf/projects/`；
+- 本轮没有读取用户稿件、账号或 AI 凭据，没有部署、推送或修改官网。未重构建 Windows：最新已验证 NSIS/ZIP 仍为未签名 alpha.42，不能称为 alpha.43 制品或可售卖正式版。完整边界见 `docs/audits/LM_STUDIO_LLMSTER_0.0.20-1_QWEN3_4B_COMPATIBILITY.md`。
 
 ### 已完成：0.1.0-alpha.42 compatible AI 故障恢复与真实 loopback 验收
 
@@ -567,7 +577,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 6. 同步只允许检查结果和必要元数据，不同步稿件、正文、摘录、文件名、路径或哈希；登录用户必须明确选择是否同步；
 7. 引用体例保留“默认”，由确定性映射自动选择，并在报告中说明；
 8. 标准文件需要签名清单、下载校验、版本固定、回滚和升级提示；已有项目不得被静默换规则；
-9. “接入用户自己的 AI”六项设计已由用户明确批准并写入 v2.0 方案；alpha.32—alpha.35 完成桌面设置、加密凭据、单条预览/建议审阅和有界网络底座，alpha.41 接入 OpenAI-compatible/Ollama/LM Studio，alpha.42 补齐失败提示、重新预览恢复和真实 loopback HTTP 证据；Ollama 0.32.5 + qwen3:4b 已完成单匿名规则的窄范围外部验收，OpenAI、Anthropic、Gemini 官方协议、LM Studio/其他 compatible 产品、宽泛质量与 Web 会话凭据仍未实现；
+9. “接入用户自己的 AI”六项设计已由用户明确批准并写入 v2.0 方案；alpha.32—alpha.35 完成桌面设置、加密凭据、单条预览/建议审阅和有界网络底座，alpha.41 接入 OpenAI-compatible/Ollama/LM Studio，alpha.42 补齐失败恢复并验证 Ollama 单组合，alpha.43 完成 LM Studio headless 单组合并拒绝静默模型替换；OpenAI、Anthropic、Gemini 官方协议、其他 compatible 产品、宽泛质量与 Web 会话凭据仍未实现；
 10. 不进行 AI 语义改写，自动修复仍只限冻结白名单机械操作。
 
 ## 4. 已核实但尚未解决的缺口
@@ -577,7 +587,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：临时作业链保持；alpha.38 另实现 SyncRecord 独立服务验证、同源 API、GoTrue/runtime、Supabase repository/002 迁移源码。生产环境/真实账号与 Blobs/Postgres E2E、病毒库/平台扫描、容器/OS 禁网与资源隔离、计费和官网嵌入仍未实现；
 - 账号/订阅/同步：离线 Provider/Free+Pro、逐字段确认、OS 加密队列和重启恢复、桌面 PKCE/加密 token-store/条件 main 接线，以及固定 client/coordinator 与服务端幂等/归属/删除源码已实现；默认账号配置仍为空，真实 PKCE/刷新/撤销、Supabase 迁移/部署、签名权益、支付和网站后台未连接；
-- AI：Ollama 0.32.5 + qwen3:4b 已通过一个匿名连续空格问题的窄范围成功/缺失模型/超时/不落盘验收；LM Studio、其他版本/模型/硬件、多规则/真实稿件质量、官方云、远程 TLS 与湖岸 AI 仍未验收；
+- AI：Ollama 0.32.5 + qwen3:4b 与 LM Studio llmster 0.0.20+1 + 同一 Qwen3 4B GGUF 已分别通过一个匿名连续空格问题的窄范围验收；其他版本/模型/硬件、多模型语义、多规则/真实稿件质量、官方云、远程 TLS 与湖岸 AI 仍未验收；
 - 标准库：治理结构和引用解析政策已完成，13 项标准、35 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
 - 标准升级：本地验证、签名包导入/回滚骨架、项目固定与显式升级已编码；生产 trust pin、在线获取/下载、签名撤回分发与联网自动更新未实现；
 - 正式发布仍缺隐私/条款最终文本、证书、生产密钥、人工内测、macOS 硬件和网站联调。
@@ -605,10 +615,10 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划。近期直接闭合“账号 → 权益 → 检查 → 明确同步”主链：
 
-1. Ollama 0.32.5 + qwen3:4b 的窄范围验收已完成；下一步扩到一个固定 LM Studio 版本与固定模型，复用同一匿名成功/拒绝/超时/不落盘门禁，并明确保留产品级兼容矩阵缺口；
-2. OpenAI、Anthropic、Gemini 官方云适配仍必须先核对当前官方协议；不得套用 compatible 形状或凭记忆猜测；
+1. Ollama 与 LM Studio 各一个固定组合的窄验收已完成；不要继续横向扩展 AI 兼容矩阵。近期回到“账号 → 权益 → 检查 → 明确同步”商业主链；
+2. 在不触碰真实生产系统的前提下，先完成可配置预生产账号契约、订阅 entitlement 验证与网站后台 SyncRecord 展示的本地/假服务闭环；真实端点、迁移和账号仍需单独授权；
 3. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，才填充 `desktop-auth.json` 并执行真实 PKCE/刷新/退出/撤销、Supabase 迁移和网站账号后台联调；
-4. 真实账号联调前确定 OIDC nonce/ID-token 验证或纯 OAuth user endpoint 的正式协议，不在未知服务契约上伪造 nonce 已完成；
+4. OpenAI、Anthropic、Gemini 官方云适配仍必须先核对当前官方协议；不得套用 compatible 形状或凭记忆猜测，但它们不再排在账号/订阅主线之前；
 5. 其后关闭发行门禁：具名许可/再分发签核、发行身份、Ace 自带浏览器/OS 隔离、Windows Authenticode/真实安装生命周期、macOS 双架构签名/公证/实机、Web 生产零留存；经联网授权后再核验标准官方来源和签名更新 transport。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。

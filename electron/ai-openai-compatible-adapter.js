@@ -37,7 +37,8 @@ function parseResponse(value) {
   const choice = value.choices[0];
   if (!plain(choice) || !plain(choice.message) ||
       (choice.message.role !== undefined && choice.message.role !== "assistant") ||
-      Object.hasOwn(choice.message, "tool_calls") ||
+      (Object.hasOwn(choice.message, "tool_calls") &&
+        (!Array.isArray(choice.message.tool_calls) || choice.message.tool_calls.length !== 0)) ||
       (choice.finish_reason !== undefined && choice.finish_reason !== "stop") ||
       typeof choice.message.content !== "string" || choice.message.content.trim().length === 0) {
     throw new TypeError("OpenAI-compatible 响应消息非法");
@@ -45,14 +46,28 @@ function parseResponse(value) {
   return { text: choice.message.content };
 }
 
+function parseLmStudioResponse(value, configuration) {
+  if (!plain(configuration) || typeof configuration.model !== "string" ||
+      !plain(value) || value.model !== configuration.model) {
+    throw new TypeError("LM Studio 响应模型标识与请求不符");
+  }
+  return parseResponse(value);
+}
+
 function createOpenAICompatibleAdapters() {
   const adapter = Object.freeze({ buildRequest, parseResponse });
-  return new Map(SUPPORTED_PROVIDERS.map((provider) => [provider, adapter]));
+  const lmStudioAdapter = Object.freeze({ buildRequest, parseResponse: parseLmStudioResponse });
+  return new Map([
+    ["openai_compatible", adapter],
+    ["ollama", adapter],
+    ["lm_studio", lmStudioAdapter],
+  ]);
 }
 
 module.exports = {
   SUPPORTED_PROVIDERS,
   buildRequest,
   createOpenAICompatibleAdapters,
+  parseLmStudioResponse,
   parseResponse,
 };
