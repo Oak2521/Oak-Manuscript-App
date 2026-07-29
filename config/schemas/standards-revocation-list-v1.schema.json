@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/standards-revocation-list-v1.schema.json",
+  "title": "Oak Manuscript standards revocation list v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "bundle_id",
+    "issued_at",
+    "expires_at",
+    "revoked_manifest_sha256s"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "kind": { "const": "oak-standards-revocation-list" },
+    "bundle_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$" },
+    "issued_at": { "type": "string", "format": "date-time", "pattern": "Z$" },
+    "expires_at": { "type": "string", "format": "date-time", "pattern": "Z$" },
+    "revoked_manifest_sha256s": {
+      "type": "array",
+      "maxItems": 4096,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+    }
+  }
+}

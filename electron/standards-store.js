@@ -15,7 +15,10 @@ const MANIFEST_SCHEMA_VERSION = "1.0";
 const MANIFEST_KIND = "oak-standard-release";
 const BUNDLED_ENVELOPE_KIND = "oak-standards-bundled-envelope";
 const TRUST_SCHEMA_VERSION = "1.0";
+const TRUST_SCHEMA_VERSION_WITH_REVOCATION = "1.1";
 const TRUST_KIND = "oak-standards-trust-store";
+const REVOCATION_ENVELOPE_KIND = "oak-standards-revocation-envelope";
+const REVOCATION_LIST_KIND = "oak-standards-revocation-list";
 const STATE_SCHEMA_VERSION = "1.0";
 const TRANSACTION_SCHEMA_VERSION = "1.0";
 const TRANSACTION_KIND = "oak-standards-transaction";
@@ -35,9 +38,12 @@ const DEFAULT_LIMITS = Object.freeze({
   manifestBytes: 256 * 1024,
   fileBytes: 8 * 1024 * 1024,
   totalPayloadBytes: 12 * 1024 * 1024,
+  revocationEnvelopeBytes: 1024 * 1024,
+  revocationPayloadBytes: 512 * 1024,
   stateBytes: 128 * 1024,
 });
 const MAX_SIGNING_KEYS = 16;
+const MAX_REVOKED_MANIFESTS = 4096;
 const PROCESS_START_TOKEN = crypto.randomBytes(32).toString("hex");
 const ROOT_QUEUES = new Map();
 
@@ -414,30 +420,49 @@ function validateManifest(manifest, {
   });
 }
 
-function validateTrustStore(trustStore) {
-  exactKeys(trustStore, ["schema_version", "kind", "keys", "roles"], "trustStore");
-  if (trustStore.schema_version !== TRUST_SCHEMA_VERSION || trustStore.kind !== TRUST_KIND) {
-    fail("INVALID_TRUST_STORE", "trust store schema/kind 不受支持");
-  }
-  if (!isPlainObject(trustStore.keys)) fail("INVALID_TRUST_STORE", "trustStore.keys 必须是对象");
-  exactKeys(trustStore.roles, ["release"], "trustStore.roles");
-  const role = trustStore.roles.release;
-  exactKeys(role, ["threshold", "keyids"], "trustStore.roles.release");
+function validateTrustRole(trustStore, roleName) {
+  const role = trustStore.roles[roleName];
+  exactKeys(role, ["threshold", "keyids"], `trustStore.roles.${roleName}`);
   if (!Array.isArray(role.keyids) || role.keyids.length === 0) {
-    fail("INVALID_TRUST_STORE", "release role 至少需要一个 keyid");
+    fail("INVALID_TRUST_STORE", `${roleName} role 至少需要一个 keyid`);
   }
   if (role.keyids.length > MAX_SIGNING_KEYS) {
-    fail("INVALID_TRUST_STORE", `release role 最多允许 ${MAX_SIGNING_KEYS} 个 keyid`);
+    fail("INVALID_TRUST_STORE", `${roleName} role 最多允许 ${MAX_SIGNING_KEYS} 个 keyid`);
   }
   const uniqueRoleKeys = new Set(role.keyids);
   if (uniqueRoleKeys.size !== role.keyids.length ||
       [...uniqueRoleKeys].some((keyid) => !SHA256_RE.test(keyid))) {
-    fail("INVALID_TRUST_STORE", "release role keyids 非法或重复");
+    fail("INVALID_TRUST_STORE", `${roleName} role keyids 非法或重复`);
   }
-  assertSafeInteger(role.threshold, "trustStore.roles.release.threshold", {
+  assertSafeInteger(role.threshold, `trustStore.roles.${roleName}.threshold`, {
     min: 1,
     max: role.keyids.length,
   });
+  return { role, uniqueRoleKeys };
+}
+
+function validateTrustStore(trustStore) {
+  exactKeys(trustStore, ["schema_version", "kind", "keys", "roles"], "trustStore");
+  if (!new Set([TRUST_SCHEMA_VERSION, TRUST_SCHEMA_VERSION_WITH_REVOCATION])
+    .has(trustStore.schema_version) || trustStore.kind !== TRUST_KIND) {
+    fail("INVALID_TRUST_STORE", "trust store schema/kind 不受支持");
+  }
+  if (!isPlainObject(trustStore.keys)) fail("INVALID_TRUST_STORE", "trustStore.keys 必须是对象");
+  const roleNames = Object.keys(trustStore.roles).sort(compareText);
+  const expectedRoleNames = trustStore.schema_version === TRUST_SCHEMA_VERSION
+    ? ["release"]
+    : ["release", "revocation"];
+  if (canonicalJson(roleNames) !== canonicalJson(expectedRoleNames)) {
+    fail("INVALID_TRUST_STORE", `trust store ${trustStore.schema_version} 角色集合不精确`);
+  }
+  const release = validateTrustRole(trustStore, "release");
+  const revocation = trustStore.schema_version === TRUST_SCHEMA_VERSION_WITH_REVOCATION
+    ? validateTrustRole(trustStore, "revocation")
+    : null;
+  const referencedKeys = new Set([
+    ...release.uniqueRoleKeys,
+    ...(revocation === null ? [] : revocation.uniqueRoleKeys),
+  ]);
 
   const keys = new Map();
   if (Object.keys(trustStore.keys).length > MAX_SIGNING_KEYS) {
@@ -460,15 +485,21 @@ function validateTrustStore(trustStore) {
     }
     keys.set(keyid, publicKey);
   }
-  for (const keyid of role.keyids) {
-    if (!keys.has(keyid)) fail("INVALID_TRUST_STORE", `release role 引用了未知 keyid：${keyid}`);
+  for (const keyid of referencedKeys) {
+    if (!keys.has(keyid)) fail("INVALID_TRUST_STORE", `签名角色引用了未知 keyid：${keyid}`);
   }
   for (const keyid of keys.keys()) {
-    if (!uniqueRoleKeys.has(keyid)) {
-      fail("INVALID_TRUST_STORE", `trust store 含未被 release role 引用的公钥：${keyid}`);
+    if (!referencedKeys.has(keyid)) {
+      fail("INVALID_TRUST_STORE", `trust store 含未被任何角色引用的公钥：${keyid}`);
     }
   }
-  return { role, keys };
+  return {
+    roles: {
+      release: release.role,
+      revocation: revocation?.role || null,
+    },
+    keys,
+  };
 }
 
 function validateEnvelopeShape(envelope) {
@@ -507,6 +538,62 @@ function validateBundledEnvelopeShape(envelope) {
   if (!Array.isArray(envelope.files) || envelope.files.length !== PAYLOAD_PATHS.length) {
     fail("INVALID_SCHEMA", "bundled envelope.files 必须精确包含两个 payload");
   }
+}
+
+function validateRevocationEnvelopeShape(envelope) {
+  exactKeys(envelope, [
+    "schema_version",
+    "kind",
+    "payload_b64",
+    "signatures",
+  ], "revocation envelope");
+  if (envelope.schema_version !== ENVELOPE_SCHEMA_VERSION ||
+      envelope.kind !== REVOCATION_ENVELOPE_KIND) {
+    fail("INVALID_REVOCATION_LIST", "revocation envelope schema/kind 不受支持");
+  }
+  if (!Array.isArray(envelope.signatures) || envelope.signatures.length === 0 ||
+      envelope.signatures.length > MAX_SIGNING_KEYS) {
+    fail("INVALID_SIGNATURE", "revocation envelope 签名数量非法");
+  }
+}
+
+function validateRevocationList(payload, { expectedBundleId, nowMs }) {
+  exactKeys(payload, [
+    "schema_version",
+    "kind",
+    "bundle_id",
+    "issued_at",
+    "expires_at",
+    "revoked_manifest_sha256s",
+  ], "revocation list");
+  if (payload.schema_version !== ENVELOPE_SCHEMA_VERSION ||
+      payload.kind !== REVOCATION_LIST_KIND) {
+    fail("INVALID_REVOCATION_LIST", "revocation list schema/kind 不受支持");
+  }
+  assertString(payload.bundle_id, "revocation list.bundle_id", {
+    pattern: SAFE_ID_RE,
+    max: 128,
+  });
+  if (payload.bundle_id !== expectedBundleId) {
+    fail("BUNDLE_ID_MISMATCH", "revocation list bundle_id 与当前标准库不一致");
+  }
+  const issuedAt = parseUtc(payload.issued_at, "revocation list.issued_at");
+  const expiresAt = parseUtc(payload.expires_at, "revocation list.expires_at");
+  if (issuedAt > nowMs) fail("NOT_YET_VALID", "revocation list 尚未生效");
+  if (expiresAt <= nowMs || expiresAt <= issuedAt) {
+    fail("EXPIRED_REVOCATION_LIST", "revocation list 已过期或时间窗非法");
+  }
+  if (!Array.isArray(payload.revoked_manifest_sha256s) ||
+      payload.revoked_manifest_sha256s.length > MAX_REVOKED_MANIFESTS) {
+    fail("INVALID_REVOCATION_LIST", "revoked_manifest_sha256s 数量非法");
+  }
+  const sorted = [...payload.revoked_manifest_sha256s].sort(compareText);
+  if (new Set(sorted).size !== sorted.length ||
+      sorted.some((digest, index) => !SHA256_RE.test(digest) ||
+        digest !== payload.revoked_manifest_sha256s[index])) {
+    fail("INVALID_REVOCATION_LIST", "revoked_manifest_sha256s 必须是去重、排序的小写 SHA-256 数组");
+  }
+  return payload;
 }
 
 function descriptorFor(manifest, manifestSha256, source) {
@@ -622,7 +709,14 @@ function validateTransactionIntent(intent) {
     fail("INVALID_TRANSACTION", "pending transaction schema/kind 不受支持");
   }
   assertString(intent.transaction_id, "transaction_id", { pattern: SHA256_RE, max: 64 });
-  if (!new Set(["bootstrap", "install", "activate", "rollback", "reconcile-bundled"])
+  if (!new Set([
+    "bootstrap",
+    "install",
+    "activate",
+    "rollback",
+    "reconcile-bundled",
+    "apply-revocations",
+  ])
     .has(intent.operation)) {
     fail("INVALID_TRANSACTION", "pending transaction operation 非法");
   }
@@ -685,13 +779,23 @@ function validateTransactionIntent(intent) {
       fail("INVALID_TRANSACTION", "bootstrap transaction 状态转换非法");
     }
   } else {
-    if (expected === null ||
-        canonicalJson(expected.revoked_manifest_sha256s) !==
-          canonicalJson(next.revoked_manifest_sha256s) ||
-        next.active.bundle_id !== expected.active.bundle_id) {
+    if (expected === null || next.active.bundle_id !== expected.active.bundle_id) {
       fail("INVALID_TRANSACTION", "transaction 前后状态基础约束不一致");
     }
-    if (intent.operation === "install" || intent.operation === "reconcile-bundled") {
+    if (intent.operation === "apply-revocations") {
+      const preservedDescriptors = descriptorIdentity(next.active) === descriptorIdentity(expected.active) &&
+        descriptorIdentity(next.previous) === descriptorIdentity(expected.previous);
+      const appendOnly = next.revoked_manifest_sha256s.length > expected.revoked_manifest_sha256s.length &&
+        expected.revoked_manifest_sha256s.every((digest) =>
+          next.revoked_manifest_sha256s.includes(digest));
+      if (!intent.target.package_was_present || !preservedDescriptors ||
+          next.highest_seen_sequence !== expected.highest_seen_sequence || !appendOnly) {
+        fail("INVALID_TRANSACTION", "apply-revocations transaction 状态转换非法");
+      }
+    } else if (canonicalJson(expected.revoked_manifest_sha256s) !==
+        canonicalJson(next.revoked_manifest_sha256s)) {
+      fail("INVALID_TRANSACTION", "非撤回事务不得修改撤回集合");
+    } else if (intent.operation === "install" || intent.operation === "reconcile-bundled") {
       const expectedSource = intent.operation === "install" ? "installed" : "bundled";
       if (intent.target.package_was_present || next.active.source !== expectedSource ||
           next.active.release_sequence <= expected.highest_seen_sequence ||
@@ -1293,7 +1397,8 @@ class StandardsStore {
       if (signature.alg !== "ed25519") fail("INVALID_SIGNATURE", "签名算法必须是 ed25519");
       if (seenSignatures.has(signature.keyid)) fail("INVALID_SIGNATURE", "同一 keyid 重复签名");
       seenSignatures.add(signature.keyid);
-      if (!this.trust.role.keyids.includes(signature.keyid) || !this.trust.keys.has(signature.keyid)) {
+      if (!this.trust.roles.release.keyids.includes(signature.keyid) ||
+          !this.trust.keys.has(signature.keyid)) {
         fail("UNKNOWN_SIGNING_KEY", `release envelope 使用未知 keyid：${signature.keyid}`);
       }
       const bytes = strictBase64(signature.sig_b64, `envelope.signatures[${index}].sig_b64`);
@@ -1303,10 +1408,10 @@ class StandardsStore {
       }
       validSignatures += 1;
     }
-    if (validSignatures < this.trust.role.threshold) {
+    if (validSignatures < this.trust.roles.release.threshold) {
       fail("SIGNATURE_THRESHOLD", "release envelope 未达到 release role 签名阈值", {
         valid: validSignatures,
-        threshold: this.trust.role.threshold,
+        threshold: this.trust.roles.release.threshold,
       });
     }
 
@@ -1323,6 +1428,75 @@ class StandardsStore {
     };
     await this._validateVerifiedPayload(result, runPayloadValidation);
     return result;
+  }
+
+  async verifyRevocationEnvelope(envelopeBytes, { bundleId } = {}) {
+    if (this.trust === null || this.trust.roles.revocation === null) {
+      fail("REVOCATION_TRUST_UNCONFIGURED", "尚未配置标准撤回签名信任角色");
+    }
+    assertString(bundleId, "revocation expected bundleId", { pattern: SAFE_ID_RE, max: 128 });
+    const raw = Buffer.isBuffer(envelopeBytes) ? envelopeBytes : Buffer.from(envelopeBytes);
+    if (raw.length === 0 || raw.length > this.limits.revocationEnvelopeBytes) {
+      fail("SIZE_LIMIT", "revocation envelope 大小非法", {
+        size: raw.length,
+        maxBytes: this.limits.revocationEnvelopeBytes,
+      });
+    }
+    const envelope = parseCanonicalJson(
+      raw,
+      "revocation envelope",
+      this.limits.revocationEnvelopeBytes,
+    );
+    validateRevocationEnvelopeShape(envelope);
+    const payloadBytes = strictBase64(envelope.payload_b64, "revocation envelope.payload_b64");
+    const payload = validateRevocationList(parseCanonicalJson(
+      payloadBytes,
+      "signed revocation list",
+      this.limits.revocationPayloadBytes,
+    ), {
+      expectedBundleId: bundleId,
+      nowMs: this._nowMs(),
+    });
+    const role = this.trust.roles.revocation;
+    const seenSignatures = new Set();
+    let validSignatures = 0;
+    for (let index = 0; index < envelope.signatures.length; index += 1) {
+      const signature = envelope.signatures[index];
+      exactKeys(signature, ["keyid", "alg", "sig_b64"],
+        `revocation envelope.signatures[${index}]`);
+      assertString(signature.keyid, `revocation envelope.signatures[${index}].keyid`, {
+        pattern: SHA256_RE,
+        max: 64,
+      });
+      if (signature.alg !== "ed25519") fail("INVALID_SIGNATURE", "撤回签名算法必须是 ed25519");
+      if (seenSignatures.has(signature.keyid)) fail("INVALID_SIGNATURE", "撤回清单含重复 keyid");
+      seenSignatures.add(signature.keyid);
+      if (!role.keyids.includes(signature.keyid) || !this.trust.keys.has(signature.keyid)) {
+        fail("UNKNOWN_SIGNING_KEY", `revocation envelope 使用未知 keyid：${signature.keyid}`);
+      }
+      const bytes = strictBase64(
+        signature.sig_b64,
+        `revocation envelope.signatures[${index}].sig_b64`,
+      );
+      if (bytes.length !== 64 ||
+          !crypto.verify(null, payloadBytes, this.trust.keys.get(signature.keyid), bytes)) {
+        fail("INVALID_SIGNATURE", `revocation keyid ${signature.keyid} 的签名无效`);
+      }
+      validSignatures += 1;
+    }
+    if (validSignatures < role.threshold) {
+      fail("SIGNATURE_THRESHOLD", "revocation envelope 未达到 revocation role 签名阈值", {
+        valid: validSignatures,
+        threshold: role.threshold,
+      });
+    }
+    return {
+      envelope,
+      envelopeBytes: raw,
+      payload,
+      payloadBytes,
+      payloadSha256: sha256(payloadBytes),
+    };
   }
 
   async verifyBundledEnvelope(envelopeBytes, {
@@ -1883,6 +2057,43 @@ class StandardsStore {
     return this._runSerialized(() => this._install(envelopeBytes));
   }
 
+  async applyRevocationEnvelope(envelopeBytes) {
+    return this._runSerialized(() => this._applyRevocationEnvelope(envelopeBytes));
+  }
+
+  async _applyRevocationEnvelope(envelopeBytes) {
+    const { state, verified: activeVerified } = await this._verifyGlobalState({
+      allowMigrationSource: true,
+    });
+    const verifiedList = await this.verifyRevocationEnvelope(envelopeBytes, {
+      bundleId: state.active.bundle_id,
+    });
+    const incoming = verifiedList.payload.revoked_manifest_sha256s;
+    if (state.revoked_manifest_sha256s.some((digest) => !incoming.includes(digest))) {
+      fail("REVOCATION_ROLLBACK", "撤回清单不得移除已经持久化的 manifest");
+    }
+    if (canonicalJson(incoming) === canonicalJson(state.revoked_manifest_sha256s)) {
+      return state;
+    }
+    const nextState = {
+      schema_version: STATE_SCHEMA_VERSION,
+      active: state.active,
+      previous: state.previous,
+      highest_seen_sequence: state.highest_seen_sequence,
+      revoked_manifest_sha256s: [...incoming],
+    };
+    const transaction = this._beginTransaction({
+      operation: "apply-revocations",
+      expectedState: state,
+      nextState,
+      verified: activeVerified,
+      packageWasPresent: true,
+    });
+    this._atomicWriteState(nextState, { expectedState: state });
+    this._completeTransaction(transaction);
+    return nextState;
+  }
+
   async _install(envelopeBytes) {
     const { state } = await this._verifyGlobalState({ allowMigrationSource: true });
     const verified = await this.verifyEnvelope(envelopeBytes, {
@@ -1941,12 +2152,12 @@ class StandardsStore {
     if (verified.manifest.bundle_id !== state.active.bundle_id) {
       fail("BUNDLE_ID_MISMATCH", "APP bundled package bundle_id 与当前标准库不一致");
     }
-    if (state.revoked_manifest_sha256s.includes(verified.manifestSha256)) {
-      fail("REVOKED_PACKAGE", "APP bundled package manifest 已撤回");
-    }
     await this._rejectDuplicateIdentity(verified);
     if (verified.manifestSha256 === state.active.manifest_sha256) return state;
     if (verified.manifest.release_sequence <= state.highest_seen_sequence) return state;
+    if (state.revoked_manifest_sha256s.includes(verified.manifestSha256)) {
+      fail("REVOKED_PACKAGE", "APP bundled package manifest 已撤回");
+    }
     const rollback = await this._resolveRollbackTarget(verified.manifest, state, {
       required: true,
       allowUnavailable: true,
@@ -2124,11 +2335,14 @@ module.exports = {
   MANIFEST_SCHEMA_VERSION,
   PACKAGE_FILES,
   PAYLOAD_PATHS,
+  REVOCATION_ENVELOPE_KIND,
+  REVOCATION_LIST_KIND,
   STATE_SCHEMA_VERSION,
   StandardsStore,
   StandardsStoreError,
   TRUST_KIND,
   TRUST_SCHEMA_VERSION,
+  TRUST_SCHEMA_VERSION_WITH_REVOCATION,
   canonicalJson,
   compareSemver,
   sha256,

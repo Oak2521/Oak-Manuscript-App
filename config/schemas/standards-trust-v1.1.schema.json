@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/standards-trust-v1.1.schema.json",
+  "title": "Oak Manuscript standards trust store v1.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "kind", "keys", "roles"],
+  "properties": {
+    "schema_version": { "const": "1.1" },
+    "kind": { "const": "oak-standards-trust-store" },
+    "keys": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 16,
+      "patternProperties": {
+        "^[0-9a-f]{64}$": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["alg", "spki_der_b64"],
+          "properties": {
+            "alg": { "const": "ed25519" },
+            "spki_der_b64": {
+              "type": "string",
+              "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "roles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["release", "revocation"],
+      "properties": {
+        "release": { "$ref": "#/$defs/role" },
+        "revocation": { "$ref": "#/$defs/role" }
+      }
+    }
+  },
+  "$defs": {
+    "role": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["threshold", "keyids"],
+      "properties": {
+        "threshold": { "type": "integer", "minimum": 1, "maximum": 16 },
+        "keyids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    }
+  }
+}

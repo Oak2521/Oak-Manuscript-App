@@ -51,12 +51,36 @@ function signingFixture() {
     privateKey,
     keyid,
     trustStore: {
-      schema_version: "1.0",
+      schema_version: "1.1",
       kind: "oak-standards-trust-store",
       keys: { [keyid]: { alg: "ed25519", spki_der_b64: der.toString("base64") } },
-      roles: { release: { threshold: 1, keyids: [keyid] } },
+      roles: {
+        release: { threshold: 1, keyids: [keyid] },
+        revocation: { threshold: 1, keyids: [keyid] },
+      },
     },
   };
+}
+
+function revocationEnvelope(signing, revokedManifestSha256s, overrides = {}) {
+  const payloadBytes = Buffer.from(canonicalJson({
+    schema_version: "1.0",
+    kind: "oak-standards-revocation-list",
+    bundle_id: "oak-standards",
+    issued_at: overrides.issuedAt || "2026-07-29T00:00:00Z",
+    expires_at: overrides.expiresAt || "2026-08-29T00:00:00Z",
+    revoked_manifest_sha256s: [...revokedManifestSha256s].sort(),
+  }), "utf8");
+  return Buffer.from(canonicalJson({
+    schema_version: "1.0",
+    kind: "oak-standards-revocation-envelope",
+    payload_b64: payloadBytes.toString("base64"),
+    signatures: [{
+      keyid: signing.keyid,
+      alg: "ed25519",
+      sig_b64: crypto.sign(null, payloadBytes, signing.privateKey).toString("base64"),
+    }],
+  }), "utf8");
 }
 
 function updateEnvelope(privateKey, keyid) {
@@ -388,6 +412,106 @@ test("explicit remote check verifies signed bytes before an opaque one-shot inst
   await assert.rejects(
     () => provider.installRemoteUpdate(preview.plan_id),
     (error) => error && error.code === "STANDARD_UPDATE_PLAN_STALE",
+  );
+});
+
+test("signed revocation of the active release blocks new work but preserves history and permits a safe forward recovery", async (t) => {
+  const signing = signingFixture();
+  const envelopeBytes = updateEnvelope(signing.privateKey, signing.keyid);
+  const provider = createProvider(t, {
+    trustStore: signing.trustStore,
+    updateClient: { async check() { return { outcome: "update", envelopeBytes }; } },
+    clock: () => new Date("2026-07-29T12:00:00.000Z"),
+    planIdFactory: () => "41000000-0000-4000-8000-000000000004",
+  });
+  await provider.initialize();
+  const historicalIdentity = await provider.verifiedActiveIdentity();
+  const projectRoot = tempRoot(t, "revoked-standard-history-");
+  const reportPath = path.join(projectRoot, "reports", "check.json");
+  fs.mkdirSync(path.dirname(reportPath), { recursive: true });
+  fs.writeFileSync(reportPath, canonicalJson({
+    standard_release: historicalIdentity,
+    outcome: "historical",
+  }));
+  const reportBefore = fs.readFileSync(reportPath);
+
+  const applied = await provider.applyRevocationEnvelope(revocationEnvelope(
+    signing,
+    [historicalIdentity.manifest_sha256],
+  ));
+  assert.equal(applied.active_revoked, true);
+  assert.equal(provider.status().ready, false);
+  await assert.rejects(
+    () => provider.verifiedActiveIdentity(),
+    (error) => error && error.code === "REVOKED_PACKAGE",
+  );
+  assert.deepEqual(
+    await provider.verifyReleaseIdentity(historicalIdentity, { allowMigrationSource: true }),
+    historicalIdentity,
+  );
+  assert.deepEqual(fs.readFileSync(reportPath), reportBefore);
+
+  const preview = await provider.checkForRemoteUpdate();
+  const installed = await provider.installRemoteUpdate(preview.plan_id);
+  assert.equal(installed.active.release_sequence, 3);
+  assert.equal(provider.status().ready, true);
+  await assert.rejects(
+    () => provider.rollback(),
+    (error) => error && error.code === "REVOKED_PACKAGE",
+  );
+  assert.deepEqual(fs.readFileSync(reportPath), reportBefore);
+});
+
+test("remote update preview rejects a candidate already present in the signed revocation set", async (t) => {
+  const signing = signingFixture();
+  const envelopeBytes = updateEnvelope(signing.privateKey, signing.keyid);
+  const parsed = JSON.parse(envelopeBytes.toString("utf8"));
+  const candidateDigest = sha256(Buffer.from(parsed.manifest_b64, "base64"));
+  const provider = createProvider(t, {
+    trustStore: signing.trustStore,
+    updateClient: { async check() { return { outcome: "update", envelopeBytes }; } },
+    clock: () => new Date("2026-07-29T12:00:00.000Z"),
+  });
+  await provider.initialize();
+  const applied = await provider.applyRevocationEnvelope(revocationEnvelope(
+    signing,
+    [candidateDigest],
+  ));
+  assert.equal(applied.active_revoked, false);
+  await assert.rejects(
+    () => provider.checkForRemoteUpdate(),
+    (error) => error && error.code === "REVOKED_PACKAGE",
+  );
+});
+
+test("a revocation applied while the update response is in flight wins before preview creation", async (t) => {
+  const signing = signingFixture();
+  const envelopeBytes = updateEnvelope(signing.privateKey, signing.keyid);
+  const parsed = JSON.parse(envelopeBytes.toString("utf8"));
+  const candidateDigest = sha256(Buffer.from(parsed.manifest_b64, "base64"));
+  let releaseResponse;
+  let markEntered;
+  const held = new Promise((resolve) => { releaseResponse = resolve; });
+  const entered = new Promise((resolve) => { markEntered = resolve; });
+  const provider = createProvider(t, {
+    trustStore: signing.trustStore,
+    updateClient: {
+      async check() {
+        markEntered();
+        await held;
+        return { outcome: "update", envelopeBytes };
+      },
+    },
+    clock: () => new Date("2026-07-29T12:00:00.000Z"),
+  });
+  await provider.initialize();
+  const checking = provider.checkForRemoteUpdate();
+  await entered;
+  await provider.applyRevocationEnvelope(revocationEnvelope(signing, [candidateDigest]));
+  releaseResponse();
+  await assert.rejects(
+    checking,
+    (error) => error && error.code === "REVOKED_PACKAGE",
   );
 });
 

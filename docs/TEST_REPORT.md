@@ -2,7 +2,26 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.50 标准更新服务端契约与桌面纵向链
+## 最新验证结论：0.1.0-alpha.51 标准签名撤回本地状态机
+
+验证日期：2026-07-29。本轮未联网、未注入生产 release/revocation 公钥或私钥；测试使用运行时生成的 Ed25519 密钥和匿名本地文件。未部署、推送或重新打包。
+
+| 项目 | 结果 | 证据与边界 |
+|---|---|---|
+| 独立撤回角色 | **PASS** | trust `1.0` 精确 release-only，`1.1` 精确要求 release + revocation；版本/角色漂移、未配置、未知/重复 key、无效签名和门槛不足均 fail-closed，不能借用普通 `release` 权限 |
+| Exact envelope/list | **PASS** | 两层 canonical UTF-8/LF JSON、exact Schema、bundle、签发/过期时间窗；清单最多 4096 个排序去重小写 manifest SHA-256；外层 1 MiB、payload 512 KiB、签名最多 16 个 |
+| 防回退与事务 | **PASS** | 已持久化撤回集合只增不减；移除旧 digest 返回 `REVOCATION_ROLLBACK`；复用跨进程 pending transaction、前后态摘要和原子替换，注入 state rename 故障后重启恢复前态且 CAS 不删 |
+| active/候选处置 | **PASS** | active 命中后普通使用停止；远程候选在生成确认计划前拒绝；撤回若在更新响应或候选验签途中落地，最新可信状态会在预览前重读并优先；受控 migration-source 身份仍可验证并前进到更高未撤回 release，恢复 ready；已撤回 previous 不能回滚 |
+| 历史保留 | **PASS** | 撤回前固定历史报告原字节；撤回、前进恢复和回滚拒绝后仍完全相同。标准 CAS、项目 pin、既有结果和已生成 exports 不删除；重新生成报告属于新操作，可信 active 恢复前阻断 |
+| 全量测试 | **PASS** | `npm test` 退出码 0；Node 682 total / 675 pass / 0 fail / 7 skip，4.049 秒；Python 362 / 0 failures / 0 errors / 3 skipped，103.218 秒；墙钟 111.7 秒 |
+| 隐藏源码 smoke | **PASS（最终外层）** | 文件系统沙箱内两次在业务动作前因 GPU 子进程 `0xC0000135` / Renderer `ERR_FAILED` 退出，均不计通过；最终 trust 1.1 代码在获准的独立隐藏原始 smoke PASS，Renderer sandbox 保持，未用 `--no-sandbox`，输出 `out/source-smoke/runs/ms5yuwmk-11a2ad804c9bde10/projects/` |
+| Web smoke | **PASS** | 隐藏 Chromium 使用匿名内存假服务；HTTP(S) 请求 0，桌面/移动截图仍在 `out/web-client-smoke/`；本轮 Web 业务未改动 |
+| 资源与运行时门禁 | **PASS（alpha）** | loose 104 文件 / 2,167,094 字节；manifest `f73887ad054dacb9946dfdc618304a69a3eaffcc1f0cfd7d9ef26b0172f09ad7`，anchor `2f5c621029192e6fcbfed14797767c95b08934a6dcb1a90bd3771ef912a85db7`；标准、Windows alpha、fuse、Electron runtime 与发行身份结构检查退出 0 |
+| 生产与销售门禁 | **未运行/未完成** | 生产 revocation trust pin、密钥托管/多人签署、HTTP 获取、调度/缓存、紧急手册、UI 告警、监控和真实网络未验证；source sale 仍 17 blocker、发行身份缺 12 字段；alpha.51 未打包，最新 Windows 制品仍为未签名 alpha.42 |
+
+结论：alpha.51 证明受信撤回状态可以在本地被独立验签、追加式持久化并安全阻断/恢复，同时保留历史文件；它不是生产撤回发布或网络分发系统的证据。
+
+## 历史验证结论：0.1.0-alpha.50 标准更新服务端契约与桌面纵向链
 
 验证日期：2026-07-29。本轮未联网、未注入生产公钥/私钥或真实发布源；使用内存发布源和运行时生成的测试 Ed25519 密钥/签名包。未部署、推送或重新打包。
 

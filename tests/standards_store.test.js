@@ -12,9 +12,12 @@ const {
   ENVELOPE_SCHEMA_VERSION,
   MANIFEST_KIND,
   PACKAGE_FILES,
+  REVOCATION_ENVELOPE_KIND,
+  REVOCATION_LIST_KIND,
   StandardsStore,
   TRUST_KIND,
   TRUST_SCHEMA_VERSION,
+  TRUST_SCHEMA_VERSION_WITH_REVOCATION,
   canonicalJson,
   compareSemver,
   sha256,
@@ -55,6 +58,50 @@ function makeTrust(signers, threshold = signers.length) {
         keyids: signers.map((item) => item.keyid),
       },
     },
+  };
+}
+
+function makeTrustWithRevocation(signers, threshold = signers.length) {
+  const trust = makeTrust(signers, threshold);
+  trust.schema_version = TRUST_SCHEMA_VERSION_WITH_REVOCATION;
+  trust.roles.revocation = {
+    threshold,
+    keyids: signers.map((item) => item.keyid),
+  };
+  return trust;
+}
+
+function signedRevocationEnvelope({
+  signers,
+  revokedManifestSha256s,
+  issuedAt = "2026-07-27T00:00:00Z",
+  expiresAt = "2026-08-27T00:00:00Z",
+  bundleId = "oak-standards",
+}) {
+  const payload = {
+    schema_version: "1.0",
+    kind: REVOCATION_LIST_KIND,
+    bundle_id: bundleId,
+    issued_at: issuedAt,
+    expires_at: expiresAt,
+    revoked_manifest_sha256s: [...revokedManifestSha256s],
+  };
+  const payloadBytes = Buffer.from(canonicalJson(payload), "utf8");
+  const envelope = {
+    schema_version: "1.0",
+    kind: REVOCATION_ENVELOPE_KIND,
+    payload_b64: payloadBytes.toString("base64"),
+    signatures: signers.map((item) => ({
+      keyid: item.keyid,
+      alg: "ed25519",
+      sig_b64: crypto.sign(null, payloadBytes, item.privateKey).toString("base64"),
+    })),
+  };
+  return {
+    bytes: Buffer.from(canonicalJson(envelope), "utf8"),
+    envelope,
+    payload,
+    payloadBytes,
   };
 }
 
@@ -546,6 +593,213 @@ test("migration-source identity mode relaxes only revoked, expired, and app-comp
     await expiredStore.verifyReleaseIdentity(expiringIdentity, { allowMigrationSource: true }),
     expiringIdentity,
   );
+});
+
+test("threshold-signed append-only revocations block active use without deleting CAS or historical reports", async (t) => {
+  const item = fixture(t);
+  item.options.trustStore = makeTrustWithRevocation(item.signers);
+  item.store = new StandardsStore(item.options);
+  await bootstrap(item);
+  const update = signedEnvelope({
+    sequence: 2,
+    version: "1.1.0",
+    signers: item.signers,
+    rollbackTarget: {
+      manifest_sha256: item.bundled.manifestSha256,
+      release_sequence: 1,
+    },
+  });
+  await item.store.install(update.bytes);
+  const identity = await item.store.verifiedActiveIdentity();
+  const reportPath = path.join(item.root, "project", "reports", "historical.json");
+  fs.mkdirSync(path.dirname(reportPath), { recursive: true });
+  fs.writeFileSync(reportPath, canonicalJson({ standard_release: identity, result: "historical" }));
+  const reportBefore = fs.readFileSync(reportPath);
+
+  const revocations = signedRevocationEnvelope({
+    signers: item.signers,
+    revokedManifestSha256s: [update.manifestSha256],
+  });
+  const applied = await item.store.applyRevocationEnvelope(revocations.bytes);
+  assert.deepEqual(applied.revoked_manifest_sha256s, [update.manifestSha256]);
+  await assert.rejects(() => item.store.verifyActive(), expectCode("REVOKED_PACKAGE"));
+  assert.deepEqual(
+    await item.store.verifyReleaseIdentity(identity, { allowMigrationSource: true }),
+    identity,
+  );
+  assert.deepEqual(fs.readFileSync(reportPath), reportBefore);
+  for (const name of PACKAGE_FILES) {
+    assert.equal(fs.existsSync(path.join(item.options.rootDir, "packages", update.manifestSha256, name)), true);
+  }
+
+  const removal = signedRevocationEnvelope({
+    signers: item.signers,
+    revokedManifestSha256s: [],
+  });
+  await assert.rejects(
+    () => item.store.applyRevocationEnvelope(removal.bytes),
+    expectCode("REVOCATION_ROLLBACK"),
+  );
+});
+
+test("revocation envelopes require an exact live list and a distinct trusted threshold", async (t) => {
+  const item = fixture(t);
+  await bootstrap(item);
+  assert.throws(
+    () => new StandardsStore({
+      ...item.options,
+      trustStore: { ...makeTrustWithRevocation(item.signers), schema_version: "1.0" },
+    }),
+    expectCode("INVALID_TRUST_STORE"),
+  );
+  const missingRevocationRole = makeTrust(item.signers);
+  missingRevocationRole.schema_version = "1.1";
+  assert.throws(
+    () => new StandardsStore({ ...item.options, trustStore: missingRevocationRole }),
+    expectCode("INVALID_TRUST_STORE"),
+  );
+  const digest = "a".repeat(64);
+  const unsignedRole = signedRevocationEnvelope({
+    signers: item.signers,
+    revokedManifestSha256s: [digest],
+  });
+  await assert.rejects(
+    () => item.store.applyRevocationEnvelope(unsignedRole.bytes),
+    expectCode("REVOCATION_TRUST_UNCONFIGURED"),
+  );
+
+  item.options.trustStore = makeTrustWithRevocation(item.signers);
+  item.store = new StandardsStore(item.options);
+  const invalidCases = [
+    signedRevocationEnvelope({
+      signers: [signer()],
+      revokedManifestSha256s: [digest],
+    }).bytes,
+    signedRevocationEnvelope({
+      signers: [item.signers[0]],
+      revokedManifestSha256s: [digest],
+    }).bytes,
+    signedRevocationEnvelope({
+      signers: item.signers,
+      revokedManifestSha256s: ["b".repeat(64), digest],
+    }).bytes,
+    signedRevocationEnvelope({
+      signers: item.signers,
+      revokedManifestSha256s: [digest, digest],
+    }).bytes,
+    signedRevocationEnvelope({
+      signers: item.signers,
+      revokedManifestSha256s: [digest],
+      issuedAt: "2026-07-29T00:00:00Z",
+    }).bytes,
+    signedRevocationEnvelope({
+      signers: item.signers,
+      revokedManifestSha256s: [digest],
+      expiresAt: "2026-07-27T12:00:00Z",
+    }).bytes,
+    signedRevocationEnvelope({
+      signers: item.signers,
+      revokedManifestSha256s: [digest],
+      bundleId: "other-standards",
+    }).bytes,
+  ];
+  const expectedCodes = [
+    "UNKNOWN_SIGNING_KEY",
+    "SIGNATURE_THRESHOLD",
+    "INVALID_REVOCATION_LIST",
+    "INVALID_REVOCATION_LIST",
+    "NOT_YET_VALID",
+    "EXPIRED_REVOCATION_LIST",
+    "BUNDLE_ID_MISMATCH",
+  ];
+  for (let index = 0; index < invalidCases.length; index += 1) {
+    await assert.rejects(
+      () => item.store.applyRevocationEnvelope(invalidCases[index]),
+      expectCode(expectedCodes[index]),
+    );
+  }
+});
+
+test("tracked revocation schemas preserve the exact signed envelope and bounded append-only list shapes", () => {
+  const schemas = path.join(REPO_ROOT, "config", "schemas");
+  const list = JSON.parse(fs.readFileSync(
+    path.join(schemas, "standards-revocation-list-v1.schema.json"),
+    "utf8",
+  ));
+  const envelope = JSON.parse(fs.readFileSync(
+    path.join(schemas, "standards-revocation-envelope-v1.schema.json"),
+    "utf8",
+  ));
+  const trust = JSON.parse(fs.readFileSync(
+    path.join(schemas, "standards-trust-v1.1.schema.json"),
+    "utf8",
+  ));
+  assert.equal(list.additionalProperties, false);
+  assert.deepEqual(list.required, [
+    "schema_version",
+    "kind",
+    "bundle_id",
+    "issued_at",
+    "expires_at",
+    "revoked_manifest_sha256s",
+  ]);
+  assert.equal(list.properties.revoked_manifest_sha256s.maxItems, 4096);
+  assert.equal(list.properties.revoked_manifest_sha256s.uniqueItems, true);
+  assert.equal(envelope.additionalProperties, false);
+  assert.deepEqual(envelope.required, ["schema_version", "kind", "payload_b64", "signatures"]);
+  assert.equal(envelope.properties.signatures.maxItems, 16);
+  assert.equal(envelope.properties.signatures.items.additionalProperties, false);
+  assert.equal(trust.additionalProperties, false);
+  assert.equal(trust.properties.schema_version.const, "1.1");
+  assert.deepEqual(trust.properties.roles.required, ["release", "revocation"]);
+});
+
+test("revocation state commit failure is recovered without deleting the active package", async (t) => {
+  const item = fixture(t);
+  item.options.trustStore = makeTrustWithRevocation(item.signers);
+  item.store = new StandardsStore(item.options);
+  await bootstrap(item);
+  const revocations = signedRevocationEnvelope({
+    signers: item.signers,
+    revokedManifestSha256s: ["c".repeat(64)],
+  });
+  let failStateRename = true;
+  const faultFs = new Proxy(fs, {
+    get(target, property) {
+      if (property === "renameSync") {
+        return (source, destination) => {
+          if (failStateRename && destination === path.join(item.options.rootDir, "active.json") &&
+              path.basename(source).startsWith(".active.json.")) {
+            failStateRename = false;
+            const error = new Error("injected revocation state rename failure");
+            error.code = "EIO";
+            throw error;
+          }
+          return target.renameSync(source, destination);
+        };
+      }
+      return Reflect.get(target, property);
+    },
+  });
+  const faultingStore = new StandardsStore({ ...item.options, fsImpl: faultFs });
+  await assert.rejects(
+    () => faultingStore.applyRevocationEnvelope(revocations.bytes),
+    /injected revocation state rename failure/,
+  );
+
+  const reopened = new StandardsStore(item.options);
+  const recovered = await reopened.verifyActive();
+  assert.deepEqual(recovered.state.revoked_manifest_sha256s, []);
+  for (const name of PACKAGE_FILES) {
+    assert.equal(fs.existsSync(path.join(
+      item.options.rootDir,
+      "packages",
+      item.bundled.manifestSha256,
+      name,
+    )), true);
+  }
+  const applied = await reopened.applyRevocationEnvelope(revocations.bytes);
+  assert.deepEqual(applied.revoked_manifest_sha256s, ["c".repeat(64)]);
 });
 
 test("valid threshold-signed release installs into CAS and atomically advances state", async (t) => {

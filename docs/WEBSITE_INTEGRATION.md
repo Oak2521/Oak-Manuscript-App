@@ -2,9 +2,9 @@
 
 > 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.50 源码）
+## Provider 一览（当前 alpha.51 源码）
 
-alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI；alpha.44—alpha.48 完成签名权益、网站账号设备客户端与匿名撤销传播链；alpha.49—alpha.50 完成用户触发的标准更新桌面 transport、公开服务端契约与真实测试签名本地纵向链。受信账号、权益与标准更新配置仍为 `pending_configuration` 且端点/key/公钥为空；数据库迁移、更新发布源、API 与客户端均未部署，因此普通 APP 仍不登录、刷新订阅、同步或在线检查标准。商业仓库没有真实 service-role key、OAuth 配置、权益/标准私钥或 AI key。
+alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI；alpha.44—alpha.48 完成签名权益、网站账号设备客户端与匿名撤销传播链；alpha.49—alpha.50 完成用户触发的标准更新桌面 transport、公开服务端契约与真实测试签名本地纵向链；alpha.51 增加独立角色签名、追加式标准撤回本地状态机。受信账号、权益与标准更新配置仍为 `pending_configuration` 且端点/key/公钥为空；数据库迁移、更新/撤回发布源、API 与客户端均未部署，因此普通 APP 仍不登录、刷新订阅、同步或在线检查标准。商业仓库没有真实 service-role key、OAuth 配置、权益/标准私钥或 AI key。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
@@ -12,7 +12,7 @@ alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；al
 | `LicenseProvider` | alpha.44—alpha.47 已实现桌面权益、签发、订阅/设备服务和网站客户端；alpha.48 已完成匿名撤销传播纵向链；默认配置为空，仓库无生产私钥 | 选择支付商并实现原始 webhook 验签适配、私钥托管/轮换，执行迁移、部署客户端并填充生产配置完成真实 E2E；价格未拍板 |
 | `EvaluationProvider` | 用户点击后返回固定湖岸 HTTPS 评估页 URL，由主进程白名单校验并交给系统浏览器打开；APP 不在该 Provider 中生成或上传摘要 | 用户确认后提交脱敏摘要（§8.3–§8.4） |
 | `SyncProvider` | 可信 Python 来源 → exact 校验 → 完整预览 → 四选一确认 → 按账户 OS 加密队列；服务/API/Supabase、桌面 client/coordinator 和网站列表/属主删除 client 已有源码；默认无端点，迁移/服务/页面未部署 | 填充受信正式配置，完成预生产迁移、真实 E2E 与官网账号后台部署 |
-| `StandardsProvider` | 离线可信链、本地导入/回滚、项目固定/显式升级，以及用户点击触发的 HTTPS client、服务端固定路由和本地真实签名 E2E 已实现；默认端点/trust pin 为空 | 建立生产发布源、密钥治理、签名撤回、限流/监控并完成真实网络联调；绝不上传稿件 |
+| `StandardsProvider` | 离线可信链、本地导入/回滚、项目固定/显式升级、用户点击 HTTPS client、服务端固定路由，以及独立角色签名撤回的本地拒绝/恢复语义已实现；默认端点/trust pin 为空，撤回获取未接线 | 建立生产发布/撤回源、密钥治理、清单获取/调度、告警、限流/监控并完成真实网络联调；绝不上传稿件 |
 | `UpdateProvider` | 尚未实现或导出 | 签名应用更新 |
 | `FeedbackProvider` | 尚未实现或导出 | 用户主动发送不含正文的规则反馈 |
 | `AIProvider` / `AIRequestCoordinator` / compatible transport | 三模式、Pro/safeStorage、单条预览/确认/审阅和有界 HTTP 已实现；桌面只注册 OpenAI-compatible/Ollama/LM Studio，保存/预览零请求，建议不持久化或写稿；Ollama 与 LM Studio headless 各一固定组合通过匿名窄验收，LM Studio 静默模型替换会被拒绝 | OpenAI/Anthropic/Gemini 官方协议、其他 compatible 组合、多模型语义、宽泛质量和湖岸 AI 服务仍待完成；Web 用户凭据只限当前会话，绝不进入账号同步或长期网站存储 |
@@ -33,6 +33,8 @@ alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；al
 固定公开路由为 `POST /manuscript/standards/v1/check`。它只接受 HTTPS、exact JSON、signed-package `Accept` 和正确 `Content-Length`，明确拒绝 Bearer、Cookie、Transfer-Encoding、内容字段和未知字段。请求只含 APP 版本、bundle、当前 release sequence 与 manifest SHA-256。
 
 服务端以 204 表示当前版本，以 200 和 `application/vnd.oak.standard-package+json` 原始字节返回更高序列候选。服务只复核发布记录结构与 envelope SHA-256，不替代桌面的签名、payload、schema、兼容性和防降级验证。生产运行时必须注入发布源与 content-free audit sink；当前没有对象存储、CDN、真实域名配置或生产密钥。完整接入、错误码和运维边界见 `STANDARDS_UPDATE_V1.md`。
+
+alpha.51 的撤回清单合同见 `STANDARDS_REVOCATION_V1.md`。当前只实现本地验签与状态语义；固定 HTTPS 获取路由、发布存储、生产 revocation key、调度和告警仍未实现，不能由 alpha.50 的普通候选响应冒充。
 
 ## SyncRecord 长期结果 API v1（alpha.39，未部署）
 

@@ -4,6 +4,18 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.51（ChatGPT 标准签名撤回本地状态机）
+
+> 本地可信状态检查点；本轮未联网、未配置生产 release/revocation key、未实现撤回 HTTP 获取或 UI 告警、未部署、未推送、未打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。
+
+- trust store `1.0` 保持 release-only，`1.1` 精确要求 `release` + 独立 `revocation` 门槛签名角色；canonical envelope/list 绑定 bundle、有效时间窗及最多 4096 个排序去重 manifest SHA-256；
+- 未配置/未知/重复 key、无效签名、阈值不足、未来/过期、bundle 漂移、排序/重复与撤回回退均 fail-closed；已持久化撤回集合只增不减；
+- 撤回应用复用跨进程 pending transaction、前后态摘要、原子换入和确定性恢复；注入状态提交故障后恢复前态且不删除 CAS；
+- active 撤回后停止新操作，但允许受控 migration-source 身份验证并安全前进到更高未撤回 release；候选和回滚目标命中撤回集合立即拒绝，更新响应或候选验签途中落地的撤回也会在预览生成前胜出；
+- 撤回不删除标准 CAS、项目 pin、既有检查结果或已生成 exports；测试固定历史报告原字节并证明撤回/恢复后不变；
+- 全量 Node 682/675/0/7、Python 362/0/0/3；资源信任 104 文件 / 2,167,094 字节，manifest `f73887ad…9ad7`、anchor `2f5c6210…5db7`；最终独立隐藏 Electron 与 Web smoke PASS；
+- 生产 trust pin、撤回发布/HTTP 获取、密钥托管/多人签署、调度/告警/监控和真实网络联调仍未完成；销售门禁仍 17 项，发行身份仍缺 12 字段。
+
 ### 2026-07-29 — 0.1.0-alpha.50（ChatGPT 标准更新服务端契约与桌面纵向链）
 
 > 源码与本地真实签名纵向证据；本轮未联网、未配置生产密钥/发布源、未部署、未推送、未打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。

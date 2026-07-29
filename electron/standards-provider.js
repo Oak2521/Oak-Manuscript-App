@@ -351,7 +351,17 @@ class StandardsProvider {
       });
       if (result && typeof result === "object" && !Array.isArray(result) &&
           Object.keys(result).length === 1 && result.outcome === "current") {
-        return { outcome: "current", active: current.active };
+        const { state: latest } = await this.store.verifyActive({ allowMigrationSource: true });
+        if (latest.active.bundle_id !== current.active.bundle_id ||
+            latest.active.release_sequence !== current.active.release_sequence ||
+            latest.active.manifest_sha256 !== current.active.manifest_sha256 ||
+            latest.highest_seen_sequence !== current.highest_seen_sequence) {
+          fail("STANDARD_UPDATE_STATE_CHANGED", "标准库在在线检查期间发生变化，请重新检查");
+        }
+        if (latest.revoked_manifest_sha256s.includes(latest.active.manifest_sha256)) {
+          fail("REVOKED_PACKAGE", "当前标准包已由受信撤回清单撤回，请获取更高版本");
+        }
+        return { outcome: "current", active: latest.active };
       }
       if (!result || typeof result !== "object" || Array.isArray(result) ||
           Object.keys(result).sort().join("\0") !== ["envelopeBytes", "outcome"].sort().join("\0") ||
@@ -364,8 +374,18 @@ class StandardsProvider {
         enforceExpiry: true,
         runPayloadValidation: true,
       });
-      if (verified.manifest.bundle_id !== current.active.bundle_id ||
-          verified.manifest.release_sequence <= current.highest_seen_sequence) {
+      const { state: latest } = await this.store.verifyActive({ allowMigrationSource: true });
+      if (latest.active.bundle_id !== current.active.bundle_id ||
+          latest.active.release_sequence !== current.active.release_sequence ||
+          latest.active.manifest_sha256 !== current.active.manifest_sha256 ||
+          latest.highest_seen_sequence !== current.highest_seen_sequence) {
+        fail("STANDARD_UPDATE_STATE_CHANGED", "标准库在在线检查期间发生变化，请重新检查");
+      }
+      if (latest.revoked_manifest_sha256s.includes(verified.manifestSha256)) {
+        fail("REVOKED_PACKAGE", "在线标准候选已列入受信撤回清单");
+      }
+      if (verified.manifest.bundle_id !== latest.active.bundle_id ||
+          verified.manifest.release_sequence <= latest.highest_seen_sequence) {
         fail("STANDARD_UPDATE_NOT_NEWER", "在线标准候选不是当前标准库的更高 release_sequence");
       }
       const planId = this.planIdFactory();
@@ -377,7 +397,7 @@ class StandardsProvider {
       this._remotePlan = Object.freeze({
         planId,
         expiresAt,
-        expectedActiveManifestSha256: current.active.manifest_sha256,
+        expectedActiveManifestSha256: latest.active.manifest_sha256,
         envelopeSha256: sha256(bytes),
         manifestSha256: verified.manifestSha256,
         bytes,
@@ -388,7 +408,7 @@ class StandardsProvider {
         expires_at: expiresAt,
         envelope_sha256: this._remotePlan.envelopeSha256,
         manifest_sha256: verified.manifestSha256,
-        expected_active_manifest_sha256: current.active.manifest_sha256,
+        expected_active_manifest_sha256: latest.active.manifest_sha256,
         bundle_id: verified.manifest.bundle_id,
         release_sequence: verified.manifest.release_sequence,
         version: verified.manifest.version,
@@ -426,6 +446,8 @@ class StandardsProvider {
     }
     const state = await this.store.install(plan.bytes);
     const active = await this.store.verifyActive();
+    this.initialized = true;
+    this.initializationError = null;
     return {
       active: state.active,
       previous: state.previous,
@@ -440,6 +462,30 @@ class StandardsProvider {
     }
     this._remotePlan = null;
     return { canceled: true };
+  }
+
+  async applyRevocationEnvelope(envelopeBytes) {
+    const store = await this._prepareStoreAndBundle();
+    if (!this.trustConfigured) {
+      fail("REVOCATION_TRUST_UNCONFIGURED", "正式撤回签名公钥尚未配置，拒绝应用撤回清单");
+    }
+    this._remotePlan = null;
+    const state = await store.applyRevocationEnvelope(envelopeBytes);
+    const activeRevoked = state.revoked_manifest_sha256s.includes(
+      state.active.manifest_sha256,
+    );
+    if (activeRevoked) {
+      this.initialized = false;
+      this.initializationError = {
+        code: "REVOKED_PACKAGE",
+        message: "当前标准包已由受信撤回清单撤回；新检查已停止，请获取更高版本",
+      };
+    }
+    return {
+      active: state.active,
+      active_revoked: activeRevoked,
+      revoked_manifest_sha256s: [...state.revoked_manifest_sha256s],
+    };
   }
 
   async listStandards() {

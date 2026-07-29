@@ -2,6 +2,16 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.51 标准签名撤回状态机验收（2026-07-29）
+
+- [x] trust store `1.0` 保持 release-only；`1.1` 精确要求 `release` + 独立 `revocation` 门槛签名角色。版本/角色漂移、未配置、未知 key、重复 key、无效签名和阈值不足均 fail-closed；
+- [x] envelope/list 使用 canonical UTF-8/LF JSON、exact 字段、bundle 与有效时间窗；撤回摘要最多 4096 条且必须排序去重；
+- [x] 已持久化撤回集合只增不减，签名清单也不能执行撤回回退；状态通过既有跨进程 pending transaction 原子提交并可从注入故障恢复；
+- [x] active 撤回后停止普通新操作，但允许受控 migration-source 验证和更高未撤回 release 安全前进恢复；撤回候选、重新激活和回滚均拒绝，在线检查途中落地的撤回在生成预览前优先；
+- [x] 撤回不删除标准 CAS、项目固定身份、既有检查结果或已生成导出；已有导出目录仍可打开，报告重新生成按新操作阻断；
+- [x] 全量 Node 682/675/0/7、Python 362/0/0/3；标准、资源、fuse、Electron runtime、发行身份结构与 Windows alpha 门禁通过；隐藏 Electron/Web smoke 通过；
+- [ ] 生产 revocation trust pin、密钥托管/多人签署、HTTP 获取、调度/缓存、紧急手册、UI 告警、监控和真实网络联调未完成；alpha.51 未打包，最新 Windows 制品仍为未签名 alpha.42。
+
 ## 0.1.0-alpha.50 标准更新服务端契约与桌面纵向链验收（2026-07-29）
 
 - [x] 固定公开 POST 路由只接受 HTTPS、exact JSON、signed-package Accept、唯一正确 Content-Length；拒绝账号凭据、Cookie、Transfer-Encoding、未知字段与内容字段；

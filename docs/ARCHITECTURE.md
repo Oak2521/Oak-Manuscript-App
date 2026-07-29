@@ -167,6 +167,12 @@ alpha.49 在 Electron 主进程增加待配置 HTTPS transport。只有用户点
 
 alpha.50 增加公开固定 `POST /manuscript/standards/v1/check`、`StandardsUpdateService` 和 Fetch runtime。服务拒绝账号凭据与内容字段，只从注入的 exact 发布记录读取不可变候选，复算 envelope SHA-256 后返回空 204 或原始 signed-package bytes；错误与 audit 不含请求版本、manifest 或发布源细节。服务端仍不设置客户端“已验证”状态，真实 Ed25519 E2E 最终由桌面再次验证并原子安装。完整协议见 `STANDARDS_UPDATE_V1.md`；生产发布源、密钥、部署和撤回清单仍未实现。
 
+### AD-029 标准撤回必须“独立角色签名—集合只增不减—active 停用—历史不删”（2026-07-29，冻结）
+
+alpha.51 保持 trust store `1.0` 为 release-only，并以 exact `1.1` 同时要求 `release` 与独立 `revocation` 门槛签名角色；未配置该角色时不能借用 `release` 权限。撤回 envelope 与 list payload 都必须是 canonical JSON，绑定 bundle、有效时间窗及排序去重的 manifest SHA-256 集合。已持久化撤回项只能增加；即使后续清单签名有效，也不能删除旧项或把已撤回候选重新激活。
+
+应用清单使用既有跨进程 pending transaction、前后态摘要和原子恢复。active 被撤回后，普通 active/项目业务验证 fail-closed；受控 migration-source 验证仍可读取完整身份，以安装更高且未撤回的 release。远程更新响应或候选验签完成后、创建预览计划前必须重新读取可信状态；途中落地的撤回优先，不能因旧快照生成可安装计划。撤回不清理 CAS、项目 pin、既有检查 JSON 或已生成 `exports/`；重新生成报告属于新操作，必须等待可信 active 恢复。完整协议见 `STANDARDS_REVOCATION_V1.md`。alpha.51 没有生产撤回密钥、HTTP 获取、调度或 UI 告警，不能写成线上撤回系统已完成。
+
 ### AD-018 Web 临时任务必须“可信主体—单任务同意—内容/元数据分道—删除失败可见”（2026-07-28，冻结）
 
 Web 创建请求不接收账号 ID；账号或匿名会话主体必须由上游可信会话层以独立参数注入。请求 exact schema 只允许幂等键、单任务处理同意、隐私版本和格式/类型/检查配置/引用体例/字节数，不允许文件名、路径、正文、片段或内容哈希。上传字节只进入临时存储适配器，公开状态与观察事件不含主体和稿件元数据；运行时大小上限不能放宽 tracked schema。

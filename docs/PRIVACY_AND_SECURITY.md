@@ -159,7 +159,9 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - 当前内置 2.0.0 以 1.0.0 manifest `d33534f0…d7af` 为精确 rollback target。旧项目的原 release 必须仍存在于本地 CAS 并通过同一严格验证；缺失时拒绝迁移，禁止用 active release 冒充历史身份。
 - 迁移源可在显式迁移路径中放宽“已撤回/已过期/APP 不兼容”三项，以便把项目救出旧 release；签名、代码锚、payload、能力映射、路径、未来发布时间和七字段身份始终不能放宽；
 - alpha.49 已实现用户点击触发的桌面 HTTPS transport；请求只含 APP/标准版本身份，Renderer 不持有端点、候选字节或安装计划。alpha.50 增加公开服务端固定路由，明确拒绝 Authorization、Cookie、稿件/项目字段和未知字段；错误不反射正文，audit 只含请求 ID、时间、方法、路由模板、状态和错误码。
-- 服务端只返回经内部 envelope 摘要复核的候选，不能设置“已验证”；桌面仍独立执行 Ed25519、canonical manifest、全文件哈希、schema、白名单、兼容性和高水位验证。默认配置继续零网络，生产发布源、trust pin、密钥治理、限流/监控、真实网络与签名撤回分发尚未完成。
+- 服务端只返回经内部 envelope 摘要复核的候选，不能设置“已验证”；桌面仍独立执行 Ed25519、canonical manifest、全文件哈希、schema、白名单、兼容性和高水位验证。
+- alpha.51 增加独立 `revocation` 角色签名的 canonical 撤回清单。清单只含 bundle、时间窗和 manifest 摘要；持久集合只增不减，active/候选/回滚目标命中即 fail-closed。撤回只改变可信使用状态，不删除 CAS、项目身份、既有检查结果或已生成导出；恢复必须前进到更高且未撤回的签名 release；
+- 默认配置继续零网络，生产发布源、release/revocation trust pin、密钥治理、撤回清单 HTTP 获取、限流/监控和真实网络尚未完成。
 
 ### Windows 安装生命周期的授权与数据边界
 
