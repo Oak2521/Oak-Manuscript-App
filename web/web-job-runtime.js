@@ -16,6 +16,10 @@ const { PythonCoreProcessProcessor } = require("./python-core-process-processor"
 const { SupabaseJobRepository } = require("./supabase-job-repository");
 const { createSupabaseSessionResolver } = require("./supabase-session-adapter");
 const { ZeroRetentionSweeper } = require("./zero-retention-sweeper");
+const {
+  DEPLOYMENT_REQUIREMENTS_SHA256,
+  assessWebDeploymentProfile,
+} = require("./deployment-admission");
 const migrationManifest = require("./supabase/migrations-v1.json");
 
 const MIGRATION_MANIFEST_SHA256 = createHash("sha256")
@@ -34,6 +38,8 @@ const CONFIGURATION_KEYS = Object.freeze([
   "blob_store_name",
   "blob_prefix",
   "expected_migration_manifest_sha256",
+  "expected_deployment_requirements_sha256",
+  "deployment_profile",
 ]);
 
 const ADAPTER_KEYS = Object.freeze([
@@ -71,11 +77,18 @@ function validateConfiguration(input) {
   if (value.expected_migration_manifest_sha256 !== MIGRATION_MANIFEST_SHA256) {
     throw new TypeError("Web 作业生产配置未绑定当前 Supabase 迁移 bundle");
   }
+  if (value.expected_deployment_requirements_sha256 !== DEPLOYMENT_REQUIREMENTS_SHA256) {
+    throw new TypeError("Web 作业生产配置未绑定当前部署需求");
+  }
   if (typeof value.supabase_api_key === "string" &&
       value.supabase_api_key === value.supabase_service_role_key) {
     throw new TypeError("Supabase 公开 API key 与 service-role key 必须分离");
   }
-  return value;
+  const deploymentAdmission = assessWebDeploymentProfile(value.deployment_profile);
+  if (deploymentAdmission.declared_capabilities_satisfied !== true) {
+    throw new TypeError("Web 作业部署平台能力不足");
+  }
+  return Object.freeze({ value, deploymentAdmission });
 }
 
 function validateAdapters(input) {
@@ -85,7 +98,8 @@ function validateAdapters(input) {
 }
 
 function createWebJobProductionRuntime({ configuration, adapters } = {}) {
-  const config = validateConfiguration(configuration);
+  const validated = validateConfiguration(configuration);
+  const config = validated.value;
   const injected = validateAdapters(adapters);
 
   const storage = createNetlifyEphemeralStorage({
@@ -145,6 +159,10 @@ function createWebJobProductionRuntime({ configuration, adapters } = {}) {
     private_worker_enabled: true,
     cleanup_scheduler_required: true,
     migration_manifest_sha256: MIGRATION_MANIFEST_SHA256,
+    deployment_requirements_sha256: DEPLOYMENT_REQUIREMENTS_SHA256,
+    declared_deployment_capabilities_satisfied:
+      validated.deploymentAdmission.declared_capabilities_satisfied,
+    production_evidence_verified: false,
     database_migrations_applied: "not_verified",
     os_network_isolation_verified: false,
     production_zero_retention_verified: false,

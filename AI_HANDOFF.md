@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-29
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.55`
+> 当前版本：`0.1.0-alpha.56`
 > 当前分支：`chatgpt/commercial-v1`
-> 当前源码标签：`chatgpt-v0.1.0-alpha.55-web-deployment-gate`；最新真实 Windows 打包标签仍为 `chatgpt-v0.1.0-alpha.54-packaged`
+> 当前源码标签：`chatgpt-v0.1.0-alpha.56-web-platform-admission`；最新真实 Windows 打包标签仍为 `chatgpt-v0.1.0-alpha.54-packaged`
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,15 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.56 Web 平台能力准入（源码检查点）
+
+- 新增平台无关 canonical 部署需求与 exact profile 校验，需求直接绑定当前代码的 50 MiB 最大上传、100 MiB 最大结果和 240 秒 Python 处理时限；
+- profile 还必须声明同源 HTTPS、固定子进程/绝对 executable、私有 scratch、OS 禁网、只读应用、强一致/条件写/metadata/list/delete-confirm 对象存储、事务/advisory lock/RLS/service-role RPC，以及私有 worker/cleanup 调度、告警和秘密注入；
+- profile 不含端点或密钥；不足项只形成稳定 content-free code。生产组合同时绑定需求 SHA-256 `6f993e8abd88b2df9e5964638901f453708c9b6f56280b96fb0149045a27eb77`，能力声明不足时在 store/network 初始化前拒绝；
+- 即使全部声明满足，报告/readiness 仍固定 `production_evidence_verified=false`、`production_ready=false`；未联网核对任何厂商官方限制，也没有生成 Netlify 或其他真实平台 profile；
+- 最终 `npm test`：Node 711 total / 704 pass / 0 fail / 7 skip（4.554 秒），Python 362 / 0 failures / 0 errors / 3 skipped（114.770 秒）；隐藏 Electron source smoke PASS，运行根 `out/source-smoke/runs/ms63m7r7-0e877dfd8c7280ff/projects/`；
+- 源码资源信任 108 文件 / 2,171,922 字节，manifest `2b783bc5d872725c9df50f1569bf5101fd798875c89ebecc7818e22e09e1bad3`、anchor `948f158207a90e788dccf75e7838b6113e78296c0780f6621b407f02f27f7095`。本轮未联网、部署、迁移、推送或重新打包；最新 Windows 制品仍为未签名 alpha.54。
 
 ### 已完成：0.1.0-alpha.55 Web 部署组合与迁移字节门禁（源码检查点）
 
@@ -740,9 +749,9 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 5. 下一执行顺序
 
-不要重新做宽泛规划。alpha.55 已补齐 Web 临时作业的生产组合和迁移来源门禁；下一步直接推进生产联调前置条件：
+不要重新做宽泛规划。alpha.56 已补齐 Web 临时作业的平台能力准入；下一步直接推进生产联调前置条件：
 
-1. 不再重复开发 Web 组合或账号同步本地链；`web-job-runtime.js` 和迁移 manifest 只证明来源/组合正确，readiness 继续保持生产未就绪；
+1. 取得联网只读授权后，只使用候选平台官方当前文档核对 50 MiB 请求、100 MiB 响应、240 秒执行、子进程、调度、存储与隔离能力，形成具来源 profile；不接受测试 profile 作为平台选择证据；
 2. 具体支付商 webhook 验签实现必须等用户授权联网并选定平台后，依据官方协议单独开发；当前规范化事件入口继续只接受上游已经验签的 content-free 快照；
 3. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，先按 manifest 执行/复核真实迁移与 RLS，再填充 `desktop-auth.json` / `desktop-license.json`，执行真实 PKCE、最小临时任务、三路清扫、签发刷新、撤销和网站后台 E2E；
 4. OpenAI、Anthropic、Gemini 官方云适配仍必须先核对当前官方协议；不得套用 compatible 形状或凭记忆猜测，但不排在账号/订阅主线之前；

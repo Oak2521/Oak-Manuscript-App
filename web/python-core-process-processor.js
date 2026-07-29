@@ -5,6 +5,8 @@ const path = require("node:path");
 const { createHash } = require("node:crypto");
 const { spawn } = require("node:child_process");
 
+const DEFAULT_PROCESS_TIMEOUT_MS = 4 * 60 * 1000;
+
 const CORE_BOOTSTRAP = [
   "import runpy,sys",
   "sys.path.insert(0,sys.argv.pop(1))",
@@ -106,7 +108,7 @@ class PythonCoreProcessProcessor {
     scratchRoot,
     spawnImpl = spawn,
     sourceEnvironment = process.env,
-    timeoutMs = 4 * 60 * 1000,
+    timeoutMs = DEFAULT_PROCESS_TIMEOUT_MS,
     maxOutputBytes = 16 * 1024 * 1024,
   } = {}) {
     this.pythonExecutable = absolutePath(pythonExecutable, "pythonExecutable");
@@ -326,6 +328,7 @@ class PythonCoreProcessProcessor {
 
 module.exports = {
   CORE_BOOTSTRAP,
+  DEFAULT_PROCESS_TIMEOUT_MS,
   PythonCoreProcessProcessor,
   isolatedEnvironment,
 };

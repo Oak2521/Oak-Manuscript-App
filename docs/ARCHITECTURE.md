@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.55` 源码架构；最新真实 Windows packaged 证据仍为 alpha.54。本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权、确认后即时发送与 OS 加密失败队列、桌面 PKCE/加密 token-store、签名权益、订阅/设备服务和三模式 AI 已有源码链。alpha.55 为 Web 临时作业新增 exact 生产组合入口与四份 SQL 的顺序/精确字节门禁；readiness 故意不声称真实迁移、OS 禁网或生产零留存。默认账号与权益配置无端点/密钥，仓库无生产私钥；真实账号、支付商 webhook、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.56` 源码架构；最新真实 Windows packaged 证据仍为 alpha.54。既有本地标准、账号/同步/权益和三模式 AI 源码链不变。Web 临时作业已有 exact 生产组合、SQL 字节门禁及平台无关能力准入；readiness 故意不声称官方平台限制、真实迁移、OS 禁网或生产零留存已验证。默认账号与权益配置无端点/密钥，仓库无生产私钥；真实账号、支付、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
 
 ## 1. 总体分层
 
@@ -236,6 +236,12 @@ alpha.31 增加仅 `service_role` 可调用的 `oak_manuscript_web_job_list_clea
 alpha.55 以 `web/web-job-runtime.js` 作为临时稿件任务的唯一生产组合根。调用方必须一次提供 exact 配置与 exact 函数适配器；公开 Supabase key、service-role key、Python/core/scratch 路径、强一致 Blobs store、审计 sink、时钟与 ID 工厂均不能隐式从 `process.env` 或全局状态取得。缺失/额外字段、公开与 service-role key 混用、schema/version 或迁移摘要漂移，都必须在 store 工厂或网络调用之前拒绝。Python processor 的继承环境固定为空，runtime 对外只暴露公开 handler、私有 worker、清扫入口和去敏 readiness。
 
 `web/supabase/migrations-v1.json` 是迁移来源束的 canonical 清单；`npm run verify:web:migrations` 对 `001`—`004` 的完整文件集合、顺序、字节数、SHA-256、UTF-8/LF 与事务包裹做只读检查。组合配置必须绑定当前清单摘要，防止应用代码与待执行 SQL 静默漂移。该摘要只证明仓库里的来源字节，不证明 SQL 已在任何数据库执行；readiness 因而固定保留 `database_migrations_applied=not_verified`、`os_network_isolation_verified=false`、`production_zero_retention_verified=false` 与 `production_ready=false`，直到独立生产验收产生更强证据。
+
+### AD-031 Web 平台选择必须“运行时硬需求—非敏感 profile—声明与证据分离”（2026-07-29，冻结）
+
+alpha.56 的 `deployment-requirements-v1.json` / `deployment-admission.js` 将当前数据面实际需要的 50 MiB 请求、100 MiB 响应、240 秒公开检查/私有处理，以及子进程、绝对 executable、私有 scratch、OS 禁网、只读应用、强一致条件写存储、事务/RLS/RPC、调度/告警/秘密注入固化为准入条件。数字直接与 job/storage/processor 导出常量交叉绑定，防止部署文档和运行时静默分叉。
+
+候选平台只能提交 exact、无端点/密钥的能力 profile；不足项生成稳定 content-free code，生产组合在创建 store 或网络适配前拒绝。通过只表示“声明值满足当前下限”，不表示厂商官方规格真实如此，也不表示预生产环境具备这些能力；因此报告与 runtime 始终保留 `production_evidence_verified=false`、`production_ready=false`。只有联网核对官方文档、形成具来源 profile 并完成真实故障/隔离/生命周期验收后，才能另行产生生产证据，不能修改本合同中的事实含义。
 
 alpha.39 的 `DesktopAuthProvider` 以受信 `desktop-auth.json` 为唯一端点来源。配置为 `pending_configuration` 时，授权、token、user、Sync API origin、client 与 public key 必须全部为 null，登录返回 `configuration_required` 且不打开页面。配置完整时，主进程生成随机 state/verifier、先将 pending 状态写入独立 `OAKAUTH1` safeStorage 密文，再通过系统浏览器发起 Authorization Code + PKCE S256；Windows second-instance 与 macOS open-url 只接受固定 `oak-manuscript-auth://callback` 的唯一 `code+state`，拒绝 token/额外参数/错配/过期/重放。code exchange 后必须再调用固定 user endpoint 取得 exact account ID；刷新后同样复核账号，错绑清除会话。access/refresh token 和 verifier 不进入 Renderer、项目、报告或日志。
 

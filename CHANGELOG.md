@@ -4,6 +4,15 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.56（ChatGPT Web 平台能力准入）
+
+> 源码检查点；未联网核对厂商规格，未使用真实账号/密钥/数据库，未迁移、部署、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.54。
+
+- 新增 canonical 部署需求与 exact、非敏感平台 profile，直接绑定 50 MiB 上传、100 MiB 结果和 240 秒处理上限；
+- 准入覆盖公开 HTTP、私有隔离执行、强一致对象存储、Postgres/RLS/RPC、worker/cleanup 调度、告警和秘密注入；能力不足输出稳定 content-free violation code；
+- `web-job-runtime.js` 强制绑定需求摘要并拒绝不合格 profile；即使声明满足也固定 `production_evidence_verified=false`、`production_ready=false`，不把自报能力冒充真实平台证据；
+- 全量回归 Node 711/704/0/7、Python 362/0/0/3，隐藏 Electron source smoke PASS；源码资源信任 manifest `2b783bc5…1bad3`、anchor `948f1582…f7095`。
+
 ### 2026-07-29 — 0.1.0-alpha.55（ChatGPT Web 部署组合与迁移字节门禁）
 
 > 源码检查点；本轮未联网、未使用真实账号/密钥/数据库或网站，未执行迁移、部署、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.54。

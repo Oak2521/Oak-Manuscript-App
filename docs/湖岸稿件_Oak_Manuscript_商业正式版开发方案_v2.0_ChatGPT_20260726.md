@@ -615,3 +615,13 @@ Provider 故障不得进入 Python 检查核心，也不得使已有本地项目
 - 已新增 canonical 迁移清单和只读验证命令，锁定四份 SQL 的完整集合、顺序、字节数、SHA-256、UTF-8/LF 与事务边界，避免部署代码与数据库来源静默漂移；
 - readiness 明确保留真实迁移、OS 禁网和生产零留存为未验证，`production_ready=false`；该状态不能由本地测试或部署包装层改写；
 - alpha.55 最终 Node 706 / Python 362 零失败，Web 客户端与 Electron 源码隐藏 smoke 通过；本轮未联网、执行迁移、部署、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.54，目标 `1.0.0` 和“可售卖订阅正式版”尚未达到。
+
+## 二十六、alpha.56 Web 平台能力准入检查点（2026-07-29）
+
+本节解决“组件可组合但候选平台可能承载不了真实稿件上限”的部署前置问题，不代表选定或部署了任何厂商：
+
+- 已将当前 50 MiB 最大上传、100 MiB 最大结果和 240 秒公开检查/私有处理固化为 canonical 平台无关需求，并与运行时代码常量交叉绑定；
+- 候选 profile 还必须声明同源 HTTPS、固定子进程、绝对 executable、私有 scratch、OS 禁网、只读应用、强一致/条件写对象存储、事务/RLS/RPC、私有 worker/cleanup 调度、告警与秘密注入；
+- profile 只能含容量与布尔能力，不能含端点、密钥或稿件字段；不足项生成稳定 content-free code，生产组合在 store/network 初始化前失败关闭；
+- 即使全部声明满足，`production_evidence_verified` 和 `production_ready` 仍为 false。当前没有联网核对 Netlify 或其他厂商官方限制，也没有真实平台 profile；
+- alpha.56 全量 Node 711 / Python 362 零失败，隐藏 Electron 源码 smoke 和资源信任通过；未联网、迁移、部署、推送或打包。最新 Windows packaged 仍为未签名 alpha.54，商业正式版目标尚未达到。

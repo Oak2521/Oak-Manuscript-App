@@ -79,9 +79,11 @@ alpha.23—alpha.31 固定：
 
 生产实现仍须补齐：在隔离环境依序执行/复核四份 canonical migration，完成 GoTrue/Postgres/Blobs 真实 E2E、平台恶意软件扫描、容器/OS 禁网与资源隔离、支付商 webhook 验签适配、私钥托管/轮换、部署计划双清扫/告警/故障演练、生产 PKCE/main transport 接线和网站后台联调。当前一次性领取不生成额外签名 URL/token，但仍须在真实平台验证删除、传输中断与三路零留存。
 
-## 生产组合与迁移来源门禁（alpha.55）
+## 生产组合、迁移来源与平台能力门禁（alpha.56）
 
 部署适配层应只通过 `createWebJobProductionRuntime({ configuration, adapters })` 创建临时稿件运行时。配置与适配器均为 exact 对象；公开 Supabase key 和 service-role key 必须分离，所有 store/network/spawn/audit/clock/ID 能力显式注入。构造过程不读取 `process.env`，也不在启动时联网；processor 使用空继承环境。返回值只包含 `handleRequest`、`runWorkerOnce`、`runCleanupCycle` 与去敏 `readiness`。
+
+alpha.56 的 `deployment-requirements-v1.json` / `deployment-admission.js` 将当前代码真实上限绑定为平台无关准入条件：公开链至少能缓冲 50 MiB 请求、100 MiB 响应并允许 4 分钟检查；私有执行至少 4 分钟并支持固定子进程、绝对可执行文件、私有 scratch、OS 禁网和只读应用；对象存储、Postgres/RLS/RPC、worker/cleanup 调度、告警与秘密注入也必须完整。平台 profile 只能包含能力和容量，不能包含端点或密钥。即使声明能力全部满足，报告仍固定 `production_evidence_verified: false`、`production_ready: false`；只有后续官方规格核对和真实环境证据才能提升生产状态。
 
 部署前先运行：
 
@@ -101,6 +103,7 @@ const {
   MIGRATION_MANIFEST_SHA256,
   createWebJobProductionRuntime,
 } = require("./web-job-runtime");
+const { DEPLOYMENT_REQUIREMENTS_SHA256 } = require("./deployment-admission");
 const { createSyncRecordFetchHandler } = require("./sync-record-runtime");
 
 // deploymentConfig / deploymentSecrets 由平台适配层显式读取和验证；
@@ -118,6 +121,8 @@ const jobRuntime = createWebJobProductionRuntime({
     blob_store_name: "oak-manuscript-ephemeral-v1",
     blob_prefix: "oak-manuscript/jobs/v1",
     expected_migration_manifest_sha256: MIGRATION_MANIFEST_SHA256,
+    expected_deployment_requirements_sha256: DEPLOYMENT_REQUIREMENTS_SHA256,
+    deployment_profile: declaredPlatformProfile,
   },
   adapters: {
     fetch_impl: fetch,

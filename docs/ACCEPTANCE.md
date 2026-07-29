@@ -2,6 +2,17 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.56 Web 平台能力准入验收（2026-07-29）
+
+- [x] 部署需求直接绑定当前 50 MiB 上传、100 MiB 结果和 240 秒处理常量，运行时漂移时 fail-closed；
+- [x] exact profile 不允许端点、密钥、稿件字段、未知字段或未知能力值；
+- [x] HTTP、私有执行/隔离、对象存储、数据库和运维能力均有稳定反向拒绝码；
+- [x] Web 生产组合强制绑定需求摘要并在 store/network 前拒绝能力不足 profile；
+- [x] 能力全部声明满足时仍固定 `production_evidence_verified=false`、`production_ready=false`；
+- [x] 聚焦 8/8、Node 711/704/0/7、Python 362/0/0/3、隐藏 Electron smoke 与资源信任通过；
+- [ ] 任何具体平台的官方规格、真实 profile 和预生产运行证据已核对；当前未联网、未生成、未部署；
+- [ ] alpha.56 Windows/macOS 制品、签名、公证和真实安装生命周期完成；最新 Windows packaged 仍为未签名 alpha.54。
+
 ## 0.1.0-alpha.55 Web 部署组合与迁移字节门禁验收（2026-07-29）
 
 - [x] 存在唯一的 Web 临时作业生产组合入口，以 exact 配置和 exact 适配器组成 GoTrue、同源 handler、强一致临时 store、Supabase repository、固定 Python processor、private worker 与清扫器；

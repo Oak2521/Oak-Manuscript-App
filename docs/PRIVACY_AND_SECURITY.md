@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.55` 源码已实现的桌面隐私边界、SyncRecord/权益/订阅/设备服务、三模式 AI，以及 Web 临时作业、同步历史和订阅/设备客户端源码契约。alpha.55 新增 Web exact 生产组合和迁移来源门禁；默认账号与权益配置没有网络目标，仓库没有生产私钥。最新 alpha.54 Windows 制品已通过 packaged 安全门禁但仍未签名，不是可售卖正式版。真实账号、支付商 webhook、数据库迁移、API/官网部署和生产隔离仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；本文件描述 `0.1.0-alpha.56` 源码隐私边界。Web 临时作业已有 exact 组合、迁移来源和平台能力准入；能力 profile 不接收端点、密钥或稿件字段，且不能转化为生产证据。默认账号/权益无网络目标，仓库无生产私钥；最新 alpha.54 Windows 制品仍未签名。真实账号、支付、迁移、API/官网部署和生产隔离未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -88,7 +88,7 @@ alpha.47 的网站账号客户端只接收上述公开权益时间窗和设备�
 - 领取读取或清理失败不得返回字节，必须保持 `deletion_pending/downloaded` 供删除重试；服务器删除后发生传输或本机保存失败时结果不可重放，用户须重新检查；取消、用户删除和 TTL 清扫同样删除输入/输出；
 - 删除失败必须保持 `deletion_pending`，准确暴露 `input_retained/result_available`，不得生成成功回执。幂等终态禁止用同一键重建，UUID 碰撞不得覆盖其它主体；
 - HTTP 错误为固定非反射文案；安全审计只含请求 ID、时间、方法、路由模板、HTTP 状态和错误码，不含主体、任务 ID、实际 URL、请求头或稿件元数据；审计接收器失败不能改变已确定响应；
-- 状态机、handler、Netlify 内容适配器、Postgres 持久层、上传结构/主动内容门禁、私有领取和固定 Python 子进程已形成源码/本机纵向闭环；alpha.55 以 exact 组合入口显式注入公开/service-role key、store/network/spawn/audit 能力，worker 不继承宿主环境，对外 readiness 不含密钥。canonical 迁移清单只锁定来源 SQL 字节。这些 FakeStore/FakeRepository、SQL 静态检查与本机烟测仍不证明生产会话、真实迁移、Blobs 删除后台、计划任务、病毒库/平台扫描、隔离容器、OS 禁网、HTTPS 部署或官网联调。真实“零留存”必须由完成删除、超时清扫和平台存储生命周期三路生产证据共同证明。
+- 状态机、handler、内容适配器、持久层、上传门禁、私有领取和固定 Python 子进程已形成源码/本机闭环；exact 组合不读取宿主环境。alpha.56 只用非敏感 profile 校验容量与安全能力，并固定 `production_evidence_verified=false`。FakeStore/FakeRepository、SQL 静态检查、自报 profile 与本机烟测都不证明生产会话、真实迁移、后台删除、计划任务、恶意软件扫描、OS 禁网、HTTPS 部署或官网联调。真实“零留存”仍须三路生产证据。
 
 ### 4.5 SyncRecord 长期结果的服务端隐私边界
 

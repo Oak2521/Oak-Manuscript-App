@@ -9,10 +9,63 @@ const {
   MIGRATION_MANIFEST_SHA256,
   createWebJobProductionRuntime,
 } = require("../web/web-job-runtime");
+const {
+  DEPLOYMENT_REQUIREMENTS_SHA256,
+} = require("../web/deployment-admission");
 
 const PUBLIC_KEY = "public-api-key-0000000000000001";
 const SERVICE_KEY = "service-role-key-0000000000001";
 const UUID = "10000000-0000-4000-8000-000000000001";
+
+function deploymentProfile(overrides = {}) {
+  const profile = {
+    schema_version: "1.0",
+    profile_type: "oak_manuscript_web_platform_profile",
+    profile_id: "compatible-test-platform",
+    public_http: {
+      max_buffered_request_bytes: 50 * 1024 * 1024,
+      max_buffered_response_bytes: 100 * 1024 * 1024,
+      max_execution_ms: 4 * 60 * 1000,
+      supports_same_origin_https: true,
+    },
+    private_execution: {
+      max_execution_ms: 4 * 60 * 1000,
+      supports_child_process: true,
+      supports_absolute_executable: true,
+      supports_writable_private_scratch: true,
+      supports_os_network_deny: true,
+      supports_read_only_application: true,
+    },
+    object_storage: {
+      supports_strong_consistency: true,
+      supports_conditional_create: true,
+      supports_metadata: true,
+      supports_paginated_prefix_list: true,
+      supports_delete_confirmation: true,
+    },
+    database: {
+      supports_transactions: true,
+      supports_advisory_locks: true,
+      supports_row_level_security: true,
+      supports_service_role_rpc: true,
+    },
+    operations: {
+      supports_private_worker_scheduler: true,
+      supports_cleanup_scheduler: true,
+      supports_retry_alerting: true,
+      supports_secret_injection: true,
+    },
+  };
+  return {
+    ...profile,
+    ...overrides,
+    public_http: { ...profile.public_http, ...(overrides.public_http || {}) },
+    private_execution: { ...profile.private_execution, ...(overrides.private_execution || {}) },
+    object_storage: { ...profile.object_storage, ...(overrides.object_storage || {}) },
+    database: { ...profile.database, ...(overrides.database || {}) },
+    operations: { ...profile.operations, ...(overrides.operations || {}) },
+  };
+}
 
 class NoNetworkStore {
   async set() { throw new Error("not called"); }
@@ -35,6 +88,8 @@ function configuration(overrides = {}) {
     blob_store_name: "oak-manuscript-ephemeral-v1",
     blob_prefix: "oak-manuscript/jobs/v1",
     expected_migration_manifest_sha256: MIGRATION_MANIFEST_SHA256,
+    expected_deployment_requirements_sha256: DEPLOYMENT_REQUIREMENTS_SHA256,
+    deployment_profile: deploymentProfile(),
     ...overrides,
   };
 }
@@ -79,6 +134,9 @@ test("production Web job runtime composes public handler, private worker, and cl
     private_worker_enabled: true,
     cleanup_scheduler_required: true,
     migration_manifest_sha256: MIGRATION_MANIFEST_SHA256,
+    deployment_requirements_sha256: DEPLOYMENT_REQUIREMENTS_SHA256,
+    declared_deployment_capabilities_satisfied: true,
+    production_evidence_verified: false,
     database_migrations_applied: "not_verified",
     os_network_isolation_verified: false,
     production_zero_retention_verified: false,
@@ -131,6 +189,18 @@ test("production Web job runtime fails closed on incomplete, extra, or mixed-sec
     configuration: configuration({ expected_migration_manifest_sha256: "0".repeat(64) }),
     adapters: validAdapters,
   }), /迁移 bundle/);
+  assert.throws(() => createWebJobProductionRuntime({
+    configuration: configuration({ expected_deployment_requirements_sha256: "0".repeat(64) }),
+    adapters: validAdapters,
+  }), /部署需求/);
+  assert.throws(() => createWebJobProductionRuntime({
+    configuration: configuration({
+      deployment_profile: deploymentProfile({
+        public_http: { max_buffered_request_bytes: 6 * 1024 * 1024 },
+      }),
+    }),
+    adapters: validAdapters,
+  }), /平台能力不足/);
   assert.equal(observed.fetches, 0);
   assert.deepEqual(observed.stores, []);
 });

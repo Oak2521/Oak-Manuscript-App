@@ -2,7 +2,27 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.55 Web 部署组合与迁移字节门禁
+## 最新验证结论：0.1.0-alpha.56 Web 平台能力准入
+
+验证日期：2026-07-29。本轮未联网核对厂商规格、未使用真实账号/密钥/数据库，未迁移、部署、推送或重新打包。最新真实 Windows packaged 证据仍属于未签名 alpha.54。
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| TDD 红灯 | **PASS（预期失败已记录）** | 新测试首次因 `web/deployment-admission` 不存在而 `MODULE_NOT_FOUND`，随后才实现模块 |
+| 需求与运行时绑定 | **PASS** | canonical 需求精确绑定 50 MiB 上传、100 MiB 结果和 240 秒 Python 默认时限；storage/job/processor 常量漂移会在加载时拒绝 |
+| exact 非敏感 profile | **PASS** | 只接受固定容量/布尔能力；额外字段、字符串伪数值、unknown 布尔和含空格 profile ID 拒绝，不接收端点、密钥或稿件字段 |
+| 能力反向路径 | **PASS** | HTTP 容量/时限、隔离、对象存储、事务/RLS/RPC、调度/告警/secret injection 任一不足均输出稳定 content-free code |
+| runtime 强制执行 | **PASS** | 需求摘要漂移或能力不足在 store/network 初始化前拒绝；合格声明也只得到 `declared_deployment_capabilities_satisfied=true` |
+| 聚焦测试 | **PASS（8/8）** | 部署准入 5 项 + Web 生产组合 3 项 |
+| 最终 Node 全量 | **PASS** | 711 total / 704 pass / 0 fail / 7 skip，4.554 秒；跳过项不计作通过 |
+| 最终 Python 全量 | **PASS** | 362 total / 0 failures / 0 errors / 3 skipped，114.770 秒 |
+| Electron 源码隐藏 smoke | **PASS** | `out/source-smoke/runs/ms63m7r7-0e877dfd8c7280ff/projects/`；保持 sandbox，未联网 |
+| 源码资源信任 | **PASS** | 108 文件 / 2,171,922 字节；manifest `2b783bc5d872725c9df50f1569bf5101fd798875c89ebecc7818e22e09e1bad3`，anchor `948f158207a90e788dccf75e7838b6113e78296c0780f6621b407f02f27f7095` |
+| 生产平台证明 | **未完成（按设计）** | 未核对任何厂商官方限制、未生成真实平台 profile；`production_evidence_verified=false`、`production_ready=false` |
+
+结论：alpha.56 能阻止明显承载不了当前稿件链的平台被声明为可用，但不能证明任何具体平台真的满足能力，也不决定最终部署拓扑。官方规格和预生产实测仍是下一道门禁。
+
+## 历史验证结论：0.1.0-alpha.55 Web 部署组合与迁移字节门禁
 
 验证日期：2026-07-29。本轮未联网、未使用真实账号、密钥、数据库或网站，未执行 SQL、迁移、部署、推送或重新打包。最新真实 Windows packaged 证据仍属于未签名 alpha.54。
 

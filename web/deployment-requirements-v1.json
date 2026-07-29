@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "requirements_type": "oak_manuscript_web_deployment_requirements",
+  "source_contracts": [
+    "web/job-contract.js",
+    "web/netlify-ephemeral-storage.js",
+    "web/python-core-process-processor.js",
+    "web/supabase/001_web_job_state.sql",
+    "web/zero-retention-sweeper.js"
+  ],
+  "public_http": {
+    "min_buffered_request_bytes": 52428800,
+    "min_buffered_response_bytes": 104857600,
+    "min_execution_ms": 240000,
+    "requires_same_origin_https": true
+  },
+  "private_execution": {
+    "min_execution_ms": 240000,
+    "requires_child_process": true,
+    "requires_absolute_executable": true,
+    "requires_writable_private_scratch": true,
+    "requires_os_network_deny": true,
+    "requires_read_only_application": true
+  },
+  "object_storage": {
+    "requires_strong_consistency": true,
+    "requires_conditional_create": true,
+    "requires_metadata": true,
+    "requires_paginated_prefix_list": true,
+    "requires_delete_confirmation": true
+  },
+  "database": {
+    "requires_transactions": true,
+    "requires_advisory_locks": true,
+    "requires_row_level_security": true,
+    "requires_service_role_rpc": true
+  },
+  "operations": {
+    "requires_private_worker_scheduler": true,
+    "requires_cleanup_scheduler": true,
+    "requires_retry_alerting": true,
+    "requires_secret_injection": true
+  }
+}
