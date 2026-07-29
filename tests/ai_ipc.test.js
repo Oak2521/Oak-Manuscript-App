@@ -13,6 +13,7 @@ function requestDeps(overrides = {}) {
       planIssueSuggestion: async (payload) => ({ plan_id: "ai-plan-test", payload }),
       confirmSuggestion: async (planId) => ({ text: `suggestion:${planId}` }),
       cancelSuggestion: () => ({ canceled: true }),
+      reviewSuggestion: async (reviewId, decision) => ({ review_id: reviewId, decision }),
       clear: () => {},
       ...overrides,
     },
@@ -66,6 +67,10 @@ test("AI request IPC accepts only a trusted project and exact one-shot plan oper
       planIssueSuggestion: async (payload) => { requestCalls.push(["plan", payload]); return { plan_id: "p" }; },
       confirmSuggestion: async (planId) => { requestCalls.push(["confirm", planId]); return { text: "只读建议" }; },
       cancelSuggestion: (planId) => { requestCalls.push(["cancel", planId]); return { canceled: true }; },
+      reviewSuggestion: async (reviewId, decision) => {
+        requestCalls.push(["review", reviewId, decision]);
+        return { review_id: reviewId, decision };
+      },
     }),
   });
   assert.deepEqual(await handlers.get("provider:ai-plan-suggestion")(null, {
@@ -77,7 +82,10 @@ test("AI request IPC accepts only a trusted project and exact one-shot plan oper
   assert.deepEqual(await handlers.get("provider:ai-cancel-suggestion")(null, { planId: "p" }), {
     ok: true, canceled: true,
   });
-  assert.equal(requestCalls.length, 3);
+  assert.deepEqual(await handlers.get("provider:ai-review-suggestion")(null, {
+    reviewId: "r", decision: "accepted",
+  }), { ok: true, review: { review_id: "r", decision: "accepted" } });
+  assert.equal(requestCalls.length, 4);
 
   const smuggled = await handlers.get("provider:ai-plan-suggestion")(null, {
     project: PROJECT, issueId: "check-0001-0001", instruction: "", manuscript: "secret",
@@ -87,7 +95,11 @@ test("AI request IPC accepts only a trusted project and exact one-shot plan oper
     project: "C:\\not-a-project", issueId: "check-0001-0001", instruction: "",
   });
   assert.equal(unsafe.ok, false);
-  assert.equal(requestCalls.length, 3);
+  const reviewSmuggled = await handlers.get("provider:ai-review-suggestion")(null, {
+    reviewId: "r", decision: "rejected", issueId: "smuggled",
+  });
+  assert.equal(reviewSmuggled.ok, false);
+  assert.equal(requestCalls.length, 4);
 });
 
 test("AI IPC sanitizes provider failures and rejects incomplete dependencies", async () => {

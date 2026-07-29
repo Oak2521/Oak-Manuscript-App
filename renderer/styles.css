@@ -280,6 +280,7 @@ dialog.modal::backdrop { background: rgba(20, 29, 25, .58); }
 .ai-destination-grid dd { margin-top: 3px; font-weight: 600; overflow-wrap: anywhere; }
 .ai-disclosure-section, .ai-request-section, .ai-suggestion-result { margin: 14px 22px; }
 .ai-disclosure-section h3, .ai-request-section h3, .ai-suggestion-result h3 { font-size: 14px; margin: 10px 0 5px; }
+.ai-review-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
 .ai-disclosure-section ul { margin-left: 22px; }
 #ai-plan-request-json, #ai-suggestion-text {
   max-height: 300px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere;

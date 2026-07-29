@@ -378,6 +378,11 @@
     <section id="ai-suggestion-result" class="ai-suggestion-result hidden" aria-live="polite">
       <h3>AI 建议（只读，不会写回稿件）</h3>
       <pre id="ai-suggestion-text" tabindex="0"></pre>
+      <p id="ai-suggestion-review-status" class="muted"></p>
+      <div class="ai-review-actions">
+        <button id="btn-reject-ai-suggestion" disabled>放弃这条建议</button>
+        <button id="btn-accept-ai-suggestion" class="primary" disabled>采纳为人工处理参考</button>
+      </div>
     </section>
     <div class="modal-actions">
       <button id="btn-cancel-ai-request">关闭（不发送）</button>

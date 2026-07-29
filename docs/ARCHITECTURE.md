@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.33` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、三模式 AI/OS 加密凭据/单条问题发送预览、Web 状态机、同源 HTTPS、Supabase/GoTrue、Fetch、未部署工作台、Netlify Blobs 临时内容、Supabase/Postgres 持久任务、上传结构/主动内容门禁、私有原子领取、固定 Python 子进程共享核心、一次性结果领取和有界双清扫边界，以及 alpha.23 已验证的 Windows packaged 安全链。真实模型 transport、数据库迁移、平台计划任务/生命周期、病毒/信誉扫描、容器与 OS 无网隔离、网络同步、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.34` 架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/同步离线契约与 OS 加密持久队列、三模式 AI/OS 加密凭据/单条问题发送预览/建议人工审阅、Web 状态机、同源 HTTPS、Supabase/GoTrue、Fetch、未部署工作台、Netlify Blobs 临时内容、Supabase/Postgres 持久任务、上传结构/主动内容门禁、私有原子领取、固定 Python 子进程共享核心、一次性结果领取和有界双清扫边界，以及 alpha.23 已验证的 Windows packaged 安全链。真实模型 transport、数据库迁移、平台计划任务/生命周期、病毒/信誉扫描、容器与 OS 无网隔离、网络同步、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -191,6 +191,8 @@ alpha.31 增加仅 `service_role` 可调用的 `oak_manuscript_web_job_list_clea
 `AIProvider` 只拥有无 AI / 湖岸 AI / 我的 AI 状态、Pro 权益、规范 provider/model/base URL、凭据存在性和输出政策。Renderer 通过固定 IPC 查询、配置或清除，永远不能读回凭据。`EncryptedAISettingsStore` 使用 Electron `safeStorage`、canonical JSON、revision CAS、单链接/路径身份检查、候选文件 `fsync`、原子替换和提交后复验；系统加密不可用时拒绝持久化，但不影响本地稿件能力。非 loopback 服务强制 HTTPS，provider 或地址变化禁止复用凭据。
 
 alpha.33 新增严格只读 Python `ai-context` 和内存态 `AIRequestCoordinator`。核心输出分为 local-only binding 与完整 request_content：前者含 issue/check、working SHA-256 和规则 manifest SHA-256，只用于重算计划新鲜度；后者只含一条问题的规则/严重级别/标题/解释/脱敏位置/预览/标准引用/状态。协调器生成最多 8 个、10 分钟有效、一次使用的计划，完整公开目的地、发送/不发送清单和语义请求；确认前不接触凭据或 transport，配置/上下文漂移即拒绝。注入式 transport 只能在一次确认后临时取得凭据，响应 exact/32 KiB、只在 Renderer 内存中以 `textContent` 展示。
+
+alpha.34 在同一协调器内新增最多 8 个、30 分钟有效、一次处理的建议审阅会话。采纳前重新读取并 exact 比较完整本地 context binding，随后只通过可信 core `issue` 命令把对应问题设为 `accepted`；不保存模型文本、不改 working。放弃或关闭只删除内存建议，不调用状态写入，因此不会把“拒绝模型措辞”混同为“拒绝规则问题”。Renderer 只提交 opaque review ID 与固定决定，项目路径和问题 ID 仍由主进程保有。
 
 生产模型 transport 仍为 `null`，状态保持 `transport_configured=false`、`fallback_mode=none`、`output_policy=suggestion_only` 和 `automatic_writeback=false`。后续 transport 必须是独立最小权限主进程通道，按官方协议固定目标、方法、头、请求/响应 schema、超时和重试；错误不能泄露凭据或静默回退，响应不能进入 Python 确定性结论或自动写回。Web 凭据只能保留当前会话，不得复用桌面加密文件或进入账号同步。
 

@@ -4,6 +4,15 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.34（ChatGPT AI 建议人工审阅检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.34`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未部署、未修改官网或重新打包；最新真实 Windows 制品仍为 alpha.23。
+
+- 模型建议新增最多 8 个、30 分钟有效、一次处理的内存态审阅会话，绑定原问题上下文；重复、过期和上下文漂移全部 fail-closed；
+- UI 新增“采纳为人工处理参考”和“放弃这条建议”：采纳只记录问题 `accepted` 状态，不保存模型文本、不写稿；放弃不改变规则问题状态；
+- 审阅 IPC 只接受 opaque ID 与固定决定，写入失败错误净化；关闭建议和切换项目销毁未处理内存建议；
+- AI/IPC/UI 定向 22/22；最终 `npm test` 118.772 秒：Node 504 total / 497 pass / 0 fail / 7 skip（3.953 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（110.274 秒）；独立隐藏源码 Electron smoke PASS；资源清单 79 文件 / 2,139,277 字节，manifest SHA-256 `a4c18d0d718cf9b33fe1afd936cf195dcf482dc8f0d97c45242b6deed1db3fd2`，锚点 SHA-256 `418e747b0fdec3c07aadfa7b5c44af331b567271e1a4197aee8d429b0c9e03e9`。
+
 ### 2026-07-28 — 0.1.0-alpha.33（ChatGPT AI 发送预览与一次确认检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.33`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未部署、未修改官网或重新打包；最新真实 Windows 制品仍为 alpha.23。

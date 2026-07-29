@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.33`
+> 当前版本：`0.1.0-alpha.34`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.33`（源码、本机隐藏 Electron 与离线 AI 预览检查点；最新未签名 Windows 制品仍是 alpha.23）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.34`（源码、本机隐藏 Electron 与离线 AI 建议审阅检查点；最新未签名 Windows 制品仍是 alpha.23）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,15 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.34 AI 建议人工审阅契约
+
+- `AIRequestCoordinator` 在注入式 transport 返回建议后生成最多 8 个、30 分钟有效、一次处理的内存态审阅会话；建议仍为 `suggestion_only` / `memory_only`，不会进入项目、报告、同步记录或 working 文件；
+- Renderer 新增“采纳为人工处理参考”和“放弃这条建议”。采纳前重新核对问题、检查、working 与规则包绑定，只把该规则问题标记为 `accepted`；放弃或关闭仅销毁内存建议，不把规则问题错误标成 `rejected`；两种决定都固定 `manuscript_modified=false`、`suggestion_persisted=false`；
+- 审阅 IPC 只接受 opaque `reviewId` 与 `accepted|rejected`，重复、过期、上下文漂移和写入失败均 fail-closed；异常文本不会回传。AI 设置变化、切换项目和关闭建议会清理相关内存状态；
+- AI/IPC/UI 定向 22/22；最终 `npm test` 118.772 秒：Node 504 total / 497 pass / 0 fail / 7 skip（3.953 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（110.274 秒）；
+- 受限 Codex 运行令牌下 Electron GPU 子进程以 `0xC0000135` 退出；同版运行时完整性验证通过。按既有验收方式获准在独立隐藏窗口运行后，保持 Electron/Renderer sandbox、未使用 `--no-sandbox`，最终 `SMOKE-RESULT: PASS`；
+- 资源锁 79 文件 / 2,139,277 字节，manifest SHA-256 `a4c18d0d718cf9b33fe1afd936cf195dcf482dc8f0d97c45242b6deed1db3fd2`，锚点 SHA-256 `418e747b0fdec3c07aadfa7b5c44af331b567271e1a4197aee8d429b0c9e03e9`。本轮未联网、未调用模型、未使用真实密钥、未部署、未修改官网或打包；生产 transport 仍为 `null`，发行身份仍 `complete=false`、缺 12 项。
 
 ### 已完成：0.1.0-alpha.33 AI 单条问题发送预览与一次确认契约
 
@@ -490,7 +499,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 6. 同步只允许检查结果和必要元数据，不同步稿件、正文、摘录、文件名、路径或哈希；登录用户必须明确选择是否同步；
 7. 引用体例保留“默认”，由确定性映射自动选择，并在报告中说明；
 8. 标准文件需要签名清单、下载校验、版本固定、回滚和升级提示；已有项目不得被静默换规则；
-9. “接入用户自己的 AI”六项设计已由用户明确批准并写入 v2.0 方案；alpha.32 已实现桌面三模式设置、Pro 门禁和 OS 加密凭据存储，alpha.33 已实现可信单条问题上下文、完整请求预览、一次确认计划和只读建议接收边界；生产模型 transport、真实响应建议审阅与 Web 会话凭据仍未实现；
+9. “接入用户自己的 AI”六项设计已由用户明确批准并写入 v2.0 方案；alpha.32 已实现桌面三模式设置、Pro 门禁和 OS 加密凭据存储，alpha.33 已实现可信单条问题上下文、完整请求预览、一次确认计划和只读建议接收边界，alpha.34 已实现建议级采纳/放弃和接受问题状态记录；生产模型 transport、真实供应商响应质量与 Web 会话凭据仍未实现；
 10. 不进行 AI 语义改写，自动修复仍只限冻结白名单机械操作。
 
 ## 4. 已核实但尚未解决的缺口

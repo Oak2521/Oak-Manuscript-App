@@ -189,6 +189,9 @@ const aiRequests = new AIRequestCoordinator({
     const { ok: _ok, ...context } = data;
     return context;
   },
+  reviewSink: async ({ project, issueId }) => {
+    await core(["issue", "--project", project, "--id", issueId, "--status", "accepted"]);
+  },
   // Production model transport is deliberately absent until provider protocols,
   // request isolation, timeout/response limits and explicit network tests pass.
   transport: null,

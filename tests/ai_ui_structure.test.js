@@ -22,6 +22,7 @@ test("settings page exposes the three approved AI modes and six provider familie
     "ai-credential-input", "btn-save-ai-settings", "btn-clear-ai-credential",
     "ai-request-dialog", "ai-plan-request-json", "ai-plan-sends",
     "ai-plan-does-not-send", "btn-confirm-ai-request", "ai-suggestion-text",
+    "ai-suggestion-review-status", "btn-accept-ai-suggestion", "btn-reject-ai-suggestion",
   ]) assert.match(html, new RegExp(`id=["']${id}["']`));
   assert.match(html, /不能静默写回稿件/);
   assert.match(html, /不会在失败时自动切换到湖岸 AI/);
@@ -37,6 +38,7 @@ test("credential crosses one fixed IPC and is never populated or rendered from s
   assert.match(preload, /provider:ai-plan-suggestion/);
   assert.match(preload, /provider:ai-confirm-suggestion/);
   assert.match(preload, /provider:ai-cancel-suggestion/);
+  assert.match(preload, /provider:ai-review-suggestion/);
   const renderer = app.slice(app.indexOf("function renderAiSettings()"),
     app.indexOf("async function refreshAiStatus()"));
   assert.match(renderer, /ai-credential-input"\)\.value = ""/);
@@ -51,6 +53,7 @@ test("main process owns OS-encrypted AI persistence and registers no model trans
   assert.match(main, /safeStorage\.decryptString/);
   assert.match(main, /registerAIIpc/);
   assert.match(main, /new AIRequestCoordinator/);
+  assert.match(main, /reviewSink:[\s\S]*?"--status", "accepted"/);
   assert.match(main, /transport: null/);
   assert.match(main, /\{ ok: _ok, \.\.\.context \} = data/);
   assert.match(main, /\[ai\] encrypted local settings ready; transport disabled/);
@@ -68,5 +71,9 @@ test("AI request preview and suggestion use text-only rendering and disable unav
   assert.match(renderer, /replaceTextList/);
   assert.doesNotMatch(renderer, /innerHTML/);
   assert.match(app, /ai-suggestion-text"\)\.textContent = response\.suggestion\.text/);
+  assert.match(app, /reviewAiSuggestion\("accepted"\)/);
+  assert.match(app, /reviewAiSuggestion\("rejected"\)/);
+  assert.match(app, /问题状态已标记为接受，但建议未写入稿件或项目文件/);
+  assert.match(app, /规则问题状态和稿件均未改变/);
   assert.doesNotMatch(html, /on(?:click|change|submit)=/i);
 });

@@ -71,6 +71,8 @@ const api = {
     ipcRenderer.invoke("provider:ai-confirm-suggestion", { planId }),
   cancelAiSuggestion: (planId) =>
     ipcRenderer.invoke("provider:ai-cancel-suggestion", { planId }),
+  reviewAiSuggestion: (reviewId, decision) =>
+    ipcRenderer.invoke("provider:ai-review-suggestion", { reviewId, decision }),
   openEvaluation: () => ipcRenderer.invoke("provider:open-evaluation"),
   appInfo: () => ipcRenderer.invoke("app:info"),
 };

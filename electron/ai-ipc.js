@@ -37,7 +37,9 @@ function registerAIIpc({ ipcMain, aiProvider, licenseProvider, aiRequests, pathP
       !licenseProvider || typeof licenseProvider.status !== "function" ||
       !aiRequests || typeof aiRequests.planIssueSuggestion !== "function" ||
       typeof aiRequests.confirmSuggestion !== "function" ||
-      typeof aiRequests.cancelSuggestion !== "function" || typeof aiRequests.clear !== "function" ||
+      typeof aiRequests.cancelSuggestion !== "function" ||
+      typeof aiRequests.reviewSuggestion !== "function" ||
+      typeof aiRequests.clear !== "function" ||
       !pathPolicy || typeof pathPolicy.looksLikeProject !== "function") {
     throw new TypeError("AI IPC 依赖非法");
   }
@@ -82,6 +84,14 @@ function registerAIIpc({ ipcMain, aiProvider, licenseProvider, aiRequests, pathP
     try {
       exactPayload(payload, ["planId"], "AI 取消");
       return ok(aiRequests.cancelSuggestion(payload.planId));
+    } catch (error) { return safeFail(error); }
+  });
+  ipcMain.handle("provider:ai-review-suggestion", async (_event, payload = {}) => {
+    try {
+      exactPayload(payload, ["reviewId", "decision"], "AI 建议审阅");
+      return ok({ review: await aiRequests.reviewSuggestion(
+        payload.reviewId, payload.decision,
+      ) });
     } catch (error) { return safeFail(error); }
   });
 }

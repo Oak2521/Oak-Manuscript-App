@@ -2,7 +2,18 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.33 AI 单条问题发送预览与一次确认验收（2026-07-28）
+## 0.1.0-alpha.34 AI 建议人工审阅验收（2026-07-28）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.34`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 建议生成后建立最多 8 个、30 分钟有效、一次处理的内存态审阅会话；模型文本不进入项目、报告、同步或 working；
+- [x] 采纳前重新核对问题/检查/working/规则包绑定，只把对应问题标为 `accepted`；稿件不变、建议文本不持久化；
+- [x] 放弃或关闭建议不调用问题状态写入，不把规则问题标成 `rejected`；重复、过期、上下文漂移及写入失败 fail-closed；
+- [x] Renderer 提供独立采纳/放弃按钮和明确结果文案，动态内容只用安全文本渲染；IPC 只接受 opaque review ID 与固定决定；
+- [x] AI/IPC/UI 定向 22/22、Node 504、Python 362 全量零失败；获准的独立隐藏源码 Electron smoke 最终 PASS；资源锁 79 文件 / 2,139,277 字节；
+- [ ] 六类真实供应商 transport、最小权限网络隔离、真实建议质量/兼容性和 Web 会话凭据完成；当前生产 transport=`null`；
+- [ ] alpha.34 Windows/macOS packaged、签名、安装生命周期与干净机证据完成；最新真实 Windows 制品仍是 alpha.23。
+
+## 0.1.0-alpha.33 AI 单条问题发送预览与一次确认验收（历史，2026-07-28）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.33`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] `ai-context` 严格只读，只提供当前单条问题；项目/检查绑定、working/规则摘要只留主进程，request_content 不含文件名、路径、项目/账号标识、其他问题或凭据；

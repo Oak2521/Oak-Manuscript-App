@@ -1,6 +1,6 @@
 # SyncRecord v1 — 结果与元数据同步契约
 
-> 状态：`0.1.0-alpha.33` 保留客户端/核心离线契约、逐字段预览、按账户隔离的 OS 加密持久队列和第二进程重启恢复；Supabase Bearer 适配器只服务 Web 临时任务身份，不是 SyncRecord transport。生产账号凭据、网络 transport、服务端验收与网站后台尚未实现，本文件不能作为“数据已可同步到网站”的证明。
+> 状态：`0.1.0-alpha.34` 保留客户端/核心离线契约、逐字段预览、按账户隔离的 OS 加密持久队列和第二进程重启恢复；Supabase Bearer 适配器只服务 Web 临时任务身份，不是 SyncRecord transport。AI 建议文本与审阅会话不进入 SyncRecord。生产账号凭据、网络 transport、服务端验收与网站后台尚未实现，本文件不能作为“数据已可同步到网站”的证明。
 
 ## 1. 信任边界
 

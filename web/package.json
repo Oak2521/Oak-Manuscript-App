@@ -1,6 +1,6 @@
 {
   "name": "@oakbylake/oak-manuscript-web",
-  "version": "0.1.0-alpha.33",
+  "version": "0.1.0-alpha.34",
   "private": true,
   "description": "Oak Manuscript server-side Web adapters",
   "type": "commonjs",

@@ -2,7 +2,24 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.33 AI 单条问题发送预览与一次确认契约
+## 最新验证结论：0.1.0-alpha.34 AI 建议人工审阅契约
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未修改官网、未部署或生成 alpha.34 安装包。
+
+| 验证 | 结果 | 证据 |
+|---|---|---|
+| AI request / review coordinator / IPC / UI 定向 | **PASS** | 22/22：30 分钟/最多 8 个/一次处理审阅、容量裁剪与过期、采纳前上下文复核、采纳仅写问题 `accepted` 状态、放弃零状态写入、重复/漂移拒绝、sink 错误净化、opaque IPC、DOM 安全与关闭销毁 |
+| `npm test` | **PASS** | 退出码 0，墙钟 118.772 秒；Node 504 total / 497 pass / 0 fail / 7 skip（3.953 秒）；Python 362 total / 0 failures / 0 errors / 3 skipped（110.274 秒） |
+| Electron runtime 锁复验 | **PASS** | Electron 43.1.0 win32-x64：2 个目录、75 个文件、364,083,658 字节；只读完整性验证通过 |
+| 受限 Codex 运行令牌内源码 smoke | **FAIL（环境限制，未采信为产品失败）** | Electron ready、加密存储与标准验证完成并创建窗口后，GPU 子进程以 `0xC0000135` 退出，Renderer `ERR_FAILED`；未进入业务动作。诊断性 `--no-sandbox` 运行不作为验收证据 |
+| 独立隐藏源码 Electron smoke | **PASS** | 经用户既有授权在沙箱外隐藏启动外层进程；应用本身仍保持 `sandbox:true` / `contextIsolation:true` / `nodeIntegration:false`，未使用 `--no-sandbox`；`SMOKE-RESULT: PASS`，完成 DOCX/EPUB、AI 预览零 transport、批量修复/撤销/导出/验证及加密队列恢复 |
+| 资源信任锁更新/复验 | **PASS** | 79 文件 / 2,139,277 字节；manifest SHA-256 `a4c18d0d718cf9b33fe1afd936cf195dcf482dc8f0d97c45242b6deed1db3fd2`；anchor SHA-256 `418e747b0fdec3c07aadfa7b5c44af331b567271e1a4197aee8d429b0c9e03e9` |
+| 真实模型 transport / Web 会话凭据 | **未实现、未运行** | 主进程继续注入 `transport:null`；本轮只验证注入式返回后的本地审阅边界，不证明供应商协议、网络隔离或建议质量 |
+| alpha.34 Windows packaged / 安装生命周期 / macOS / Web 部署 | **未运行** | 最新可复验 Windows 制品仍是 alpha.23；源码 smoke 不证明新制品或跨平台通过 |
+
+证据边界：采纳 AI 建议只记录用户对规则问题的处理意向，模型文本仍为当前界面内存数据；放弃模型措辞不会拒绝规则问题。该闭环不修改稿件，也不构成真实模型 transport 或模型质量证据。
+
+## 历史验证结论：0.1.0-alpha.33 AI 单条问题发送预览与一次确认契约
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未修改官网、未部署或生成 alpha.33 安装包。
 

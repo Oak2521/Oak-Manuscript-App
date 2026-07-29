@@ -5,9 +5,12 @@ const { AIProviderError } = require("./ai-provider");
 
 const PLAN_TTL_MS = 10 * 60 * 1000;
 const MAX_PENDING_PLANS = 8;
+const REVIEW_TTL_MS = 30 * 60 * 1000;
+const MAX_PENDING_REVIEWS = 8;
 const MAX_REQUEST_BYTES = 32 * 1024;
 const MAX_SUGGESTION_BYTES = 32 * 1024;
 const PLAN_ID_RE = /^ai-plan-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const REVIEW_ID_RE = /^ai-review-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const OPAQUE_ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const SHA256_RE = /^[0-9a-f]{64}$/;
 const CONTEXT_KEYS = Object.freeze(["schema_version", "context_type", "binding", "request_content"]);
@@ -126,25 +129,33 @@ function safeNow(now) {
 }
 
 class AIRequestCoordinator {
-  constructor({ aiProvider, licenseProvider, contextSource, transport = null,
-    now = () => Date.now(), idFactory = () => `ai-plan-${randomUUID()}` } = {}) {
+  constructor({ aiProvider, licenseProvider, contextSource, reviewSink, transport = null,
+    now = () => Date.now(), idFactory = () => `ai-plan-${randomUUID()}`,
+    reviewIdFactory = () => `ai-review-${randomUUID()}` } = {}) {
     if (!aiProvider || typeof aiProvider.requestBinding !== "function" ||
         typeof aiProvider.withRequestCredential !== "function" ||
         !licenseProvider || typeof licenseProvider.status !== "function" ||
-        typeof contextSource !== "function" || typeof now !== "function" ||
-        typeof idFactory !== "function") {
+        typeof contextSource !== "function" || typeof reviewSink !== "function" ||
+        typeof now !== "function" || typeof idFactory !== "function" ||
+        typeof reviewIdFactory !== "function") {
       throw new TypeError("AI 请求协调器依赖非法");
     }
     this.aiProvider = aiProvider;
     this.licenseProvider = licenseProvider;
     this.contextSource = contextSource;
+    this.reviewSink = reviewSink;
     this.transport = transport;
     this.now = now;
     this.idFactory = idFactory;
+    this.reviewIdFactory = reviewIdFactory;
     this.plans = new Map();
+    this.reviews = new Map();
   }
 
-  clear() { this.plans.clear(); }
+  clear() {
+    this.plans.clear();
+    this.reviews.clear();
+  }
 
   _prune(nowMs) {
     for (const [id, plan] of this.plans) {
@@ -152,6 +163,15 @@ class AIRequestCoordinator {
     }
     while (this.plans.size >= MAX_PENDING_PLANS) {
       this.plans.delete(this.plans.keys().next().value);
+    }
+  }
+
+  _pruneReviews(nowMs) {
+    for (const [id, review] of this.reviews) {
+      if (review.expiresMs <= nowMs) this.reviews.delete(id);
+    }
+    while (this.reviews.size >= MAX_PENDING_REVIEWS) {
+      this.reviews.delete(this.reviews.keys().next().value);
     }
   }
 
@@ -261,16 +281,76 @@ class AIRequestCoordinator {
     if (Buffer.byteLength(result.text, "utf8") > MAX_SUGGESTION_BYTES) {
       throw new AIRequestError("RESPONSE_TOO_LARGE", "AI 响应超过本地安全上限");
     }
-    return deepFreeze({
+    const completedAt = safeNow(this.now);
+    this._pruneReviews(completedAt);
+    const reviewId = this.reviewIdFactory();
+    if (typeof reviewId !== "string" || !REVIEW_ID_RE.test(reviewId) ||
+        this.reviews.has(reviewId)) {
+      throw new TypeError("AI 审阅 ID 非法或重复");
+    }
+    const suggestion = deepFreeze({
       schema_version: "1.0",
       suggestion_id: randomUUID(),
-      created_at: new Date(nowMs).toISOString(),
+      review_id: reviewId,
+      created_at: new Date(completedAt).toISOString(),
+      expires_at: new Date(completedAt + REVIEW_TTL_MS).toISOString(),
       provider_label: plan.publicPlan.destination.provider_label,
       model: plan.publicPlan.destination.model,
       text: result.text,
       output_policy: "suggestion_only",
       automatic_writeback: false,
       persistence: "memory_only",
+      review_state: "pending",
+    });
+    this.reviews.set(reviewId, {
+      expiresMs: completedAt + REVIEW_TTL_MS,
+      project: plan.project,
+      issueId: plan.issueId,
+      context: plan.context,
+      suggestion,
+    });
+    return suggestion;
+  }
+
+  async reviewSuggestion(reviewId, decision) {
+    if (typeof reviewId !== "string" || !REVIEW_ID_RE.test(reviewId)) {
+      throw new TypeError("AI 审阅 ID 非法");
+    }
+    if (!new Set(["accepted", "rejected"]).has(decision)) {
+      throw new TypeError("AI 审阅决定非法");
+    }
+    const review = this.reviews.get(reviewId);
+    this.reviews.delete(reviewId);
+    const nowMs = safeNow(this.now);
+    if (!review || review.expiresMs <= nowMs) {
+      throw new AIRequestError("AI_REVIEW_STALE", "AI 建议审阅已过期或已处理");
+    }
+    if (decision === "accepted") {
+      const currentContext = validateAIContext(
+        await this.contextSource(review.project, review.issueId),
+      );
+      if (canonical(currentContext) !== canonical(review.context)) {
+        throw new AIRequestError("AI_REVIEW_STALE", "稿件问题或检查状态已变化；不能采纳旧建议");
+      }
+      try {
+        await this.reviewSink({
+          project: review.project,
+          issueId: review.issueId,
+          status: "accepted",
+        });
+      } catch {
+        throw new AIRequestError(
+          "AI_REVIEW_FAILED", "AI 建议采纳记录失败；没有修改稿件",
+        );
+      }
+    }
+    return deepFreeze({
+      schema_version: "1.0",
+      review_id: reviewId,
+      decision,
+      issue_status: decision === "accepted" ? "accepted" : "unchanged",
+      manuscript_modified: false,
+      suggestion_persisted: false,
     });
   }
 
@@ -288,9 +368,11 @@ module.exports = {
   AIRequestError,
   DEFAULT_USER_INSTRUCTION,
   MAX_PENDING_PLANS,
+  MAX_PENDING_REVIEWS,
   MAX_REQUEST_BYTES,
   MAX_SUGGESTION_BYTES,
   PLAN_TTL_MS,
+  REVIEW_TTL_MS,
   SYSTEM_INSTRUCTION,
   validateAIContext,
 };

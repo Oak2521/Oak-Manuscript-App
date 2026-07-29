@@ -8,6 +8,7 @@ const {
   AIRequestCoordinator,
   DEFAULT_USER_INSTRUCTION,
   PLAN_TTL_MS,
+  REVIEW_TTL_MS,
   validateAIContext,
 } = require("../electron/ai-request");
 
@@ -54,14 +55,21 @@ function ids() {
   return () => `ai-plan-00000000-0000-4000-8000-${String(++counter).padStart(12, "0")}`;
 }
 
+function reviewIds() {
+  let counter = 0;
+  return () => `ai-review-00000000-0000-4000-8000-${String(++counter).padStart(12, "0")}`;
+}
+
 function coordinator(overrides = {}) {
   const aiProvider = overrides.aiProvider || provider();
   return new AIRequestCoordinator({
     aiProvider,
     licenseProvider: { status: () => PRO },
     contextSource: async () => context(),
+    reviewSink: async () => {},
     now: () => FIXED_NOW,
     idFactory: ids(),
+    reviewIdFactory: reviewIds(),
     transport: null,
     ...overrides,
   });
@@ -98,6 +106,7 @@ test("preview alone never calls transport and unavailable confirmation is one-sh
 
 test("one confirmed plan passes the credential only to transport and returns a memory-only suggestion", async () => {
   const calls = [];
+  const reviewCalls = [];
   const transport = {
     supports: (binding) => binding.provider === "openai",
     request: async (input) => {
@@ -105,7 +114,10 @@ test("one confirmed plan passes the credential only to transport and returns a m
       return { text: "建议删除其中一个空格；请确认这不会改变原意。" };
     },
   };
-  const requests = coordinator({ transport });
+  const requests = coordinator({
+    transport,
+    reviewSink: async (input) => reviewCalls.push(input),
+  });
   const plan = await requests.planIssueSuggestion({
     project: PROJECT, issueId: "check-0001-0001", instruction: "保持原意。",
   });
@@ -117,9 +129,92 @@ test("one confirmed plan passes the credential only to transport and returns a m
   assert.equal(calls[0].request, plan.request);
   assert.equal(suggestion.text.includes("删除"), true);
   assert.equal(suggestion.persistence, "memory_only");
+  assert.equal(suggestion.review_state, "pending");
   assert.equal(suggestion.automatic_writeback, false);
   assert.equal(JSON.stringify(suggestion).includes(SECRET), false);
+  const review = await requests.reviewSuggestion(suggestion.review_id, "accepted");
+  assert.equal(review.decision, "accepted");
+  assert.equal(review.issue_status, "accepted");
+  assert.equal(review.manuscript_modified, false);
+  assert.equal(review.suggestion_persisted, false);
+  assert.deepEqual(reviewCalls, [{
+    project: PROJECT, issueId: "check-0001-0001", status: "accepted",
+  }]);
+  await assert.rejects(
+    () => requests.reviewSuggestion(suggestion.review_id, "accepted"), /已处理/u,
+  );
   await assert.rejects(() => requests.confirmSuggestion(plan.plan_id), /已过期或已使用/u);
+});
+
+test("rejecting an AI suggestion changes neither issue status nor manuscript", async () => {
+  let reviewCalls = 0;
+  const requests = coordinator({
+    transport: { supports: () => true, request: async () => ({ text: "只读建议" }) },
+    reviewSink: async () => { reviewCalls += 1; },
+  });
+  const plan = await requests.planIssueSuggestion({
+    project: PROJECT, issueId: "check-0001-0001", instruction: "",
+  });
+  const suggestion = await requests.confirmSuggestion(plan.plan_id);
+  const review = await requests.reviewSuggestion(suggestion.review_id, "rejected");
+  assert.equal(review.decision, "rejected");
+  assert.equal(review.issue_status, "unchanged");
+  assert.equal(review.manuscript_modified, false);
+  assert.equal(review.suggestion_persisted, false);
+  assert.equal(reviewCalls, 0);
+});
+
+test("AI review rejects stale context and sanitizes sink failures", async () => {
+  let current = context();
+  const requests = coordinator({
+    contextSource: async () => current,
+    transport: { supports: () => true, request: async () => ({ text: "只读建议" }) },
+  });
+  let plan = await requests.planIssueSuggestion({
+    project: PROJECT, issueId: "check-0001-0001", instruction: "",
+  });
+  let suggestion = await requests.confirmSuggestion(plan.plan_id);
+  current = context({ request_content: { ...context().request_content, status: "accepted" } });
+  await assert.rejects(
+    () => requests.reviewSuggestion(suggestion.review_id, "accepted"), /不能采纳旧建议/u,
+  );
+
+  current = context();
+  const failing = coordinator({
+    contextSource: async () => current,
+    transport: { supports: () => true, request: async () => ({ text: "只读建议" }) },
+    reviewSink: async () => { throw new Error(`leak ${SECRET}`); },
+  });
+  plan = await failing.planIssueSuggestion({
+    project: PROJECT, issueId: "check-0001-0001", instruction: "",
+  });
+  suggestion = await failing.confirmSuggestion(plan.plan_id);
+  await assert.rejects(
+    () => failing.reviewSuggestion(suggestion.review_id, "accepted"),
+    (error) => /没有修改稿件/u.test(error.message) && !error.message.includes(SECRET),
+  );
+});
+
+test("AI reviews are bounded to eight and expire after thirty minutes", async () => {
+  let now = FIXED_NOW;
+  const requests = coordinator({
+    now: () => now,
+    transport: { supports: () => true, request: async () => ({ text: "只读建议" }) },
+  });
+  const suggestions = [];
+  for (let index = 0; index < 9; index += 1) {
+    const plan = await requests.planIssueSuggestion({
+      project: PROJECT, issueId: "check-0001-0001", instruction: "",
+    });
+    suggestions.push(await requests.confirmSuggestion(plan.plan_id));
+  }
+  await assert.rejects(
+    () => requests.reviewSuggestion(suggestions[0].review_id, "rejected"), /已处理/u,
+  );
+  now += REVIEW_TTL_MS;
+  await assert.rejects(
+    () => requests.reviewSuggestion(suggestions.at(-1).review_id, "rejected"), /已过期/u,
+  );
 });
 
 test("context or AI configuration drift invalidates the plan before transport", async () => {

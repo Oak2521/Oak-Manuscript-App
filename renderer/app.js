@@ -31,6 +31,8 @@ const state = {
   aiStatus: null,
   aiRequestPlan: null,
   aiRequestConfirming: false,
+  aiSuggestion: null,
+  aiSuggestionReviewing: false,
   syncPreview: null,
   syncConfirming: false,
   syncQueue: [],
@@ -487,6 +489,9 @@ function resetCurrentProject({ clearProjectDir = false } = {}) {
   if (state.aiRequestPlan) {
     window.oak.cancelAiSuggestion(state.aiRequestPlan.plan_id).catch(() => {});
   }
+  if (state.aiSuggestion && state.aiSuggestion.review_state === "pending") {
+    window.oak.reviewAiSuggestion(state.aiSuggestion.review_id, "rejected").catch(() => {});
+  }
   state.project = null;
   state.lastCheck = null;
   state.selectedIssue = null;
@@ -501,6 +506,7 @@ function resetCurrentProject({ clearProjectDir = false } = {}) {
   state.rulepackUpgradePlan = null;
   state.syncPreview = null;
   state.aiRequestPlan = null;
+  state.aiSuggestion = null;
   if (clearProjectDir) {
     state.projectDir = null;
     $("#chosen-dir").textContent = "未选择（需要空目录）";
@@ -866,6 +872,7 @@ const actions = {
     const response = unwrap(await window.oak.planAiSuggestion(
       state.project, issueId, instruction,
     ));
+    state.aiSuggestion = null;
     state.aiRequestPlan = response.plan;
     renderAiRequestPlan(response.plan);
     const dialog = $("#ai-request-dialog");
@@ -878,10 +885,15 @@ const actions = {
   },
 
   async cancelAiSuggestion() {
-    if (state.aiRequestConfirming) return false;
+    if (state.aiRequestConfirming || state.aiSuggestionReviewing) return false;
     const plan = state.aiRequestPlan;
+    const suggestion = state.aiSuggestion;
     state.aiRequestPlan = null;
+    state.aiSuggestion = null;
     if (plan) unwrap(await window.oak.cancelAiSuggestion(plan.plan_id));
+    if (suggestion && suggestion.review_state === "pending") {
+      unwrap(await window.oak.reviewAiSuggestion(suggestion.review_id, "rejected"));
+    }
     const dialog = $("#ai-request-dialog");
     if (dialog.open) dialog.close("cancel");
     return true;
@@ -898,8 +910,13 @@ const actions = {
     try {
       const response = unwrap(await window.oak.confirmAiSuggestion(plan.plan_id));
       state.aiRequestPlan = null;
+      state.aiSuggestion = { ...response.suggestion, issue_id: state.selectedIssue };
       $("#ai-suggestion-text").textContent = response.suggestion.text;
       $("#ai-suggestion-result").classList.remove("hidden");
+      $("#ai-suggestion-review-status").textContent =
+        `等待您审阅；${response.suggestion.expires_at} 前有效。采纳只记录问题状态，不会改稿。`;
+      $("#btn-accept-ai-suggestion").disabled = false;
+      $("#btn-reject-ai-suggestion").disabled = false;
       $("#ai-plan-transport").textContent =
         "建议仅保存在当前界面内存中；没有写入稿件、问题状态、项目、报告或同步记录。";
       $("#btn-confirm-ai-request").textContent = "已完成（不会写回）";
@@ -908,6 +925,43 @@ const actions = {
     } finally {
       state.aiRequestConfirming = false;
       $("#btn-cancel-ai-request").disabled = false;
+    }
+  },
+
+  async reviewAiSuggestion(decision) {
+    const suggestion = state.aiSuggestion;
+    if (!suggestion || suggestion.review_state !== "pending") {
+      throw new Error("没有待审阅的 AI 建议");
+    }
+    if (!new Set(["accepted", "rejected"]).has(decision)) {
+      throw new Error("AI 建议审阅决定非法");
+    }
+    if (state.aiSuggestionReviewing) throw new Error("AI 建议正在处理");
+    state.aiSuggestionReviewing = true;
+    $("#btn-accept-ai-suggestion").disabled = true;
+    $("#btn-reject-ai-suggestion").disabled = true;
+    try {
+      const response = unwrap(await window.oak.reviewAiSuggestion(
+        suggestion.review_id, decision,
+      ));
+      state.aiSuggestion = { ...suggestion, review_state: decision };
+      if (decision === "accepted") {
+        const issue = state.lastCheck && state.lastCheck.issues.find(
+          (item) => item.issue_id === suggestion.issue_id,
+        );
+        if (issue) issue.status = "accepted";
+        renderIssues();
+        if (issue) renderDetail(issue);
+        $("#ai-suggestion-review-status").textContent =
+          "已采纳为人工处理参考；问题状态已标记为接受，但建议未写入稿件或项目文件。";
+      } else {
+        $("#ai-suggestion-review-status").textContent =
+          "已放弃这条 AI 建议；规则问题状态和稿件均未改变。";
+      }
+      $("#btn-cancel-ai-request").textContent = "关闭";
+      return response.review;
+    } finally {
+      state.aiSuggestionReviewing = false;
     }
   },
 
@@ -1098,6 +1152,10 @@ const actions = {
       syncPreview: state.syncPreview ? state.syncPreview.record.idempotency_id : null,
       selectedIssue: state.selectedIssue,
       aiRequestPlan: state.aiRequestPlan ? state.aiRequestPlan.plan_id : null,
+      aiSuggestionReview: state.aiSuggestion ? {
+        id: state.aiSuggestion.review_id,
+        state: state.aiSuggestion.review_state,
+      } : null,
     };
   },
 };
@@ -1344,6 +1402,7 @@ function replaceTextList(root, items) {
 }
 
 function renderAiRequestPlan(plan) {
+  state.aiSuggestion = null;
   $("#ai-plan-mode").textContent = plan.destination.mode === "byo" ? "我的 AI" : "湖岸 AI";
   $("#ai-plan-provider").textContent = plan.destination.provider_label;
   $("#ai-plan-model").textContent = plan.destination.model || "由湖岸服务确定";
@@ -1353,6 +1412,9 @@ function renderAiRequestPlan(plan) {
   replaceTextList($("#ai-plan-does-not-send"), plan.disclosure.does_not_send);
   $("#ai-plan-request-json").textContent = JSON.stringify(plan.request, null, 2);
   $("#ai-suggestion-text").textContent = "";
+  $("#ai-suggestion-review-status").textContent = "";
+  $("#btn-accept-ai-suggestion").disabled = true;
+  $("#btn-reject-ai-suggestion").disabled = true;
   $("#ai-suggestion-result").classList.add("hidden");
   const confirm = $("#btn-confirm-ai-request");
   confirm.disabled = !plan.transport_available;
@@ -1658,6 +1720,10 @@ document.addEventListener("DOMContentLoaded", () => {
     actions.cancelAiSuggestion().catch((error) => toast(String(error.message || error), 6000)));
   $("#btn-confirm-ai-request").addEventListener("click", () =>
     actions.confirmAiSuggestion().catch((error) => toast(String(error.message || error), 6000)));
+  $("#btn-accept-ai-suggestion").addEventListener("click", () =>
+    actions.reviewAiSuggestion("accepted").catch((error) => toast(String(error.message || error), 6000)));
+  $("#btn-reject-ai-suggestion").addEventListener("click", () =>
+    actions.reviewAiSuggestion("rejected").catch((error) => toast(String(error.message || error), 6000)));
   $("#ai-request-dialog").addEventListener("cancel", (event) => {
     event.preventDefault();
     actions.cancelAiSuggestion().catch((error) => toast(String(error.message || error), 6000));

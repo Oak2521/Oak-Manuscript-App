@@ -2,9 +2,9 @@
 
 > 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.33）
+## Provider 一览（当前 alpha.34）
 
-alpha.33 在桌面 AI 设置之上增加单条问题发送预览和一次确认契约；生产模型 transport 仍为 `null`，没有改变 Web 作业、网站或生产服务。数据库/store 仍是 Fake/静态检查，没有执行真实迁移、连接 Supabase/Netlify 或部署计划任务，也没有容器/OS 无网隔离证据。商业仓库没有复制真实 service-role key 或 AI key、没有修改网站或部署 worker、签名权益/计费、同步 transport、AI transport 或网站后台。
+alpha.34 在桌面 AI 请求预览之上增加建议级采纳/放弃；采纳只记录问题状态，放弃零写入，模型文本不持久化。生产模型 transport 仍为 `null`，没有改变 Web 作业、网站或生产服务。数据库/store 仍是 Fake/静态检查，没有执行真实迁移、连接 Supabase/Netlify 或部署计划任务，也没有容器/OS 无网隔离证据。商业仓库没有复制真实 service-role key 或 AI key、没有修改网站或部署 worker、签名权益/计费、同步 transport、AI transport 或网站后台。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
@@ -15,7 +15,7 @@ alpha.33 在桌面 AI 设置之上增加单条问题发送预览和一次确认�
 | `StandardsProvider` | 离线验证内置 release；本地签名包预览/安装/全局回滚、项目固定版本与显式升级已实现；生产 trust pin 缺失时导入禁用 | 用户主动触发的在线检查/下载、签名与撤回分发、可观测回滚；绝不上传稿件 |
 | `UpdateProvider` | 尚未实现或导出 | 签名应用更新 |
 | `FeedbackProvider` | 尚未实现或导出 | 用户主动发送不含正文的规则反馈 |
-| `AIProvider` / `AIRequestCoordinator` | 三模式、六类供应商、Pro/safeStorage、单条问题最小上下文、10 分钟一次性计划、完整发送披露与只读建议接口已实现；生产 transport=`null`、确认按钮禁用 | 按官方协议实现六类独立最小权限 transport、湖岸 AI 服务和真实建议审阅；Web 用户凭据只限当前会话，绝不进入账号同步或长期网站存储 |
+| `AIProvider` / `AIRequestCoordinator` | 三模式、六类供应商、Pro/safeStorage、单条问题最小上下文、10 分钟一次性请求计划、完整发送披露、30 分钟一次性建议审阅和采纳/放弃边界已实现；生产 transport=`null`、确认按钮禁用 | 按官方协议实现六类独立最小权限 transport、湖岸 AI 服务和真实建议质量验收；Web 用户凭据只限当前会话，绝不进入账号同步或长期网站存储 |
 
 ## 当前离线边界与硬性验收（对应 §20.1 / §21）
 
