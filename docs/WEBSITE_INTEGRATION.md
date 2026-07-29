@@ -2,16 +2,16 @@
 
 > 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.38 源码）
+## Provider 一览（当前 alpha.39 源码）
 
-alpha.38 新增 SyncRecord 长期结果的独立服务验证、同源 HTTP API、Supabase repository/迁移、生产形状 runtime，以及桌面 Bearer client/coordinator 源码。生产 `AuthProvider` 仍未提供 token，主进程未实例化 transport；数据库迁移未执行、API 未部署、网站后台未修改，因此普通 APP 仍不联网也不声称同步成功。桌面 AI transport 仍为 `null`，适配器注册表为空。商业仓库没有复制真实 service-role key 或 AI key，没有部署 worker、签名权益/计费、同步/AI 服务或网站后台。
+alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI。受信配置仍为 `pending_configuration` 且全部端点/key 为空；数据库迁移未执行、API 未部署、网站后台未修改，因此普通 APP 仍不联网也不声称同步成功。桌面 AI transport 仍为 `null`，适配器注册表为空。商业仓库没有真实 service-role key、OAuth 配置或 AI key。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
-| `AuthProvider` | 状态机覆盖未登录/已登录/过期/撤销，固定生产方式为系统浏览器 PKCE；未配置时返回 `configuration_required`，不打开页面、不联网；登录模拟仅供测试实例 | 湖岸橡树官网统一认证、系统浏览器 PKCE、系统安全存储、邮箱与 Google OAuth |
+| `AuthProvider` | 系统浏览器 Authorization Code + PKCE S256/state、固定 Windows/macOS 深链、safeStorage token-store、刷新身份复核已完成离线源码/注入测试；默认配置为空时返回 `configuration_required`，不打开页面、不联网 | 在获准预生产环境核对正式 OAuth/OIDC、nonce/ID-token 取舍、真实刷新/退出/撤销、邮箱与 Google OAuth |
 | `LicenseProvider` | Free/Pro 能力矩阵、有效期/宽限/过期降级已固定；`signatureVerified=false`，永不锁已有本地文件 | 服务端签名权益、离线宽限、设备管理和订阅计费；价格未拍板 |
 | `EvaluationProvider` | 用户点击后返回固定湖岸 HTTPS 评估页 URL，由主进程白名单校验并交给系统浏览器打开；APP 不在该 Provider 中生成或上传摘要 | 用户确认后提交脱敏摘要（§8.3–§8.4） |
-| `SyncProvider` | 可信 Python 来源 → SyncRecord v1 exact 校验 → 完整预览 → 四选一确认 → 按账户隔离的 OS 加密队列；服务端/API/Supabase 与桌面 client/coordinator 源码已存在，但 main 未接线、迁移未执行、服务未部署，所以仍不联网、不声称上传成功 | 完成生产 PKCE/token、main 接线、预生产迁移和真实 E2E；登录用户明确选择后只同步检查结果/必要元数据，并支持网站后台查看与属主删除 |
+| `SyncProvider` | 可信 Python 来源 → exact 校验 → 完整预览 → 四选一确认 → 按账户 OS 加密队列；服务端/API/Supabase 与桌面 client/coordinator 已由 main 条件接线，只有用户逐项点击才发送；默认无端点，迁移/服务未部署 | 填充受信正式配置，完成预生产迁移和真实 E2E；网站后台支持查看与属主删除 |
 | `StandardsProvider` | 离线验证内置 release；本地签名包预览/安装/全局回滚、项目固定版本与显式升级已实现；生产 trust pin 缺失时导入禁用 | 用户主动触发的在线检查/下载、签名与撤回分发、可观测回滚；绝不上传稿件 |
 | `UpdateProvider` | 尚未实现或导出 | 签名应用更新 |
 | `FeedbackProvider` | 尚未实现或导出 | 用户主动发送不含正文的规则反馈 |
@@ -20,7 +20,7 @@ alpha.38 新增 SyncRecord 长期结果的独立服务验证、同源 HTTP API�
 ## 当前离线边界与硬性验收（对应 §20.1 / §21）
 
 - 未登录状态**不触发**任何同步询问与网络调用；
-- Auth、License 与 Sync 的当前生产组合不发起网络请求；alpha.38 的 Sync client/coordinator 只有注入式测试，main 没有实例化。StandardsProvider 目前也只有本地文件路径，没有联网 transport。Evaluation 是例外：只有用户点击后，主进程才把固定白名单 HTTPS URL 交给系统浏览器，浏览器随后可能联网；Update/Feedback 当前根本没有实现，不能写成已有占位代码路径；
+- Auth、License 与 Sync 的当前仓库默认组合不发起网络请求；alpha.39 只有在受信配置从 `pending_configuration` 改为完整正式配置后才实例化网络 client/coordinator。StandardsProvider 目前也只有本地文件路径，没有联网 transport。Evaluation 是例外：只有用户点击后，主进程才把固定白名单 HTTPS URL 交给系统浏览器，浏览器随后可能联网；Update/Feedback 当前根本没有实现，不能写成已有占位代码路径；
 - 标准包 transport 未来必须与本地验证分层：网络层只能提供候选字节，不能设置“已验证”状态、选择项目升级目标或绕过签名/CAS/高水位/回滚规则；默认 Electron session 继续离线；
 - 全局标准更新不等于项目升级。已有项目保持七字段 pin，用户查看完整差异并一次确认后才可迁移，之后强制重检；
 - 同步负载 JSON schema 带版本号；当前实现不改变 `project.json`，进程内队列不得伪造同步历史。生产服务端确认机制上线时，项目持久状态必须另行版本化并保持向后兼容；
@@ -28,7 +28,7 @@ alpha.38 新增 SyncRecord 长期结果的独立服务验证、同源 HTTP API�
 - “同步结果”与 Web 版“用户主动提交临时处理任务”是两条不同数据流。Web 作业可以在明确操作后上传待处理文件，但必须使用隔离临时存储、TTL 删除和零留存审计，不能进入用户同步历史；
 - Windows、macOS 和 Web 共用同一湖岸官网账号与权益判定，不另建 APP 独立账号库。
 
-## SyncRecord 长期结果 API v1（alpha.38，未部署）
+## SyncRecord 长期结果 API v1（alpha.39，未部署）
 
 长期同步与 Web 临时稿件任务是两条独立数据流。固定 API 前缀为 `/manuscript/api/v1/sync-records`：collection 的 `POST` 创建/幂等重放、`GET` 分页列表；item 的 `GET` 读取、`DELETE` 属主删除。请求不能自报账号，GoTrue Bearer 或服务器 Cookie 会话必须先解析为 exact trusted subject；服务端再用独立验证器检查 SyncRecord v1，而不是信任 Electron validator。响应不开放 CORS，状态变更强制 HTTPS、同源/Fetch Metadata；Cookie 模式另需 CSRF，Bearer 明确 `credentials:omit`。
 
@@ -36,7 +36,7 @@ alpha.38 新增 SyncRecord 长期结果的独立服务验证、同源 HTTP API�
 
 `web/sync-record-runtime.js` 组合独立的公开 Supabase API key、GoTrue verifier、session resolver、service-role repository、service、HTTP handler、Fetch adapter 和必填的 content-free audit sink。部署平台需显式把这些构造参数映射到服务端秘密与同源站点 origin；源码没有自动读取或暗示任何真实环境变量值。`electron/sync-http-client.js` 固定规范 HTTPS origin、路径、Bearer、超时/响应上限和 canonical 回显；`electron/sync-transport-coordinator.js` 要求 token 与当前队列账号 exact 绑定，保证单项单在途，复核登录账号稳定性，并只在远端 `created|replayed` 后删除精确本地项。
 
-当前未执行 `002_sync_records.sql`，未配置真实 public/service-role key，未部署 runtime，未把生产 PKCE token provider 接入 main，也没有网站账号后台的列表/导出/删除 UI。上述源码和 Fake fetch/repository 测试不能替代真实 GoTrue、RLS、多实例、备份恢复、删除和无密钥泄露验收。
+当前未执行 `002_sync_records.sql`，未配置真实 OAuth/public/service-role key，未部署 runtime，也没有网站账号后台的列表/导出/删除 UI。桌面 PKCE/token provider/main 已具备条件接线源码，但默认配置为空；上述源码和 Fake fetch/repository 测试不能替代真实 OAuth/OIDC、GoTrue、RLS、多实例、备份恢复、删除和无密钥泄露验收。
 
 ## Web 作业契约 v1、HTTP/GoTrue/Fetch/Blobs/Postgres/inspection/worker/result/cleanup 与账号适配（alpha.31）
 

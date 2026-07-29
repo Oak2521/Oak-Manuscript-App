@@ -1,10 +1,10 @@
 # AI_HANDOFF — 湖岸稿件（Oak Manuscript）项目交接说明
 
-> 最近更新：2026-07-28
+> 最近更新：2026-07-29
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.38`
+> 当前版本：`0.1.0-alpha.39`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.38`（提交后建立；SyncRecord 服务/API/Supabase 与未接线桌面 transport 源码检查点）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.39`（提交后建立；桌面 PKCE、加密 token-store 与显式同步主进程接线源码检查点）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,16 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.39 桌面 PKCE、加密会话与显式同步主进程接线
+
+- APP、Python core、桌面/Web lockfile 统一为 alpha.39；资源信任清单 84 文件 / 2,145,925 字节，manifest SHA-256 `9b1a292bb58ac8ae021691c37c877af288efc6ea043dbec10628bc9681e5d313`，源码锚点 `a5504168689213f4a4219c4aac3104d88ec10d24fb73eebf3985e07b8c02f160`；标准包/规则/fixer 未变化；
+- 新增 exact 桌面账号配置及 schema。仓库默认配置为 `pending_configuration`，授权/token/user/API origin/client/public key 全部为 null；普通启动、测试和 smoke 不存在可调用网络目标；
+- 新增系统浏览器 Authorization Code + PKCE S256：随机 state/verifier、verifier 先加密落盘再开浏览器、固定回调 scheme、Windows second-instance 与 macOS open-url 路由、有界 code exchange 与 user identity 复核；token、额外查询字段、错 scheme、错配/过期/已用 state 均拒绝；
+- 新增独立 `OAKAUTH1` safeStorage 会话存储，保存账号绑定 access/refresh token 与 pending verifier；canonical JSON、revision CAS、单链接/路径身份、原子替换、fsync 和提交后复验均 fail-closed，Renderer/项目/报告不接收令牌；
+- 主进程只在受信账号配置完整且系统加密可用时实例化 Auth/Sync client/coordinator；队列 UI 只在该状态显示“发送到网站/确认重试并发送”，每项仍须用户明确点击，不存在登录后自动同步或后台 flush；
+- `npm test` 113.8 秒：Node 576 total / 569 pass / 0 fail / 7 skip（4.059 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（105.091 秒）；隐藏源码 Electron smoke PASS，输出 `out/source-smoke/runs/ms5kxdpe-fa5aab63ad422c0f/projects/`；
+- 本轮未联网、未使用真实账号/端点/API key、未迁移、未部署、未修改官网、未重新打包。没有真实 PKCE、GoTrue/RLS、网站后台或远端同步证据；最新真实 Windows 制品和 packaged 证据保持 alpha.37。
 
 ### 已完成：0.1.0-alpha.38 SyncRecord 服务端与桌面 transport 源码检查点
 
@@ -536,7 +546,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - Windows：alpha.37 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke、schema v2 发布证据，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：临时作业链保持；alpha.38 另实现 SyncRecord 独立服务验证、同源 API、GoTrue/runtime、Supabase repository/002 迁移源码。生产环境/真实账号与 Blobs/Postgres E2E、病毒库/平台扫描、容器/OS 禁网与资源隔离、计费和官网嵌入仍未实现；
-- 账号/订阅/同步：离线 Provider/Free+Pro、逐字段确认、OS 加密队列和重启恢复，以及固定桌面 client/coordinator 与服务端幂等/归属/删除源码已实现；生产 PKCE token 安全存储、main 接线、真实 Supabase 迁移/部署、签名权益、支付和网站后台未连接；
+- 账号/订阅/同步：离线 Provider/Free+Pro、逐字段确认、OS 加密队列和重启恢复、桌面 PKCE/加密 token-store/条件 main 接线，以及固定 client/coordinator 与服务端幂等/归属/删除源码已实现；默认账号配置仍为空，真实 PKCE/刷新/撤销、Supabase 迁移/部署、签名权益、支付和网站后台未连接；
 - 标准库：治理结构和引用解析政策已完成，13 项标准、35 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
 - 标准升级：本地验证、签名包导入/回滚骨架、项目固定与显式升级已编码；生产 trust pin、在线获取/下载、签名撤回分发与联网自动更新未实现；
 - 正式发布仍缺隐私/条款最终文本、证书、生产密钥、人工内测、macOS 硬件和网站联调。
@@ -564,9 +574,9 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划。近期直接闭合“账号 → 权益 → 检查 → 明确同步”主链：
 
-1. 在离线/假凭据测试下实现生产形状的系统浏览器 PKCE 回调、state/nonce/PKCE 校验、OS 安全 token-store、刷新/过期/撤销状态和主进程 access-token provider；未配置时继续零网络、fail-closed；
-2. 把 alpha.38 `SyncTransportCoordinator` 接入 main 与明确发送/重试 UI，保持 Renderer 无 token/URL/负载构造权，补进程崩溃、远端成功后本地删除失败、账号切换和幂等重放测试；
-3. 真实 `002_sync_records.sql` 迁移、GoTrue/RLS/多实例/备份/删除 E2E 和网站账号后台必须在另行授权的隔离预生产环境完成；当前不得连接生产系统；
+1. 在不连接生产系统的条件下补完 alpha.39 账号故障语义：token exchange/refresh 模糊失败、进程崩溃恢复、系统浏览器打开失败、回调并发，以及远端成功后本地删除失败的注入测试；不要把源码模拟写成真实 OAuth 验收；
+2. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，才填充 `desktop-auth.json` 并执行真实 PKCE/刷新/退出/撤销、`002_sync_records.sql`、GoTrue/RLS/多实例/备份/删除 E2E 和网站账号后台联调；当前不得连接生产系统；
+3. 真实联调前确定 OIDC nonce/ID-token 验证或纯 OAuth user endpoint 的正式协议，不在未知服务契约上伪造 nonce 已完成；
 4. 其后并行关闭发行门禁：具名许可/再分发签核、发行身份、Ace 自带浏览器/OS 隔离、Windows Authenticode/真实安装生命周期、macOS 双架构签名/公证/实机，以及临时作业的生产恶意软件扫描与三路零留存；
 5. 经联网授权后再核验标准官方来源并实现签名更新 transport；任何新规则必须有反例、匿名样本、回归和真实审校签核。
 

@@ -2,13 +2,13 @@
 
 ## 桌面应用（推荐）
 
-当前开发版本为 `0.1.0-alpha.38`，最新已打包版本仍为 `0.1.0-alpha.37`；Windows x64 NSIS/ZIP 未签名，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.38 在既有标准包 2.0.0、默认引用解析、加密同步队列与 Web 临时任务链之外，加入未部署的 SyncRecord 服务端/API/Postgres 契约及未实例化的桌面有界 transport；普通测试、启动和构建不会触发联网下载。
+当前开发版本为 `0.1.0-alpha.39`，最新已打包版本仍为 `0.1.0-alpha.37`；Windows x64 NSIS/ZIP 未签名，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.39 在 SyncRecord 服务/API/Postgres 契约之上加入桌面 PKCE、加密账号会话和逐项显式发送接线；默认账号配置仍为空，普通测试、启动和构建不会触发账号联网或下载。
 
-**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.38 当前结果为 Node 560/553/0/7、Python 362/0 failures/0 errors/3 skipped；跳过项不计作通过。alpha.38 独立隐藏源码 smoke 已通过，但本轮未打包；alpha.37 packaged smoke 历史证据仍有效，不能冒充 alpha.38 制品证据。
+**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.39 当前结果为 Node 576/569/0/7、Python 362/0 failures/0 errors/3 skipped；跳过项不计作通过。alpha.39 独立隐藏源码 smoke 已通过，但本轮未打包；alpha.37 packaged smoke 历史证据仍有效，不能冒充 alpha.39 制品证据。
 
 **Web 状态**：`web/client/` 已提供可本地渲染的临时处理工作台，保留湖岸账号登录/注册，包含“默认”引用体例、本次临时处理同意、创建/上传/轮询/取消/一次性领取；服务端另有 GoTrue、Fetch、Netlify Blobs 内容适配/有界清扫、Supabase/Postgres 持久任务迁移、上传结构/主动内容检查、私有原子领取、固定 Python 共享核心子进程及任务—对象—任务协调器。alpha.38 又提供独立 `/manuscript/api/v1/sync-records` 源码边界，用于已确认的长期结果记录创建/重放、列表、读取与删除；它不接收稿件文件。两条 SQL 均未在真实 Supabase 执行，API/计划任务也未部署；本地注入测试不等于平台零留存或线上可用。网站工作台的结果同步按钮仍禁用，计费未接通。用户不要把稿件交给任何声称基于该 alpha 的线上地址；正式地址只能在官网联调、隐私文本和生产验收后公布。
 
-**账号与结果同步（当前边界）**：欢迎页、导出页和设置页保留湖岸账号入口。由于生产认证尚未配置，点击登录只会明确显示 `configuration_required`，不会打开浏览器或联网；真实登录状态只在自动化测试实例中模拟。登录用户导出后才会看到 SyncRecord v1 的逐字段预览，并可选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。确认项进入由系统安全存储加密的本机 `pending_transport` 队列，重启后可恢复；设置页只显示当前账号项，并可取消、重试或删除。alpha.38 的桌面客户端只能向构建时受信 HTTPS origin 发送 Bearer 请求；token 必须带与当前队列账号一致的主进程绑定，成功回执必须逐字段回显同一记录。协调器在远端创建/幂等重放后才删除本机项，失败或账号切换则保留并记录稳定错误。生产 AuthProvider 仍没有 token，主进程也未配置客户端，因此当前 APP 绝未上传到网站；系统加密不可用时同步安全停止，本地稿件功能不受影响。
+**账号与结果同步（当前边界）**：欢迎页、导出页和设置页保留湖岸账号入口。仓库受信配置为 `pending_configuration`，点击登录只会显示配置未完成，不打开浏览器或联网。alpha.39 已实现未来正式配置下的系统浏览器 PKCE、固定深链和 OS 加密账号会话，但尚未连接真实服务。登录用户导出后才会看到 SyncRecord v1 逐字段预览，并可选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。确认项进入系统加密本机队列；配置完整时设置页才显示逐项“发送到网站/确认重试并发送”，登录绝不自动上传。token 只在主进程密文中并与队列账号绑定；远端创建/幂等重放后才删除本机项，失败或账号切换则保留。当前默认配置下 APP 绝未上传到网站；系统加密不可用时同步安全停止，本地稿件功能不受影响。
 
 **AI 设置与发送预览（当前边界）**：设置页提供“无 AI”“湖岸 AI”“我的 AI”。我的 AI 支持 OpenAI、Anthropic、Google Gemini、OpenAI-compatible、Ollama 和 LM Studio，属于 Pro 权益且不消耗湖岸 AI 配额；三个官方云供应商固定使用官方端点，自定义地址必须选择 OpenAI-compatible；远程地址必须使用 HTTPS，本机 HTTP 只接受 loopback。凭据不会回填到界面、报告或同步，供应商/地址变化后必须重新提供。
 
@@ -168,9 +168,9 @@ npm run verify:release-identity
 npm run release:evidence:verify:win
 ```
 
-验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。当前源码已是 alpha.38 且本轮未打包，因此该命令不会拿 alpha.37 冒充当前制品。alpha.37 的 NSIS、ZIP、SHA 文件与 schema v2 canonical manifest 历史证据已通过交叉验证；manifest 另绑定对应 packaged-smoke、实际 unpacked EXE 与匿名输出树摘要。
+验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。当前源码已是 alpha.39 且本轮未打包，因此该命令不会拿 alpha.37 冒充当前制品。alpha.37 的 NSIS、ZIP、SHA 文件与 schema v2 canonical manifest 历史证据已通过交叉验证；manifest 另绑定对应 packaged-smoke、实际 unpacked EXE 与匿名输出树摘要。
 
-安装生命周期验收器默认只读、不启动安装器，并要求当前源码版本存在精确制品；所以 alpha.38 尚不能运行该预检。历史 alpha.37 对归档 alpha.12 的只读预检已经通过：
+安装生命周期验收器默认只读、不启动安装器，并要求当前源码版本存在精确制品；所以 alpha.39 尚不能运行该预检。历史 alpha.37 对归档 alpha.12 的只读预检已经通过：
 
 ```powershell
 npm run verify:install-lifecycle:win
@@ -182,7 +182,7 @@ npm run verify:install-lifecycle:win
 node scripts/windows_install_acceptance.js --run --allow-system-mutation
 ```
 
-alpha.37 已执行并通过默认只读安装生命周期预检，`authorized=false`，没有启动安装器。alpha.38 未打包、未预检；真实安装生命周期始终未运行，不能据此声称安装、升级、降级保护或卸载已验收。
+alpha.37 已执行并通过默认只读安装生命周期预检，`authorized=false`，没有启动安装器。alpha.39 未打包、未预检；真实安装生命周期始终未运行，不能据此声称安装、升级、降级保护或卸载已验收。
 
 macOS 分架构入口为 `npm run verify:resources:mac:x64` / `:arm64` 和 `npm run build:mac:x64` / `:arm64`，必须分别在对应原生 runner 执行。`npm run build:mac` 只选择当前 Mac 的原生架构；`npm run verify:resources:mac` 是显式 `--no-runtime-probe` 的跨架构静态聚合，不算探针或构建通过。当前仍缺 x64/arm64 Python/JRE 资源与锁、构建、签名、公证和实机证据。
 

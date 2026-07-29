@@ -1,6 +1,6 @@
 # Web 作业契约与同源 HTTP handler（alpha）
 
-`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.38 另以 `sync-record-service.js`、`sync-record-http-handler.js`、`supabase-sync-record-repository.js`、`sync-record-runtime.js` 和 `supabase/002_sync_records.sql` 实现长期 SyncRecord 的独立验证/API/持久层组合。`supabase-session-adapter.js`、`gotrue-verifier.js` 和 `fetch-adapter.js` 由两条数据流复用；`client/` 仍是未部署工作台。源码可本机测试，但临时作业与长期同步均不是已上线生产服务。
+`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.38 以 `sync-record-service.js`、`sync-record-http-handler.js`、`supabase-sync-record-repository.js`、`sync-record-runtime.js` 和 `supabase/002_sync_records.sql` 实现长期 SyncRecord 的独立验证/API/持久层组合；alpha.39 只改变桌面条件接线，不改变 Web 服务合同。源码可本机测试，但临时作业与长期同步均不是已上线生产服务。
 
 Web 服务端依赖与 Electron 桌面依赖隔离：
 
@@ -30,7 +30,7 @@ alpha.38 长期 SyncRecord 固定：
 - `supabase-sync-record-repository.js` 只调用四个白名单 RPC，固定 HTTPS、service-role、无 Cookie/重定向、超时/响应上限及严格响应归属；
 - `supabase/002_sync_records.sql` 建立不含稿件内容、标题、路径、文件名、片段或哈希的长期表，强制 RLS、撤销浏览器权限，并用账户 advisory transaction lock 原子执行容量检查和幂等创建；
 - `sync-record-runtime.js` 明确分离公开 Supabase API key、service-role key 与必填审计接收器；它只组合依赖，不读取真实部署环境；
-- Electron client/coordinator 未由 main 实例化，生产 AuthProvider 也没有 access token，当前 APP 不会调用此 API；SQL 未在真实 PostgreSQL/Supabase 执行。
+- Electron client/coordinator 已由 main 在受信账号配置完整时条件实例化；仓库默认配置无端点/key，当前 APP 不会调用此 API；SQL 未在真实 PostgreSQL/Supabase 执行。
 
 alpha.23—alpha.31 固定：
 

@@ -22,6 +22,12 @@ const { registerStandardsIpc } = require("./standards-ipc");
 const { StandardsProvider } = require("./standards-provider");
 const { EncryptedSyncStore } = require("./sync-store");
 const { EncryptedAISettingsStore } = require("./ai-settings-store");
+const { EncryptedAuthStore } = require("./encrypted-auth-store");
+const { loadDesktopAuthConfig } = require("./desktop-auth-config");
+const { AuthHttpClient } = require("./auth-http-client");
+const { DesktopAuthProvider } = require("./desktop-auth-provider");
+const { SyncHttpClient } = require("./sync-http-client");
+const { SyncTransportCoordinator } = require("./sync-transport-coordinator");
 const { createStandardBoundCore } = require("./standard-bound-core");
 const { readCoreCommandResult, toFailureResponse } = require("./core-result");
 const { createPdfPreview } = require("./pdf-preview");
@@ -52,6 +58,23 @@ if (SMOKE) app.disableHardwareAcceleration();
 let mainWindow = null;
 let standardsProvider = null;
 let standardBoundCore = null;
+let syncCoordinator = null;
+let authReady = false;
+const pendingAuthCallbacks = [];
+
+function authCallbackFromArgs(argv) {
+  if (!Array.isArray(argv)) return null;
+  return argv.find((value) => typeof value === "string" && value.startsWith("oak-manuscript-auth://")) || null;
+}
+
+async function consumeAuthCallback(url) {
+  try {
+    await providers.authProvider.handleCallback(url);
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("provider:auth-changed");
+  } catch (error) {
+    console.error("[auth] callback rejected:", error && error.message);
+  }
+}
 
 // ---------- 工具 ----------
 
@@ -168,6 +191,7 @@ registerAccountSyncIpc({
   authProvider: providers.authProvider,
   licenseProvider: providers.licenseProvider,
   syncProvider: providers.syncProvider,
+  getSyncCoordinator: () => syncCoordinator,
   syncRecordSource: async (project, event, includeIssues) => {
     const { data } = await core(["sync-source", "--project", project, "--event", event]);
     const platform = process.platform === "win32" || process.platform === "darwin"
@@ -370,11 +394,22 @@ const hasSingleInstanceLock = app.requestSingleInstanceLock();
 if (!hasSingleInstanceLock) {
   app.quit();
 } else {
-  app.on("second-instance", () => {
+  app.on("second-instance", (_event, argv) => {
+    const callback = authCallbackFromArgs(argv);
+    if (callback) {
+      if (authReady) void consumeAuthCallback(callback);
+      else pendingAuthCallbacks.push(callback);
+    }
     if (mainWindow === null) return;
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.focus();
   });
+
+app.on("open-url", (event, url) => {
+  event.preventDefault();
+  if (authReady) void consumeAuthCallback(url);
+  else pendingAuthCallbacks.push(url);
+});
 
 app.whenReady().then(async () => {
   console.log("[main] app ready");
@@ -393,6 +428,41 @@ app.whenReady().then(async () => {
       return;
     }
   }
+  try {
+    const config = loadDesktopAuthConfig(pathPolicy.configDir());
+    let desktopAuth;
+    if (config.status === "configured") {
+      if (!safeStorage.isEncryptionAvailable()) throw new Error("当前系统安全存储不可用");
+      const authStore = new EncryptedAuthStore({
+        rootDir: path.join(app.getPath("userData"), "auth"),
+        protect: (plaintext) => safeStorage.encryptString(plaintext),
+        unprotect: (ciphertext) => safeStorage.decryptString(ciphertext),
+      });
+      const authClient = new AuthHttpClient({ config });
+      desktopAuth = new DesktopAuthProvider({
+        config, store: authStore, client: authClient,
+        openExternal: (url) => shell.openExternal(url),
+      });
+      syncCoordinator = new SyncTransportCoordinator({
+        syncProvider: providers.syncProvider,
+        authProvider: desktopAuth,
+        accessTokenProvider: (binding) => desktopAuth.accessToken(binding),
+        transport: new SyncHttpClient({ apiOrigin: config.api_origin }),
+      });
+      console.log("[auth] encrypted PKCE session ready; network remains user-triggered");
+    } else {
+      desktopAuth = new DesktopAuthProvider({ config });
+      console.log("[auth] production endpoints pending; login and sync transport disabled");
+    }
+    providers.authProvider.configureProduction(desktopAuth);
+  } catch (error) {
+    syncCoordinator = null;
+    console.error("[auth] production account boundary unavailable:", error && error.message);
+  }
+  authReady = true;
+  const startupCallback = authCallbackFromArgs(process.argv);
+  if (startupCallback) pendingAuthCallbacks.push(startupCallback);
+  while (pendingAuthCallbacks.length) await consumeAuthCallback(pendingAuthCallbacks.shift());
   installAppProtocol(protocol, path.join(pathPolicy.repoRoot(), "renderer"));
   try {
     if (!safeStorage.isEncryptionAvailable()) {

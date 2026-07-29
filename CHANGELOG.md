@@ -4,6 +4,16 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.39（ChatGPT 桌面 PKCE 与显式同步主进程接线）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.39`（提交后建立）。本轮未联网、未使用真实账号/端点/API key、未迁移数据库、未部署、未修改官网，也未重新打包；最新真实 Windows 制品仍为 alpha.37。
+
+- 新增受资源信任清单约束的 exact `desktop-auth.json` 与 schema；默认固定 `pending_configuration` 且全部网络目标为空，普通 APP 登录和同步继续零请求；
+- 新增系统浏览器 Authorization Code + PKCE S256、随机 state、严格 `oak-manuscript-auth://callback`、Windows second-instance/macOS open-url 深链、固定有界 token/user 客户端及独立身份复核；回调 URL 拒绝 token、额外参数、错误 scheme、过期/错配/重放 state；
+- 新增 `OAKAUTH1` 域分离的 safeStorage 加密账号会话：token 与 PKCE verifier 只在主进程密文文件中，具备 canonical JSON、revision CAS、单链接/路径身份、原子替换和提交后复验；Renderer 只接收状态；
+- 账号配置完整时主进程才实例化 Sync client/coordinator；设置页只在该状态显示“发送到网站/确认重试并发送”，每项仍须用户明确点击，失败保留本机队列，默认不后台发送；
+- 完整 `npm test`：Node 576 total / 569 pass / 0 fail / 7 skip，Python 362 total / 0 failures / 0 errors / 3 skipped；隐藏源码 Electron smoke PASS，输出 `out/source-smoke/runs/ms5kxdpe-fa5aab63ad422c0f/projects/`；资源清单 84 文件 / 2,145,925 字节，manifest SHA-256 `9b1a292bb58ac8ae021691c37c877af288efc6ea043dbec10628bc9681e5d313`，anchor SHA-256 `a5504168689213f4a4219c4aac3104d88ec10d24fb73eebf3985e07b8c02f160`。
+
 ### 2026-07-28 — 0.1.0-alpha.38（ChatGPT SyncRecord 服务端与桌面 transport 源码检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.38`。本轮未联网、未使用真实账号/API/service-role/AI 密钥、未迁移数据库、未部署或修改官网，也未重新打包；最新真实 Windows 制品仍为 alpha.37。

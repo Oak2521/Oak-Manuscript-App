@@ -320,9 +320,20 @@ class AuthProvider {
     this.allowLocalSimulation = allowLocalSimulation;
     this.clock = clock;
     this.session = { state: "signed_out", accountId: null, sessionExpiresAt: null };
+    this.production = null;
+  }
+
+  configureProduction(provider) {
+    if (!provider || ["status", "beginLogin", "logout", "handleCallback", "accessToken"]
+      .some((name) => typeof provider[name] !== "function")) {
+      throw new TypeError("production auth provider 接口不完整");
+    }
+    this.production = provider;
+    return this.status();
   }
 
   status() {
+    if (this.production !== null) return this.production.status();
     const loggedIn = this.session.state === "authenticated";
     return {
       state: this.session.state,
@@ -342,6 +353,7 @@ class AuthProvider {
   }
 
   beginLogin() {
+    if (this.production !== null) return this.production.beginLogin();
     return {
       state: "configuration_required",
       opened: false,
@@ -360,6 +372,7 @@ class AuthProvider {
   }
 
   logout() {
+    if (this.production !== null) return this.production.logout();
     this.session = { state: "signed_out", accountId: null, sessionExpiresAt: null };
     return this.status();
   }
@@ -372,6 +385,16 @@ class AuthProvider {
   revokeDevice() {
     this.session = { state: "revoked", accountId: null, sessionExpiresAt: null };
     return this.status();
+  }
+
+  handleCallback(url) {
+    if (this.production === null) throw new Error("生产账号服务尚未配置");
+    return this.production.handleCallback(url);
+  }
+
+  accessToken(binding) {
+    if (this.production === null) throw new Error("生产账号服务尚未配置");
+    return this.production.accessToken(binding);
   }
 }
 

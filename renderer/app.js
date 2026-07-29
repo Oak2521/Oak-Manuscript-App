@@ -37,6 +37,7 @@ const state = {
   syncConfirming: false,
   syncQueue: [],
   syncPersistence: null,
+  syncTransportConfigured: false,
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -1524,9 +1525,12 @@ function renderSyncQueue() {
     root.replaceChildren();
     return;
   }
+  const transportText = state.syncTransportConfigured
+    ? "只有点击发送才会联网。"
+    : "生产同步端点尚未配置，均未上传。";
   $("#sync-queue-status").textContent = state.syncQueue.length
-    ? `当前账号有 ${state.syncQueue.length} 个本机队列项；production transport 未配置，均未上传。`
-    : "当前账号没有本机待发送项；production transport 未配置。";
+    ? `当前账号有 ${state.syncQueue.length} 个本机队列项；${transportText}`
+    : `当前账号没有本机待发送项；${transportText}`;
   const children = state.syncQueue.map((item) => {
     const row = document.createElement("div");
     row.className = "sync-queue-item";
@@ -1537,13 +1541,16 @@ function renderSyncQueue() {
     buttons.className = "sync-queue-actions";
     const stateButton = document.createElement("button");
     stateButton.textContent = item.state === "canceled" ? "重新加入待发送" : "取消待发送";
-    stateButton.addEventListener("click", () => handleSyncQueueAction(
-      item.state === "canceled" ? "retry" : "cancel",
-      item.queue_id,
-    ));
+    stateButton.addEventListener("click", () => handleSyncQueueAction(item.state === "canceled" ? "retry" : "cancel", item.queue_id));
     const deleteButton = document.createElement("button");
     deleteButton.textContent = "删除本机记录";
     deleteButton.addEventListener("click", () => handleSyncQueueAction("delete", item.queue_id));
+    if (state.syncTransportConfigured && item.state === "pending_transport") {
+      const sendButton = document.createElement("button");
+      sendButton.textContent = item.last_error ? "确认重试并发送" : "发送到网站";
+      sendButton.addEventListener("click", () => handleSyncQueueAction(item.last_error ? "retrySend" : "send", item.queue_id));
+      buttons.append(sendButton);
+    }
     buttons.append(stateButton, deleteButton);
     row.append(meta, buttons);
     return row;
@@ -1555,6 +1562,7 @@ async function refreshSyncQueue() {
   const response = unwrap(await window.oak.syncQueue());
   state.syncQueue = Array.isArray(response.items) ? response.items : [];
   state.syncPersistence = response.persistence || null;
+  state.syncTransportConfigured = response.transportConfigured === true;
   renderSyncQueue();
   return response;
 }
@@ -1564,12 +1572,18 @@ async function handleSyncQueueAction(action, queueId) {
     cancel: () => window.oak.syncCancel(queueId),
     retry: () => window.oak.syncRetry(queueId),
     delete: () => window.oak.syncDelete(queueId),
+    send: () => window.oak.syncSend(queueId),
+    retrySend: async () => {
+      unwrap(await window.oak.syncRetry(queueId));
+      return window.oak.syncSend(queueId);
+    },
   };
   if (!operations[action]) throw new Error("同步队列操作非法");
   try {
     unwrap(await operations[action]());
     await refreshSyncQueue();
-    toast(action === "delete" ? "已删除本机队列记录" : "本机队列状态已更新", 3600);
+    toast(action === "delete" ? "已删除本机队列记录" :
+      ["send", "retrySend"].includes(action) ? "结果已同步到网站账号后台" : "本机队列状态已更新", 3600);
   } catch (error) {
     toast(String(error.message || error), 5000);
   }
@@ -1624,6 +1638,9 @@ function setSyncChoiceDisabled(disabled) {
 // ---------- 绑定 ----------
 
 document.addEventListener("DOMContentLoaded", () => {
+  window.oak.onAuthChanged(() => {
+    refreshAccountStatus().catch((error) => toast(String(error.message || error), 5000));
+  });
   $$(".step").forEach((btn) =>
     btn.addEventListener("click", () => {
       if (btn.disabled) return;

@@ -9,13 +9,18 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 81,
-  "total_bytes": 2142090,
+  "file_count": 84,
+  "total_bytes": 2145925,
   "files": [
     {
       "path": "config/app-config.json",
       "size_bytes": 615,
       "sha256": "c7cb100af998081f8caf67bc17039caa48c460482fad4077f94ece6aed132e2c"
+    },
+    {
+      "path": "config/desktop-auth.json",
+      "size_bytes": 368,
+      "sha256": "c78fa7593103170ee03729960c46d9e403ecc1e479cee4a00699d451a9ce5d5d"
     },
     {
       "path": "config/provenance/cpython-3.13.14-win32-x64.json",
@@ -63,9 +68,19 @@
       "sha256": "098b382e33c06ccddf154940fbbd51db384d8025cf235ed7f7e10e83d34897a4"
     },
     {
+      "path": "config/schemas/auth-session-store-v1.schema.json",
+      "size_bytes": 2242,
+      "sha256": "7910d55bcbe706095a7f5c7fdf57eb689e57ee8bed9010078124b37f9ab70c38"
+    },
+    {
       "path": "config/schemas/builder-provenance-v1.schema.json",
       "size_bytes": 5810,
       "sha256": "86a437598760b2b189b0a9eee09ce293d61b335e3614a08776309df2767bf48b"
+    },
+    {
+      "path": "config/schemas/desktop-auth-v1.schema.json",
+      "size_bytes": 1225,
+      "sha256": "1326f797246a6da1881a6c1d7c458ddf65ef3e4e17e69ee843272abea200d219"
     },
     {
       "path": "config/schemas/electron-provenance-v1.schema.json",
@@ -185,7 +200,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "f29257589df97c8a488ac78e96f3252dc19c6a0dfe125258f0dfd3497dd87a10"
+      "sha256": "eec29caa96b04431d645c4b62476b21a846d9ce600d6c356bb0ac0c98c0f6074"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

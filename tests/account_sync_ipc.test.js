@@ -45,6 +45,7 @@ test("sandboxed preload exposes only bounded account and sync operations", async
   await api.syncCancel("queue-1");
   await api.syncRetry("queue-1");
   await api.syncDelete("queue-1");
+  await api.syncSend("queue-1");
 
   assert.deepEqual(JSON.parse(JSON.stringify(calls)), [
     { channel: "provider:auth-status" },
@@ -75,6 +76,7 @@ test("sandboxed preload exposes only bounded account and sync operations", async
     { channel: "provider:sync-cancel", payload: { queueId: "queue-1" } },
     { channel: "provider:sync-retry", payload: { queueId: "queue-1" } },
     { channel: "provider:sync-delete", payload: { queueId: "queue-1" } },
+    { channel: "provider:sync-send", payload: { queueId: "queue-1" } },
   ]);
 });
 
@@ -267,7 +269,7 @@ test("queue IPC is account-scoped and signed-out callers cannot inspect or mutat
 
   const signedOutQueue = await handlers.get("provider:sync-queue")();
   assert.deepEqual(signedOutQueue, {
-    ok: true, items: [], signedOut: true, persistence,
+    ok: true, items: [], signedOut: true, persistence, transportConfigured: false,
   });
   for (const channel of ["provider:sync-cancel", "provider:sync-retry", "provider:sync-delete"]) {
     const response = await handlers.get(channel)(null, { queueId: "queue-1" });
@@ -282,6 +284,7 @@ test("queue IPC is account-scoped and signed-out callers cannot inspect or mutat
   assert.equal(signedInQueue.signedOut, false);
   assert.deepEqual(signedInQueue.items, [{ queue_id: "queue-1" }]);
   assert.deepEqual(signedInQueue.persistence, persistence);
+  assert.equal(signedInQueue.transportConfigured, false);
   await handlers.get("provider:sync-cancel")(null, { queueId: "queue-1" });
   await handlers.get("provider:sync-retry")(null, { queueId: "queue-1" });
   await handlers.get("provider:sync-delete")(null, { queueId: "queue-1" });
@@ -291,4 +294,25 @@ test("queue IPC is account-scoped and signed-out callers cannot inspect or mutat
     assert.equal(status.accountId, "account-1");
     assert.equal(status.loggedIn, true);
   }
+});
+
+test("sync send IPC requires authentication and an explicitly configured coordinator", async () => {
+  const handlers = new Map(); let accountId = null; const flushed = [];
+  registerAccountSyncIpc({
+    ipcMain: { handle: (name, fn) => handlers.set(name, fn) },
+    pathPolicy: { looksLikeProject: () => true },
+    authProvider: {
+      status: () => accountId ? { state: "authenticated", loggedIn: true, accountId } : { state: "signed_out", loggedIn: false },
+      beginLogin: async () => ({}), logout: async () => ({}),
+    },
+    licenseProvider: { status: () => ({}) },
+    syncProvider: { getPreference: () => "never_asked", setPreference: () => {}, preview: () => ({}), confirm: () => ({}), listQueue: () => [], cancel: () => ({}), retry: () => ({}), delete: () => true },
+    syncRecordSource: async () => ({}),
+    getSyncCoordinator: () => ({ async flush(id) { flushed.push(id); return { state: "synced" }; } }),
+  });
+  const signedOut = await handlers.get("provider:sync-send")(null, { queueId: "queue-1" });
+  assert.equal(signedOut.ok, false); assert.deepEqual(flushed, []);
+  accountId = "account-1";
+  const sent = await handlers.get("provider:sync-send")(null, { queueId: "queue-1" });
+  assert.equal(sent.ok, true); assert.deepEqual(flushed, ["queue-1"]);
 });

@@ -44,17 +44,18 @@ function registerAccountSyncIpc({
   licenseProvider,
   syncProvider,
   syncRecordSource,
+  getSyncCoordinator = () => null,
 }) {
   if (!ipcMain || typeof ipcMain.handle !== "function") throw new TypeError("ipcMain 非法");
   const previews = new Map();
 
   ipcMain.handle("provider:auth-status", () => ok(authProvider.status()));
-  ipcMain.handle("provider:auth-begin", () => {
-    try { return ok(authProvider.beginLogin()); } catch (error) { return fail(error); }
+  ipcMain.handle("provider:auth-begin", async () => {
+    try { return ok(await authProvider.beginLogin()); } catch (error) { return fail(error); }
   });
-  ipcMain.handle("provider:auth-logout", () => {
+  ipcMain.handle("provider:auth-logout", async () => {
     try {
-      const status = authProvider.logout();
+      const status = await authProvider.logout();
       previews.clear();
       return ok(status);
     } catch (error) { return fail(error); }
@@ -113,9 +114,9 @@ function registerAccountSyncIpc({
         ? syncProvider.persistenceStatus()
         : { state: "memory_only", encrypted: false, persistent: false };
       if (!status || status.loggedIn !== true || status.state !== "authenticated") {
-        return ok({ items: [], signedOut: true, persistence });
+        return ok({ items: [], signedOut: true, persistence, transportConfigured: getSyncCoordinator() !== null });
       }
-      return ok({ items: syncProvider.listQueue(status), signedOut: false, persistence });
+      return ok({ items: syncProvider.listQueue(status), signedOut: false, persistence, transportConfigured: getSyncCoordinator() !== null });
     } catch (error) { return fail(error); }
   });
   ipcMain.handle("provider:sync-cancel", (_event, payload = {}) => {
@@ -150,6 +151,16 @@ function registerAccountSyncIpc({
       });
     }
     catch (error) { return fail(error); }
+  });
+  ipcMain.handle("provider:sync-send", async (_event, payload = {}) => {
+    try {
+      authenticatedStatus(authProvider);
+      const coordinator = getSyncCoordinator();
+      if (!coordinator || typeof coordinator.flush !== "function") {
+        throw new Error("生产同步服务尚未配置，未发起网络请求");
+      }
+      return ok({ result: await coordinator.flush(opaqueId(payload.queueId, "queueId")) });
+    } catch (error) { return fail(error); }
   });
 }
 

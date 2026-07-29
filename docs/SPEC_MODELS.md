@@ -1,6 +1,6 @@
 # SPEC_MODELS — 问题 / 规则 / 标准模型
 
-> 问题与规则模型仍为 v1.0；标准注册表为治理 schema 2.0。同步负载于 2026-07-26 按商业方案 v2.0 改为“结果与元数据白名单”，废止旧文件级同步占位；`0.1.0-alpha.8` 实现 SyncRecord v1 客户端离线契约，`0.1.0-alpha.38` 增加独立服务验证、HTTP/Supabase 持久边界和未接线桌面 transport。`0.1.0-alpha.5` 引入规则包 2.0.0 与向后兼容的 `citation_resolution` 模型；机器可读定义以 `config/` 下 JSON 和核心严格校验器为准，本文件为语义规范。
+> 问题与规则模型仍为 v1.0；标准注册表为治理 schema 2.0。同步负载于 2026-07-26 按商业方案 v2.0 改为“结果与元数据白名单”，废止旧文件级同步占位；`0.1.0-alpha.8` 实现 SyncRecord v1 客户端离线契约，`0.1.0-alpha.38` 增加独立服务验证与 HTTP/Supabase 持久边界，`0.1.0-alpha.39` 增加桌面 PKCE/token-store 和条件主进程 transport 接线。`0.1.0-alpha.5` 引入规则包 2.0.0 与向后兼容的 `citation_resolution` 模型；机器可读定义以 `config/` 下 JSON 和核心严格校验器为准，本文件为语义规范。
 
 ## 1. 问题模型（Issue，方案 §6.3）
 
@@ -181,7 +181,7 @@
 
 运行前可信性约束：Ace 只有在 stage manifest、受版本控制的 full lock、236 包闭包、补丁与全部文件一致时才可执行，Python 运行路径须独立复核；EpubCheck/JRE 同理先通过分发与平台锁。非原生 platform/arch 不能产生运行状态；显式 `--no-runtime-probe` 的纯静态门禁结果也不得写入 `external_tools` 作为 `passed` 或 `failed`。
 
-## 8. 同步负载 schema（SyncRecord v1，alpha.38 服务/transport 源码已实现）
+## 8. 同步负载 schema（SyncRecord v1，alpha.39 桌面条件接线已实现）
 
 商业方案只允许同步检查结果与必要元数据。旧 v1 占位中的 `project_display_name`、Issue `preview` 和 `file` 级上传全部废止，不得为兼容旧文档而实现。
 
@@ -196,7 +196,7 @@
 
 禁止字段：稿件、正文、标题、摘要、关键词、任何短预览或片段、原稿/修订稿、文件名、本地路径、用户名或设备目录、参考文献/脚注/图片原文、文件或正文哈希及其他内容指纹。
 
-未登录状态不询问、不发送；登录不等于授权。Renderer 不可构造负载；主进程从 Python `sync-source` 取得只读来源并构造 exact-schema 记录。发送前必须逐字段展示同一份缓存负载并由用户选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。alpha.21 起使用按账户隔离的 OS 加密 `pending_transport` 队列并支持重启恢复；alpha.38 增加固定 HTTPS/Bearer client、单项单在途 coordinator、服务端幂等/归属验证及强制 RLS/service-role-only RPC，但生产 Auth token、main 接线、真实迁移和部署均不存在，普通 APP 仍不会上传，入队不等于同步成功。Web 端用户主动发起的临时稿件处理属于独立作业协议，不得混入结果同步 schema 或长期账号历史。
+未登录状态不询问、不发送；登录不等于授权。Renderer 不可构造负载；主进程从 Python `sync-source` 取得只读来源并构造 exact-schema 记录。发送前必须逐字段展示同一份缓存负载并由用户选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。alpha.21 起使用按账户隔离的 OS 加密队列；alpha.38 增加服务/client/coordinator；alpha.39 增加 PKCE/token-store、条件 main 接线与逐项显式发送。默认受信端点仍为空，真实迁移和部署不存在，普通 APP 不上传，入队不等于同步成功。Web 临时稿件处理属于独立作业协议，不得混入结果同步 schema 或长期账号历史。
 
 ## 9. Web 临时作业模型（alpha.30 契约、上传门禁、持久状态、私有 worker 与一次性领取边界）
 

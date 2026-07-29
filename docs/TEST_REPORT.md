@@ -1,8 +1,24 @@
 # TEST_REPORT — 测试报告
 
-> 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
+> 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.38 SyncRecord 服务端与桌面 transport 源码
+## 最新验证结论：0.1.0-alpha.39 桌面 PKCE、加密会话与显式同步接线
+
+验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未使用真实账号/端点/API key、未执行数据库迁移、未部署或修改官网，也未读写项目目录外内容。源码 Electron smoke 在独立隐藏进程执行；没有重新打包，最新真实 Windows 制品保持 alpha.37。
+
+| 验证 | 结果 | 证据 |
+|---|---|---|
+| Auth/Sync focused 离线测试 | **PASS** | 配置、PKCE provider、加密 store、HTTP client、主进程深链接线、账号 IPC、Sync store/client/coordinator 共 47/47；覆盖 pending 零网络、verifier 先落盘、S256/state、回调拒绝、身份复核、token—账号绑定和逐项显式发送 |
+| 最终顺序 `npm test` | **PASS** | 退出码 0，墙钟 113.8 秒；Node 576 total / 569 pass / 0 fail / 7 skip（4.0589638 秒）；Python 362 total / 0 failures / 0 errors / 3 skipped（105.091 秒） |
+| JS 语法与资源信任复验 | **PASS** | 新增/修改 JS 均通过 `node --check` 和 Node 全量加载；84 文件 / 2,145,925 字节，manifest SHA-256 `9b1a292bb58ac8ae021691c37c877af288efc6ea043dbec10628bc9681e5d313`，anchor SHA-256 `a5504168689213f4a4219c4aac3104d88ec10d24fb73eebf3985e07b8c02f160` |
+| 独立隐藏源码 Electron smoke | **PASS** | `SMOKE-RESULT: PASS`；alpha.39 源码；输出 `out/source-smoke/runs/ms5kxdpe-fa5aab63ad422c0f/projects/`；默认账号配置没有网络端点 |
+| 真实 PKCE/刷新/撤销/远端同步 | **未运行** | `config/desktop-auth.json` 为 `pending_configuration`，全部端点与 key 为 null；没有真实 OAuth/OIDC 服务、账号或服务器响应证据 |
+| SQL / Supabase / 网站后台联调 | **未运行** | `002_sync_records.sql` 未迁移；没有真实 GoTrue/RLS/多实例/备份/删除、网站列表/导出/删除或生产密钥证据 |
+| alpha.39 packaged / Windows 安装 / macOS | **未运行** | 最新真实 NSIS/ZIP 与 packaged smoke 仍为 alpha.37；源码测试不能代表 alpha.39 制品或 macOS 通过 |
+
+证据边界：本轮证明“受信配置 → PKCE/加密 token-store → 账号绑定 access-token provider → 主进程 coordinator → 用户逐项发送”的生产形状源码在离线注入下闭合，并证明默认配置零账号网络目标。它不证明正式 OAuth/OIDC 协议、生产数据库/API、官网账号后台或商业发行完成。
+
+## 历史验证结论：0.1.0-alpha.38 SyncRecord 服务端与桌面 transport 源码
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实账号/API/service-role/AI 密钥、未执行数据库迁移、未部署或修改官网，也未读写项目目录外内容。源码 Electron smoke 以独立隐藏进程执行；本轮没有重新打包，最新真实 Windows 制品保持 alpha.37。
 

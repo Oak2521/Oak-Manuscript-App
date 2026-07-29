@@ -1,6 +1,6 @@
 # SyncRecord v1 — 结果与元数据同步契约
 
-> 状态：`0.1.0-alpha.38` 已在既有客户端/核心离线契约、逐字段预览和 OS 加密持久队列之上，实现独立的 SyncRecord 服务端验证、同源 HTTPS API、Supabase service-role repository/迁移源码，以及桌面 Bearer 客户端与发送协调器。它们尚未接入主进程生产 `AuthProvider`，迁移未在真实 Supabase 执行，API 未部署，网站后台也未实现；普通 APP 仍不发出同步请求。最新 packaged smoke 仍为 alpha.37，只证明本机队列跨进程恢复且不含队列明文。AI 建议文本、审阅会话和 AI HTTP 底座均不进入 SyncRecord。本文件不能作为“数据已可同步到网站”的证明。
+> 状态：`0.1.0-alpha.39` 已在既有客户端/核心离线契约、逐字段预览、OS 加密队列、独立服务/API/Supabase 源码之上，实现桌面系统浏览器 PKCE、独立加密 token-store、主进程条件 transport 接线和逐项显式发送 UI。受信账号配置仍为 `pending_configuration` 且无端点/key；迁移未执行、API 未部署、网站后台未实现，所以普通 APP 仍不发同步请求。最新 packaged smoke 仍为 alpha.37。AI 建议文本、审阅会话和 AI HTTP 底座均不进入 SyncRecord。本文件不能作为“数据已可同步到网站”的证明。
 
 ## 1. 信任边界
 
@@ -67,17 +67,19 @@ Renderer 只能向主进程提交项目句柄、`check | export` 事件、是否
 
 本机持久状态的机器契约为 `config/schemas/sync-queue-store-v1.schema.json`。Electron `safeStorage` 提供 OS 绑定加密；磁盘文件为 `OAKSYNC1 + uint32 长度 + 密文`。明文必须是 exact/canonical JSON，写入采用同目录独占候选、文件 `fsync`、原子替换、提交后解密复验和 revision compare-and-swap。链接、硬链接、目录逃逸、大小超限、篡改、非 canonical、短读、读取期间身份变化或并发旧 revision 均拒绝。系统加密不可用或队列损坏时，同步预览和保存 fail-closed，本地检查、修复与导出继续可用。
 
-alpha.38 已提供未实例化的 `SyncHttpClient` 与 `SyncTransportCoordinator`：只允许固定规范 HTTPS origin、固定 API 路径、Bearer、无 Cookie/重定向、有界超时与响应；token provider 必须返回 token 及其所属账号的 exact 绑定，错绑在 transport 前拒绝。同一队列项只允许一个在途请求，远端创建或幂等重放后才删除精确本地项，失败/账号切换/本地提交失败则保留并记录稳定错误以便显式重试。生产 `AuthProvider` 尚不能提供 access token，主进程未创建协调器，也没有后台调度或网站后台；关闭并重新打开当前 APP 只会恢复本机待发送状态，不会产生上传。
+alpha.39 在 alpha.38 的 `SyncHttpClient` / `SyncTransportCoordinator` 上接入 `DesktopAuthProvider`：受信配置完整时，token provider 返回 access token 及账号 exact 绑定；同一队列项只允许一个在途请求，远端创建或幂等重放后才删除精确本地项，失败/账号切换/本地提交失败则保留。Renderer 只有逐项“发送/确认重试并发送”，没有后台调度。仓库配置仍为 `pending_configuration`，所以当前 APP 关闭重开只恢复本机状态，不会上传。
 
-## 5. 账号与权益模拟边界
+## 5. 账号、加密会话与权益边界
 
-- `AuthProvider` 固定声明未来采用系统浏览器 PKCE；生产未配置时 `beginLogin` 返回 `configuration_required`，不打开网页、不联网；
+- `AuthProvider` 在生产配置完整时使用系统浏览器 Authorization Code + PKCE S256/state；未配置时 `beginLogin` 返回 `configuration_required`，不打开网页、不联网；
+- 固定 `oak-manuscript-auth://callback` 只允许唯一 code/state；Windows second-instance 与 macOS open-url 共用严格解析。token、额外参数、错 scheme、过期/错配/重放 state 均拒绝；
+- pending verifier 与 access/refresh token 仅保存在 `userData/auth/session-v1.enc` 的 safeStorage 密文；code exchange 后与 refresh 后都经固定 user endpoint 复核 exact account ID；
 - 本地测试可模拟 authenticated、signed_out、expired、revoked，但生产运行不开放模拟入口；
 - `LicenseProvider` 给出 Free/Pro 能力矩阵，并可按 `validUntil` / `graceUntil` 计算 active、grace、expired；模拟授权没有签名证据，`signatureVerified=false`；
 - 订阅过期只影响新的 Pro 权益，`localProjectsLocked` 永远为 false；
-- 队列已使用 `safeStorage`，但这不是登录 token 存储；令牌凭据、设备撤销服务和生产签名授权缓存均未实现。
+- 真实 OAuth/OIDC 契约、nonce/ID-token 取舍、设备撤销服务、生产签名授权缓存和真实密钥/端点均未联调。
 
-## 6. alpha.38 服务端与 transport 源码边界
+## 6. alpha.39 服务端与桌面 transport 源码边界
 
 - `web/sync-record-service.js` 独立验证记录、账号归属、幂等创建/重放/冲突、分页列表、读取与删除；列表由 repository 单次快照返回 `{rows,total}`，避免结果与总数跨查询漂移；
 - `web/sync-record-http-handler.js` 固定 `POST/GET /manuscript/api/v1/sync-records` 及 `GET/DELETE /:id`，强制 HTTPS、同源/Fetch Metadata、Cookie CSRF 或已验证 Bearer、JSON framing/大小和固定非反射错误；审计受 exact schema 限制且接收器失败不改变响应；
@@ -90,8 +92,8 @@ alpha.38 已提供未实例化的 `SyncHttpClient` 与 `SyncTransportCoordinator
 ## 7. 生产对接前必须补齐
 
 1. 经授权现场核对网站当前 Supabase、账号和后台 schema，并在隔离预生产执行/复核 `002_sync_records.sql`；
-2. 完成系统浏览器 PKCE、回调校验、OS 安全 token 存储、刷新/退出/过期/撤销，再把 access-token provider 和 coordinator 接入主进程；默认 Electron session 必须继续离线；
-3. 完成显式发送/重试 UI、限次退避、离线/认证/服务故障分类，以及远端提交与本地队列删除之间的崩溃恢复验收；
+2. 在正式 OAuth/OIDC 契约确定后验证真实 PKCE、nonce/ID-token 取舍、刷新/退出/过期/撤销；默认 Electron session 必须继续离线；
+3. 补完限次退避、模糊失败、浏览器打开失败、并发回调，以及远端提交与本地队列删除之间的崩溃恢复验收；
 4. 部署同源 API，验证真实 GoTrue、Postgres RLS/RPC、多实例并发、备份/恢复、限额、删除和无密钥泄露；
 5. 实现 APP 与网站后台的查看、导出、删除和内容无关审计记录；
 6. 完成正文、文件名、路径、片段、哈希泄露反向生产集成测试及真实隐私验收。

@@ -61,6 +61,7 @@ const api = {
   syncCancel: (queueId) => ipcRenderer.invoke("provider:sync-cancel", { queueId }),
   syncRetry: (queueId) => ipcRenderer.invoke("provider:sync-retry", { queueId }),
   syncDelete: (queueId) => ipcRenderer.invoke("provider:sync-delete", { queueId }),
+  syncSend: (queueId) => ipcRenderer.invoke("provider:sync-send", { queueId }),
   licenseStatus: () => ipcRenderer.invoke("provider:license-status"),
   aiStatus: () => ipcRenderer.invoke("provider:ai-status"),
   configureAi: (config) => ipcRenderer.invoke("provider:ai-configure", config),
@@ -76,5 +77,15 @@ const api = {
   openEvaluation: () => ipcRenderer.invoke("provider:open-evaluation"),
   appInfo: () => ipcRenderer.invoke("app:info"),
 };
+
+Object.defineProperty(api, "onAuthChanged", {
+  value: (listener) => {
+    if (typeof listener !== "function") throw new TypeError("listener 必须是函数");
+    const wrapped = () => listener();
+    ipcRenderer.on("provider:auth-changed", wrapped);
+    return () => ipcRenderer.removeListener("provider:auth-changed", wrapped);
+  },
+  enumerable: true,
+});
 
 contextBridge.exposeInMainWorld("oak", api);

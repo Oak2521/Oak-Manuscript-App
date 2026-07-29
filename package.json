@@ -1,7 +1,7 @@
 {
   "name": "oak-manuscript",
   "productName": "湖岸稿件 Oak Manuscript",
-  "version": "0.1.0-alpha.38",
+  "version": "0.1.0-alpha.39",
   "private": true,
   "description": "本地优先的稿件检查与修订桌面应用（Electron 壳 + Python 零依赖检查核心）",
   "main": "electron/main.js",
@@ -81,6 +81,12 @@
       "resetAdHocDarwinSignature": false
     },
     "files": ["electron/**/*", "renderer/**/*", "package.json"],
+    "protocols": [
+      {
+        "name": "Oak Manuscript Auth Callback",
+        "schemes": ["oak-manuscript-auth"]
+      }
+    ],
     "extraResources": [
       { "from": "python/oak_manuscript_core", "to": "python/oak_manuscript_core", "filter": ["**/*.py"] },
       { "from": "config", "to": "config" },

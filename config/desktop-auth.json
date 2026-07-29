@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "config_type": "oak_manuscript_desktop_auth",
+  "status": "pending_configuration",
+  "authorization_endpoint": null,
+  "token_endpoint": null,
+  "user_endpoint": null,
+  "client_id": null,
+  "public_api_key": null,
+  "api_origin": null,
+  "redirect_uri": "oak-manuscript-auth://callback",
+  "scopes": [
+    "openid",
+    "profile"
+  ]
+}

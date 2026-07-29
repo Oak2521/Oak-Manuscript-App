@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.38` 源码架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、独立服务端再验证/同源 API/Supabase 持久层及尚未主进程接线的桌面 transport，三模式 AI/OS 加密凭据/单条问题发送预览/建议人工审阅/未接线有界 HTTP 底座，以及 Web 临时作业的零留存源码边界。最新真实 Windows 制品仍为 alpha.37，其 schema v2 发布清单已绑定 packaged-smoke 哈希证据。生产账号与 Sync API 部署、真实模型适配、数据库迁移、平台计划任务/生命周期、病毒/信誉扫描、容器与 OS 无网隔离、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.39` 源码架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、独立服务端/API/Supabase 持久层，以及条件接线的桌面 PKCE/OS 加密 token-store/显式 transport，三模式 AI/OS 加密凭据/单条问题发送预览/建议人工审阅/未接线有界 HTTP 底座，以及 Web 临时作业的零留存源码边界。默认账号配置无端点；最新真实 Windows 制品仍为 alpha.37，其 schema v2 发布清单已绑定 packaged-smoke 哈希证据。真实账号与 Sync API 部署、真实模型适配、数据库迁移、平台计划任务/生命周期、病毒/信誉扫描、容器与 OS 无网隔离、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
 
 ## 1. 总体分层
 
@@ -18,10 +18,10 @@ Electron Main
   ├─ StandardsStore：严格 payload / 签名 / CAS / 高水位 / 撤回 / 事务恢复
   ├─ standard-bound-core：项目 release 预检 + 七字段 Python 绑定
   ├─ core-ipc：引用计划 / 检查参数的固定白名单
-  ├─ AuthProvider / LicenseProvider：离线状态机、PKCE 固定契约与 Free/Pro 权益矩阵
+  ├─ AuthProvider / LicenseProvider：待配置零网络、PKCE/token-store 条件接线与 Free/Pro 权益矩阵
   ├─ account-sync-ipc / SyncProvider：可信来源负载、逐字段预览、四选一授权、账户隔离队列
   ├─ sync-store / safeStorage：canonical 状态、revision CAS、原子加密持久化与重启恢复
-  ├─ SyncTransportCoordinator / SyncHttpClient：未实例化的 Bearer 发送、幂等回放与本地提交协调
+  ├─ SyncTransportCoordinator / SyncHttpClient：配置完整时实例化的 Bearer 发送、幂等回放与本地提交协调
   ├─ AIProvider / ai-settings-store：三模式、Pro 门禁、供应商边界与 OS 加密凭据；模型 transport 关闭
   ├─ AIRequestCoordinator：可信单条上下文 → 完整披露 → 10 分钟一次性确认 → 只读建议
   ├─ AI HTTP / transport router：未接线的固定 POST/JSON、HTTPS/loopback、容量/超时/媒体/适配门禁
@@ -130,7 +130,7 @@ Renderer 必须先调用严格只读的 `plan-citation`，展示体例/模式、
 
 Renderer 不能构造同步负载，也不能提供 token、任意 URL 或 transport。主进程只接受受路径门禁保护的项目和固定 `check|export` 事件，调用 Python `sync-source` 取得只读结构来源，再由 `buildSyncRecordV1` 生成并以 exact validator 校验负载。字段权威定义为 `config/schemas/sync-record-v1.schema.json`；标题、正文、解释、位置、预览、文件名、路径、用户名、引用原文和任何内容哈希都没有可用字段，未知字段一律拒绝。
 
-只有已登录状态才可生成预览；预览本身不入队、不发送。界面必须逐字段展示同一份缓存负载，用户随后明确选择 `sync_once`、`ask_each_time`、`not_now` 或 `never_for_project`。确认只提交 opaque `idempotency_id` 和固定选择，过期或替换后的预览拒绝。alpha.21 队列固定为 `pending_transport|canceled`，使用 Electron `safeStorage` 加密并按账户隔离；内部状态以 exact schema/canonical JSON 校验，经同目录独占候选、文件 `fsync`、原子替换、提交后解密复验和 revision CAS 落盘。未登录不读取队列，Renderer 不接收内部账户 ID。alpha.38 增加主进程专用 client/coordinator 源码，但生产 `AuthProvider` 仍无 token 且 main 未实例化该链，因此普通 APP 仍没有后台发送或网络上传，“已入队”绝不等于“已同步到网站”。
+只有已登录状态才可生成预览；预览本身不入队、不发送。界面必须逐字段展示同一份缓存负载，用户随后明确选择 `sync_once`、`ask_each_time`、`not_now` 或 `never_for_project`。确认只提交 opaque `idempotency_id` 和固定选择，过期或替换后的预览拒绝。alpha.21 队列固定为 `pending_transport|canceled`，使用 Electron `safeStorage` 加密并按账户隔离；内部状态以 exact schema/canonical JSON 校验，经同目录独占候选、文件 `fsync`、原子替换、提交后解密复验和 revision CAS 落盘。未登录不读取队列，Renderer 不接收内部账户 ID。alpha.39 只在受信账号配置完整时由 main 实例化 client/coordinator，并只响应当前账号用户逐项点击“发送/确认重试并发送”；不存在登录后自动 flush。默认配置仍为空，所以当前普通 APP 不上传，“已入队”绝不等于“已同步到网站”。
 
 ### AD-025 SyncRecord 长期结果必须“可信身份—服务端再验证—事务幂等—属主删除”（2026-07-28，冻结）
 
@@ -194,7 +194,9 @@ alpha.31 增加仅 `service_role` 可调用的 `oak_manuscript_web_job_list_clea
 
 周期报告只保留规范起止时间、阶段状态、扫描/删除/pending/非法键计数与截断信号，不得包含主体、任务 ID、对象键、异常文本或稿件元数据。只有三个阶段均完成、pending/非法键为零且对象扫描未截断时，当前周期才是 `cycle_clear`；这仍只是应用层本地证据，所以 `production_zero_retention_verified` 必须固定为 false。只有真实计划任务、告警、Supabase/Blobs 故障演练、复制/备份生命周期及三路删除证据另行完成后，才能在生产验收文档中作更强结论。
 
-`AuthProvider` 当前固定未来生产形态为系统浏览器 PKCE，但未配置服务时只返回 `configuration_required` 且不打开页面；登录/过期/撤销仅能由测试专用实例模拟。`LicenseProvider` 已固定 Free/Pro 能力矩阵、有效期和离线宽限语义；签名订阅凭证、服务端设备管理与计费尚未实现。当前 `safeStorage` 只保护待发送队列，不等于生产 token 凭据层。生产 transport 上线时必须保持默认 Electron session 离线，使用独立最小权限网络通道，并在不改变 SyncRecord v1 最小字段边界的前提下另行威胁建模。
+alpha.39 的 `DesktopAuthProvider` 以受信 `desktop-auth.json` 为唯一端点来源。配置为 `pending_configuration` 时，授权、token、user、Sync API origin、client 与 public key 必须全部为 null，登录返回 `configuration_required` 且不打开页面。配置完整时，主进程生成随机 state/verifier、先将 pending 状态写入独立 `OAKAUTH1` safeStorage 密文，再通过系统浏览器发起 Authorization Code + PKCE S256；Windows second-instance 与 macOS open-url 只接受固定 `oak-manuscript-auth://callback` 的唯一 `code+state`，拒绝 token/额外参数/错配/过期/重放。code exchange 后必须再调用固定 user endpoint 取得 exact account ID；刷新后同样复核账号，错绑清除会话。access/refresh token 和 verifier 不进入 Renderer、项目、报告或日志。
+
+这仍不是正式 OAuth/OIDC 兼容证明：真实服务契约、nonce/ID-token 取舍、刷新/退出/设备撤销和故障恢复必须在获准的隔离预生产环境核对。`LicenseProvider` 的签名订阅凭证、服务端设备管理与计费也尚未实现。默认 Electron session 继续完全离线；Auth/Sync 使用的是只在用户登录或发送动作后才调用的主进程有界通道，不能被 Renderer 提供 URL、token 或任意 payload。
 
 ### AD-024 AI 设置与模型 transport 必须分层（2026-07-28，冻结）
 
@@ -339,4 +341,4 @@ alpha.20 进一步把“源码构建配置正确”和“制品实际身份正�
 - 源码 smoke 每次生成独立 `out/source-smoke/runs/<run-id>/`，项目、标准 store、缓存、临时目录、用户数据、HOME/APPDATA/XDG 与 crash dumps 不复用；打包 smoke 同样按运行 ID 隔离并受仓库 `out/` 边界控制。Windows EXE 还须先通过 x64 PE32+ 校验。
 - macOS 构建拆为 `build:mac:x64` 与 `build:mac:arm64`；聚合入口 `build:mac` 只选择当前原生 host 架构，不在一个进程伪造双架构探针。`verify:resources:mac` 只是带 `--no-runtime-probe` 的跨架构静态聚合，不能替代两个原生 runner 的执行证据。
 - alpha.20 最终 source/packaged 隐藏 smoke 已 PASS：`out/packaged-smoke/runs/ms4yn5a2-2412f8598c07f65e/projects/` 中 DOCX/EPUB 均先确认引用计划、各有 4 次检查、1 个修复批次、3 个检查点、`source_hash_ok=true`，PDF 分别为 251,665/178,403 字节；EPUB 通过受控 utilityProcess 实际运行 EpubCheck/Ace，缺陷结果分别为 5 error/8 项失败断言。Electron sandbox 保持开启。
-- alpha.38 继续以 `oak-manuscript://renderer/` 的四文件白名单在 `GrantFileProtocolExtraPrivileges=false` 下保持 ASAR UI 可用；Python `-B` 防止运行时修改 loose 可信树；顶层 2.1.3 afterPack 严格写入并回读 Electron 43 全 9 fuse。Web 私有实现不进入桌面 Renderer 或 default session；五份 Web 作业 HTTP schema 与两份 Sync HTTP schema进入 loose 资源信任清单。alpha.38 未重新打包，最新真实构建/smoke/制品仍为 alpha.37；数字只以 `TEST_REPORT.md` 当次记录为准。安装生命周期仍需单独系统写入授权，完整法定身份、五类 provenance 人工签署、生产账号/凭证/部署、Windows 签名、macOS 与已部署 Web 仍待完成。
+- alpha.39 继续以 `oak-manuscript://renderer/` 的四文件白名单在 `GrantFileProtocolExtraPrivileges=false` 下保持 ASAR UI 可用；另在安装元数据中注册 `oak-manuscript-auth` 回调 scheme，但不在开发运行时改写系统默认协议。Python `-B` 防止运行时修改 loose 可信树；顶层 2.1.3 afterPack 严格写入并回读 Electron 43 全 9 fuse。Web 私有实现不进入桌面 Renderer 或 default session；账号配置与会话 schema 进入 loose 资源信任清单。alpha.39 未重新打包，最新真实构建/smoke/制品仍为 alpha.37；数字只以 `TEST_REPORT.md` 当次记录为准。安装生命周期仍需单独系统写入授权，完整法定身份、五类 provenance 人工签署、生产账号/凭证/部署、Windows 签名、macOS 与已部署 Web 仍待完成。

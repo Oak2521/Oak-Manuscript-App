@@ -6,7 +6,7 @@
 
 - sandboxed preload、固定 IPC、Renderer 批量计划/确认和检查点 UI 契约；
 - 默认引用解析 IPC/UI 的计划—确认顺序、六种体例参数白名单、packaged smoke 同契约，以及切换稿件/项目时清空旧 session；
-- Auth 登录/退出/过期/撤销状态、Free/Pro/宽限/过期权益、SyncRecord/持久状态 exact schema、反内容泄露、可信来源 IPC、四选一授权、safeStorage 加密、账户隔离、revision/原子故障、重启恢复、幂等队列与安全 UI 渲染；alpha.38 另覆盖固定 HTTPS/Bearer 桌面客户端、exact 成功回显、错误/超时净化、单项并发、token—账号错绑前置拒绝、失败持久化、账号漂移和成功后本机删除；
+- Auth 登录/退出/过期/撤销状态、Free/Pro/宽限/过期权益、SyncRecord/持久状态 exact schema、反内容泄露、可信来源 IPC、四选一授权、safeStorage 加密、账户隔离、revision/原子故障、重启恢复、幂等队列与安全 UI 渲染；alpha.39 另覆盖待配置零网络、PKCE S256/state、固定深链拒绝、verifier 先落盘、加密 token-store、身份复核、条件 main 接线、固定 HTTPS/Bearer 客户端、token—账号错绑和逐项显式发送；
 - Electron 默认 session 离线 switches/网络请求拦截、Renderer CSP、源码 smoke 的 `out/source-smoke/` 路径边界；
 - ASAR/integrity、顶层 2.1.3 afterPack 全 9 fuse 严格写入/回读、未来未知 fuse 的 alpha/sale fail-closed、实际 Framework 文件身份和构建顺序；
 - ASAR 内资源锚点、81 文件应用 loose 清单、四类平台锁绑定、真实 `app.asar` raw header/精确读取、同路径重建、loose 伪锚点拒绝、启动前验证及 5 个可信根 blocker 的严格关闭条件；
@@ -34,4 +34,4 @@ Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零�
 
 真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。当前 packaged smoke 强制通过受控链路运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言；缺失或陈旧 EXE 不得复用。
 
-alpha.38 最终隐藏源码 smoke 为 **PASS**，运行根为 `out/source-smoke/runs/ms5kbrfu-69765feff8e3381c/projects/`。alpha.37 最终隐藏 packaged smoke 为 **SMOKE + SYNC-RECOVERY PASS**，运行根为 `out/packaged-smoke/runs/ms5ht9j7-67fece5b58d7c515/projects/`；其 canonical 证据把实际 EXE、双进程结果摘要和匿名输出树绑定进 schema v2 发布清单。两者版本证据必须分开解释；哈希不是代码签名，实际安装生命周期仍未运行。
+alpha.39 最终隐藏源码 smoke 为 **PASS**，运行根为 `out/source-smoke/runs/ms5kxdpe-fa5aab63ad422c0f/projects/`。alpha.37 最终隐藏 packaged smoke 为 **SMOKE + SYNC-RECOVERY PASS**，运行根为 `out/packaged-smoke/runs/ms5ht9j7-67fece5b58d7c515/projects/`；其 canonical 证据把实际 EXE、双进程结果摘要和匿名输出树绑定进 schema v2 发布清单。两者版本证据必须分开解释；哈希不是代码签名，实际安装生命周期仍未运行。

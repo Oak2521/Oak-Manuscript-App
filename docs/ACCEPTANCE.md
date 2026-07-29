@@ -2,6 +2,17 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.39 桌面 PKCE 与显式同步主进程接线验收（2026-07-29）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.39`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] exact 桌面账号配置与 schema 进入资源信任清单；默认 `pending_configuration` 的授权/token/user/API origin/client/key 全为 null，登录和同步无可调用网络目标；
+- [x] PKCE S256/state、verifier 先加密落盘再开系统浏览器、固定深链、Windows second-instance/macOS open-url、严格 code exchange/user identity 与回调拒绝契约通过离线测试；
+- [x] access/refresh token 与 verifier 只保存到独立 `OAKAUTH1` safeStorage 密文；canonical/revision/路径/单链接/原子替换门禁成立，Renderer、项目、报告和 SyncRecord 无令牌；
+- [x] 主进程仅在配置完整且系统加密可用时实例化账号与 Sync coordinator；发送/重试逐项明确触发，不后台 flush，账号错绑与变化均 fail-closed；
+- [x] `npm test` Node 576 / Python 362 全量零失败；资源清单 84 文件 / 2,145,925 字节；独立隐藏 alpha.39 源码 smoke PASS；
+- [ ] 正式 OAuth/OIDC 契约（包括是否需要 nonce/ID-token）、真实 PKCE/刷新/退出/撤销、Supabase 迁移/API/网站后台和生产无密钥泄露 E2E 已完成；
+- [ ] alpha.39 Windows/macOS 安装包、签名、公证与真实安装生命周期完成；最新真实 packaged 证据仍为 alpha.37。
+
 ## 0.1.0-alpha.38 SyncRecord 服务端与桌面 transport 源码验收（2026-07-28）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.38`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
