@@ -92,6 +92,7 @@ def _cmd_check(args, kind: str) -> int:
         "citation_resolution": copy.deepcopy(
             proj.data["settings"].get("citation_resolution")
         ),
+        "format_coverage": copy.deepcopy(outcome.format_coverage),
         "issues": outcome.issues,
         "skipped_rule_groups": outcome.skipped_rule_groups,
     })
@@ -128,6 +129,7 @@ def _cmd_web_check(args) -> int:
         "citation_resolution": copy.deepcopy(
             proj.data["settings"].get("citation_resolution")
         ),
+        "format_coverage": copy.deepcopy(outcome.format_coverage),
         "issues": outcome.issues,
         "skipped_rule_groups": outcome.skipped_rule_groups,
         "source_hash_ok": True,

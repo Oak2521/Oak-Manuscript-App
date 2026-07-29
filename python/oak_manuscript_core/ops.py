@@ -23,6 +23,7 @@ from .engine import (
     manuscript_status_level,
 )
 from .errors import OakError, ProjectValidationError, StructuredOakError
+from .format_coverage import validate_format_coverage
 from .fix_plans import build_fix_plan
 from .fixes import WHITELIST, apply_fixes
 from .project import MAX_CHECKPOINTS, Project
@@ -341,6 +342,8 @@ def _ai_location_label(location: dict) -> str:
         return "电子书内容资源（内部路径未发送）"
     if location.get("part") == "footnotes" and location.get("note_id") is not None:
         return f"脚注 {location['note_id']}"
+    if location.get("line") is not None:
+        return f"第 {location['line']} 行"
     if location.get("paragraph") is not None:
         return f"正文第 {location['paragraph']} 段"
     return "文档"
@@ -524,6 +527,7 @@ def run_check(
         "settings_snapshot": copy.deepcopy(settings),
         "citation_resolution": copy.deepcopy(settings["citation_resolution"]),
         "citation_note": _citation_note(settings),
+        "format_coverage": copy.deepcopy(outcome.format_coverage),
         "issues": outcome.issues,
         "skipped_rule_groups": outcome.skipped_rule_groups,
         "external_tools": {"epubcheck": "not_run", "ace": "not_run"},
@@ -1206,6 +1210,10 @@ def build_report_data(project: Project, pack: dict) -> dict:
                 "鎸囧畾鎶ュ憡妫€鏌ョ偣涓婁紶鐨勮繕鐞?缁撴灉涓嶄繚鐣欓紱璇烽噸鏂扮敓鎴?淇璁″垝銆?"
             )
 
+    format_coverage = validate_format_coverage(
+        result.get("format_coverage"), allow_none=True,
+    )
+
     return {
         "generated_at": now_iso(),
         "app_version": __version__,
@@ -1215,6 +1223,7 @@ def build_report_data(project: Project, pack: dict) -> dict:
         "rulepack": copy.deepcopy(identity),
         "citation_note": result["citation_note"],
         "citation_resolution": copy.deepcopy(result_resolution),
+        "format_coverage": copy.deepcopy(format_coverage),
         "status_level": manuscript_status_level(issues),
         "pending_counts": pending,
         "issues": issues,

@@ -206,7 +206,7 @@ class SignalExtractionTest(unittest.TestCase):
 
 class ResolutionTest(unittest.TestCase):
     def test_repository_v2_pack_matches_the_resolver_contract(self):
-        pack = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-2.0.0.json")
+        pack = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-2.1.0.json")
         numeric = document(
             ["引用 [1]、[2]、[3]。"],
             ["[1] 甲", "[2] 乙", "[3] 丙"],

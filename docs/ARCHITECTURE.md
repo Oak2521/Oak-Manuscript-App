@@ -73,6 +73,8 @@ Electron 桥和发布资源门禁共用 `electron/python-invocation.js`，固定
 
 规则定义（含元数据、严重程度、标准引用、文案）放 `config/rule-packs/`（版本化 JSON），判断逻辑在核心内以 `rule_id` 注册。同一 `rule_id` 的逻辑与定义必须一一对应；规则包带语义化版本，报告记录所用版本。
 
+TXT/Markdown 的行级检查先由读取器生成原始行视图，再由 `text_hygiene` 只检查普通文本上下文。Markdown 围栏代码、表格、行内代码和强制换行，以及保守识别的短行密集排版块均带保护标记；规则不得越过这些标记。4 条规则只产生 warning/suggestion，不进入 fixer。`format_coverage` 由本次实际应用的规则定义和固定排除枚举派生，不包含命中内容、文件名或路径，并贯通检查 JSON、报告与 Renderer。
+
 ### AD-004 批量修复必须“计划—确认—事务执行”（2026-07-26，冻结）
 
 `plan-fixes` 严格只读，返回完整候选及 `plan_id`。计划 ID 绑定项目、working SHA-256、问题集、规则包内容和全部候选；界面逐项显示标题、位置、修改前/后预览，只提供一个整批确认写入动作。`fix` 强制接收已确认的 `--plan-id`，任何绑定内容变化都会使旧计划失效。
@@ -306,8 +308,8 @@ Python 核心、`config/` 和 `samples/` 以 canonical `app-resources-v1.json` �
 | `oak_manuscript_core/safety.py` | 路径规范化、链接/reparse 与逃逸拒绝、ZIP 安全（成员数 / 单文件 / 总解压上限）、大文件预警 |
 | `oak_manuscript_core/web_inspection.py` | Web 上传的 UTF-8、危险 ZIP 结构、DOCX 主动内容与脚本 EPUB 前置门禁；只返回内容无关计数 |
 | `oak_manuscript_core/readers/docx_reader.py` | OOXML 解析 → 统一文档模型 |
-| `oak_manuscript_core/readers/md_reader.py` | （M2）Markdown ATX 标题 + 分段解析 |
-| `oak_manuscript_core/readers/txt_reader.py` | （M2）纯文本空行分段 |
+| `oak_manuscript_core/readers/md_reader.py` | （M2）Markdown/TXT 标题、分段与受保护行上下文分类 |
+| `oak_manuscript_core/readers/txt_reader.py` | （M2）纯文本入口，复用行上下文解析 |
 | `oak_manuscript_core/readers/epub_reader.py` | （M3）EPUB 容器 / OPF / nav / 内容文档结构解析 |
 | `oak_manuscript_core/epub_writer.py` | （M3）基础 EPUB 导出（自检零问题） |
 | `oak_manuscript_core/model.py` | 文档模型、问题（Issue）、检查结果的数据类 |
@@ -316,6 +318,7 @@ Python 核心、`config/` 和 `samples/` 以 canonical `app-resources-v1.json` �
 | `oak_manuscript_core/standards_store.py` | 内置/用户标准 CAS、manifest/payload 哈希重验、active 与历史 release 解析、期望身份绑定 |
 | `oak_manuscript_core/rulepack_upgrade.py` | 项目标准状态、确定性差异计划、检查点/issues 归档、pin 升降级和崩溃一致提交 |
 | `oak_manuscript_core/engine.py` | 规则调度（按稿件类型 / 语言 / 体例启用），确定性保证 |
+| `oak_manuscript_core/format_coverage.py` | TXT/Markdown content-free 格式覆盖矩阵 |
 | `oak_manuscript_core/rules/` | 各规则判断逻辑（每规则独立、可单测） |
 | `oak_manuscript_core/fixes.py` | 白名单机械修复原语（幂等） |
 | `oak_manuscript_core/fix_plans.py` | 生成绑定项目 / working / issues / 规则包 / 候选的只读批量计划 |

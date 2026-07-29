@@ -18,7 +18,7 @@ from oak_manuscript_core.project import Project
 from oak_manuscript_core.rulepack import load_rulepack
 
 REPO = Path(__file__).resolve().parents[2]
-PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-2.0.0.json")
+PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-2.1.0.json")
 SAMPLE = REPO / "samples" / "paper_needs_review.docx"
 
 TOP_KEYS = {"schema_version", "context_type", "binding", "request_content"}

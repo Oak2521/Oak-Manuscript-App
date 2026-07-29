@@ -14,8 +14,11 @@ const { canonicalJson, sha256 } = require("../electron/standards-store");
 
 const ROOT = path.resolve(__dirname, "..");
 const CONFIG = path.join(ROOT, "config");
+const CURRENT_APP_VERSION = require("../package.json").version;
 const LEGACY_MANIFEST_SHA256 =
   "d33534f081b2122a90652ee03304a0e71177a7fd0d3130fffe77b0fea807d7af";
+const V2_MANIFEST_SHA256 =
+  "0aff75eb181a62869147e9af27330c717bc808bdd23865197534fc9868568427";
 const LEGACY_FIXTURE = path.join(ROOT, "tests", "fixtures", "standards-v1");
 
 function tempRoot(t, prefix) {
@@ -31,7 +34,7 @@ function createProvider(t, options = {}) {
   const providerOptions = {
     rootDir,
     configDir: options.configDir || CONFIG,
-    appVersion: options.appVersion || "0.1.0-alpha.5",
+    appVersion: options.appVersion || CURRENT_APP_VERSION,
     bundledRelease: options.bundledRelease || BUNDLED_STANDARD_RELEASE,
     ...(options.fsImpl ? { fsImpl: options.fsImpl } : {}),
     ...(options.storeClass ? { storeClass: options.storeClass } : {}),
@@ -88,11 +91,11 @@ function updateEnvelope(privateKey, keyid) {
   const rulepack = JSON.parse(fs.readFileSync(
     path.join(CONFIG, BUNDLED_STANDARD_RELEASE.rulepackRelative), "utf8",
   ));
-  standards.registry_version = "2.0.1";
-  standards.updated_at = "2026-07-27";
-  rulepack.pack_version = "2.0.1";
-  rulepack.frozen_at = "2026-07-27";
-  rulepack.citation_default_mapping.version = "2.0.1";
+  standards.registry_version = "2.1.1";
+  standards.updated_at = "2026-07-29";
+  rulepack.pack_version = "2.1.1";
+  rulepack.frozen_at = "2026-07-29";
+  rulepack.citation_default_mapping.version = "2.1.1";
   const standardsBytes = Buffer.from(`${JSON.stringify(standards, null, 2)}\n`, "utf8");
   const rulepackBytes = Buffer.from(`${JSON.stringify(rulepack, null, 2)}\n`, "utf8");
   const capabilityBytes = fs.readFileSync(path.join(CONFIG, "rule-capabilities.json"));
@@ -100,12 +103,12 @@ function updateEnvelope(privateKey, keyid) {
     schema_version: "1.0",
     kind: "oak-standard-release",
     bundle_id: "oak-standards",
-    release_sequence: 3,
-    version: "2.0.1",
+    release_sequence: 4,
+    version: "2.1.1",
     channel: "stable",
-    released_at: "2026-07-27T00:00:00Z",
+    released_at: "2026-07-29T00:00:00Z",
     expires_at: null,
-    min_app: "0.1.0-alpha.5",
+    min_app: CURRENT_APP_VERSION,
     max_app_exclusive: "0.2.0",
     signing_role: "release",
     files: [
@@ -124,15 +127,15 @@ function updateEnvelope(privateKey, keyid) {
     ],
     rulepack: {
       name: "oak-rules",
-      version: "2.0.1",
+      version: "2.1.1",
       sha256: sha256(rulepackBytes),
       capability_set_sha256: sha256(capabilityBytes),
     },
     rollback_target: {
       manifest_sha256: BUNDLED_STANDARD_RELEASE.manifestSha256,
-      release_sequence: 2,
+      release_sequence: 3,
     },
-    change_summary: ["测试签名标准包 2.0.1。"],
+    change_summary: ["测试签名标准包 2.1.1。"],
   };
   const manifestBytes = Buffer.from(canonicalJson(manifest), "utf8");
   const signature = crypto.sign(null, manifestBytes, privateKey);
@@ -186,6 +189,52 @@ function writeLegacyBundledConfig(t) {
   };
 }
 
+function writeV2BundledConfig(t) {
+  const configDir = tempRoot(t, "standards-provider-v2-config-");
+  fs.mkdirSync(path.join(configDir, "standard-packs"), { recursive: true });
+  fs.mkdirSync(path.join(configDir, "rule-packs"), { recursive: true });
+  let standardsSource = fs.readFileSync(path.join(CONFIG, "standards.json"), "utf8");
+  standardsSource = standardsSource
+    .replace('"registry_version": "2.1.0"', '"registry_version": "2.0.0"')
+    .replace('"updated_at": "2026-07-29"', '"updated_at": "2026-07-27"');
+  const textStandardStart = standardsSource.indexOf(
+    '    {\n      "standard_id": "OAK-TEXT-HYGIENE-001"',
+  );
+  const followingStandardStart = standardsSource.indexOf(
+    '    {\n      "standard_id": "OAK-PAPER-STRUCT-001"',
+    textStandardStart,
+  );
+  assert.notEqual(textStandardStart, -1);
+  assert.notEqual(followingStandardStart, -1);
+  standardsSource = `${standardsSource.slice(0, textStandardStart)}`
+    + standardsSource.slice(followingStandardStart);
+  const standardsBytes = Buffer.from(standardsSource, "utf8");
+  assert.equal(sha256(standardsBytes),
+    "7a83d7f5d6b1d92ae9ff0c786b8b66698e8341fc47d1f5b874d127c731543d74");
+  fs.writeFileSync(path.join(configDir, "standards.json"), standardsBytes);
+  for (const [source, target] of [
+    [path.join(CONFIG, "standard-packs", "oak-standards-2.0.0.manifest.json"),
+      path.join(configDir, "standard-packs", "oak-standards-2.0.0.manifest.json")],
+    [path.join(CONFIG, "rule-packs", "oak-rules-2.0.0.json"),
+      path.join(configDir, "rule-packs", "oak-rules-2.0.0.json")],
+    [path.join(CONFIG, "rule-capabilities.json"),
+      path.join(configDir, "rule-capabilities.json")],
+  ]) fs.copyFileSync(source, target);
+  return {
+    configDir,
+    release: {
+      ...BUNDLED_STANDARD_RELEASE,
+      releaseSequence: 2,
+      version: "2.0.0",
+      manifestSha256: V2_MANIFEST_SHA256,
+      historicalManifestSha256s: [LEGACY_MANIFEST_SHA256],
+      manifestRelative: "standard-packs/oak-standards-2.0.0.manifest.json",
+      standardsRelative: "standards.json",
+      rulepackRelative: "rule-packs/oak-rules-2.0.0.json",
+    },
+  };
+}
+
 test("provider bootstraps and verifies the digest-anchored bundled release without a trust root", async (t) => {
   const provider = createProvider(t);
   const status = await provider.initialize();
@@ -197,17 +246,17 @@ test("provider bootstraps and verifies the digest-anchored bundled release witho
   assert.equal(status.network_updates_enabled, false);
 
   const listing = await provider.listStandards();
-  assert.equal(listing.standards.length, 13);
-  assert.equal(listing.release.release_sequence, 2);
+  assert.equal(listing.standards.length, 14);
+  assert.equal(listing.release.release_sequence, 3);
   assert.deepEqual(listing.governance_summary.status_counts, {
-    active: 9,
+    active: 10,
     under_review: 4,
     superseded: 0,
     deprecated: 0,
   });
   assert.deepEqual(listing.governance_summary.source_verification_counts, {
     verified: 0,
-    pending: 12,
+    pending: 13,
     unavailable: 1,
   });
   assert.equal(listing.governance_summary.governance_gate_satisfied, false);
@@ -218,11 +267,11 @@ test("provider bootstraps and verifies the digest-anchored bundled release witho
   const identity = await provider.verifiedActiveIdentity();
   assert.deepEqual(identity, {
     name: "oak-rules",
-    version: "2.0.0",
+    version: "2.1.0",
     pinned: true,
     sha256: currentManifest.rulepack.sha256,
     bundle_id: "oak-standards",
-    release_sequence: 2,
+    release_sequence: 3,
     manifest_sha256: BUNDLED_STANDARD_RELEASE.manifestSha256,
   });
   assert.deepEqual(await provider.verifyReleaseIdentity(identity), identity);
@@ -237,7 +286,7 @@ test("provider reopens an existing CAS and re-verifies active bytes", async (t) 
   const second = createProvider(t, { rootDir: storeRoot });
   const status = await second.initialize();
   assert.equal(status.ready, true);
-  assert.equal(status.active.release_sequence, 2);
+  assert.equal(status.active.release_sequence, 3);
 });
 
 test("provider constructor defers all asset reads and reports initialization failure through status", async (t) => {
@@ -280,7 +329,7 @@ test("on-disk trust root is rejected unless its raw digest is code-pinned", asyn
   assert.equal(status.local_signed_import_enabled, true);
 });
 
-test("provider initializes a newer bundled release and preserves/verifies historical CAS", async (t) => {
+test("provider advances bundled v1 to v2 to v3 and preserves every historical CAS", async (t) => {
   const storeRoot = tempRoot(t, "standards-provider-v1-v2-store-");
   const legacy = writeLegacyBundledConfig(t);
   const first = createProvider(t, {
@@ -295,23 +344,32 @@ test("provider initializes a newer bundled release and preserves/verifies histor
   assert.ok(BUNDLED_STANDARD_RELEASE.historicalManifestSha256s.includes(
     LEGACY_MANIFEST_SHA256,
   ));
+  const v2 = writeV2BundledConfig(t);
   const second = createProvider(t, {
     rootDir: storeRoot,
+    configDir: v2.configDir,
+    bundledRelease: v2.release,
     trustStore: null,
   });
+  const v2Status = await second.initialize();
+  assert.equal(v2Status.active.release_sequence, 2);
+  assert.equal(v2Status.previous.manifest_sha256, LEGACY_MANIFEST_SHA256);
+  const v2Identity = await second.verifiedActiveIdentity();
 
-  const status = await second.initialize();
-  assert.equal(status.active.release_sequence, 2);
+  const third = createProvider(t, { rootDir: storeRoot, trustStore: null });
+  const status = await third.initialize();
+  assert.equal(status.active.release_sequence, 3);
   assert.equal(status.active.manifest_sha256, BUNDLED_STANDARD_RELEASE.manifestSha256);
-  assert.equal(status.previous.manifest_sha256, LEGACY_MANIFEST_SHA256);
-  assert.deepEqual(await second.verifyReleaseIdentity(v1Identity), v1Identity);
-  assert.equal((await second.listStandards()).registry_version, "2.0.0");
+  assert.equal(status.previous.manifest_sha256, V2_MANIFEST_SHA256);
+  assert.deepEqual(await third.verifyReleaseIdentity(v2Identity), v2Identity);
+  assert.deepEqual(await third.verifyReleaseIdentity(v1Identity), v1Identity);
+  assert.equal((await third.listStandards()).registry_version, "2.1.0");
 
   const reopened = createProvider(t, {
     rootDir: storeRoot,
     trustStore: null,
   });
-  assert.equal((await reopened.initialize()).active.release_sequence, 2);
+  assert.equal((await reopened.initialize()).active.release_sequence, 3);
   assert.deepEqual(await reopened.verifyReleaseIdentity(v1Identity), v1Identity);
 });
 
@@ -329,38 +387,38 @@ test("provider rejects a bundled manifest whose bytes do not match the code-fixe
 test("provider installs a local signed release and explicitly rolls global active back", async (t) => {
   const signing = signingFixture();
   const storeRoot = tempRoot(t, "standards-provider-signed-chain-");
-  const legacy = writeLegacyBundledConfig(t);
-  const legacyProvider = createProvider(t, {
+  const v2 = writeV2BundledConfig(t);
+  const v2Provider = createProvider(t, {
     rootDir: storeRoot,
-    configDir: legacy.configDir,
-    bundledRelease: legacy.release,
+    configDir: v2.configDir,
+    bundledRelease: v2.release,
     trustStore: null,
   });
-  await legacyProvider.initialize();
+  await v2Provider.initialize();
   const provider = createProvider(t, { rootDir: storeRoot, trustStore: signing.trustStore });
   await provider.initialize();
   const packagePath = path.join(tempRoot(t, "standards-package-"), "update.oakstd");
   fs.writeFileSync(packagePath, updateEnvelope(signing.privateKey, signing.keyid));
 
   const preview = await provider.previewPackage(packagePath);
-  assert.equal(preview.release_sequence, 3);
+  assert.equal(preview.release_sequence, 4);
   assert.equal(preview.expected_active_manifest_sha256,
     BUNDLED_STANDARD_RELEASE.manifestSha256);
   const installed = await provider.importPackage(packagePath, preview);
-  assert.equal(installed.active.release_sequence, 3);
+  assert.equal(installed.active.release_sequence, 4);
   assert.equal(installed.active.source, "installed");
-  assert.equal(installed.previous.release_sequence, 2);
-  assert.deepEqual(installed.change_summary, ["测试签名标准包 2.0.1。"]);
-  assert.equal((await provider.listStandards()).registry_version, "2.0.1");
+  assert.equal(installed.previous.release_sequence, 3);
+  assert.deepEqual(installed.change_summary, ["测试签名标准包 2.1.1。"]);
+  assert.equal((await provider.listStandards()).registry_version, "2.1.1");
 
   const rollbackPreview = await provider.previewRollback();
-  assert.equal(rollbackPreview.target.release_sequence, 2);
+  assert.equal(rollbackPreview.target.release_sequence, 3);
   const rolledBack = await provider.rollback(rollbackPreview);
-  assert.equal(rolledBack.active.release_sequence, 2);
-  assert.equal(rolledBack.previous.release_sequence, 1);
+  assert.equal(rolledBack.active.release_sequence, 3);
+  assert.equal(rolledBack.previous.release_sequence, 2);
   const status = provider.status();
-  assert.equal(status.highest_seen_sequence, 3);
-  assert.equal((await provider.listStandards()).registry_version, "2.0.0");
+  assert.equal(status.highest_seen_sequence, 4);
+  assert.equal((await provider.listStandards()).registry_version, "2.1.0");
 });
 
 test("provider rejects linked or incorrectly named local update files", async (t) => {
@@ -407,19 +465,19 @@ test("explicit remote check verifies signed bytes before an opaque one-shot inst
   const preview = await provider.checkForRemoteUpdate();
   assert.equal(preview.outcome, "update_available");
   assert.equal(preview.plan_id, "40000000-0000-4000-8000-000000000004");
-  assert.equal(preview.release_sequence, 3);
+  assert.equal(preview.release_sequence, 4);
   assert.equal(preview.expected_active_manifest_sha256, before.manifest_sha256);
-  assert.equal((await provider.verifiedActiveIdentity()).release_sequence, 2, "preview must not install");
+  assert.equal((await provider.verifiedActiveIdentity()).release_sequence, 3, "preview must not install");
   assert.deepEqual(calls, [{
-    appVersion: "0.1.0-alpha.5",
+    appVersion: CURRENT_APP_VERSION,
     bundleId: "oak-standards",
-    currentReleaseSequence: 2,
+    currentReleaseSequence: 3,
     currentManifestSha256: before.manifest_sha256,
   }]);
 
   const installed = await provider.installRemoteUpdate(preview.plan_id);
-  assert.equal(installed.active.release_sequence, 3);
-  assert.equal(installed.previous.release_sequence, 2);
+  assert.equal(installed.active.release_sequence, 4);
+  assert.equal(installed.previous.release_sequence, 3);
   assert.deepEqual(await provider.verifyReleaseIdentity(before), before, "existing project pin remains verifiable");
   await assert.rejects(
     () => provider.installRemoteUpdate(preview.plan_id),
@@ -468,7 +526,7 @@ test("signed revocation of the active release blocks new work but preserves hist
 
   const preview = await provider.checkForRemoteUpdate();
   const installed = await provider.installRemoteUpdate(preview.plan_id);
-  assert.equal(installed.active.release_sequence, 3);
+  assert.equal(installed.active.release_sequence, 4);
   assert.equal(provider.status().ready, true);
   await assert.rejects(
     () => provider.rollback(),

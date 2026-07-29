@@ -33,6 +33,20 @@ _CITATION_CONFIDENCE_LABELS = {
     "medium": "中",
     "low": "低",
 }
+_FORMAT_LABELS = {"md": "Markdown", "txt": "TXT"}
+_EXCLUDED_LABELS = {
+    "fenced_code": "围栏代码块",
+    "inline_code": "行内代码",
+    "table": "Markdown 表格",
+    "hard_break": "行末双空格换行",
+    "layout_sensitive": "保守识别的排版敏感文本",
+}
+_NOT_CHECKED_LABELS = {
+    "semantic_rewriting": "语义改写与语言润色",
+    "full_markdown_conformance": "完整 Markdown 语法合规",
+    "layout_reconstruction": "版式还原",
+    "external_standard_completeness": "外部标准完整合规",
+}
 
 _EVALUATION_BLOCK = (
     "想进一步判断稿件是否适合出版？湖岸橡树可在您主动提交后，"
@@ -46,6 +60,8 @@ def _loc(issue: dict) -> str:
         return loc["resource"]
     if loc["part"] == "footnotes":
         return f"脚注 {loc['note_id']}"
+    if loc.get("line") is not None:
+        return f"第 {loc['line']} 行"
     if loc["paragraph"] is not None:
         return f"正文第 {loc['paragraph']} 段"
     return "文档"
@@ -110,6 +126,27 @@ def _citation_resolution_rows(report: dict) -> list[tuple[str, str]]:
     ]
 
 
+def _format_coverage_rows(report: dict) -> list[tuple[str, str]]:
+    coverage = report.get("format_coverage")
+    if not isinstance(coverage, dict):
+        return []
+    rules = coverage.get("rule_ids") if isinstance(coverage.get("rule_ids"), list) else []
+    auto = coverage.get("auto_fixable_rule_ids") \
+        if isinstance(coverage.get("auto_fixable_rule_ids"), list) else []
+    excluded = coverage.get("excluded_contexts") \
+        if isinstance(coverage.get("excluded_contexts"), list) else []
+    not_checked = coverage.get("not_checked") \
+        if isinstance(coverage.get("not_checked"), list) else []
+    return [
+        ("格式", _FORMAT_LABELS.get(coverage.get("format"), str(coverage.get("format", "未记录")))),
+        ("实际运行规则", "、".join(str(item) for item in rules) or "（无）"),
+        ("自动修复", "、".join(str(item) for item in auto) if auto else "本格式没有自动修复规则"),
+        ("保守排除", "、".join(_EXCLUDED_LABELS.get(item, str(item)) for item in excluded)),
+        ("本次不检查", "、".join(_NOT_CHECKED_LABELS.get(item, str(item)) for item in not_checked)),
+        ("覆盖声明", str(coverage.get("disclosure", "未记录"))),
+    ]
+
+
 def render_markdown(report: dict) -> str:
     lines: list[str] = []
     lines.append("# 湖岸稿件检查报告")
@@ -125,6 +162,13 @@ def render_markdown(report: dict) -> str:
         lines.append("## 引用体例解析")
         lines.append("")
         for label, value in citation_rows:
+            lines.append(f"- {label}：{value}")
+    coverage_rows = _format_coverage_rows(report)
+    if coverage_rows:
+        lines.append("")
+        lines.append("## 文本格式检查覆盖")
+        lines.append("")
+        for label, value in coverage_rows:
             lines.append(f"- {label}：{value}")
     lines.append("")
     lines.append("## 结论摘要")
@@ -243,6 +287,12 @@ def render_html(report: dict) -> str:
     if citation_rows:
         parts.append("<h2>引用体例解析</h2><dl>")
         for label, value in citation_rows:
+            parts.append(f"<dt><strong>{e(label)}</strong></dt><dd>{e(value)}</dd>")
+        parts.append("</dl>")
+    coverage_rows = _format_coverage_rows(report)
+    if coverage_rows:
+        parts.append("<h2>文本格式检查覆盖</h2><dl>")
+        for label, value in coverage_rows:
             parts.append(f"<dt><strong>{e(label)}</strong></dt><dd>{e(value)}</dd>")
         parts.append("</dl>")
     p = report["pending_counts"]

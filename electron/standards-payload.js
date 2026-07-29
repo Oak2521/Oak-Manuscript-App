@@ -673,16 +673,30 @@ function validateStandards(standards, manifest, rulepack, rules, releaseDate) {
   return byId;
 }
 
-function createStandardsPayloadValidator({ capabilityBytes }) {
+function createStandardsPayloadValidator({
+  capabilityBytes,
+  historicalBundledCapabilitySetSha256s = [],
+}) {
   const capabilities = validateCapabilities(capabilityBytes);
+  if (!Array.isArray(historicalBundledCapabilitySetSha256s) ||
+      historicalBundledCapabilitySetSha256s.some(
+        (digest) => typeof digest !== "string" || !/^[a-f0-9]{64}$/.test(digest),
+      )) {
+    throw new TypeError("historicalBundledCapabilitySetSha256s 非法");
+  }
+  const historicalBundledCapabilities = new Set(historicalBundledCapabilitySetSha256s);
   return async function validatePayload({
     manifest,
     standardsBytes,
     rulepackBytes,
     capabilitySetSha256,
   }) {
-    if (!isObject(manifest) || capabilitySetSha256 !== capabilities.sha256 ||
-        manifest.rulepack?.capability_set_sha256 !== capabilities.sha256) {
+    const declaredCapability = manifest?.rulepack?.capability_set_sha256;
+    const currentCapability = declaredCapability === capabilities.sha256;
+    const anchoredHistoricalCapability = manifest?.signing_role === "bundled" &&
+      historicalBundledCapabilities.has(declaredCapability);
+    if (!isObject(manifest) || capabilitySetSha256 !== declaredCapability ||
+        (!currentCapability && !anchoredHistoricalCapability)) {
       fail("STANDARD_CAPABILITY_MISMATCH", "manifest capability_set_sha256 与本 APP 不一致");
     }
     const releaseDate = manifestReleaseDate(manifest);

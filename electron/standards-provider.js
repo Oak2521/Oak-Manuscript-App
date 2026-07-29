@@ -26,17 +26,21 @@ const { summarizeStandardsGovernance } = require("./standards-governance");
 // the tracked manifest. Formal releases must additionally sign the application.
 const BUNDLED_STANDARD_RELEASE = Object.freeze({
   bundleId: "oak-standards",
-  releaseSequence: 2,
-  version: "2.0.0",
-  manifestSha256: "0aff75eb181a62869147e9af27330c717bc808bdd23865197534fc9868568427",
-  manifestRelative: "standard-packs/oak-standards-2.0.0.manifest.json",
+  releaseSequence: 3,
+  version: "2.1.0",
+  manifestSha256: "88a60da2f55c6de13853e0af56389f56a591c5702e44de1a7943d31afbff0187",
+  manifestRelative: "standard-packs/oak-standards-2.1.0.manifest.json",
   standardsRelative: "standards.json",
-  rulepackRelative: "rule-packs/oak-rules-2.0.0.json",
+  rulepackRelative: "rule-packs/oak-rules-2.1.0.json",
   capabilitiesRelative: "rule-capabilities.json",
   trustRelative: "standard-trust.json",
   trustSha256: null,
   historicalManifestSha256s: Object.freeze([
+    "0aff75eb181a62869147e9af27330c717bc808bdd23865197534fc9868568427",
     "d33534f081b2122a90652ee03304a0e71177a7fd0d3130fffe77b0fea807d7af",
+  ]),
+  historicalCapabilitySetSha256s: Object.freeze([
+    "af67d0aaf2ece431ec1b617934bdfa3627b6be1b1301a92fcf3b2b2f29ca232e",
   ]),
 });
 
@@ -221,6 +225,14 @@ class StandardsProvider {
         historical.some((digest) => typeof digest !== "string" || !SHA256_RE.test(digest))) {
       fail("INVALID_BUNDLED_RELEASE", "historicalManifestSha256s 必须是 SHA-256 数组");
     }
+    const historicalCapabilities = release.historicalCapabilitySetSha256s === undefined
+      ? []
+      : release.historicalCapabilitySetSha256s;
+    if (!Array.isArray(historicalCapabilities) || historicalCapabilities.some(
+      (digest) => typeof digest !== "string" || !SHA256_RE.test(digest),
+    )) {
+      fail("INVALID_BUNDLED_RELEASE", "historicalCapabilitySetSha256s 必须是 SHA-256 数组");
+    }
     this.paths = Object.freeze({
       manifest: resolveBundledPath(this.configDir, release.manifestRelative, "manifestRelative"),
       standards: resolveBundledPath(this.configDir, release.standardsRelative, "standardsRelative"),
@@ -248,7 +260,11 @@ class StandardsProvider {
       rootDir: this.rootDir,
       trustStore: effectiveTrust,
       appVersion: this.appVersion,
-      validatePayload: createStandardsPayloadValidator({ capabilityBytes }),
+      validatePayload: createStandardsPayloadValidator({
+        capabilityBytes,
+        historicalBundledCapabilitySetSha256s:
+          this.bundledRelease.historicalCapabilitySetSha256s || [],
+      }),
       bundledManifestSha256: this.bundledRelease.manifestSha256,
       bundledManifestSha256s,
       fsImpl: this.fs,

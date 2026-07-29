@@ -28,6 +28,7 @@ const {
 const { createStandardsUpdateFetchHandler } = require("../web/standards-update-runtime");
 
 const ROOT = path.resolve(__dirname, "..");
+const CURRENT_APP_VERSION = require("../package.json").version;
 const ORIGIN = "https://updates.oakbylake.com";
 const REQUEST_ID = "70000000-0000-4000-8000-000000000007";
 const CURRENT_MANIFEST = "a".repeat(64);
@@ -55,11 +56,11 @@ function signedReleaseFixture() {
   const rulepack = JSON.parse(fs.readFileSync(
     path.join(config, BUNDLED_STANDARD_RELEASE.rulepackRelative), "utf8",
   ));
-  standards.registry_version = "2.0.1";
+  standards.registry_version = "2.1.1";
   standards.updated_at = "2026-07-29";
-  rulepack.pack_version = "2.0.1";
+  rulepack.pack_version = "2.1.1";
   rulepack.frozen_at = "2026-07-29";
-  rulepack.citation_default_mapping.version = "2.0.1";
+  rulepack.citation_default_mapping.version = "2.1.1";
   const standardsBytes = Buffer.from(`${JSON.stringify(standards, null, 2)}\n`, "utf8");
   const rulepackBytes = Buffer.from(`${JSON.stringify(rulepack, null, 2)}\n`, "utf8");
   const capabilityBytes = fs.readFileSync(path.join(config, "rule-capabilities.json"));
@@ -67,12 +68,12 @@ function signedReleaseFixture() {
     schema_version: "1.0",
     kind: "oak-standard-release",
     bundle_id: "oak-standards",
-    release_sequence: 3,
-    version: "2.0.1",
+    release_sequence: 4,
+    version: "2.1.1",
     channel: "stable",
     released_at: "2026-07-29T00:00:00Z",
     expires_at: null,
-    min_app: "0.1.0-alpha.5",
+    min_app: CURRENT_APP_VERSION,
     max_app_exclusive: "0.2.0",
     signing_role: "release",
     files: [
@@ -91,13 +92,13 @@ function signedReleaseFixture() {
     ],
     rulepack: {
       name: "oak-rules",
-      version: "2.0.1",
+      version: "2.1.1",
       sha256: storeSha256(rulepackBytes),
       capability_set_sha256: storeSha256(capabilityBytes),
     },
     rollback_target: {
       manifest_sha256: BUNDLED_STANDARD_RELEASE.manifestSha256,
-      release_sequence: 2,
+      release_sequence: 3,
     },
     change_summary: ["服务端到桌面签名更新纵向测试。"],
   };
@@ -362,6 +363,7 @@ test("the real desktop HTTP client consumes the production-shaped Fetch handler 
 test("a real signed release crosses fake server, desktop client, verification, and atomic install", async (t) => {
   const signed = signedReleaseFixture();
   const sourceResult = publishedRelease({
+    release_sequence: 4,
     manifest_sha256: signed.manifestSha256,
     envelope_sha256: sha256(signed.envelopeBytes),
     envelope_bytes: signed.envelopeBytes,
@@ -381,7 +383,7 @@ test("a real signed release crosses fake server, desktop client, verification, a
   const provider = new StandardsProvider({
     rootDir: tempRoot(t, "standards-web-e2e-"),
     configDir: path.join(ROOT, "config"),
-    appVersion: "0.1.0-alpha.50",
+    appVersion: CURRENT_APP_VERSION,
     bundledRelease: BUNDLED_STANDARD_RELEASE,
     trustStore: signed.trustStore,
     updateClient: client,
@@ -392,13 +394,13 @@ test("a real signed release crosses fake server, desktop client, verification, a
   const before = await provider.verifiedActiveIdentity();
   const preview = await provider.checkForRemoteUpdate();
   assert.equal(preview.outcome, "update_available");
-  assert.equal(preview.release_sequence, 3);
+  assert.equal(preview.release_sequence, 4);
   assert.equal(preview.manifest_sha256, signed.manifestSha256);
-  assert.equal((await provider.verifiedActiveIdentity()).release_sequence, 2);
+  assert.equal((await provider.verifiedActiveIdentity()).release_sequence, 3);
 
   const installed = await provider.installRemoteUpdate(preview.plan_id);
-  assert.equal(installed.active.release_sequence, 3);
-  assert.equal(installed.previous.release_sequence, 2);
+  assert.equal(installed.active.release_sequence, 4);
+  assert.equal(installed.previous.release_sequence, 3);
   assert.deepEqual(await provider.verifyReleaseIdentity(before), before);
   assert.equal(events.length, 1);
   assert.equal(JSON.stringify(events).includes(signed.manifestSha256), false);

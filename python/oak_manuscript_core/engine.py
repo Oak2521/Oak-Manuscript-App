@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 from .citation import resolve_citation, validate_citation_resolution
 from .errors import OakError
+from .format_coverage import build_format_coverage
 from .model import DocxDocument
 from .rules import RULE_FUNCS
 from .rules.common import PREVIEW_MAX
@@ -19,6 +20,7 @@ class CheckOutcome:
     issues: list[dict] = field(default_factory=list)
     resolved: dict = field(default_factory=dict)
     skipped_rule_groups: list[dict] = field(default_factory=list)
+    format_coverage: dict | None = None
 
 
 def _matches(allowed: list[str], value: str) -> bool:
@@ -113,6 +115,7 @@ def check_document(
         doc_format=doc_format,
     )
     skipped_milestones: set[str] = set()
+    applied_rule_defs: list[dict] = []
     for rule_def in pack["rules"]:
         milestone = rule_def["milestone"]
         if milestone not in IMPLEMENTED_MILESTONES:
@@ -133,6 +136,7 @@ def check_document(
             raise OakError(
                 f"规则 {rule_def['rule_id']} 属当前里程碑但没有对应实现：规则包与代码不一致，拒绝继续。"
             )
+        applied_rule_defs.append(rule_def)
         for f in fn(doc, ctx):
             issues.append(_assemble_issue(rule_def, f, settings))
 
@@ -144,6 +148,7 @@ def check_document(
         key=lambda i: (
             _PART_ORDER.get(i["location"]["part"], 9),
             i["location"].get("resource") or "",
+            i["location"].get("line") if i["location"].get("line") is not None else 10**9,
             i["location"]["paragraph"] if i["location"]["paragraph"] is not None else 10**9,
             i["location"]["note_id"] if i["location"]["note_id"] is not None else 0,
             i["rule_id"],
@@ -155,7 +160,12 @@ def check_document(
     skipped = [
         {"milestone": m, "reason": "本版本未实现"} for m in sorted(skipped_milestones)
     ]
-    return CheckOutcome(issues=issues, resolved=resolved, skipped_rule_groups=skipped)
+    return CheckOutcome(
+        issues=issues,
+        resolved=resolved,
+        skipped_rule_groups=skipped,
+        format_coverage=build_format_coverage(doc_format, applied_rule_defs),
+    )
 
 
 def _assemble_issue(rule_def: dict, f: dict, settings: dict) -> dict:
@@ -170,6 +180,7 @@ def _assemble_issue(rule_def: dict, f: dict, settings: dict) -> dict:
         "location": {
             "part": f.get("part", "document"),
             "paragraph": f.get("paragraph"),
+            "line": f.get("line"),
             "note_id": f.get("note_id"),
             "resource": f.get("resource"),
         },

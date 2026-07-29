@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 108,
-  "total_bytes": 2171922,
+  "file_count": 112,
+  "total_bytes": 2220055,
   "files": [
     {
       "path": "config/app-config.json",
@@ -64,8 +64,8 @@
     },
     {
       "path": "config/rule-capabilities.json",
-      "size_bytes": 2908,
-      "sha256": "af67d0aaf2ece431ec1b617934bdfa3627b6be1b1301a92fcf3b2b2f29ca232e"
+      "size_bytes": 3230,
+      "sha256": "5225cfe28f2855b374df1b10dc23ec6d42fec5548655082b25d606615f093ef7"
     },
     {
       "path": "config/rule-packs/oak-rules-1.0.0.json",
@@ -76,6 +76,11 @@
       "path": "config/rule-packs/oak-rules-2.0.0.json",
       "size_bytes": 25005,
       "sha256": "098b382e33c06ccddf154940fbbd51db384d8025cf235ed7f7e10e83d34897a4"
+    },
+    {
+      "path": "config/rule-packs/oak-rules-2.1.0.json",
+      "size_bytes": 28135,
+      "sha256": "e7f0a01463edd8713973f5973c673d6940fab334b498fcc2b1fbeebddf52e1e2"
     },
     {
       "path": "config/schemas/auth-session-store-v1.schema.json",
@@ -283,9 +288,14 @@
       "sha256": "0aff75eb181a62869147e9af27330c717bc808bdd23865197534fc9868568427"
     },
     {
+      "path": "config/standard-packs/oak-standards-2.1.0.manifest.json",
+      "size_bytes": 1211,
+      "sha256": "88a60da2f55c6de13853e0af56389f56a591c5702e44de1a7943d31afbff0187"
+    },
+    {
       "path": "config/standards.json",
-      "size_bytes": 15193,
-      "sha256": "7a83d7f5d6b1d92ae9ff0c786b8b66698e8341fc47d1f5b874d127c731543d74"
+      "size_bytes": 16498,
+      "sha256": "ae9bfdbfbd97ba260a65b745620da4e2c8dbb4c85134ec485c74506256521681"
     },
     {
       "path": "config/tool-manifests/ace-1.4.6.json",
@@ -320,12 +330,12 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "270c5d8ba963acee32898202a00023c97926b62e000f6c54ad3d04b8c9795c93"
+      "sha256": "eefee9ef5e19ab014f1ed7861bd5c17db0f34d891ac3905da69938b0828141ca"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",
-      "size_bytes": 20339,
-      "sha256": "75a2f38f4c35a649946fe24ca15bdcac67d9c1a8a2e333466c0bb715b5dcb5b9"
+      "size_bytes": 20473,
+      "sha256": "d62baa1373cd8da03875ed3f15ab8588bd32f6d62946da538ad06646f83f575f"
     },
     {
       "path": "python/oak_manuscript_core/citation.py",
@@ -334,8 +344,8 @@
     },
     {
       "path": "python/oak_manuscript_core/engine.py",
-      "size_bytes": 6858,
-      "sha256": "2337ebafaa71289e7495f37ab4044e182bd2324654db04632f8830d2dc825d8e"
+      "size_bytes": 7252,
+      "sha256": "267c14737ba0fd8960fd6c162f3bbf617b900389da541c378137a2fadff992fe"
     },
     {
       "path": "python/oak_manuscript_core/epub_writer.py",
@@ -363,19 +373,24 @@
       "sha256": "003c40bf71ac56be2d3cbe2dd9e748cd6f34daa4e965c08e80b3417bf1e00dd7"
     },
     {
+      "path": "python/oak_manuscript_core/format_coverage.py",
+      "size_bytes": 3057,
+      "sha256": "27c06f90eceb19bf3b709f148f21ce2ba0402a5c452601b29219a4523a096cd5"
+    },
+    {
       "path": "python/oak_manuscript_core/model.py",
-      "size_bytes": 1542,
-      "sha256": "b280b787d05808e7d7c091404bc595503cfea5944a596eaf49d1f2a96c40f926"
+      "size_bytes": 2201,
+      "sha256": "a31077cf25076501f2616cd8feb4343ff9ffe4f5b9d4028006968843d4a22bb0"
     },
     {
       "path": "python/oak_manuscript_core/ops.py",
-      "size_bytes": 53652,
-      "sha256": "8c677a00106947bd85a3d8ab8be309aae744fec710d0f874d438f4f37243a3c9"
+      "size_bytes": 54029,
+      "sha256": "4de0461fb18c364ade2b2840d846c51dd376a0ccce97ff017fcfedb2bb1bcc01"
     },
     {
       "path": "python/oak_manuscript_core/project.py",
-      "size_bytes": 74497,
-      "sha256": "557c30089bd4711ff9d545b31cfc750a3cec8bf356775d911584594689493dc0"
+      "size_bytes": 74832,
+      "sha256": "543b02e96941efb348c8cbca0e3a4413e159ad2dc121cee5f95b9094fe8f5b08"
     },
     {
       "path": "python/oak_manuscript_core/project_lock.py",
@@ -399,8 +414,8 @@
     },
     {
       "path": "python/oak_manuscript_core/readers/md_reader.py",
-      "size_bytes": 2888,
-      "sha256": "5a2aaedc47cad2a9d912c4695114bc50178bf21cc7337fdfa6b1e3d58c0ea82a"
+      "size_bytes": 6898,
+      "sha256": "8363282a7c9096e2562f0abaa5a7186666eea3af236ddfbb864f062deb89daa8"
     },
     {
       "path": "python/oak_manuscript_core/readers/txt_reader.py",
@@ -409,8 +424,8 @@
     },
     {
       "path": "python/oak_manuscript_core/reports.py",
-      "size_bytes": 11773,
-      "sha256": "e52678d0d58501d1659c0638be8481699c66b1060f9132e710306d6f2cb18b50"
+      "size_bytes": 14172,
+      "sha256": "a07bb83d1252fb511b08bdc068586b11c5fefd3b97f13f161328275901c52a3c"
     },
     {
       "path": "python/oak_manuscript_core/rulepack.py",
@@ -424,8 +439,8 @@
     },
     {
       "path": "python/oak_manuscript_core/rules/__init__.py",
-      "size_bytes": 759,
-      "sha256": "5403dc6c70ec139e77c41e6c25e932aab0a25d6f7544f5f3811a64dd989968ff"
+      "size_bytes": 772,
+      "sha256": "c76ec0dd73bc697e3f5fef9bcbf28df077d1ffc322c4db1bedf63d5a17023f40"
     },
     {
       "path": "python/oak_manuscript_core/rules/book.py",
@@ -434,8 +449,8 @@
     },
     {
       "path": "python/oak_manuscript_core/rules/common.py",
-      "size_bytes": 1305,
-      "sha256": "43687e74dfe6dd461547d37f20a2d7e20bde2a2d0c7abc6b8721b6d259b50d1d"
+      "size_bytes": 1351,
+      "sha256": "cac2af65458cec9057b4a9113058ab2b95df8764ee9394f0c609ccfd4623cf37"
     },
     {
       "path": "python/oak_manuscript_core/rules/epub.py",
@@ -468,6 +483,11 @@
       "sha256": "ab091473566dd7d04c5625b1454cedfbd18ad66a6c408af3e4e29da86ba7f123"
     },
     {
+      "path": "python/oak_manuscript_core/rules/text_hygiene.py",
+      "size_bytes": 3383,
+      "sha256": "8fdf9e1d59d184c2711984c89ebb818efb2ba6b338fdbecf4adf59c6ea56db10"
+    },
+    {
       "path": "python/oak_manuscript_core/rules/whitespace.py",
       "size_bytes": 2387,
       "sha256": "f5ce38451b8f7497869d36aa21527a0f71729c7ecf9703c6256b8718416ed247"
@@ -479,8 +499,8 @@
     },
     {
       "path": "python/oak_manuscript_core/standards_store.py",
-      "size_bytes": 57655,
-      "sha256": "ab5213fcebac1eefe33ee3061cf6cfb6b0f32acf3a00adf10ce8d98c91c24866"
+      "size_bytes": 60008,
+      "sha256": "08ecac85848a87b6ca9aebd16d1d59e9f858f94243c035c818cb8cd8611f1fb1"
     },
     {
       "path": "python/oak_manuscript_core/util.py",

@@ -36,7 +36,7 @@ from oak_manuscript_core.reports import render_markdown
 from oak_manuscript_core.rulepack import load_rulepack
 
 REPO = Path(__file__).resolve().parents[2]
-PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-2.0.0.json")
+PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-2.1.0.json")
 SAMPLES = REPO / "samples"
 ACE_CONTROLLED_RUNNER = (
     REPO / "scripts" / "patches" / "ace-axe-runner-puppeteer-1.4.6.js"

@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "registry_version": "2.0.0",
-  "updated_at": "2026-07-27",
+  "registry_version": "2.1.0",
+  "updated_at": "2026-07-29",
   "standards": [
     {
       "standard_id": "GBT-7714-2025",
@@ -110,6 +110,27 @@
       "source_verified_at": null,
       "source_verification_status": "pending",
       "change_history": [{"changed_at": "2026-07-27", "change_type": "schema_migration", "summary": "补充治理元数据。"}]
+    },
+    {
+      "standard_id": "OAK-TEXT-HYGIENE-001",
+      "title": "TXT 与 Markdown 稿件空白卫生（湖岸解释）",
+      "source_type": "oak_interpretation",
+      "official_source_url": "",
+      "oak_resource_slug": "text/conservative-whitespace-hygiene",
+      "version": "1.0.0",
+      "updated_at": "2026-07-29",
+      "scope": "TXT 与 Markdown 普通文本的空文件、行内连续空格、行内制表符和连续空行提示",
+      "summary": "只在普通文本上下文中提示可能的空白遗留；Markdown 代码、表格、强制换行和保守识别的排版敏感文本被排除。诗歌、题词与刻意对齐优先少报，全部规则仅提示且不自动修复。",
+      "status": "active",
+      "publisher": "Oak by Lake / 湖岸橡树",
+      "reviewed_by": ["Oak Editorial（待指定人员复核）"],
+      "copyright_use": "metadata_only",
+      "supersedes": [],
+      "superseded_by": null,
+      "rule_ids": ["TEXT-BLANK-001", "TEXT-EMPTY-001", "TEXT-SPACE-001", "TEXT-TAB-001"],
+      "source_verified_at": null,
+      "source_verification_status": "pending",
+      "change_history": [{"changed_at": "2026-07-29", "change_type": "content_addition", "summary": "新增保守、不可自动修复的 TXT/Markdown 空白卫生提示与排除边界。"}]
     },
     {
       "standard_id": "OAK-PAPER-STRUCT-001",

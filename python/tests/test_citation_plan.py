@@ -18,7 +18,7 @@ from oak_manuscript_core.util import read_json, sha256_file, write_json
 
 
 REPO = Path(__file__).resolve().parents[2]
-PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-2.0.0.json")
+PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-2.1.0.json")
 SAMPLE = REPO / "samples" / "paper_sample.md"
 
 

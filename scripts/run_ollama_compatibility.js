@@ -20,7 +20,7 @@ const MODEL_RE = /^[A-Za-z0-9][A-Za-z0-9._:/+-]{0,127}$/u;
 const REPO_ROOT = path.resolve(__dirname, "..");
 const OUTPUT_ROOT = path.join(REPO_ROOT, "out", "external-validation", "ollama");
 const PACKAGE_PATH = path.join(REPO_ROOT, "package.json");
-const RULE_PACK_PATH = path.join(REPO_ROOT, "config", "rule-packs", "oak-rules-2.0.0.json");
+const RULE_PACK_PATH = path.join(REPO_ROOT, "config", "rule-packs", "oak-rules-2.1.0.json");
 
 function exactKeys(value, keys, label) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {

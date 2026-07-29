@@ -2,9 +2,9 @@
 
 > 更新日期：2026-07-29
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.57`
+> 当前版本：`0.1.0-alpha.58`
 > 当前分支：`chatgpt/commercial-v1`
-> 当前源码标签：`chatgpt-v0.1.0-alpha.57-standards-governance`；最新真实 Windows 打包标签仍为 `chatgpt-v0.1.0-alpha.54-packaged`
+> 当前源码/Windows packaged 标签：`chatgpt-v0.1.0-alpha.58-text-hygiene`；最新真实 Windows 打包内容为未签名 alpha.58
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,15 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.58 TXT/Markdown 保守卫生检查与 Windows packaged 检查点
+
+- 新增 4 条仅提示、不可自动修复规则：空文件、普通文本连续空格、行内制表符、连续空行；Markdown 围栏代码、行内代码、表格、强制换行尾随空格和保守识别的排版敏感块被排除；
+- TXT/Markdown 问题增加 1 起算行号；检查 JSON、Markdown/HTML 报告和 Renderer 增加 content-free 格式覆盖矩阵；源稿 SHA-256 不变测试通过；
+- 标准/规则升为 2.1.0 / release sequence 3，39 条规则、6 fixer；历史 v1/v2 bundled CAS 仍由代码摘要锚定且只能作为当前能力子集验证，签名更新包不能借旧能力摘要放宽；
+- 当前治理计数 14 项标准、active 10、under_review 4、verified 0、pending 13、unavailable 1；本次只新增湖岸解释规则，未伪造外部来源完成度；
+- Node 719/712/0/7、Python 368/0/0/3；源码 Electron、Web 客户端和 packaged Windows 隐藏 smoke PASS；资源 112 文件 / 2,220,055 字节，manifest `bf5de4af…846e`、anchor `36139523…527c`；
+- alpha.58 Windows NSIS 190,062,079 字节 / `2db9df2f…eb75`，ZIP 233,903,104 字节 / `752ab1db…83c6`，unpacked EXE `080fc3ff…3a79`；schema v2 发布证据复验通过。两份 EXE 均 `NotSigned`；未执行真实安装；macOS 静态门禁仍缺双架构 Electron/Python/JRE。
 
 ### 已完成：0.1.0-alpha.57 标准治理状态透明化（源码检查点）
 
@@ -758,7 +767,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 5. 下一执行顺序
 
-不要重新做宽泛规划。alpha.57 已把标准内容缺口转化为用户可见、可测试的治理门禁，但没有补写未经核验的标准事实；下一步直接推进生产联调前置条件：
+不要重新做宽泛规划。alpha.58 已完成 TXT/Markdown 保守卫生检查和同版 Windows packaged 证据，但仍不是可售卖正式版；下一步直接推进生产联调前置条件：
 
 1. 取得联网只读授权后，只使用候选平台官方当前文档核对 50 MiB 请求、100 MiB 响应、240 秒执行、子进程、调度、存储与隔离能力，形成具来源 profile；不接受测试 profile 作为平台选择证据；
 2. 具体支付商 webhook 验签实现必须等用户授权联网并选定平台后，依据官方协议单独开发；当前规范化事件入口继续只接受上游已经验签的 content-free 快照；

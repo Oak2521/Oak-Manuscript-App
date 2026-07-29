@@ -18,6 +18,7 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from .citation import REQUESTED_STYLES, SUPPORTED_STYLES, validate_citation_resolution
 from .errors import OakError, ProjectValidationError
+from .format_coverage import validate_format_coverage
 from .project_lock import PROJECT_LOCK_FILENAME, validate_existing_lock_file
 from .rulepack import validate_rulepack_identity
 from .safety import is_link_or_reparse
@@ -1498,6 +1499,12 @@ class Project:
                 and settings_snapshot.get("citation_resolution") is not None
             ):
                 problems.append(f"检查结果缺少 citation_resolution：{relative}")
+
+            if "format_coverage" in result:
+                try:
+                    validate_format_coverage(result.get("format_coverage"), allow_none=True)
+                except OakError:
+                    problems.append(f"检查结果 format_coverage 非法：{relative}")
 
             if "rulepack" in check:
                 check_identity = check["rulepack"]

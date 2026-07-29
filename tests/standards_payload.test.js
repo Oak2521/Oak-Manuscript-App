@@ -52,9 +52,9 @@ test("runtime payload validator accepts the authenticated bundled payload", asyn
   assert.deepEqual(result, {
     ok: true,
     pack_name: "oak-rules",
-    pack_version: "2.0.0",
-    rule_count: 35,
-    standard_count: 13,
+    pack_version: "2.1.0",
+    rule_count: 39,
+    standard_count: 14,
   });
 });
 
@@ -66,7 +66,7 @@ test("runtime payload validator accepts both legacy and resolver-backed citation
   assert.equal(legacyResult.ok, true);
 
   const current = strictJson(rulepackBytes, "fixture rulepack");
-  assert.equal(current.citation_default_mapping.version, "2.0.0");
+  assert.equal(current.citation_default_mapping.version, "2.1.0");
   assert.equal(current.citation_default_mapping.resolver.version, "1.0.0");
   const currentResult = await validate(args({ rulepackBytes: bytes(current) }));
   assert.equal(currentResult.ok, true);
@@ -139,7 +139,7 @@ test("runtime payload validator accepts a signed subset of implemented rules", a
     standard.rule_ids = standard.rule_ids.filter((id) => id !== removed.rule_id);
   }
   const result = await validate(args({ rulepackBytes: bytes(pack), standardsBytes: bytes(standards) }));
-  assert.equal(result.rule_count, 34);
+  assert.equal(result.rule_count, 38);
 });
 
 test("runtime payload validator rejects unknown executable rule capability", async () => {
@@ -278,10 +278,10 @@ test("calendar dates must be real, ordered, and no later than the authenticated 
   );
 
   const future = strictJson(standardsBytes, "fixture standards");
-  future.updated_at = "2026-07-28";
+  future.updated_at = "2026-07-30";
   await assert.rejects(
     validate(args({ standardsBytes: bytes(future) })),
-    /晚于 2026-07-27/,
+    /晚于 2026-07-29/,
   );
 
   const unordered = strictJson(standardsBytes, "fixture standards");

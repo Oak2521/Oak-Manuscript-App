@@ -22,6 +22,7 @@
     const loc = location && typeof location === "object" ? location : {};
     if (loc.resource) return String(loc.resource);
     if (loc.part === "footnotes") return `脚注 ${loc.note_id || ""}`.trim();
+    if (loc.line !== null && loc.line !== undefined) return `第 ${loc.line} 行`;
     if (loc.paragraph !== null && loc.paragraph !== undefined) return `正文第 ${loc.paragraph} 段`;
     return "文档";
   }

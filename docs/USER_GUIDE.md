@@ -2,9 +2,9 @@
 
 ## 桌面应用（推荐）
 
-当前开发源码为 `0.1.0-alpha.57`，最新已打包 Windows x64 NSIS/ZIP 仍为 `0.1.0-alpha.54`；制品未签名，不是可售卖正式版。alpha.57 在标准页增加审阅与来源核验治理披露；默认账号与权益配置仍为空，仓库没有生产私钥，普通启动和构建不会触发账号/权益联网或下载。
+当前开发源码与最新已打包 Windows x64 NSIS/ZIP 均为 `0.1.0-alpha.58`；制品未签名，不是可售卖正式版。alpha.58 增加 TXT/Markdown 保守空白卫生检查和格式覆盖矩阵；默认账号与权益配置仍为空，仓库没有生产私钥，普通启动和构建不会触发账号/权益联网或下载。
 
-**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.56 结果为 Node 711/704/0/7、Python 362/0 failures/0 errors/3 skipped；隐藏 Electron 源码 smoke 通过。最新 packaged smoke、实际 EXE 和匿名输出树证据仍属于 alpha.54。
+**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.58 结果为 Node 719/712/0/7、Python 368/0 failures/0 errors/3 skipped；隐藏 Electron 源码、Web 客户端和 Windows packaged smoke 均通过。
 
 **Web 状态**：客户端保留湖岸账号登录/注册、“默认”引用体例、单任务处理同意和完整临时作业流程；账号后台源码提供同步历史与订阅/设备管理。服务端已有组合与迁移门禁。alpha.56 要求候选部署平台显式满足 50 MiB 请求、100 MiB 响应、240 秒处理及隔离/存储/数据库/调度能力；当前没有任何经官方核对的真实平台 profile。API/计划任务/页面未部署，本地测试不等于平台零留存、订阅或线上可用。
 
@@ -52,11 +52,13 @@ Python 3.11+。核心零第三方依赖，无需安装任何包。
 ## 支持的输入格式（阶段 1 完成，全部四种）
 
 - `.docx`（支持当前已实现的论文 / 纸质出版物基础检查；不代表覆盖全部外部标准）
-- `.md`、`.txt`（UTF-8；Markdown 支持结构与 APA 引用检查）
+- `.md`、`.txt`（UTF-8；Markdown 支持结构与 APA 引用检查；两者支持保守空白卫生提示和精确行号）
 - `.epub`（电子书结构检查：mimetype / 元数据 / 导航 / 语言 / 替代文本 / 内部链接）
 
 创建项目时加 `--epub-preview` 可在导出时附带基础 EPUB 预览（DOCX / MD / TXT 源稿适用）。
 EPUB 的 EpubCheck / Ace 外部验证默认未运行，报告会如实标注「未运行」。
+
+TXT/Markdown 的空白卫生检查只提示，不会自动改稿。Markdown 围栏代码、行内代码、表格和强制换行尾随空格不检查；短行密集的诗歌、题词或刻意排版块会保守豁免。结果页“格式覆盖”会明确列出本次启用规则和这些排除项，但不包含稿件正文。空文件会得到明确提示，而不是被当作“零问题通过”。
 
 ## 命令行用法
 

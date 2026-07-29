@@ -14,7 +14,7 @@ from oak_manuscript_core.readers.epub_reader import read_epub
 from oak_manuscript_core.rulepack import load_rulepack
 
 REPO = Path(__file__).resolve().parents[2]
-PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-2.0.0.json")
+PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-2.1.0.json")
 SAMPLES = REPO / "samples"
 
 EBOOK_SETTINGS = {

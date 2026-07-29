@@ -203,6 +203,13 @@ dialog.modal::backdrop { background: rgba(20, 29, 25, .58); }
 .batch-list li:last-child { border-bottom: none; }
 .batch-item-title { font-weight: 600; }
 .batch-item-location { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+.format-coverage-card { margin-top: 12px; max-width: 58rem; }
+.format-coverage-card h3 { margin: 0 0 6px; }
+.format-coverage-card dl { display: grid; gap: 6px; margin: 8px 0 0; }
+.format-coverage-card dl div { display: grid; grid-template-columns: 7rem 1fr; gap: 8px; }
+.format-coverage-card dt { font-weight: 600; }
+.format-coverage-card dd { margin: 0; overflow-wrap: anywhere; }
 .batch-preview {
   min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere;
   background: #f4f6f5; border-radius: 4px; padding: 7px 8px;

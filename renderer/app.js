@@ -297,8 +297,37 @@ function locText(issue) {
   const loc = issue.location || {};
   if (loc.resource) return loc.resource;
   if (loc.part === "footnotes") return `脚注 ${loc.note_id}`;
+  if (loc.line != null) return `第 ${loc.line} 行`;
   if (loc.paragraph != null) return `正文第 ${loc.paragraph} 段`;
   return "文档";
+}
+
+function renderFormatCoverage() {
+  const card = $("#format-coverage-card");
+  const coverage = state.lastCheck && state.lastCheck.format_coverage;
+  if (!coverage) {
+    card.classList.add("hidden");
+    for (const id of [
+      "#format-coverage-summary", "#format-coverage-rules", "#format-coverage-autofix",
+      "#format-coverage-excluded", "#format-coverage-not-checked",
+    ]) $(id).textContent = "";
+    return;
+  }
+  card.classList.remove("hidden");
+  try {
+    const view = window.OakFormatCoverage.normalizeFormatCoverage(coverage);
+    $("#format-coverage-summary").textContent = `${view.formatLabel} · ${view.statusLabel}：${view.summary}`;
+    $("#format-coverage-rules").textContent = `${view.ruleCount} 条：${view.rulesLabel}`;
+    $("#format-coverage-autofix").textContent = view.autoFixLabel;
+    $("#format-coverage-excluded").textContent = view.excludedLabel;
+    $("#format-coverage-not-checked").textContent = view.notCheckedLabel;
+  } catch {
+    $("#format-coverage-summary").textContent = "格式覆盖信息无法验证，不能据此判断检查完整性。";
+    $("#format-coverage-rules").textContent = "未验证";
+    $("#format-coverage-autofix").textContent = "未验证";
+    $("#format-coverage-excluded").textContent = "未验证";
+    $("#format-coverage-not-checked").textContent = "未验证";
+  }
 }
 
 function filteredIssues() {
@@ -321,6 +350,7 @@ function renderIssues() {
     ? adoptCitationResolution(check.citation_resolution)
     : null;
   renderCitationResult();
+  renderFormatCoverage();
   const c = pendingCounts(check.issues);
   $("#issues-title").textContent =
     `检查结果：必须处理 ${c.error} ｜ 建议处理 ${c.warning} ｜ 可选改进 ${c.suggestion}`;

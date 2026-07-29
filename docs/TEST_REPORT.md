@@ -2,7 +2,28 @@
 
 > 更新日期：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.57 标准治理状态透明化
+## 最新验证结论：0.1.0-alpha.58 TXT/Markdown 保守卫生检查与 Windows packaged 检查点
+
+验证日期：2026-07-29。本轮未联网、未使用真实账号/密钥/数据库、未部署或推送。Windows 制品未签名；未执行真实安装生命周期。macOS 静态门禁按事实失败。
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| TDD 与功能专项 | **PASS** | 初始因规则包/coverage 模块不存在而预期失败；实现后覆盖普通文本、代码、表格、强制换行、排版敏感块、BOM、CRLF/LF、空文件和源稿哈希不变 |
+| 规则与自动修复边界 | **PASS** | 4 条 TEXT 规则仅 warning/suggestion、不可自动修复；总规则 39，机械 fixer 仍为 6 |
+| 行号与格式覆盖 | **PASS** | TXT/Markdown 问题使用 1 起算行号；JSON/Markdown/HTML/Renderer 显示固定 content-free 覆盖矩阵，不含正文/路径/文件名 |
+| 标准 release | **PASS** | 2.1.0 / sequence 3，manifest `88a60da2f55c6de13853e0af56389f56a591c5702e44de1a7943d31afbff0187`；v1→v2→v3 历史 CAS 验证通过 |
+| Node 全量 | **PASS** | 719 total / 712 pass / 0 fail / 7 skip，5.136 秒 |
+| Python 全量 | **PASS** | 368 total / 0 failures / 0 errors / 3 skipped，114.876 秒 |
+| 首次统一回归 | **FAIL（已修复）** | Python 38 errors 均因 8 个当前测试模块仍显式加载规则包 2.0；项目完整 pin 正确拒绝混用。切换当前版本测试到 2.1 后全量通过，历史迁移测试保留旧版 |
+| 资源信任 | **PASS** | 112 文件 / 2,220,055 字节；manifest `bf5de4af0df4aa3064fc1abd1a9bb181a033c25e2d93d696413be53f3fb6846e`；anchor `361395233fabaac7a79401bfe0741b84b8ae4822c9300a4604fb21b4d54b527c` |
+| 源码与 Web smoke | **PASS（独立隐藏窗口）** | Electron 输出 `out/source-smoke/runs/ms66bgk2-768d238594aca8fd/projects/`；Web `forbidden_network_requests=0` |
+| Windows 打包链 | **PASS（沙箱外最终 smoke）** | 构建在 packaged smoke 前因沙箱 GPU `0xC0000135` 退出，不计通过；独立隐藏重跑 PASS，输出树 76 文件 / 1,378,184 字节 / `8810151f…23e8`，证据 `c4c67173…2907` |
+| Windows 制品 | **PASS（未签名内测）** | NSIS 190,062,079 字节 / `2db9df2f81cbfd3e1b2bdd0d794bc6e159f6f8662e3fd165d2bd915e0fe6eb75`；ZIP 233,903,104 字节 / `752ab1db04377ba6353e521ec786eef3b6e6ad9016865b36c9b3e11a74d583c6`；unpacked EXE 225,449,472 字节 / `080fc3ff6d2d03beacd57cef6fb576dc6560bbd55c22363e4a5c7c34880d3a79` |
+| 签名 / macOS / 生产 | **未完成** | 两份 EXE `NotSigned`；macOS 缺双架构 Electron/Python/JRE 和 DMG/签名/公证；生产账号、支付、标准服务和 Web 部署未验证 |
+
+结论：alpha.58 是具备真实 Windows 安装包与运行证据的未签名内测检查点。它关闭 TXT/Markdown 基础空白卫生和覆盖透明度缺口，但没有关闭外部标准来源、代码签名、macOS 或生产商业系统门禁。
+
+## 历史验证结论：0.1.0-alpha.57 标准治理状态透明化
 
 验证日期：2026-07-29。本轮没有修改标准/规则 payload，没有联网核验外部来源，也未使用真实账号/密钥/数据库，未迁移、部署、推送或重新打包。最新真实 Windows packaged 证据仍属于未签名 alpha.54。
 

@@ -11,12 +11,12 @@ const path = require("path");
 const REPO_ROOT = path.resolve(__dirname, "..");
 const CAPABILITIES_RELATIVE = "config/rule-capabilities.json";
 const STANDARDS_RELATIVE = "config/standards.json";
-const RULEPACK_RELATIVE = "config/rule-packs/oak-rules-2.0.0.json";
-const MANIFEST_RELATIVE = "config/standard-packs/oak-standards-2.0.0.manifest.json";
+const RULEPACK_RELATIVE = "config/rule-packs/oak-rules-2.1.0.json";
+const MANIFEST_RELATIVE = "config/standard-packs/oak-standards-2.1.0.manifest.json";
 const BUNDLE_ID = "oak-standards";
-const RELEASE_SEQUENCE = 2;
-const RELEASE_VERSION = "2.0.0";
-const PREVIOUS_MANIFEST_SHA256 = "d33534f081b2122a90652ee03304a0e71177a7fd0d3130fffe77b0fea807d7af";
+const RELEASE_SEQUENCE = 3;
+const RELEASE_VERSION = "2.1.0";
+const PREVIOUS_MANIFEST_SHA256 = "0aff75eb181a62869147e9af27330c717bc808bdd23865197534fc9868568427";
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?$/;
 
@@ -320,9 +320,9 @@ function buildManifest(root = REPO_ROOT) {
     release_sequence: RELEASE_SEQUENCE,
     version: RELEASE_VERSION,
     channel: "stable",
-    released_at: "2026-07-27T00:00:00Z",
+    released_at: "2026-07-29T00:00:00Z",
     expires_at: null,
-    min_app: "0.1.0-alpha.5",
+    min_app: "0.1.0-alpha.58",
     max_app_exclusive: "0.2.0",
     signing_role: "bundled",
     files: [
@@ -337,12 +337,12 @@ function buildManifest(root = REPO_ROOT) {
     },
     rollback_target: {
       manifest_sha256: PREVIOUS_MANIFEST_SHA256,
-      release_sequence: 1,
+      release_sequence: 2,
     },
     change_summary: [
-      "新增版本化的默认引用体例结构信号解析器。",
-      "低置信度时仅运行明确声明的结构与一致性检查，不再强行套用具体体例。",
-      "项目与报告记录最终体例、理由、置信度和解析器版本。",
+      "新增 TXT 与 Markdown 的保守空文件和空白卫生提示。",
+      "代码、表格、强制换行和排版敏感文本优先少报，新增规则均不自动修复。",
+      "检查结果、界面与导出报告披露实际运行、排除和未覆盖范围。",
     ],
   };
 }

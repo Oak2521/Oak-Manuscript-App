@@ -72,13 +72,16 @@ class StandardStoreFixture:
         manifest_src = (
             REPO / "config" / "standard-packs" / "oak-standards-1.0.0.manifest.json"
         )
-        if not manifest_src.is_file():
+        legacy_standards_src = (
+            REPO / "tests" / "fixtures" / "standards-v1" / "standards.json"
+        )
+        if manifest_src.is_file():
+            standards_src = legacy_standards_src
+        else:
             manifest_src = (
                 REPO / "tests" / "fixtures" / "standards-v1" / "oak-standards-1.0.0.manifest.json"
             )
-            standards_src = (
-                REPO / "tests" / "fixtures" / "standards-v1" / "standards.json"
-            )
+            standards_src = legacy_standards_src
         if not standards_src.is_file():
             raise FileNotFoundError(f"standards fixture 不存在: {standards_src}")
         shutil.copy2(standards_src, self.config / "standards.json")

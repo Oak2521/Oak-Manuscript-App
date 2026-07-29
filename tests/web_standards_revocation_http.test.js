@@ -26,6 +26,7 @@ const {
 const { createStandardsRevocationFetchHandler } = require("../web/standards-revocation-runtime");
 
 const ROOT = path.resolve(__dirname, "..");
+const CURRENT_APP_VERSION = require("../package.json").version;
 const ORIGIN = "https://updates.oakbylake.com";
 const REQUEST_ID = "90000000-0000-4000-8000-000000000009";
 
@@ -379,7 +380,7 @@ test("a real signed list crosses fake server, desktop verification, and atomic l
   const provider = new StandardsProvider({
     rootDir: tempRoot(t, "standards-revocation-web-e2e-"),
     configDir: path.join(ROOT, "config"),
-    appVersion: "0.1.0-alpha.54",
+    appVersion: CURRENT_APP_VERSION,
     bundledRelease: BUNDLED_STANDARD_RELEASE,
     trustStore: fixture.trustStore,
     revocationClient: client,
@@ -402,7 +403,7 @@ test("provider keeps revocation networking disabled unless complete and rejects 
   const offline = new StandardsProvider({
     rootDir: tempRoot(t, "standards-revocation-offline-"),
     configDir: path.join(ROOT, "config"),
-    appVersion: "0.1.0-alpha.54",
+    appVersion: CURRENT_APP_VERSION,
     bundledRelease: BUNDLED_STANDARD_RELEASE,
     trustStore: fixture.trustStore,
   });
@@ -420,7 +421,7 @@ test("provider keeps revocation networking disabled unless complete and rejects 
   const provider = new StandardsProvider({
     rootDir: tempRoot(t, "standards-revocation-concurrent-"),
     configDir: path.join(ROOT, "config"),
-    appVersion: "0.1.0-alpha.54",
+    appVersion: CURRENT_APP_VERSION,
     bundledRelease: BUNDLED_STANDARD_RELEASE,
     trustStore: fixture.trustStore,
     revocationClient: {

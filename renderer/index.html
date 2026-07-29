@@ -112,6 +112,16 @@
             <div><dt>置信度</dt><dd id="citation-result-confidence"></dd></div>
             <div><dt>解析器版本</dt><dd id="citation-result-version"></dd></div>
           </dl>
+          <section id="format-coverage-card" class="callout format-coverage-card hidden" aria-label="本次文本格式检查覆盖范围">
+            <h3>文本格式检查覆盖</h3>
+            <p id="format-coverage-summary"></p>
+            <dl>
+              <div><dt>实际运行规则</dt><dd id="format-coverage-rules"></dd></div>
+              <div><dt>自动修复</dt><dd id="format-coverage-autofix"></dd></div>
+              <div><dt>保守排除</dt><dd id="format-coverage-excluded"></dd></div>
+              <div><dt>本次不检查</dt><dd id="format-coverage-not-checked"></dd></div>
+            </dl>
+          </section>
         </div>
         <div class="issues-toolbar">
           <button id="btn-autofix" class="primary">预览批量自动修复</button>
@@ -398,6 +408,7 @@
 
   <div id="toast" class="hidden"></div>
   <script src="p0-ui-model.js"></script>
+  <script src="format-coverage-model.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

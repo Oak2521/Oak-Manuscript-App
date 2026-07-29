@@ -1,6 +1,6 @@
 # SPEC_PROJECT_FORMAT — 项目文件格式（v1.0，冻结）
 
-> 冻结日期：2026-07-11；`0.1.0-alpha.1` 加入向后兼容的检查点可选字段，`alpha.2` 加强路径/锁/导出安全，`alpha.3` 把规则包 pin 扩为七字段并增加升级历史与强制重检，`alpha.4` 加固发布资源可信链。`0.1.0-alpha.5` 在不提升 `format_version` 的前提下增加向后兼容的 `settings.citation_resolution`；旧 `1.0` 项目可缺失并在读取时补为 `null`。`alpha.8` 的账号、权益和 SyncRecord v1 离线契约刻意不改变项目格式。破坏性字段变更须升版本号并提供兼容读取。
+> 冻结日期：2026-07-11；`alpha.58` 在不提升 `format_version` 的前提下，仅为检查结果增加可选 `format_coverage` 和问题位置 `line`，旧项目/报告可缺失。破坏性字段变更须升版本号并提供兼容读取。
 
 ## 1. 项目目录结构
 
@@ -48,11 +48,11 @@ project-root/
 
   "rulepack": {
     "name": "oak-rules",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "pinned": true,
     "sha256": "规则包原始字节 SHA-256",
     "bundle_id": "oak-standards",
-    "release_sequence": 2,
+    "release_sequence": 3,
     "manifest_sha256": "canonical release manifest SHA-256"
   },
 
@@ -77,7 +77,7 @@ project-root/
       "kind": "check | recheck",
       "started_at": "ISO8601",
       "finished_at": "ISO8601",
-      "rulepack_version": "2.0.0",
+      "rulepack_version": "2.1.0",
       "rulepack": "完整七字段身份对象",
       "issue_counts": { "error": 0, "warning": 0, "suggestion": 0 },
       "result_file": "reports/check-0001.json"

@@ -56,13 +56,13 @@ test("bundled standards assets have a current canonical manifest", () => {
   const result = verifyStandardAssets(REPO_ROOT);
   assert.equal(result.manifest.bundle_id, "oak-standards");
   assert.equal(result.manifest.release_sequence, RELEASE_SEQUENCE);
-  assert.equal(result.manifest.release_sequence, 2);
+  assert.equal(result.manifest.release_sequence, 3);
   assert.equal(result.manifest.version, RELEASE_VERSION);
-  assert.equal(result.manifest.version, "2.0.0");
-  assert.equal(result.manifest.min_app, "0.1.0-alpha.5");
+  assert.equal(result.manifest.version, "2.1.0");
+  assert.equal(result.manifest.min_app, "0.1.0-alpha.58");
   assert.deepEqual(result.manifest.rollback_target, {
     manifest_sha256: PREVIOUS_MANIFEST_SHA256,
-    release_sequence: 1,
+    release_sequence: 2,
   });
   assert.match(result.manifestSha256, /^[a-f0-9]{64}$/);
   assert.deepEqual(result.manifest, buildManifest(REPO_ROOT));

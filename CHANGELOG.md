@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.58（ChatGPT TXT/Markdown 保守卫生检查）
+
+> 已离线生成并复验 Windows NSIS/ZIP/unpacked；未联网、部署、推送或执行真实安装。Windows 制品未签名，macOS 资源仍缺失，不是可售卖正式版。
+
+- 新增 `TEXT-EMPTY-001`、`TEXT-SPACE-001`、`TEXT-TAB-001`、`TEXT-BLANK-001`；全部为 warning/suggestion，不可自动修复，机械 fixer 总数保持 6；
+- Markdown 围栏代码、行内代码、表格、强制换行尾随空格与保守识别的诗歌/刻意排版块不进入空白卫生提示；TXT/Markdown 结果增加行号；
+- 检查 JSON、Markdown/HTML 报告和 Renderer 增加 content-free 格式覆盖矩阵，明确启用规则与豁免上下文；
+- 标准包升为 2.1.0 / sequence 3；保留 v1/v2 CAS 信任链，并允许旧 bundled capability 摘要仅在代码锚定且规则仍是当前能力子集时验证；
+- Node 719/712/0/7，Python 368/0/0/3；源码、Web 与 packaged 隐藏 smoke 通过。资源信任 112 文件 / 2,220,055 字节，manifest `bf5de4af…846e`、anchor `36139523…527c`；
+- Windows NSIS 190,062,079 字节 / `2db9df2f…eb75`，ZIP 233,903,104 字节 / `752ab1db…83c6`；两份 EXE 均为 `NotSigned`。
+
 ### 2026-07-29 — 0.1.0-alpha.57（ChatGPT 标准治理状态透明化）
 
 > 源码检查点；标准/规则 payload 未改，未联网核验来源，未部署、迁移、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.54。

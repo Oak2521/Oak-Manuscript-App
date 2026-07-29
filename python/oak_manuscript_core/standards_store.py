@@ -88,7 +88,11 @@ TRUSTED_BUNDLED_MANIFEST_SHA256S = frozenset(
     {
         "d33534f081b2122a90652ee03304a0e71177a7fd0d3130fffe77b0fea807d7af",
         "0aff75eb181a62869147e9af27330c717bc808bdd23865197534fc9868568427",
+        "88a60da2f55c6de13853e0af56389f56a591c5702e44de1a7943d31afbff0187",
     }
+)
+TRUSTED_HISTORICAL_BUNDLED_CAPABILITY_SET_SHA256S = frozenset(
+    {"af67d0aaf2ece431ec1b617934bdfa3627b6be1b1301a92fcf3b2b2f29ca232e"}
 )
 
 _MANIFEST_FIELDS = {
@@ -830,7 +834,12 @@ def _load_release(
 
     if enforce_capabilities:
         capability_doc, capability_sha256 = _load_capabilities(config_root)
-        if manifest["rulepack"]["capability_set_sha256"] != capability_sha256:
+        declared_capability = manifest["rulepack"]["capability_set_sha256"]
+        accepts_historical_bundled = (
+            manifest["signing_role"] == "bundled"
+            and declared_capability in TRUSTED_HISTORICAL_BUNDLED_CAPABILITY_SET_SHA256S
+        )
+        if declared_capability != capability_sha256 and not accepts_historical_bundled:
             raise _failure(
                 "STANDARD_CAPABILITY_MISMATCH",
                 "标准包针对的 capability set 与本 APP 不一致。",
@@ -1114,21 +1123,36 @@ def resolve_active_release(
     root = _store_root(store_root)
     config_root = _safe_directory(Path(resources_root) / "config", "APP config 目录")
     if root is None:
-        releases = [
-            _load_bundled_by_path(
-                path,
-                config_root=config_root,
-                expected_manifest_sha256=None,
+        candidates: list[tuple[int, Path, str]] = []
+        for manifest_path in _bundled_manifest_paths(config_root):
+            parent = _safe_directory(manifest_path.parent, "内置标准 manifest 目录")
+            raw = _safe_read_file(manifest_path, parent=parent, label="内置 release manifest")
+            manifest = _decode_json(raw, "内置 release manifest")
+            _validate_manifest(
+                manifest,
+                source="bundled",
                 app_version=app_version,
                 now=current_time,
             )
-            for path in _bundled_manifest_paths(config_root)
-        ]
-        highest = max(release.identity["release_sequence"] for release in releases)
-        winners = [release for release in releases if release.identity["release_sequence"] == highest]
+            candidates.append((
+                manifest["release_sequence"],
+                manifest_path,
+                hashlib.sha256(raw).hexdigest(),
+            ))
+        if not candidates:
+            raise _failure("STANDARD_RELEASE_MISSING", "没有可用的内置标准版本。")
+        highest = max(sequence for sequence, _, _ in candidates)
+        winners = [candidate for candidate in candidates if candidate[0] == highest]
         if len(winners) != 1:
             raise _failure("STANDARD_STORE_AMBIGUOUS", "内置 active release_sequence 不唯一。")
-        return _assert_expected_standard_identity(winners[0])
+        _, manifest_path, manifest_sha256 = winners[0]
+        return _assert_expected_standard_identity(_load_bundled_by_path(
+            manifest_path,
+            config_root=config_root,
+            expected_manifest_sha256=manifest_sha256,
+            app_version=app_version,
+            now=current_time,
+        ))
 
     state = _load_active_state(root)
     pointer = state["active"]
@@ -1225,13 +1249,38 @@ def _all_releases(
     now: datetime,
 ) -> list[ResolvedStandardRelease]:
     releases: dict[str, ResolvedStandardRelease] = {}
+    bundled_candidates: list[tuple[int, Path, str]] = []
     for path in _bundled_manifest_paths(config_root):
+        parent = _safe_directory(path.parent, "内置标准 manifest 目录")
+        raw = _safe_read_file(path, parent=parent, label="内置 release manifest")
+        manifest = _decode_json(raw, "内置 release manifest")
+        _validate_manifest(
+            manifest,
+            source="bundled",
+            app_version=app_version,
+            now=now,
+            enforce_compatibility=False,
+            enforce_expiry=False,
+        )
+        bundled_candidates.append((
+            manifest["release_sequence"],
+            path,
+            hashlib.sha256(raw).hexdigest(),
+        ))
+    if bundled_candidates:
+        highest = max(sequence for sequence, _, _ in bundled_candidates)
+        winners = [candidate for candidate in bundled_candidates if candidate[0] == highest]
+        if len(winners) != 1:
+            raise _failure("STANDARD_STORE_AMBIGUOUS", "内置 active release_sequence 不唯一。")
+        _, path, manifest_sha256 = winners[0]
         release = _load_bundled_by_path(
             path,
             config_root=config_root,
-            expected_manifest_sha256=None,
+            expected_manifest_sha256=manifest_sha256,
             app_version=app_version,
             now=now,
+            enforce_compatibility=False,
+            enforce_expiry=False,
         )
         releases[release.manifest_sha256] = release
     if store_root is not None:

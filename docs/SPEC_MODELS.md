@@ -1,6 +1,6 @@
 # SPEC_MODELS — 问题 / 规则 / 标准模型
 
-> 问题与规则模型仍为 v1.0；标准注册表为治理 schema 2.0。alpha.57 从已验证标准数组派生只含分类计数的治理摘要，不改变本模型或标准 payload。同步负载于 2026-07-26 按商业方案 v2.0 改为“结果与元数据白名单”，废止旧文件级同步占位；`0.1.0-alpha.8` 实现 SyncRecord v1 客户端离线契约，alpha.38—alpha.40 增加独立服务/持久边界、桌面 PKCE/transport 和故障恢复；alpha.41 增加 compatible AI 非流式适配，alpha.42 增加稳定失败分类，alpha.43 为 LM Studio 增加响应模型身份一致性并允许普通文本的精确空工具数组。`0.1.0-alpha.5` 引入规则包 2.0.0 与向后兼容的 `citation_resolution` 模型；机器可读定义以 `config/` 下 JSON 和核心严格校验器为准，本文件为语义规范。
+> 问题与规则模型仍为 v1.0；标准注册表为治理 schema 2.0。alpha.58 发布规则包 2.1.0，并为 TXT/Markdown 增加可选行位置与 content-free `format_coverage`；旧报告可缺失这些字段。机器可读定义以 `config/` 下 JSON 和核心严格校验器为准，本文件为语义规范。
 
 ## 1. 问题模型（Issue，方案 §6.3）
 
@@ -12,7 +12,7 @@
   "severity": "error | warning | suggestion",
   "title": "连续空格",
   "explanation": "为什么需要处理（来自规则包，面向作者的语言）",
-  "location": { "part": "document | footnotes | endnotes | package", "paragraph": 23, "note_id": null, "resource": null },
+  "location": { "part": "document | footnotes | endnotes | package", "paragraph": 23, "line": null, "note_id": null, "resource": null },
   "preview": "截断脱敏的短上下文，≤ 60 字符",
   "standard_refs": ["OAK-DOCX-STYLE-001"],
   "auto_fixable": true,
@@ -29,6 +29,7 @@
 - **status 流转**：`open` →（用户接受修复并已应用）`resolved`；→（用户明确拒绝）`rejected`；`accepted` 为用户已接受但尚未应用的中间态。复检时：已 `resolved` 的问题若再次检出，生成**新 issue**（不复活旧的）。
 - **issue_id 确定性**：同一输入 + 同一规则包版本，两次检查产生的问题集合与顺序完全一致（引擎按 part → resource → paragraph → rule_id 排序）。
 - **location 兼容性附注（2026-07-11，M3）**：为 EPUB 增加可选字段 `resource`（包内资源路径）与 part 取值 `package`（包级问题）。属向后兼容的增量扩展，v1.0 消费方可安全忽略。
+- **location 行号附注（2026-07-29，alpha.58）**：TXT/Markdown 问题可增加 1 起算的 `line`；DOCX/EPUB 和旧报告可缺失或为 null。
 - **preview 脱敏**：只含问题附近截断文本；脱敏摘要与日志中**不得**出现 preview。
 
 ## 2. 稿件状态级别（结果页概览，方案 §5.3，冻结的透明条件）
@@ -136,11 +137,11 @@
   "app_version": "0.1.0-alpha.5",
   "rulepack": {
     "name": "oak-rules",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "pinned": true,
     "sha256": "规则包原始字节 SHA-256",
     "bundle_id": "oak-standards",
-    "release_sequence": 2,
+    "release_sequence": 3,
     "manifest_sha256": "canonical manifest SHA-256"
   },
   "settings_snapshot": { "…": "创建检查时 project.settings 的完整快照" },
@@ -158,6 +159,12 @@
     "coverage": { "signal_availability": "full", "rule_ids": ["实际调度的引用结构规则"] }
   },
   "citation_note": "本次仅执行引用结构与一致性检查（未选定具体体例）",
+  "format_coverage": {
+    "schema_version": "1.0",
+    "format": "md",
+    "enabled_rule_ids": ["TEXT-BLANK-001", "TEXT-EMPTY-001", "TEXT-SPACE-001", "TEXT-TAB-001"],
+    "excluded_contexts": ["fenced_code", "inline_code", "table", "hard_break", "layout_sensitive"]
+  },
   "issues": [ "Issue 对象数组，见第 1 节" ],
   "skipped_rule_groups": [ { "milestone": "M2", "reason": "本版本未实现" } ],
   "external_tools": { "epubcheck": "not_run", "ace": "not_run" },
@@ -166,6 +173,8 @@
 ```
 
 检查结果一致性约束：每份报告的 `check_id` 必须对应自己的项目 `checks[]` 记录。alpha.3 新记录含完整七字段 `checks[].rulepack`，报告必须与其完全一致；alpha.2 及更早的旧记录没有该字段，只允许报告保存精确 `{name, version}`，并由 `version` 对齐 `checks[].rulepack_version`，这种 legacy 证据不能冒充七字段身份。规则包升级后，历史检查和历史报告保留旧身份是正常现象；只有最新的当前检查/报告必须与项目现行 pin 一致，后续修复、外部验证和导出据此放行。`project.json.app_version` 记录项目创建版本，报告 `app_version` 记录本次检查所用核心版本，二者在旧项目升级后不要求永久相等。源码/打包 smoke 使用当次新建项目，会读取真实项目、最新检查与导出报告核对 APP/项目/检查/报告四方身份；不能仅凭 Renderer 或 `app:info` 自报。
+
+`format_coverage` 仅对 TXT/Markdown 出现，只允许固定格式枚举、已启用规则 ID 和固定排除上下文；不得包含命中行、正文、预览、路径或文件名。旧报告可缺失该字段。
 
 ## 7. 外部验证状态模型（当前 0.1.0-alpha.5；语义自 alpha.3 保持不变）
 

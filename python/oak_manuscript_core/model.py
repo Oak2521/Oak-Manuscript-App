@@ -5,6 +5,23 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 
+@dataclass(frozen=True)
+class TextLine:
+    """TXT/Markdown 原始行的只读、格式感知视图。
+
+    ``protected_context`` 只使用固定枚举，不保存推断标签或用户信息；
+    ``inline_code_ranges`` 使用半开区间，供机械空白检查排除 Markdown
+    行内代码。段落模型继续承担引用与结构检查，两者互不替代。
+    """
+
+    number: int
+    text: str
+    protected_context: str | None = None  # fenced_code | table
+    layout_sensitive: bool = False
+    inline_code_ranges: tuple[tuple[int, int], ...] = ()
+    hard_break_start: int | None = None
+
+
 @dataclass
 class Paragraph:
     part: str            # document | footnotes
@@ -40,6 +57,7 @@ class Document:
     paragraphs: list[Paragraph] = field(default_factory=list)
     footnotes: list[Footnote] = field(default_factory=list)
     footnote_ref_ids: list[int] = field(default_factory=list)  # 正文引用顺序
+    source_lines: list[TextLine] = field(default_factory=list)
 
     @property
     def body_text(self) -> str:

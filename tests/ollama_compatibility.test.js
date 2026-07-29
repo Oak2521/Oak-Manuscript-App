@@ -57,8 +57,8 @@ test("real Ollama validation CLI is exact and rejects duplicate or missing argum
 test("real Ollama fixture is bound to the tracked application and exact current spacing rule", () => {
   const fixture = readValidationFixture();
   const context = syntheticContext();
-  assert.equal(fixture.appVersion, "0.1.0-alpha.57");
-  assert.equal(fixture.rulePackVersion, "2.0.0");
+  assert.equal(fixture.appVersion, "0.1.0-alpha.58");
+  assert.equal(fixture.rulePackVersion, "2.1.0");
   assert.equal(fixture.rule.ruleId, "DOCX-SPACE-001");
   assert.equal(fixture.rule.fixId, "FIX-SPACE-001");
   assert.equal(context.request_content.rule_id, fixture.rule.ruleId);

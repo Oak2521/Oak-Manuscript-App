@@ -22,9 +22,9 @@ test("bundled standards expose an exact content-free governance summary", () => 
   assert.deepEqual(summary, {
     schema_version: "1.0",
     kind: "oak-standards-governance-summary",
-    total_standards: 13,
+    total_standards: 14,
     status_counts: {
-      active: 9,
+      active: 10,
       under_review: 4,
       superseded: 0,
       deprecated: 0,
@@ -32,11 +32,11 @@ test("bundled standards expose an exact content-free governance summary", () => 
     source_type_counts: {
       official: 3,
       technical_spec: 1,
-      oak_interpretation: 9,
+      oak_interpretation: 10,
     },
     source_verification_counts: {
       verified: 0,
-      pending: 12,
+      pending: 13,
       unavailable: 1,
     },
     external_source_counts: {
