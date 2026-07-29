@@ -76,6 +76,9 @@ test("AI request preview and suggestion use text-only rendering and disable unav
   assert.match(renderer, /replaceTextList/);
   assert.doesNotMatch(renderer, /innerHTML/);
   assert.match(app, /ai-suggestion-text"\)\.textContent = response\.suggestion\.text/);
+  assert.match(app, /重新生成发送预览（不发送）/);
+  assert.match(app, /重新生成预览本身不会联网/);
+  assert.match(app, /aiRetryRequest/);
   assert.match(app, /reviewAiSuggestion\("accepted"\)/);
   assert.match(app, /reviewAiSuggestion\("rejected"\)/);
   assert.match(app, /问题状态已标记为接受，但建议未写入稿件或项目文件/);

@@ -32,8 +32,8 @@
 | `standard-bound-core.js` | 已有项目以只读状态预检发现 pin；核验精确 CAS 后绑定所有业务/变更调用；项目升级仅开放受控迁移源 |
 | `standards-ipc.js` | 本地包安装、全局回滚、项目差异预览与一次确认升级 IPC |
 | `smoke.js` | 在隐藏窗口走 DOCX/EPUB 真 UI闭环、AI 单条发送预览零 transport，并核对版本与打包身份 |
-| `ai-request.js` | 绑定可信单条上下文的请求预览/一次确认、注入式建议响应与内存态人工审阅；采纳只经核心记录问题状态，永不直接改稿 |
-| `ai-http-client.js` | 未接线的供应商无关 POST/JSON 客户端；固定 HTTPS/loopback、禁重定向/代理转发/Cookie，限制头、请求、响应和超时 |
+| `ai-request.js` | 绑定可信单条上下文的请求预览/一次确认、稳定故障分类、失败后重新预览与内存态人工审阅；采纳只经核心记录问题状态，永不直接改稿 |
+| `ai-http-client.js` | compatible 三类已接线的供应商无关 POST/JSON 客户端；固定 HTTPS/loopback、禁重定向/代理转发/Cookie，限制头、请求、响应和超时 |
 | `ai-transport-router.js` | exact 适配器路由；拒绝未知 provider、配置漂移、凭据 URL/响应回显和未净化适配错误 |
 | `ai-openai-compatible-adapter.js` | 只注册 OpenAI-compatible/Ollama/LM Studio 的固定非流式 Chat Completions 请求与唯一文本响应 |
 
@@ -51,6 +51,6 @@ PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专�
 
 账号与同步 IPC 不接受 Renderer 自带的负载、token、URL 或 transport；主进程通过固定 `sync-source` 命令取值并重建 SyncRecord v1。alpha.39 只在受信账号配置完整且 safeStorage 可用时实例化系统浏览器 PKCE、token/user client 与 Sync coordinator；默认 `pending_configuration` 没有任何网络目标。Renderer 只能查询状态、发起登录或逐项发送/重试，令牌/verifier 永不跨 preload。远端创建或幂等重放后才删除本机队列，失败和账号切换保留记录。详见 `docs/SYNC_RECORD_V1.md`。
 
-AI transport 不接受 Renderer 自报 URL、凭据或任意负载。`AIProvider` 从 OS 加密设置生成绑定，`AIRequestCoordinator` 从受信 Python core 读取单条问题并公开完整发送预览；只有一次确认后才把绑定与同一语义请求交给 Router。alpha.41 只注册 OpenAI-compatible、Ollama、LM Studio；官方云和湖岸 AI 仍不可用。注入测试不替代真实服务兼容或质量验收。
+AI transport 不接受 Renderer 自报 URL、凭据或任意负载。`AIProvider` 从 OS 加密设置生成绑定，`AIRequestCoordinator` 从受信 Python core 读取单条问题并公开完整发送预览；只有一次确认后才把绑定与同一语义请求交给 Router。alpha.41 只注册 OpenAI-compatible、Ollama、LM Studio；alpha.42 把净化后的底层失败收敛为七类安全用户错误，失败消费旧计划并要求重新预览/再次确认。真实 `127.0.0.1` HTTP 测试证明请求和连接重置路径，但不替代真实产品兼容或质量验收；官方云和湖岸 AI 仍不可用。
 
 当次全量 Node/Python、source/packaged smoke、safeStorage 队列恢复、真实 fuse/ASAR/资源/production package identity、provenance 与发布证据，以仓库 `docs/TEST_REPORT.md` 为唯一事实来源；本文件不在 ASAR 中固化易过期的运行根、计数或制品哈希。完整发行身份、五类运行/构建资源人工签署、代码签名和其余 packaged sale blocker 在对应门禁关闭前始终有效。

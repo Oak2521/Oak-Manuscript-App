@@ -9,6 +9,7 @@ const {
   DEFAULT_USER_INSTRUCTION,
   PLAN_TTL_MS,
   REVIEW_TTL_MS,
+  transportFailure,
   validateAIContext,
 } = require("../electron/ai-request");
 
@@ -101,6 +102,49 @@ test("preview alone never calls transport and unavailable confirmation is one-sh
     project: PROJECT, issueId: "check-0001-0001", instruction: "重点解释标点。",
   });
   await assert.rejects(() => requests.confirmSuggestion(plan.plan_id), /尚未配置/u);
+  await assert.rejects(() => requests.confirmSuggestion(plan.plan_id), /已过期或已使用/u);
+});
+
+test("transport failures become actionable stable errors without leaking upstream details", async () => {
+  const cases = [
+    ["NETWORK_FAILED", "AI_SERVICE_UNREACHABLE", /服务已启动且地址正确/u],
+    ["NETWORK_TIMEOUT", "AI_SERVICE_TIMEOUT", /模型已经加载/u],
+    ["UPSTREAM_STATUS", "AI_SERVICE_REJECTED", /模型名称和凭据/u],
+    ["REDIRECT_REJECTED", "AI_SERVICE_REDIRECTED", /不允许的重定向/u],
+    ["INVALID_RESPONSE", "AI_SERVICE_INCOMPATIBLE", /兼容格式/u],
+    ["ADAPTER_FAILED", "AI_SERVICE_INCOMPATIBLE", /兼容格式/u],
+    ["RESPONSE_TOO_LARGE", "AI_RESPONSE_TOO_LARGE", /安全上限/u],
+    ["CREDENTIAL_ECHO", "AI_CREDENTIAL_ECHO_REJECTED", /受保护凭据/u],
+  ];
+  for (const [internal, publicCode, message] of cases) {
+    const mapped = transportFailure({ code: internal, message: `leak ${SECRET}` });
+    assert.equal(mapped.code, publicCode);
+    assert.match(mapped.message, message);
+    assert.equal(mapped.message.includes(SECRET), false);
+    assert.match(mapped.message, /没有修改稿件或配置/u);
+  }
+  const fallback = transportFailure({
+    get code() { throw new Error(`leak ${SECRET}`); },
+  });
+  assert.equal(fallback.code, "MODEL_REQUEST_FAILED");
+  assert.equal(fallback.message.includes(SECRET), false);
+});
+
+test("a failed send consumes the plan and exposes the bounded recovery category", async () => {
+  const requests = coordinator({
+    transport: {
+      supports: () => true,
+      request: async () => { throw Object.assign(new Error(`leak ${SECRET}`), { code: "NETWORK_FAILED" }); },
+    },
+  });
+  const plan = await requests.planIssueSuggestion({
+    project: PROJECT, issueId: "check-0001-0001", instruction: "",
+  });
+  await assert.rejects(
+    () => requests.confirmSuggestion(plan.plan_id),
+    (error) => error.code === "AI_SERVICE_UNREACHABLE" &&
+      /重新预览/u.test(error.message) && !error.message.includes(SECRET),
+  );
   await assert.rejects(() => requests.confirmSuggestion(plan.plan_id), /已过期或已使用/u);
 });
 

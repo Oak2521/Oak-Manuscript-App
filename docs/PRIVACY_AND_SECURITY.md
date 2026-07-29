@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.41` 源码已实现的桌面隐私边界、SyncRecord 服务端/API/Supabase、PKCE/加密 token-store/同步失败恢复、三模式 AI/OS 加密凭据和 compatible 三类主进程 transport，以及 Web 临时作业源码契约。默认账号配置没有网络目标；最新 alpha.37 Windows 制品未签名，不是可售卖正式版。真实账号、官方云/真实模型联调、数据库迁移、API 部署、生产隔离、计费和官网发布仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.42` 源码已实现的桌面隐私边界、SyncRecord 服务端/API/Supabase、PKCE/加密 token-store/同步失败恢复、三模式 AI/OS 加密凭据、compatible 三类主进程 transport 和失败后重新预览恢复，以及 Web 临时作业源码契约。默认账号配置没有网络目标；最新 alpha.37 Windows 制品未签名，不是可售卖正式版。真实账号、官方云/真实模型联调、数据库迁移、API 部署、生产隔离、计费和官网发布仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -58,9 +58,9 @@
 - OpenAI、Anthropic 和 Google 官方标签绑定固定官方 HTTPS 端点；自定义远程地址只能使用 OpenAI-compatible HTTPS，本机 HTTP 仅限精确 loopback；provider 或地址变化后不得沿用旧凭据；
 - `ai-context` 只读提取所选一条问题；binding 中的项目内 issue/check、working/标准摘要不返回 Renderer，也不进入 request_content。发送内容只允许规则、严重级别、标题、解释、脱敏位置、原文预览、标准引用、状态和用户附加要求；EPUB 内部资源路径被统一替换；
 - 预览计划只在主进程内存中最多保留 8 个、10 分钟、一次使用；上下文或 AI 配置变化、取消、过期或重复确认均在 transport 前拒绝。公开预览完整显示目的地、会发送/不会发送字段和语义请求，不含文件名、路径、项目/账号标识、哈希或凭据；
-- alpha.41 只注册 OpenAI-compatible、Ollama、LM Studio；保存、预览和取消不请求，只有用户逐条查看完整发送内容并确认一次后才由主进程发出请求。OpenAI、Anthropic、Gemini 与湖岸 AI 确认按钮仍禁用；凭据永不同步，Web 凭据只限当前会话；失败不得静默回退湖岸 AI。
+- alpha.41 只注册 OpenAI-compatible、Ollama、LM Studio；保存、预览和取消不请求，只有用户逐条查看完整发送内容并确认一次后才由主进程发出请求。alpha.42 将不可达、超时、服务拒绝、重定向、响应不兼容、响应超限和凭据回显映射为非反射用户错误；失败消费旧计划，只能重新生成零请求预览并再次确认，不自动重试或静默回退。OpenAI、Anthropic、Gemini 与湖岸 AI 确认按钮仍禁用；凭据永不同步，Web 凭据只限当前会话。
 - 返回建议最多在主进程保留 8 个、30 分钟、一次处理。采纳前重新验证完整问题上下文，只记录问题 `accepted` 状态；模型文本不持久化、不进入报告/同步/项目，也不写 working。放弃或关闭只销毁内存建议，不改变规则问题状态。
-- alpha.37 沿用未实例化的主进程 HTTP 网络原语：固定 POST JSON、Node 原生单次连接、远程 HTTPS/本机 loopback，拒绝重定向、URL 凭据/查询、Cookie、代理/转发头、压缩与超限响应。请求 32 KiB、响应 64 KiB、头 16 个/8 KiB、默认超时 60 秒；所有错误使用固定本地文案。
+- 主进程 HTTP 网络原语固定 POST JSON、Node 原生单次连接、远程 HTTPS/本机 loopback，拒绝重定向、URL 凭据/查询、Cookie、代理/转发头、压缩与超限响应。请求 32 KiB、响应 64 KiB、头 16 个/8 KiB、默认超时 60 秒；所有错误使用固定本地文案。alpha.42 的真实 loopback 测试仅绑定 `127.0.0.1` 临时服务，不访问局域网或互联网。
 - `AITransportRouter` 只接受已注册适配器，凭据不得进入 URL、请求 JSON或由响应精确回显。compatible 请求固定非流式双消息，响应只接受唯一非空 assistant 文本并拒绝工具调用、多结果和数组内容；现有客户端继续禁重定向、Cookie、代理环境、压缩响应和非 HTTPS/loopback。注入测试不证明真实供应商版本兼容、证书部署或建议质量。
 
 ### 4.4 Web 临时作业的零留存与同源 HTTP 契约
@@ -126,7 +126,7 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - Windows CPython 3.13.14 另由 provenance v1 绑定 PSF 官方 ZIP/Sigstore/SPDX、34 文件清单、33 个原字节文件、唯一 `_pth` 精确追加和原样许可证；证据原始 SHA-256 同时进入运行时 manifest 与 ASAR 资源锚点。完整 Sigstore/GPG 与具名许可签署仍待办，机器验证不能替代法律/再分发审阅。
 - Electron 桥和门禁共用固定 Python bootstrap：`-I -S -X utf8`，显式把经路径策略验证的 core 绝对目录插入 `sys.path[0]` 后用 `runpy` 执行；同时清理可注入模块或启动参数的继承环境，并始终以参数数组和 `shell=false` 启动。CPython 探针核对 `sys.implementation`、精确三段版本、`releaselevel=final` 与 `serial=0`，不只匹配宽松版本字符串。
 - 打包配置必须显式开启 ASAR、保持 embedded ASAR integrity，并注册全量 fuse `afterPack`。顶层锁定 `@electron/fuses 2.1.3`，以 `strictlyRequireAllFuses=true` 写入 Electron 43 的全部 9 项；索引 8 `WasmTrapHandlers=true`。写后立即回读，随后再独立读取真实二进制；路径逃逸、不安全父链、链接/硬链接、实际 Framework 文件身份变化、API/索引和状态漂移均拒绝。完整合同见 `ELECTRON_FUSE_POLICY.md`。
-- alpha.41 源码锚点绑定 84 个 loose 应用文件，包括账号配置/会话 schema、发行身份/同步队列、Web/Sync HTTP schema 和目标平台运行锁；最新真实 packaged 锚点仍为 alpha.37 的 79 文件版本。packaged 门禁另从实际 ASAR production package 读取 exact `oakReleaseIdentity`。读取器解析当前 raw header并精确读满字节，不依赖路径缓存；打包启动在标准存储和窗口前复核完整资源树。Python 显式 `-B` 禁止探针写入字节码；锚点、身份和清单不读取或记录用户稿件内容。
+- alpha.42 源码锚点绑定 84 个 loose 应用文件，包括账号配置/会话 schema、发行身份/同步队列、Web/Sync HTTP schema 和目标平台运行锁；最新真实 packaged 锚点仍为 alpha.37 的 79 文件版本。packaged 门禁另从实际 ASAR production package 读取 exact `oakReleaseIdentity`。读取器解析当前 raw header并精确读满字节，不依赖路径缓存；打包启动在标准存储和窗口前复核完整资源树。Python 显式 `-B` 禁止探针写入字节码；锚点、身份和清单不读取或记录用户稿件内容。
 - Java 与 Ace/Node/Electron 外部工具进程也清理类路径、模块和启动参数注入变量，并以固定参数数组、`shell=false` 启动。
 - 所有锁和清单使用 locale-independent UTF-16 code unit 排序；Ace tracked lock 同时固定 stage manifest 原始字节哈希，JSON 语义等价但字节漂移也拒绝。JRE/Ace 的候选 stage 与受版本控制锁在显式更新时事务提交，失败恢复旧目录和旧锁，避免身份撕裂。
 - Ace 的空/未知 license 声明和空许可证文件直接拒绝。现有许可证文件或生成元数据通知只满足 alpha 可追溯性；全部 236 包仍需正式逐包人工审计。

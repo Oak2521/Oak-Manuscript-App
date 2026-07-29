@@ -25,6 +25,44 @@ const RESULT_KEYS = Object.freeze(["text"]);
 const SYSTEM_INSTRUCTION =
   "你是稿件规范审阅助手。只根据用户明确发送的单条问题上下文给出建议；不得声称已修改稿件，不得把建议冒充确定性规则结论。上下文不足时必须明确说明。";
 const DEFAULT_USER_INSTRUCTION = "请解释这个问题，并给出尽量保持原意的修订建议。";
+const TRANSPORT_FAILURES = Object.freeze({
+  NETWORK_FAILED: Object.freeze({
+    code: "AI_SERVICE_UNREACHABLE",
+    message: "无法连接到 AI 服务；请确认服务已启动且地址正确。本次计划已用完，请重新预览后再发送；没有修改稿件或配置",
+  }),
+  NETWORK_TIMEOUT: Object.freeze({
+    code: "AI_SERVICE_TIMEOUT",
+    message: "AI 服务响应超时；请确认模型已经加载，或稍后重新预览后再发送；没有修改稿件或配置",
+  }),
+  UPSTREAM_STATUS: Object.freeze({
+    code: "AI_SERVICE_REJECTED",
+    message: "AI 服务拒绝了请求；请检查服务地址、模型名称和凭据，再重新预览后发送；没有修改稿件或配置",
+  }),
+  REDIRECT_REJECTED: Object.freeze({
+    code: "AI_SERVICE_REDIRECTED",
+    message: "AI 服务返回了不允许的重定向；请检查基础地址，再重新预览后发送；没有修改稿件或配置",
+  }),
+  INVALID_RESPONSE: Object.freeze({
+    code: "AI_SERVICE_INCOMPATIBLE",
+    message: "AI 服务响应不是受支持的兼容格式；请检查服务版本和兼容接口，再重新预览后发送；没有修改稿件或配置",
+  }),
+  ADAPTER_FAILED: Object.freeze({
+    code: "AI_SERVICE_INCOMPATIBLE",
+    message: "AI 服务响应不是受支持的兼容格式；请检查服务版本和兼容接口，再重新预览后发送；没有修改稿件或配置",
+  }),
+  INVALID_RESULT: Object.freeze({
+    code: "AI_SERVICE_INCOMPATIBLE",
+    message: "AI 服务响应不是受支持的兼容格式；请检查服务版本和兼容接口，再重新预览后发送；没有修改稿件或配置",
+  }),
+  RESPONSE_TOO_LARGE: Object.freeze({
+    code: "AI_RESPONSE_TOO_LARGE",
+    message: "AI 服务响应超过本地安全上限，已停止接收；请缩短要求后重新预览；没有修改稿件或配置",
+  }),
+  CREDENTIAL_ECHO: Object.freeze({
+    code: "AI_CREDENTIAL_ECHO_REJECTED",
+    message: "AI 服务响应包含受保护凭据，应用已拒绝显示；请检查该服务配置；没有修改稿件或配置",
+  }),
+});
 
 class AIRequestError extends Error {
   constructor(code, message) {
@@ -118,6 +156,22 @@ function transportSupports(transport, binding) {
   if (!transport || typeof transport.supports !== "function" ||
       typeof transport.request !== "function") return false;
   try { return transport.supports(binding) === true; } catch { return false; }
+}
+
+function transportFailure(error) {
+  let internalCode = null;
+  try {
+    if (error && typeof error === "object" && typeof error.code === "string") {
+      internalCode = error.code;
+    }
+  } catch { internalCode = null; }
+  const mapped = internalCode && TRANSPORT_FAILURES[internalCode];
+  return mapped
+    ? new AIRequestError(mapped.code, mapped.message)
+    : new AIRequestError(
+      "MODEL_REQUEST_FAILED",
+      "AI 请求失败；本次计划已用完，请重新预览后再发送；没有修改稿件或配置",
+    );
 }
 
 function safeNow(now) {
@@ -265,10 +319,8 @@ class AIRequestCoordinator {
         async (configuration) => {
           try {
             return await this.transport.request({ configuration, request: plan.request });
-          } catch {
-            throw new AIRequestError(
-              "MODEL_REQUEST_FAILED", "AI 请求失败；没有修改稿件或配置",
-            );
+          } catch (error) {
+            throw transportFailure(error);
           }
         },
       );
@@ -374,5 +426,7 @@ module.exports = {
   PLAN_TTL_MS,
   REVIEW_TTL_MS,
   SYSTEM_INSTRUCTION,
+  TRANSPORT_FAILURES,
+  transportFailure,
   validateAIContext,
 };

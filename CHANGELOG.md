@@ -4,6 +4,15 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.42（ChatGPT compatible AI 故障恢复与真实 loopback 验收）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.42`（提交后建立）。本轮没有外部联网、真实模型调用、真实 AI 凭据、部署、官网修改或重新打包；唯一真实 socket 验收绑定 `127.0.0.1` 临时测试服务，最新真实 Windows 制品仍为 alpha.37。
+
+- 保留底层错误净化，同时把连接失败、超时、上游拒绝、不允许的重定向、响应不兼容、响应超限和凭据回显映射为稳定、可操作且不含上游正文/密钥的用户错误；未知异常继续统一失败关闭；
+- AI 发送失败仍消费一次性计划。界面保留失败提示，并把确认按钮改为“重新生成发送预览（不发送）”；重新预览本身零请求，用户必须再次查看并明确确认，应用不会自动重试或静默切换湖岸 AI；
+- 新增真实 Node loopback HTTP 纵向测试：完整 Ollama 配置→预览零请求→确认后固定 `/v1/chat/completions` POST→内存建议→人工接受；另由真实连接重置证明 `AI_SERVICE_UNREACHABLE` 与计划单次消费；
+- AI 聚焦测试 38/38；最终 `npm test`：Node 590 total / 583 pass / 0 fail / 7 skip（3.762 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（102.360 秒），墙钟 110.6 秒；隐藏源码 Electron smoke PASS，输出 `out/source-smoke/runs/ms5mq6e3-c9a77fa886f62c0d/projects/`；资源清单 84 文件 / 2,145,925 字节，manifest SHA-256 `70ab613a5b11a9c64d89a46fe4502708aee4f7a8fb4cbb8e5269c8fcdcf6d045`，anchor SHA-256 `68ac171dc801360a98d9f301f48fb7ac7583ca9868ab093b1416ff4c4159d866`。
+
 ### 2026-07-29 — 0.1.0-alpha.41（ChatGPT OpenAI-compatible“我的 AI”纵向链）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.41`（提交后建立）。本轮未联网、未调用真实模型、未使用真实 AI 凭据、未部署、未修改官网，也未重新打包；最新真实 Windows 制品仍为 alpha.37。

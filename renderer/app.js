@@ -30,6 +30,7 @@ const state = {
   licenseStatus: null,
   aiStatus: null,
   aiRequestPlan: null,
+  aiRetryRequest: null,
   aiRequestConfirming: false,
   aiSuggestion: null,
   aiSuggestionReviewing: false,
@@ -266,7 +267,11 @@ function enableStep(id) {
 }
 
 function unwrap(resp) {
-  if (!resp || resp.ok === false) throw new Error((resp && resp.error) || "操作失败");
+  if (!resp || resp.ok === false) {
+    const error = new Error((resp && resp.error) || "操作失败");
+    if (resp && typeof resp.code === "string") error.code = resp.code;
+    throw error;
+  }
   return resp;
 }
 
@@ -507,6 +512,7 @@ function resetCurrentProject({ clearProjectDir = false } = {}) {
   state.rulepackUpgradePlan = null;
   state.syncPreview = null;
   state.aiRequestPlan = null;
+  state.aiRetryRequest = null;
   state.aiSuggestion = null;
   if (clearProjectDir) {
     state.projectDir = null;
@@ -875,6 +881,7 @@ const actions = {
     ));
     state.aiSuggestion = null;
     state.aiRequestPlan = response.plan;
+    state.aiRetryRequest = { issueId, instruction };
     renderAiRequestPlan(response.plan);
     const dialog = $("#ai-request-dialog");
     if (!dialog.open) dialog.showModal();
@@ -890,6 +897,7 @@ const actions = {
     const plan = state.aiRequestPlan;
     const suggestion = state.aiSuggestion;
     state.aiRequestPlan = null;
+    state.aiRetryRequest = null;
     state.aiSuggestion = null;
     if (plan) unwrap(await window.oak.cancelAiSuggestion(plan.plan_id));
     if (suggestion && suggestion.review_state === "pending") {
@@ -902,7 +910,13 @@ const actions = {
 
   async confirmAiSuggestion() {
     const plan = state.aiRequestPlan;
-    if (!plan) throw new Error("没有待确认的 AI 发送预览");
+    if (!plan) {
+      if (!state.aiRetryRequest) throw new Error("没有待确认的 AI 发送预览");
+      return this.planAiSuggestion(
+        state.aiRetryRequest.issueId,
+        state.aiRetryRequest.instruction,
+      );
+    }
     if (!plan.transport_available) throw new Error("模型 transport 尚未接入；没有发送任何内容");
     if (state.aiRequestConfirming) throw new Error("AI 请求确认正在处理");
     state.aiRequestConfirming = true;
@@ -911,6 +925,7 @@ const actions = {
     try {
       const response = unwrap(await window.oak.confirmAiSuggestion(plan.plan_id));
       state.aiRequestPlan = null;
+      state.aiRetryRequest = null;
       state.aiSuggestion = { ...response.suggestion, issue_id: state.selectedIssue };
       $("#ai-suggestion-text").textContent = response.suggestion.text;
       $("#ai-suggestion-result").classList.remove("hidden");
@@ -923,6 +938,14 @@ const actions = {
       $("#btn-confirm-ai-request").textContent = "已完成（不会写回）";
       $("#btn-cancel-ai-request").textContent = "关闭";
       return response.suggestion;
+    } catch (error) {
+      state.aiRequestPlan = null;
+      $("#ai-plan-transport").textContent =
+        `${String(error.message || error)}。重新生成预览本身不会联网。`;
+      $("#btn-confirm-ai-request").textContent = "重新生成发送预览（不发送）";
+      $("#btn-confirm-ai-request").disabled = false;
+      $("#btn-cancel-ai-request").textContent = "关闭";
+      throw error;
     } finally {
       state.aiRequestConfirming = false;
       $("#btn-cancel-ai-request").disabled = false;
@@ -1418,6 +1441,7 @@ function renderAiRequestPlan(plan) {
   $("#btn-reject-ai-suggestion").disabled = true;
   $("#ai-suggestion-result").classList.add("hidden");
   const confirm = $("#btn-confirm-ai-request");
+  $("#btn-cancel-ai-request").textContent = "关闭（不发送）";
   confirm.disabled = !plan.transport_available;
   confirm.textContent = plan.transport_available ? "确认发送一次" : "模型 transport 尚未接入";
   $("#ai-plan-transport").textContent = plan.transport_available

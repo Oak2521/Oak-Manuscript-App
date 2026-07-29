@@ -2,7 +2,24 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.41 OpenAI-compatible“我的 AI”纵向链
+## 最新验证结论：0.1.0-alpha.42 compatible AI 故障恢复与真实 loopback 验收
+
+验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮没有外部联网、真实模型调用、真实 AI 凭据、部署或官网修改；真实 socket 仅绑定测试进程内的 `127.0.0.1` 临时 HTTP 服务。源码 Electron smoke 在独立隐藏进程执行；没有重新打包，最新真实 Windows 制品保持 alpha.37。
+
+| 验证 | 结果 | 证据 |
+|---|---|---|
+| AI failure/loopback focused | **PASS** | 38/38；覆盖七类安全错误、未知异常净化、失败计划单次消费、UI 重新预览零请求、真实 loopback 固定 POST/响应/人工审阅和真实 socket reset |
+| 最终顺序 `npm test` | **PASS** | 退出码 0，墙钟 110.6 秒；Node 590 total / 583 pass / 0 fail / 7 skip（3.7620509 秒）；Python 362 total / 0 failures / 0 errors / 3 skipped（102.360 秒） |
+| 资源信任复验 | **PASS** | 84 文件 / 2,145,925 字节，manifest SHA-256 `70ab613a5b11a9c64d89a46fe4502708aee4f7a8fb4cbb8e5269c8fcdcf6d045`，anchor SHA-256 `68ac171dc801360a98d9f301f48fb7ac7583ca9868ab093b1416ff4c4159d866` |
+| 独立隐藏源码 Electron smoke | **PASS** | `SMOKE-RESULT: PASS`；输出 `out/source-smoke/runs/ms5mq6e3-c9a77fa886f62c0d/projects/`；未配置 AI、未产生模型请求 |
+| 真实本机 HTTP 边界 | **PASS（协议夹具，不是产品兼容）** | 实际监听 `127.0.0.1` 随机端口；预览前/后零请求，确认后一次 `/v1/chat/completions` POST；另一次真实连接重置映射为 `AI_SERVICE_UNREACHABLE`，旧计划不能重放 |
+| 真实 Ollama / LM Studio / OpenAI-compatible 产品 | **未运行** | 未启动任一产品或模型；没有具体版本、模型加载、质量、真实拒绝/超时、凭据或 TLS 证据，不能把 loopback 夹具写成兼容通过 |
+| OpenAI / Anthropic / Gemini 官方云 | **未实现/未运行** | 未联网核对当前官方协议，三个 provider 继续不注册 adapter |
+| alpha.42 packaged / Windows 安装 / macOS | **未运行** | 最新真实 NSIS/ZIP 与 packaged smoke 仍为 alpha.37；源码测试不能代表 alpha.42 制品或 macOS 通过 |
+
+证据边界：本轮把“注入函数调用”提升为真实本机 socket/HTTP 证据，并证明失败后的用户恢复链不会自动重试或泄密；仍不证明任何第三方服务版本、模型质量、远程 TLS/凭据、云端隐私或商业发行完成。
+
+## 历史验证结论：0.1.0-alpha.41 OpenAI-compatible“我的 AI”纵向链
 
 验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实 AI 凭据、未部署或修改官网，也未读写项目目录外内容。源码 Electron smoke 在独立隐藏进程执行；没有重新打包，最新真实 Windows 制品保持 alpha.37。
 

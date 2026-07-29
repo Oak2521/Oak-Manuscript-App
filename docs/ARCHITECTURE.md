@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.41` 源码架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、独立服务端/API/Supabase 持久层、桌面 PKCE/加密 token-store/同步失败恢复，以及三模式 AI/OS 加密凭据/单条预览/建议审阅和 OpenAI-compatible/Ollama/LM Studio 主进程 transport。Web 临时作业保持独立零留存源码边界。默认账号配置无端点；最新真实 Windows 制品仍为 alpha.37。真实账号/Sync API、官方云 AI、真实模型兼容性、数据库迁移、生产隔离、联网标准获取、发行身份、签名、安装生命周期和 macOS 仍待验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.42` 源码架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、独立服务端/API/Supabase 持久层、桌面 PKCE/加密 token-store/同步失败恢复，以及三模式 AI/OS 加密凭据/单条预览/建议审阅、OpenAI-compatible/Ollama/LM Studio 主进程 transport 和失败后重新预览恢复。Web 临时作业保持独立零留存源码边界。默认账号配置无端点；最新真实 Windows 制品仍为 alpha.37。真实账号/Sync API、官方云 AI、真实模型兼容性、数据库迁移、生产隔离、联网标准获取、发行身份、签名、安装生命周期和 macOS 仍待验收。
 
 ## 1. 总体分层
 
@@ -209,6 +209,8 @@ alpha.34 在同一协调器内新增最多 8 个、30 分钟有效、一次处�
 alpha.35 新增供应商无关的 `BoundedAIHttpClient` 与 `AITransportRouter`。客户端使用 Node 原生 `http/https`、单次连接、固定 POST/JSON，不读取代理环境；远程地址必须 HTTPS，本机 HTTP 仅限精确 loopback，且拒绝 URL 凭据/查询/片段、重定向、Cookie、代理/转发/hop-by-hop 头、压缩响应、媒体/长度漂移和超限。路由只接受 exact provider 配置与语义请求、已注册适配器和 exact 文本结果，并拒绝凭据进入 URL或被上游精确回显。
 
 alpha.41 新增 `ai-openai-compatible-adapter.js`，只为 `openai_compatible`、`ollama`、`lm_studio` 注册固定 `{base_url}/chat/completions`：系统/用户双消息、`stream:false`、可选 Bearer，响应只接受唯一 choice 的非空 assistant 字符串并拒绝工具调用。`AIRequestCoordinator` 只在完整预览后的一次确认中调用 Router；状态仅对这三类报告 `transport_configured=true`。OpenAI、Anthropic、Gemini 和湖岸 AI 继续不可用；模块不是独立 OS 沙箱，也没有真实上游兼容/质量证据。所有模式保持 `fallback_mode=none`、`output_policy=suggestion_only` 和 `automatic_writeback=false`；Web 凭据只能保留当前会话。
+
+alpha.42 在协调层把净化后的 transport code 收敛为七类用户故障：不可达、超时、服务拒绝、重定向、响应不兼容、响应超限、凭据回显拒绝；未知错误只返回通用失败，不携带上游异常。发送计划在进入确认时先删除，因此成功或失败都不能原样重放。Renderer 失败后清除旧计划，只允许用户重新生成完整预览；该动作零请求，新的确认才允许再次联网。真实 loopback 测试使用临时 `127.0.0.1` Node HTTP 服务验证 socket/HTTP 路径和连接重置，不解除默认 session 离线，也不构成任一第三方服务兼容证明。
 
 ### AD-014 Electron fuses 必须“显式固定—构建后读回—未知项失败关闭”（2026-07-28，冻结）
 

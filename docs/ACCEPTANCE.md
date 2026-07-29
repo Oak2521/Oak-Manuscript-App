@@ -2,6 +2,15 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.42 compatible AI 故障恢复与 loopback 验收（2026-07-29）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.42`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 连接失败、超时、服务拒绝、重定向、响应不兼容、超限和凭据回显映射为稳定用户错误；未知上游异常、正文和凭据不进入 IPC/Renderer；
+- [x] 失败消费原一次性计划；界面只允许重新生成零请求预览，必须再次确认后才发送，不自动重试、不静默回退、不改稿或配置；
+- [x] 真实 `127.0.0.1` HTTP 测试证明预览零请求、确认后一次固定 POST、内存建议与人工审阅，并以真实连接重置证明可操作失败和计划单次消费；
+- [x] AI 聚焦 38/38；`npm test` Node 590 / Python 362 全量零失败；资源清单 84 文件 / 2,145,925 字节；独立隐藏 alpha.42 源码 smoke PASS；
+- [ ] 任一真实 Ollama/LM Studio/OpenAI-compatible 产品版本、模型质量、真实凭据/TLS 和供应商故障尚未验收；alpha.42 未打包，最新真实 Windows 制品仍为 alpha.37。
+
 ## 0.1.0-alpha.41 OpenAI-compatible“我的 AI”纵向链验收（2026-07-29）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.41`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；

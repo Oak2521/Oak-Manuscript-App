@@ -2,9 +2,9 @@
 
 ## 桌面应用（推荐）
 
-当前开发版本为 `0.1.0-alpha.41`，最新已打包版本仍为 `0.1.0-alpha.37`；Windows x64 NSIS/ZIP 未签名，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.41 已包含桌面 PKCE/加密账号会话/同步失败恢复，以及 OpenAI-compatible、Ollama、LM Studio 的逐条 AI 建议链；默认账号配置仍为空，普通测试、启动和构建不会触发账号联网或下载。
+当前开发版本为 `0.1.0-alpha.42`，最新已打包版本仍为 `0.1.0-alpha.37`；Windows x64 NSIS/ZIP 未签名，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.42 已包含桌面 PKCE/加密账号会话/同步失败恢复，以及 OpenAI-compatible、Ollama、LM Studio 的逐条 AI 建议、失败提示与重新预览恢复；默认账号配置仍为空，普通启动和构建不会触发账号联网或下载。
 
-**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.39 当前结果为 Node 576/569/0/7、Python 362/0 failures/0 errors/3 skipped；跳过项不计作通过。alpha.39 独立隐藏源码 smoke 已通过，但本轮未打包；alpha.37 packaged smoke 历史证据仍有效，不能冒充 alpha.39 制品证据。
+**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.42 当前结果为 Node 590/583/0/7、Python 362/0 failures/0 errors/3 skipped；跳过项不计作通过。alpha.42 独立隐藏源码 smoke 已通过，但本轮未打包；alpha.37 packaged smoke 历史证据仍有效，不能冒充 alpha.42 制品证据。
 
 **Web 状态**：`web/client/` 已提供可本地渲染的临时处理工作台，保留湖岸账号登录/注册，包含“默认”引用体例、本次临时处理同意、创建/上传/轮询/取消/一次性领取；服务端另有 GoTrue、Fetch、Netlify Blobs 内容适配/有界清扫、Supabase/Postgres 持久任务迁移、上传结构/主动内容检查、私有原子领取、固定 Python 共享核心子进程及任务—对象—任务协调器。alpha.38 又提供独立 `/manuscript/api/v1/sync-records` 源码边界，用于已确认的长期结果记录创建/重放、列表、读取与删除；它不接收稿件文件。两条 SQL 均未在真实 Supabase 执行，API/计划任务也未部署；本地注入测试不等于平台零留存或线上可用。网站工作台的结果同步按钮仍禁用，计费未接通。用户不要把稿件交给任何声称基于该 alpha 的线上地址；正式地址只能在官网联调、隐私文本和生产验收后公布。
 
@@ -14,9 +14,9 @@
 
 选择湖岸 AI 或完成我的 AI 设置后，可在某条检查问题详情填写可选要求并点击“预览将发送给 AI 的内容”。APP 只读提取这一条问题，完整展示目的地、有效期、会发送/不会发送清单和请求 JSON；不包含完整稿件、其他问题、文件名、路径、项目/账号标识、哈希或凭据。预览十分钟有效且只能确认一次；问题、working、检查或 AI 配置变化后必须重新预览。在有效 Pro 权益并成功保存 compatible 配置时，OpenAI-compatible、Ollama、LM Studio 的确认按钮可用；保存、生成预览或取消均不联网，只有点击“确认发送一次”才请求配置的服务。当前默认权益仍为 Free，生产订阅尚未接入；OpenAI、Anthropic、Gemini 和湖岸 AI 也继续禁用确认。
 
-compatible transport 返回建议后，界面提供“采纳为人工处理参考”和“放弃这条建议”。采纳会再次核对当前问题，只把问题状态标为“接受”，仍需用户人工修改；模型文本不会保存到项目或写回稿件。放弃或直接关闭只删除当前内存建议，不会把规则问题标为“拒绝”。建议审阅 30 分钟有效且只能处理一次。当前只完成源码和注入测试；没有真实模型服务兼容或输出质量保证。
+compatible transport 返回建议后，界面提供“采纳为人工处理参考”和“放弃这条建议”。采纳会再次核对当前问题，只把问题状态标为“接受”，仍需用户人工修改；模型文本不会保存到项目或写回稿件。放弃或直接关闭只删除当前内存建议，不会把规则问题标为“拒绝”。建议审阅 30 分钟有效且只能处理一次。当前有真实 `127.0.0.1` HTTP 协议夹具证据，但没有真实模型产品兼容或输出质量保证。
 
-alpha.37 已具备供应商无关的固定 POST/JSON、HTTPS/本机 loopback、禁重定向/Cookie/代理转发、容量/超时和错误净化底座，但它没有接入主进程，也没有任何真实供应商适配器。界面仍不能发送；不得通过开发者工具、修改配置或把本地 HTTP 服务暴露到公网来绕开该状态。
+如果发送失败，界面会区分“无法连接”“超时”“服务拒绝”“重定向”“响应不兼容”“响应过大”或“响应回显凭据”。请按提示检查服务是否启动、基础地址、模型名称和凭据。本次发送计划已经用完；点击“重新生成发送预览（不发送）”只会重新显示内容，不会立即联网，必须再次点击确认才会重发。应用不会自动重试或改用湖岸 AI。不要为排障把只监听本机的模型服务暴露到公网。
 
 流程：欢迎页（隐私说明）→ 选稿件或匿名样本 → 选项目目录 → 选检查目标与引用体例 → 查看默认解析计划 → 确认后检查 →
 问题页可逐条接受/拒绝/暂不处理；选择“预览批量自动修复”时，APP 在一个可滚动窗口集中列出全部白名单机械修改的标题、位置和修改前/后预览。只有点击一次“确认批量修复 N 项”才执行整批写入；取消不写入。修复后可在“撤销与检查点”中撤销上一次批量修复或恢复选定检查点 → 导出中心（修订稿、三种报告、PDF 样张、基础 EPUB 预览、脱敏评估摘要）→ 验证完整性。
@@ -168,7 +168,7 @@ npm run verify:release-identity
 npm run release:evidence:verify:win
 ```
 
-验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。当前源码已是 alpha.41 且本轮未打包，因此该命令不会拿 alpha.37 冒充当前制品。alpha.37 的 NSIS、ZIP、SHA 文件与 schema v2 canonical manifest 历史证据已通过交叉验证；manifest 另绑定对应 packaged-smoke、实际 unpacked EXE 与匿名输出树摘要。
+验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。当前源码已是 alpha.42 且本轮未打包，因此该命令不会拿 alpha.37 冒充当前制品。alpha.37 的 NSIS、ZIP、SHA 文件与 schema v2 canonical manifest 历史证据已通过交叉验证；manifest 另绑定对应 packaged-smoke、实际 unpacked EXE 与匿名输出树摘要。
 
 安装生命周期验收器默认只读、不启动安装器，并要求当前源码版本存在精确制品；所以 alpha.39 尚不能运行该预检。历史 alpha.37 对归档 alpha.12 的只读预检已经通过：
 

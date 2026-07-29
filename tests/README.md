@@ -1,12 +1,12 @@
 # tests/ — Node 契约、发布资源与打包验证
 
-`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.41 最终统一结果为 Node **586 total / 579 pass / 0 fail / 7 skip / 3.811 秒**，Python **362 项 / 0 失败 / 0 错误 / 3 跳过 / 104.514 秒**，墙钟 112.8 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
+`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.42 最终统一结果为 Node **590 total / 583 pass / 0 fail / 7 skip / 3.762 秒**，Python **362 项 / 0 失败 / 0 错误 / 3 跳过 / 102.360 秒**，墙钟 110.6 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
 
 本目录覆盖：
 
 - sandboxed preload、固定 IPC、Renderer 批量计划/确认和检查点 UI 契约；
 - 默认引用解析 IPC/UI 的计划—确认顺序、六种体例参数白名单、packaged smoke 同契约，以及切换稿件/项目时清空旧 session；
-- 三模式 AI、OS 加密凭据、单条完整发送预览、一次确认、内存建议审阅、有界 HTTP/Router，以及 OpenAI-compatible/Ollama/LM Studio 固定非流式请求、唯一文本响应、工具/多结果拒绝和 Ollama 纵向链；官方云和真实上游兼容性不冒充通过；
+- 三模式 AI、OS 加密凭据、单条完整发送预览、一次确认、内存建议审阅、有界 HTTP/Router，以及 OpenAI-compatible/Ollama/LM Studio 固定非流式请求、唯一文本响应、七类安全故障、失败后重新预览和真实 `127.0.0.1` HTTP/连接重置纵向链；官方云和真实上游产品兼容性不冒充通过；
 - Auth 登录/退出/过期/撤销状态、Free/Pro/宽限/过期权益、SyncRecord/持久状态 exact schema、反内容泄露、可信来源 IPC、四选一授权、safeStorage 加密、账户隔离、revision/原子故障、重启恢复、幂等队列与安全 UI 渲染；alpha.39—alpha.40 另覆盖待配置零网络、PKCE/deep link/token-store、身份复核、条件 main 接线、浏览器/并发/刷新失败及远端成功后本地提交失败的幂等重试；
 - Electron 默认 session 离线 switches/网络请求拦截、Renderer CSP、源码 smoke 的 `out/source-smoke/` 路径边界；
 - ASAR/integrity、顶层 2.1.3 afterPack 全 9 fuse 严格写入/回读、未来未知 fuse 的 alpha/sale fail-closed、实际 Framework 文件身份和构建顺序；
@@ -20,7 +20,7 @@
 - Windows builder 受控下载器固定官方 URL/HTTPS 主机/文件名/SHA-256，要求显式联网开关并覆盖零授权零写入、重定向/容量/哈希、事务提交/碰撞回滚及仓库路径边界；安全导入器继续拒绝 UNC、未知归档、路径穿越、链接/reparse、备用流、加密条目、名称冲突和解压膨胀，只有显式 `--update-lock` 才可建立/更新独立 tracked lock；三份真实归档、工具树和 tracked lock 已按用户授权建立并复验，注入响应与测试夹具仍不能冒充发布资产；
 - Windows 发布证据只接受 package/lock 当前版本的精确 NSIS/ZIP；覆盖 PE/ZIP 结构、旧制品/版本漂移、稳定文件身份、SHA256SUMS 与 canonical manifest 交叉绑定、两文件提交回滚、clear 全预检，以及真实缺制品 fail-closed；
 - 发行商身份门禁覆盖当前显式待定状态、完整 Windows/macOS 身份、源码 `build.appId`、ASAR production `oakReleaseIdentity`、重复键、unknown/reordered 字段、固定 schema/canonical 字节、占位文本、官方 URL、package 漂移和只读 CLI；
-- Windows 安装生命周期验收默认只读并精确绑定源码当前版本；专项测试覆盖 alpha.23/alpha.12 成功夹具、SemVer、NSIS x86 启动器与 x64 主程序、两开关授权门、零授权零启动/零输出、九阶段状态机、HKCU/快捷方式探针、持久化 sentinel、降级成功时 fail-closed 与 canonical 证据篡改。alpha.41 未打包，当前真实预检不会借用旧制品；
+- Windows 安装生命周期验收默认只读并精确绑定源码当前版本；专项测试覆盖 alpha.23/alpha.12 成功夹具、SemVer、NSIS x86 启动器与 x64 主程序、两开关授权门、零授权零启动/零输出、九阶段状态机、HKCU/快捷方式探针、持久化 sentinel、降级成功时 fail-closed 与 canonical 证据篡改。alpha.42 未打包，当前真实预检不会借用旧制品；
 - Web 作业、HTTP、Supabase、GoTrue、Fetch、客户端、Netlify 内容存储、持久任务、上传检查、私有 worker、双清扫与独立 SyncRecord 服务/API/repository/runtime 测试合计 130 项。alpha.38 的 26 项同步服务测试覆盖服务端独立白名单、可信主体、账号隔离、幂等/上限、列表快照、查看/删除、HTTPS/同源/CSRF/Bearer、固定 service-role RPC、RLS SQL 静态契约、生产式 Fetch 组合和异步审计失败隔离。Python Web 专项仍覆盖共享核心 one-shot、UTF-8/NUL、格式伪装、危险 ZIP、宏/ActiveX/嵌入/DDE、脚本 EPUB、固定子进程、身份最小化、拒绝零入库和预留释放。database/network/store 仍为注入仿真或静态检查，不冒充真实迁移、部署、容器/OS 禁网、病毒库或零留存测试；
 - 许可证字段/文件为空的拒绝路径，以及“有许可证文件仍不能替代全部 236 包人工审计”的 sale blocker 契约；
 - 资源门禁两阶段顺序：静态全量检查有任一错误时不执行 Python/Java，静态全绿后才运行探针；非原生 host/arch fail-closed，纯静态必须显式 `--no-runtime-probe`；
@@ -35,4 +35,4 @@ Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零�
 
 真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。当前 packaged smoke 强制通过受控链路运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言；缺失或陈旧 EXE 不得复用。
 
-alpha.41 最终隐藏源码 smoke 为 **PASS**，运行根为 `out/source-smoke/runs/ms5m1hzg-4e5a85d9dc0932c5/projects/`。alpha.37 最终隐藏 packaged smoke 为 **SMOKE + SYNC-RECOVERY PASS**，运行根为 `out/packaged-smoke/runs/ms5ht9j7-67fece5b58d7c515/projects/`；其 canonical 证据把实际 EXE、双进程结果摘要和匿名输出树绑定进 schema v2 发布清单。两者版本证据必须分开解释；哈希不是代码签名，实际安装生命周期仍未运行。
+alpha.42 最终隐藏源码 smoke 为 **PASS**，运行根为 `out/source-smoke/runs/ms5mq6e3-c9a77fa886f62c0d/projects/`。alpha.37 最终隐藏 packaged smoke 为 **SMOKE + SYNC-RECOVERY PASS**，运行根为 `out/packaged-smoke/runs/ms5ht9j7-67fece5b58d7c515/projects/`；其 canonical 证据把实际 EXE、双进程结果摘要和匿名输出树绑定进 schema v2 发布清单。两者版本证据必须分开解释；哈希不是代码签名，实际安装生命周期仍未运行。
