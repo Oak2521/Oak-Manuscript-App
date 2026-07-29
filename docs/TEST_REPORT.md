@@ -2,7 +2,30 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.42 compatible AI 故障恢复与 Windows packaged 验收
+## 最新验证结论：0.1.0-alpha.42 真实 Ollama 0.32.5 / qwen3:4b 窄范围兼容验收
+
+验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已明确批准下载；本轮只从 Ollama 官方文档、官方 GitHub release 和官方模型库取得公开运行包/模型。没有使用用户稿件、项目、账号、AI 凭据或生产端点，没有部署、修改官网或改写系统安装状态。运行包、模型、HOME/状态、临时目录、日志和证据全部隔离在仓库 `out/external-validation/ollama/v0.32.5/`；服务只监听 `127.0.0.1:11435`，结束后已确认进程退出且端口关闭。
+
+| 项目 | 结果 | 证据 |
+|---|---|---|
+| 官方 Windows standalone | **PASS** | Ollama 0.32.5 ZIP 1,457,824,795 字节；SHA-256 `7c941ae084569d298062d29f8139163a3187c76dbca0479c70d085e78fd8c7bb`，与 GitHub release asset digest 一致；`/api/version` 返回 `0.32.5` |
+| 模型身份与加载 | **PASS** | `qwen3:4b` API size 2,497,293,931；manifest 859 字节 / SHA-256 `359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7`；RTX 4070 Ti / CUDA 8.9，37/37 layers offload |
+| 验收脚本单测 | **PASS** | 5/5；固定 loopback、CLI exact 参数、证据目录、APP/规则包/真实规则绑定、语义质量/越权反向判据和 canonical 序列化 |
+| 真实成功路径 | **PASS** | 预览请求数 0；确认后恰好 1 次；推理 17,893 ms；`memory_only`、`automatic_writeback=false`；人工接受不改稿、不持久化建议文本 |
+| 真实缺失模型 | **PASS** | 一次请求映射 `AI_SERVICE_REJECTED`；重放旧 plan 为 `AI_PLAN_STALE`，请求数保持 1 |
+| 真实超时 | **PASS** | qwen3:4b 以 100 ms client timeout 映射 `AI_SERVICE_TIMEOUT`；重放旧 plan 为 `AI_PLAN_STALE`，请求数保持 1 |
+| 建议质量窄判据 | **PASS** | 有界非空、识别空格问题、提出与“连续空格合并为一个”一致的修订动作、不声称已改稿；只存 123 字节响应的 SHA-256 `77281740…284e`，不存正文 |
+| 最终 canonical 证据 | **PASS** | `compatibility-evidence-run4.json` 1,451 字节 / SHA-256 `767197c5d2748f216b5006e85efb49ffbcb957b3e9dd9df88c4f5625320b0f98`；绑定 APP、规则包、真实规则/修复 ID 与脚本摘要，只用匿名上下文，无凭据 |
+| AI 定向回归 | **PASS** | 36/36；HTTP client、Router、compatible adapter、请求协调、真实 loopback 与 Ollama 验收脚本 |
+| 最终 `npm test` | **PASS** | 退出码 0，墙钟 134.4 秒；Node 595 total / 588 pass / 0 fail / 7 skip（4.0823258 秒）；Python 362 total / 0 failures / 0 errors / 3 skipped（123.971 秒） |
+| 进程清理 | **PASS** | 两轮服务分别精确核对仓库内 `runtime/ollama.exe` 的 PID 24204 与 38528；最终停止后 `NO_OLLAMA_PROCESS`、`PORT_11435_CLOSED` |
+| Windows package | **未重构建** | 新增内容仅为仓库测试脚本、测试和 docs，不进入 Electron `files`/资源锚点；最新 alpha.42 NSIS/ZIP 与 packaged 证据保持下节已验证字节 |
+
+首次 `compatibility-evidence.json` 与第二次 `compatibility-evidence-run2.json` 均按设计退出 1并保留。第一次质量判据错误地要求“湖岸稿件”完全无空格，违背真实 `DOCX-SPACE-001`“连续空格合并为一个空格”；第二次虽修正目标形式，但匿名 context 仍把规则缩写成“这里包含连续空格”，未给模型真实规则语义。这两次的协议、安全、拒绝和超时路径均通过，但不计为产品兼容通过。run3 的语义/安全场景通过，但夹具仍使用不存在的 `CN-001` 且未在证据中绑定 APP/规则包/脚本，因此只保留为中间记录。最终 run4 直接读取真实规则包，并同时拒绝“删除所有空格”及“我已经修改”式陈述。详细逐项证据与官方来源见 `docs/audits/OLLAMA_0.32.5_QWEN3_4B_COMPATIBILITY.md`。
+
+证据边界：只证明 Windows 11、Ollama 0.32.5、qwen3:4b、当前开发快照和一个匿名连续空格问题。它不证明 LM Studio、其他版本/模型/硬件、macOS、远程 TLS、真实稿件、多规则质量、官方云或商业支持矩阵；也没有把 Ollama/模型加入 APP 安装包或完成其再分发许可审计。
+
+## 前一验证结论：0.1.0-alpha.42 compatible AI 故障恢复与 Windows packaged 验收
 
 验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮没有外部联网、真实模型调用、真实 AI 凭据、部署或官网修改；真实 socket 仅绑定测试进程内的 `127.0.0.1` 临时 HTTP 服务。源码及 packaged Electron smoke 均在独立隐藏进程执行。首次 α42 构建验证完成后发现会进入 ASAR 的内部 README 仍记载 α37；修正并提交后执行最终 205.7 秒重构建，以下只采信最终制品。
 

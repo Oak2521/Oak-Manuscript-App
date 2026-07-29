@@ -2,6 +2,17 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.42 真实 Ollama 外部兼容补充验收（2026-07-29）
+
+- [x] 官方 Windows standalone ZIP 固定为 Ollama `0.32.5`，1,457,824,795 字节及 SHA-256 与 release asset digest 一致；服务 `/api/version` 精确返回 `0.32.5`；
+- [x] `qwen3:4b` 本地 manifest SHA-256 固定为 `359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7`，API 报告 2,497,293,931 字节；
+- [x] 运行包、模型、状态、日志和临时目录全部隔离在仓库 `out/`；服务只绑定 `127.0.0.1:11435`，结束后进程已退出、端口已关闭；
+- [x] 匿名单问题真实推理证明预览零请求、确认后恰好一次请求、建议 `memory_only`、自动写回 false、人工接受不改稿且不持久化模型文本；
+- [x] 真实缺失模型映射为 `AI_SERVICE_REJECTED`，100 ms 真实推理超时映射为 `AI_SERVICE_TIMEOUT`；两条失败均消费旧 plan，重放为 `AI_PLAN_STALE` 且不产生第二次请求；
+- [x] 建议质量窄判据与当前连续空格规则一致；首次错误判据、第二次不完整上下文和未绑定真实规则 ID 的 run3 均保留，最终 run4 证据绑定 APP/规则包/`DOCX-SPACE-001`/`FIX-SPACE-001`/脚本摘要，为 1,451 字节 / SHA-256 `767197c5d2748f216b5006e85efb49ffbcb957b3e9dd9df88c4f5625320b0f98`；
+- [x] 新增脚本单测 5/5、AI 定向 36/36；最终 `npm test` 为 Node 595 / Python 362，全量零失败；
+- [ ] LM Studio、其他 Ollama 版本/模型/硬件、远程 HTTPS、macOS、多规则/真实稿件建议质量和产品级兼容矩阵未验收；本补充不得表述成“全面支持 Ollama”。
+
 ## 0.1.0-alpha.42 compatible AI 故障恢复与 loopback 验收（2026-07-29）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.42`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
@@ -10,7 +21,8 @@
 - [x] 真实 `127.0.0.1` HTTP 测试证明预览零请求、确认后一次固定 POST、内存建议与人工审阅，并以真实连接重置证明可操作失败和计划单次消费；
 - [x] AI 聚焦 38/38；`npm test` Node 590 / Python 362 全量零失败；资源清单 84 文件 / 2,145,925 字节；独立隐藏 alpha.42 源码 smoke PASS；
 - [x] alpha.42 Windows x64 NSIS/ZIP、packaged 资源/ASAR、Electron 9 fuse、双进程隐藏 smoke、schema v2 发布证据与 alpha.12 安装生命周期只读预检通过；
-- [ ] 任一真实 Ollama/LM Studio/OpenAI-compatible 产品版本、模型质量、真实凭据/TLS 和供应商故障尚未验收；Windows 签名、真实系统安装/升级/卸载和干净机验收也未完成。
+- [x] Ollama 0.32.5 + qwen3:4b 的一条匿名问题、缺失模型和超时路径已完成窄范围真实验收；
+- [ ] LM Studio、其他 Ollama/OpenAI-compatible 组合、真实凭据/TLS、宽泛模型质量、Windows 签名、真实系统安装/升级/卸载和干净机验收仍未完成。
 
 ## 0.1.0-alpha.41 OpenAI-compatible“我的 AI”纵向链验收（2026-07-29）
 

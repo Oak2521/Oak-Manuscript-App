@@ -1,12 +1,12 @@
 # tests/ — Node 契约、发布资源与打包验证
 
-`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.42 最终统一结果为 Node **590 total / 583 pass / 0 fail / 7 skip / 3.762 秒**，Python **362 项 / 0 失败 / 0 错误 / 3 跳过 / 102.360 秒**，墙钟 110.6 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
+`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.42 在新增真实 Ollama 验收工具后，统一结果为 Node **595 total / 588 pass / 0 fail / 7 skip / 4.082 秒**，Python **362 项 / 0 失败 / 0 错误 / 3 跳过 / 123.971 秒**，墙钟 134.4 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
 
 本目录覆盖：
 
 - sandboxed preload、固定 IPC、Renderer 批量计划/确认和检查点 UI 契约；
 - 默认引用解析 IPC/UI 的计划—确认顺序、六种体例参数白名单、packaged smoke 同契约，以及切换稿件/项目时清空旧 session；
-- 三模式 AI、OS 加密凭据、单条完整发送预览、一次确认、内存建议审阅、有界 HTTP/Router，以及 OpenAI-compatible/Ollama/LM Studio 固定非流式请求、唯一文本响应、七类安全故障、失败后重新预览和真实 `127.0.0.1` HTTP/连接重置纵向链；官方云和真实上游产品兼容性不冒充通过；
+- 三模式 AI、OS 加密凭据、单条完整发送预览、一次确认、内存建议审阅、有界 HTTP/Router，以及 OpenAI-compatible/Ollama/LM Studio 固定非流式请求、唯一文本响应、七类安全故障、失败后重新预览和真实 `127.0.0.1` HTTP/连接重置纵向链；另有显式运行的 Ollama 0.32.5 / qwen3:4b 匿名窄范围验收脚本，拒绝非 loopback、版本/模型摘要漂移、正文落证据和宽泛质量宣称；官方云、LM Studio 和其他真实上游产品不冒充通过；
 - Auth 登录/退出/过期/撤销状态、Free/Pro/宽限/过期权益、SyncRecord/持久状态 exact schema、反内容泄露、可信来源 IPC、四选一授权、safeStorage 加密、账户隔离、revision/原子故障、重启恢复、幂等队列与安全 UI 渲染；alpha.39—alpha.40 另覆盖待配置零网络、PKCE/deep link/token-store、身份复核、条件 main 接线、浏览器/并发/刷新失败及远端成功后本地提交失败的幂等重试；
 - Electron 默认 session 离线 switches/网络请求拦截、Renderer CSP、源码 smoke 的 `out/source-smoke/` 路径边界；
 - ASAR/integrity、顶层 2.1.3 afterPack 全 9 fuse 严格写入/回读、未来未知 fuse 的 alpha/sale fail-closed、实际 Framework 文件身份和构建顺序；

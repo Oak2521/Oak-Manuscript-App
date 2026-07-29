@@ -4,7 +4,7 @@
 
 ## Provider 一览（当前 alpha.42 源码）
 
-alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI。受信配置仍为 `pending_configuration` 且全部端点/key 为空；数据库迁移未执行、API 未部署、网站后台未修改，因此普通 APP 仍不联网也不声称同步成功。桌面 AI transport 仍为 `null`，适配器注册表为空。商业仓库没有真实 service-role key、OAuth 配置或 AI key。
+alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI。受信账号配置仍为 `pending_configuration` 且全部端点/key 为空；数据库迁移未执行、API 未部署、网站后台未修改，因此普通 APP 仍不登录或同步。alpha.41 已在主进程注册 OpenAI-compatible、Ollama、LM Studio transport；其调用与账号端点无关，只能由用户保存自己的配置、查看单条完整预览并确认一次后触发。商业仓库没有真实 service-role key、OAuth 配置或 AI key。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
@@ -15,7 +15,7 @@ alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；al
 | `StandardsProvider` | 离线验证内置 release；本地签名包预览/安装/全局回滚、项目固定版本与显式升级已实现；生产 trust pin 缺失时导入禁用 | 用户主动触发的在线检查/下载、签名与撤回分发、可观测回滚；绝不上传稿件 |
 | `UpdateProvider` | 尚未实现或导出 | 签名应用更新 |
 | `FeedbackProvider` | 尚未实现或导出 | 用户主动发送不含正文的规则反馈 |
-| `AIProvider` / `AIRequestCoordinator` / compatible transport | 三模式、Pro/safeStorage、单条预览/确认/审阅和有界 HTTP 已实现；桌面只注册 OpenAI-compatible/Ollama/LM Studio，保存/预览零请求，建议不持久化或写稿 | OpenAI/Anthropic/Gemini 官方协议、真实 compatible 服务与质量验收、湖岸 AI 服务仍待完成；Web 用户凭据只限当前会话，绝不进入账号同步或长期网站存储 |
+| `AIProvider` / `AIRequestCoordinator` / compatible transport | 三模式、Pro/safeStorage、单条预览/确认/审阅和有界 HTTP 已实现；桌面只注册 OpenAI-compatible/Ollama/LM Studio，保存/预览零请求，建议不持久化或写稿；Ollama 0.32.5 + qwen3:4b 已通过一个匿名规则的窄范围外部验收 | OpenAI/Anthropic/Gemini 官方协议、LM Studio/其他 compatible 组合、宽泛模型质量和湖岸 AI 服务仍待完成；Web 用户凭据只限当前会话，绝不进入账号同步或长期网站存储 |
 
 ## 当前离线边界与硬性验收（对应 §20.1 / §21）
 

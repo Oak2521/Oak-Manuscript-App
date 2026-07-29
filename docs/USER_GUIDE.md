@@ -4,7 +4,7 @@
 
 当前开发与最新已打包版本均为 `0.1.0-alpha.42`；Windows x64 NSIS/ZIP 未签名，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.42 已包含桌面 PKCE/加密账号会话/同步失败恢复，以及 OpenAI-compatible、Ollama、LM Studio 的逐条 AI 建议、失败提示与重新预览恢复；默认账号配置仍为空，普通启动和构建不会触发账号联网或下载。
 
-**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.42 当前结果为 Node 590/583/0/7、Python 362/0 failures/0 errors/3 skipped；跳过项不计作通过。alpha.42 独立隐藏源码与 packaged smoke 均已通过；packaged 证据还绑定第二进程加密队列恢复、实际 EXE 和匿名输出树。
+**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.42 在增加真实 Ollama 验收工具后的结果为 Node 595/588/0/7、Python 362/0 failures/0 errors/3 skipped；跳过项不计作通过。alpha.42 独立隐藏源码与 packaged smoke 均已通过；packaged 证据还绑定第二进程加密队列恢复、实际 EXE 和匿名输出树。
 
 **Web 状态**：`web/client/` 已提供可本地渲染的临时处理工作台，保留湖岸账号登录/注册，包含“默认”引用体例、本次临时处理同意、创建/上传/轮询/取消/一次性领取；服务端另有 GoTrue、Fetch、Netlify Blobs 内容适配/有界清扫、Supabase/Postgres 持久任务迁移、上传结构/主动内容检查、私有原子领取、固定 Python 共享核心子进程及任务—对象—任务协调器。alpha.38 又提供独立 `/manuscript/api/v1/sync-records` 源码边界，用于已确认的长期结果记录创建/重放、列表、读取与删除；它不接收稿件文件。两条 SQL 均未在真实 Supabase 执行，API/计划任务也未部署；本地注入测试不等于平台零留存或线上可用。网站工作台的结果同步按钮仍禁用，计费未接通。用户不要把稿件交给任何声称基于该 alpha 的线上地址；正式地址只能在官网联调、隐私文本和生产验收后公布。
 
@@ -13,6 +13,8 @@
 **AI 设置与发送预览（当前边界）**：设置页提供“无 AI”“湖岸 AI”“我的 AI”。我的 AI 支持 OpenAI、Anthropic、Google Gemini、OpenAI-compatible、Ollama 和 LM Studio，属于 Pro 权益且不消耗湖岸 AI 配额；三个官方云供应商固定使用官方端点，自定义地址必须选择 OpenAI-compatible；远程地址必须使用 HTTPS，本机 HTTP 只接受 loopback。凭据不会回填到界面、报告或同步，供应商/地址变化后必须重新提供。
 
 选择湖岸 AI 或完成我的 AI 设置后，可在某条检查问题详情填写可选要求并点击“预览将发送给 AI 的内容”。APP 只读提取这一条问题，完整展示目的地、有效期、会发送/不会发送清单和请求 JSON；不包含完整稿件、其他问题、文件名、路径、项目/账号标识、哈希或凭据。预览十分钟有效且只能确认一次；问题、working、检查或 AI 配置变化后必须重新预览。在有效 Pro 权益并成功保存 compatible 配置时，OpenAI-compatible、Ollama、LM Studio 的确认按钮可用；保存、生成预览或取消均不联网，只有点击“确认发送一次”才请求配置的服务。当前默认权益仍为 Free，生产订阅尚未接入；OpenAI、Anthropic、Gemini 和湖岸 AI 也继续禁用确认。
+
+**真实兼容证据边界**：当前开发快照已用官方 Ollama 0.32.5 和 qwen3:4b 对一个匿名“连续空格”问题完成成功、缺失模型、100 ms 超时、失败计划不可重放、不落盘和不改稿验证。该结果不是通用 Ollama 兼容承诺；LM Studio、其他 Ollama 版本/模型/硬件、远程 HTTPS、macOS 和宽泛稿件质量尚未实测。开发者复验命令、下载物摘要和失败判据纠正见 `audits/OLLAMA_0.32.5_QWEN3_4B_COMPATIBILITY.md`。用户自己的模型请求仍可能把预览中明确列出的单条内容发送给其所配置的服务，必须以每次发送预览为准。
 
 compatible transport 返回建议后，界面提供“采纳为人工处理参考”和“放弃这条建议”。采纳会再次核对当前问题，只把问题状态标为“接受”，仍需用户人工修改；模型文本不会保存到项目或写回稿件。放弃或直接关闭只删除当前内存建议，不会把规则问题标为“拒绝”。建议审阅 30 分钟有效且只能处理一次。当前有真实 `127.0.0.1` HTTP 协议夹具证据，但没有真实模型产品兼容或输出质量保证。
 

@@ -6,13 +6,14 @@
 
 ### 2026-07-29 — 0.1.0-alpha.42（ChatGPT compatible AI 故障恢复与真实 loopback 验收）
 
-> 本地源码标签：`chatgpt-v0.1.0-alpha.42`；最终 Windows 打包证据标签：`chatgpt-v0.1.0-alpha.42-packaged`（文档收口提交后建立）。本轮没有外部联网、真实模型调用、真实 AI 凭据、部署或官网修改；唯一真实 socket 验收绑定测试进程内 `127.0.0.1` 临时服务。
+> 本地源码标签：`chatgpt-v0.1.0-alpha.42`；最终 Windows 打包证据标签：`chatgpt-v0.1.0-alpha.42-packaged`。随后在用户批准下载后增加真实 Ollama 窄范围外部验收；未使用真实用户稿件、账号或 AI 凭据，未部署或修改官网。
 
 - 保留底层错误净化，同时把连接失败、超时、上游拒绝、不允许的重定向、响应不兼容、响应超限和凭据回显映射为稳定、可操作且不含上游正文/密钥的用户错误；未知异常继续统一失败关闭；
 - AI 发送失败仍消费一次性计划。界面保留失败提示，并把确认按钮改为“重新生成发送预览（不发送）”；重新预览本身零请求，用户必须再次查看并明确确认，应用不会自动重试或静默切换湖岸 AI；
 - 新增真实 Node loopback HTTP 纵向测试：完整 Ollama 配置→预览零请求→确认后固定 `/v1/chat/completions` POST→内存建议→人工接受；另由真实连接重置证明 `AI_SERVICE_UNREACHABLE` 与计划单次消费；
 - AI 聚焦测试 38/38；最终 `npm test`：Node 590 total / 583 pass / 0 fail / 7 skip（3.762 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（102.360 秒），墙钟 110.6 秒；隐藏源码 Electron smoke PASS，输出 `out/source-smoke/runs/ms5mq6e3-c9a77fa886f62c0d/projects/`；资源清单 84 文件 / 2,145,925 字节，manifest SHA-256 `70ab613a5b11a9c64d89a46fe4502708aee4f7a8fb4cbb8e5269c8fcdcf6d045`，anchor SHA-256 `68ac171dc801360a98d9f301f48fb7ac7583ca9868ab093b1416ff4c4159d866`。
 - 修正进入 `app.asar` 的内部说明后执行最终 Windows x64 重构建：NSIS 190,025,679 字节 / SHA-256 `69147b5a44f0ebbf5ff63ac46f6e640207e6edbd0abc3ce45c3ac89c03028736`，ZIP 233,856,293 字节 / `38c66dcd44d0bcd1249f865c9e38af531ac8f17aaed7667244ee6360b8f972a0`；packaged 资源/ASAR、9 fuse、隐藏双进程 smoke、canonical smoke 证据和 schema v2 发布清单均通过；alpha.42→归档 alpha.12 安装生命周期只读预检通过，未运行系统安装。制品未签名、发行身份不完整且保留 12 项 sale blocker。
+- 新增 `scripts/run_ollama_compatibility.js` 与 5 项单测；在仓库隔离目录运行官方 Ollama 0.32.5、qwen3:4b 和匿名“连续空格”问题，最终证明预览零请求、确认后一次请求、建议只在内存、审阅不改稿/不持久化、缺失模型拒绝、100 ms 超时与失败 plan 不可重放；run4 证据另绑定 APP、规则包、`DOCX-SPACE-001` / `FIX-SPACE-001` 与脚本摘要，SHA-256 `767197c5…0f98`。完整回归更新为 Node 595/588/0/7、Python 362/0/0/3。该脚本/证据不进入安装包，因此未重构建 alpha.42 制品。
 
 ### 2026-07-29 — 0.1.0-alpha.41（ChatGPT OpenAI-compatible“我的 AI”纵向链）
 

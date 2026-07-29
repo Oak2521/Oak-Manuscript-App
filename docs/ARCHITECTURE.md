@@ -212,6 +212,8 @@ alpha.41 新增 `ai-openai-compatible-adapter.js`，只为 `openai_compatible`�
 
 alpha.42 在协调层把净化后的 transport code 收敛为七类用户故障：不可达、超时、服务拒绝、重定向、响应不兼容、响应超限、凭据回显拒绝；未知错误只返回通用失败，不携带上游异常。发送计划在进入确认时先删除，因此成功或失败都不能原样重放。Renderer 失败后清除旧计划，只允许用户重新生成完整预览；该动作零请求，新的确认才允许再次联网。真实 loopback 测试使用临时 `127.0.0.1` Node HTTP 服务验证 socket/HTTP 路径和连接重置，不解除默认 session 离线，也不构成任一第三方服务兼容证明。
 
+alpha.42 的外部验收补充用官方 Ollama 0.32.5 standalone 和 qwen3:4b 在隔离仓库目录运行 `scripts/run_ollama_compatibility.js`。验收器固定版本、模型 manifest digest、loopback `/v1` 与匿名单问题，复用生产 `BoundedAIHttpClient`、compatible adapter、Router、Provider 和 Coordinator；证据仅保留判据、耗时和响应摘要，不保留建议正文。该结果证明一个具体组合的成功、缺失模型、超时、不落盘和不改稿路径，不改变 production app 的默认离线、分发资源或可支持矩阵。
+
 ### AD-014 Electron fuses 必须“显式固定—构建后读回—未知项失败关闭”（2026-07-28，冻结）
 
 `package.json` 必须显式开启 ASAR、不得关闭 embedded ASAR integrity，并列出全部当前工具已知 fuse 的精确值；不能依赖 electron-builder 默认值。配置在调用 builder 前校验，生成应用后立即从真实 Electron 二进制读取 fuse wire，再进入资源门禁、packaged smoke 和发布证据。
