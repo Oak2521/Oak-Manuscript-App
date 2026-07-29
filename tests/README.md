@@ -20,7 +20,7 @@
 - Windows builder 受控下载器固定官方 URL/HTTPS 主机/文件名/SHA-256，要求显式联网开关并覆盖零授权零写入、重定向/容量/哈希、事务提交/碰撞回滚及仓库路径边界；安全导入器继续拒绝 UNC、未知归档、路径穿越、链接/reparse、备用流、加密条目、名称冲突和解压膨胀，只有显式 `--update-lock` 才可建立/更新独立 tracked lock；三份真实归档、工具树和 tracked lock 已按用户授权建立并复验，注入响应与测试夹具仍不能冒充发布资产；
 - Windows 发布证据只接受 package/lock 当前版本的精确 NSIS/ZIP；覆盖 PE/ZIP 结构、旧制品/版本漂移、稳定文件身份、SHA256SUMS 与 canonical manifest 交叉绑定、两文件提交回滚、clear 全预检，以及真实缺制品 fail-closed；
 - 发行商身份门禁覆盖当前显式待定状态、完整 Windows/macOS 身份、源码 `build.appId`、ASAR production `oakReleaseIdentity`、重复键、unknown/reordered 字段、固定 schema/canonical 字节、占位文本、官方 URL、package 漂移和只读 CLI；
-- Windows 安装生命周期验收默认只读并精确绑定源码当前版本；专项测试覆盖 alpha.23/alpha.12 成功夹具、SemVer、NSIS x86 启动器与 x64 主程序、两开关授权门、零授权零启动/零输出、九阶段状态机、HKCU/快捷方式探针、持久化 sentinel、降级成功时 fail-closed 与 canonical 证据篡改。alpha.42 未打包，当前真实预检不会借用旧制品；
+- Windows 安装生命周期验收默认只读并精确绑定源码当前版本；专项测试覆盖 alpha.23/alpha.12 成功夹具、SemVer、NSIS x86 启动器与 x64 主程序、两开关授权门、零授权零启动/零输出、九阶段状态机、HKCU/快捷方式探针、持久化 sentinel、降级成功时 fail-closed 与 canonical 证据篡改。alpha.42 对归档 alpha.12 的真实只读预检已通过；
 - Web 作业、HTTP、Supabase、GoTrue、Fetch、客户端、Netlify 内容存储、持久任务、上传检查、私有 worker、双清扫与独立 SyncRecord 服务/API/repository/runtime 测试合计 130 项。alpha.38 的 26 项同步服务测试覆盖服务端独立白名单、可信主体、账号隔离、幂等/上限、列表快照、查看/删除、HTTPS/同源/CSRF/Bearer、固定 service-role RPC、RLS SQL 静态契约、生产式 Fetch 组合和异步审计失败隔离。Python Web 专项仍覆盖共享核心 one-shot、UTF-8/NUL、格式伪装、危险 ZIP、宏/ActiveX/嵌入/DDE、脚本 EPUB、固定子进程、身份最小化、拒绝零入库和预留释放。database/network/store 仍为注入仿真或静态检查，不冒充真实迁移、部署、容器/OS 禁网、病毒库或零留存测试；
 - 许可证字段/文件为空的拒绝路径，以及“有许可证文件仍不能替代全部 236 包人工审计”的 sale blocker 契约；
 - 资源门禁两阶段顺序：静态全量检查有任一错误时不执行 Python/Java，静态全绿后才运行探针；非原生 host/arch fail-closed，纯静态必须显式 `--no-runtime-probe`；
@@ -35,4 +35,4 @@ Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零�
 
 真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。当前 packaged smoke 强制通过受控链路运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言；缺失或陈旧 EXE 不得复用。
 
-alpha.42 最终隐藏源码 smoke 为 **PASS**，运行根为 `out/source-smoke/runs/ms5mq6e3-c9a77fa886f62c0d/projects/`。alpha.37 最终隐藏 packaged smoke 为 **SMOKE + SYNC-RECOVERY PASS**，运行根为 `out/packaged-smoke/runs/ms5ht9j7-67fece5b58d7c515/projects/`；其 canonical 证据把实际 EXE、双进程结果摘要和匿名输出树绑定进 schema v2 发布清单。两者版本证据必须分开解释；哈希不是代码签名，实际安装生命周期仍未运行。
+alpha.42 最终隐藏源码 smoke 为 **PASS**，运行根为 `out/source-smoke/runs/ms5mq6e3-c9a77fa886f62c0d/projects/`。同版本最终隐藏 packaged smoke 为 **SMOKE + SYNC-RECOVERY PASS**，运行根为 `out/packaged-smoke/runs/ms5nicav-edc12e1b32aaafed/projects/`；其 canonical 证据把实际 EXE、双进程结果摘要和匿名输出树绑定进 schema v2 发布清单。哈希不是代码签名，实际系统安装生命周期仍未运行。

@@ -1,6 +1,6 @@
 # ELECTRON_FUSE_POLICY — Electron 打包硬化合同
 
-> 当前源码为 `0.1.0-alpha.42`，最新真实打包二进制证据仍为 `0.1.0-alpha.37`。本文件描述源码配置、打包后强制写入与回读、ASAR 资源/production package 身份、packaged-smoke 哈希证据及受限应用协议合同。Web SDK、Postgres 迁移、服务端 repository、上传检查、私有 worker、一次性领取与 Python 子进程处理器位于 `web/` 私有子包且不在 Electron `build.files` 中；桌面 Auth/Sync 失败恢复、compatible AI 主进程 transport 和重新预览恢复已实现。账号默认受信配置为空；AI 只有逐条预览并确认后才允许请求。
+> 当前源码与最新真实打包二进制证据均为 `0.1.0-alpha.42`。本文件描述源码配置、打包后强制写入与回读、ASAR 资源/production package 身份、packaged-smoke 哈希证据及受限应用协议合同。Web SDK、Postgres 迁移、服务端 repository、上传检查、私有 worker、一次性领取与 Python 子进程处理器位于 `web/` 私有子包且不在 Electron `build.files` 中；桌面 Auth/Sync 失败恢复、compatible AI 主进程 transport 和重新预览恢复已实现。账号默认受信配置为空；AI 只有逐条预览并确认后才允许请求。
 
 ## 固定策略
 
@@ -22,7 +22,7 @@
 
 macOS arm64 写 fuse 后按官方工具要求设置 `resetAdHocDarwinSignature=true`；Windows 和 macOS x64 为 `false`。这只是打包阶段签名有效性处理，不等于正式 Developer ID 签名、公证或 Windows Authenticode。
 
-alpha.37 把 `electron/resource-trust-anchor.json` 与 production `package.json` 都作为真实 `app.asar` 证据读取：锚点复核 canonical loose 应用清单（含五份 Web schema）并绑定 Electron/Windows builder provenance，production package 的 exact `oakReleaseIdentity` 与发行身份交叉验证；当次文件数、字节数与摘要以 `TEST_REPORT.md` 为准。读取器解析当前 raw header 并精确读满 payload，不依赖 ASAR 路径缓存。这不会替代正式代码签名或人工许可签核。由于 `GrantFileProtocolExtraPrivileges=false` 会使 Electron 43 的 `file://...app.asar/...` 页面加载失败，主窗口使用只允许四个固定渲染文件的 `oak-manuscript://renderer/`；这不放宽 file 协议。
+alpha.42 延续并实测 `electron/resource-trust-anchor.json` 与 production `package.json` 的真实 `app.asar` 证据读取：锚点复核 canonical loose 应用清单（含 Web/同步 schema）并绑定 Electron/Windows builder provenance，production package 的 exact `oakReleaseIdentity` 与发行身份交叉验证；当次文件数、字节数与摘要以 `TEST_REPORT.md` 为准。读取器解析当前 raw header 并精确读满 payload，不依赖 ASAR 路径缓存。这不会替代正式代码签名或人工许可签核。由于 `GrantFileProtocolExtraPrivileges=false` 会使 Electron 43 的 `file://...app.asar/...` 页面加载失败，主窗口使用只允许四个固定渲染文件的 `oak-manuscript://renderer/`；这不放宽 file 协议。
 
 配置缺项、多项、值漂移、继承态或 removed 状态一律拒绝。构建顺序固定为：配置验证 → electron-builder（含 `afterPack` 全量写入与立即回读）→ 独立真实二进制 fuse 回读 → 打包资源门禁 → 隐藏 packaged smoke → smoke 证据 live 复验 → schema v2 发布证据生成。smoke 证据绑定实际 EXE、双进程结果和匿名输出树，但未签名前不构成不可伪造证明。
 

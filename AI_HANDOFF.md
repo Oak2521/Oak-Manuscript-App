@@ -4,7 +4,7 @@
 > 当前开发方：ChatGPT Codex
 > 当前版本：`0.1.0-alpha.42`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.42`（提交后建立；compatible AI 故障恢复与 loopback 验收检查点）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.42`（源码功能检查点）；最终 Windows 打包证据将在文档收口提交上另标 `chatgpt-v0.1.0-alpha.42-packaged`
 
 ## 1. 权威入口与工作区
 
@@ -37,7 +37,9 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - AI 发送失败仍消费一次性计划。界面持久显示安全原因，只允许“重新生成发送预览（不发送）”；重新预览零请求，用户必须再次查看同一披露并明确确认，应用不自动重发、不静默切换湖岸 AI、不修改稿件或配置；
 - 新增真实 `127.0.0.1` Node HTTP 纵向测试：Ollama 配置→预览零请求→确认后固定 POST→内存建议→人工接受；真实 socket reset 映射为 `AI_SERVICE_UNREACHABLE`，旧 plan 重放被拒绝；该证据不等于真实 Ollama/LM Studio 产品兼容；
 - AI 聚焦 38/38；最终 `npm test`：Node 590 total / 583 pass / 0 fail / 7 skip（3.762 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（102.360 秒），墙钟 110.6 秒；隐藏源码 Electron smoke PASS，输出 `out/source-smoke/runs/ms5mq6e3-c9a77fa886f62c0d/projects/`；
-- 本轮没有外部联网、真实模型调用、真实 AI 凭据、部署、官网修改或重新打包。唯一真实网络路径为测试进程内 `127.0.0.1` 临时服务；真实供应商版本、模型质量、TLS/凭据、官方云与商业发行仍无证据，最新真实 Windows 制品保持 alpha.37。
+- 最终 Windows x64 重构建 205.7 秒退出 0；NSIS 190,025,679 字节 / SHA-256 `69147b5a44f0ebbf5ff63ac46f6e640207e6edbd0abc3ce45c3ac89c03028736`，ZIP 233,856,293 字节 / `38c66dcd44d0bcd1249f865c9e38af531ac8f17aaed7667244ee6360b8f972a0`；`SHA256SUMS.txt` 摘要 `0886a9a2433d4ddadcbf29af17cd91e762a8bac305dfd9d3cfb11d54a956d09f`；
+- packaged 资源/ASAR、Electron 43 全 9 fuse、Python/JRE/EpubCheck/Ace 探针、隐藏双进程 smoke 和 schema v2 发布证据均 PASS。smoke 证据固定实际 EXE `c65ebfbc…d87e` 与匿名输出树 76 文件 / 1,368,631 字节 / `209a487e…e9ec`；alpha.42 对归档 alpha.12 的安装生命周期只读预检 PASS，未启动安装器或改写系统；
+- 本轮没有外部联网、真实模型调用、真实 AI 凭据、部署或官网修改。唯一真实网络路径为测试进程内 `127.0.0.1` 临时服务；真实供应商版本、模型质量、TLS/凭据、官方云与商业发行仍无证据。Windows 制品未签名，发行身份 `complete=false`，packaged 门禁保留 12 项 sale blocker，不是可售卖正式版。
 
 ### 已完成：0.1.0-alpha.41 OpenAI-compatible“我的 AI”纵向链
 

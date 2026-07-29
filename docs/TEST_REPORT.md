@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.42 compatible AI 故障恢复与真实 loopback 验收
+## 最新验证结论：0.1.0-alpha.42 compatible AI 故障恢复与 Windows packaged 验收
 
-验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮没有外部联网、真实模型调用、真实 AI 凭据、部署或官网修改；真实 socket 仅绑定测试进程内的 `127.0.0.1` 临时 HTTP 服务。源码 Electron smoke 在独立隐藏进程执行；没有重新打包，最新真实 Windows 制品保持 alpha.37。
+验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮没有外部联网、真实模型调用、真实 AI 凭据、部署或官网修改；真实 socket 仅绑定测试进程内的 `127.0.0.1` 临时 HTTP 服务。源码及 packaged Electron smoke 均在独立隐藏进程执行。首次 α42 构建验证完成后发现会进入 ASAR 的内部 README 仍记载 α37；修正并提交后执行最终 205.7 秒重构建，以下只采信最终制品。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -13,11 +13,16 @@
 | 资源信任复验 | **PASS** | 84 文件 / 2,145,925 字节，manifest SHA-256 `70ab613a5b11a9c64d89a46fe4502708aee4f7a8fb4cbb8e5269c8fcdcf6d045`，anchor SHA-256 `68ac171dc801360a98d9f301f48fb7ac7583ca9868ab093b1416ff4c4159d866` |
 | 独立隐藏源码 Electron smoke | **PASS** | `SMOKE-RESULT: PASS`；输出 `out/source-smoke/runs/ms5mq6e3-c9a77fa886f62c0d/projects/`；未配置 AI、未产生模型请求 |
 | 真实本机 HTTP 边界 | **PASS（协议夹具，不是产品兼容）** | 实际监听 `127.0.0.1` 随机端口；预览前/后零请求，确认后一次 `/v1/chat/completions` POST；另一次真实连接重置映射为 `AI_SERVICE_UNREACHABLE`，旧计划不能重放 |
+| 最终 Windows x64 electron-builder | **制品生成成功** | `npm run build:win` 退出码 0，205.7 秒；源码/packaged 资源、真实 ASAR production identity、运行时探针和全 9 fuse 同链通过 |
+| 独立隐藏 packaged Electron smoke | **PASS** | `SMOKE-RESULT: PASS`；真实运行 alpha.42 `release/win-unpacked/湖岸稿件 Oak Manuscript.exe`；输出 `out/packaged-smoke/runs/ms5nicav-edc12e1b32aaafed/projects/`；主进程与第二进程恢复标志各唯一一次 |
+| packaged smoke canonical 证据 | **PASS** | 证据 1,222 字节 / `4e925327ca37b2b9476087d45d9dcf1f93980dd455c23a95349d6ed8a3a93cac`；绑定实际 EXE 225,449,472 字节 / `c65ebfbc04609a5d5902897e1f7b2cb1600aedbedb759c4026b27a2e6c93d87e`，以及输出树 76 文件 / 1,368,631 字节 / `209a487ec35af4a65174fd905471586aafb45b4fccb181597e5535c0bd4fe9ec` |
+| 发布证据生成与独立复验 | **PASS** | manifest schema v2；NSIS 190,025,679 字节 / `69147b5a44f0ebbf5ff63ac46f6e640207e6edbd0abc3ce45c3ac89c03028736`；ZIP 233,856,293 字节 / `38c66dcd44d0bcd1249f865c9e38af531ac8f17aaed7667244ee6360b8f972a0`；SHA 文件摘要 `0886a9a2433d4ddadcbf29af17cd91e762a8bac305dfd9d3cfb11d54a956d09f`；manifest 文件摘要 `5724f78085703c2586aa133690f212bd58250595ef76a61143f7663e74156214` |
+| 安装生命周期只读预检 | **PASS（未改系统）** | alpha.42 当前 schema v2 安装器与归档 alpha.12 schema v1 安装器精确绑定；`authorized=false`、`ready_for_authorized_run=true`；未运行安装、升级、降级探测或卸载 |
 | 真实 Ollama / LM Studio / OpenAI-compatible 产品 | **未运行** | 未启动任一产品或模型；没有具体版本、模型加载、质量、真实拒绝/超时、凭据或 TLS 证据，不能把 loopback 夹具写成兼容通过 |
 | OpenAI / Anthropic / Gemini 官方云 | **未实现/未运行** | 未联网核对当前官方协议，三个 provider 继续不注册 adapter |
-| alpha.42 packaged / Windows 安装 / macOS | **未运行** | 最新真实 NSIS/ZIP 与 packaged smoke 仍为 alpha.37；源码测试不能代表 alpha.42 制品或 macOS 通过 |
+| Windows 签名 / 真实安装生命周期 / 干净机 / macOS | **未运行** | 当前是未签名 Windows 内测制品；发行身份 `complete=false` 且 packaged 资源门禁保留 12 项 sale blocker，不是可售卖正式版 |
 
-证据边界：本轮把“注入函数调用”提升为真实本机 socket/HTTP 证据，并证明失败后的用户恢复链不会自动重试或泄密；仍不证明任何第三方服务版本、模型质量、远程 TLS/凭据、云端隐私或商业发行完成。
+证据边界：本轮把“注入函数调用”提升为真实本机 socket/HTTP 证据，并证明失败后的用户恢复链不会自动重试或泄密；同时证明 alpha.42 Windows x64 字节级制品、打包资源、ASAR/fuse、安全启动、本地端到端流程及 EXE/匿名输出树哈希绑定可复验。证据与制品同处可写本地仓库，在 Authenticode 或独立可信见证前可被整体重造；不证明第三方服务兼容、模型质量、系统安装生命周期、干净机、macOS、生产账号/同步/Web 或商业销售条件完成。
 
 ## 历史验证结论：0.1.0-alpha.41 OpenAI-compatible“我的 AI”纵向链
 

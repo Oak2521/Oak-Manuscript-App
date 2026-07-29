@@ -9,7 +9,8 @@
 - [x] 失败消费原一次性计划；界面只允许重新生成零请求预览，必须再次确认后才发送，不自动重试、不静默回退、不改稿或配置；
 - [x] 真实 `127.0.0.1` HTTP 测试证明预览零请求、确认后一次固定 POST、内存建议与人工审阅，并以真实连接重置证明可操作失败和计划单次消费；
 - [x] AI 聚焦 38/38；`npm test` Node 590 / Python 362 全量零失败；资源清单 84 文件 / 2,145,925 字节；独立隐藏 alpha.42 源码 smoke PASS；
-- [ ] 任一真实 Ollama/LM Studio/OpenAI-compatible 产品版本、模型质量、真实凭据/TLS 和供应商故障尚未验收；alpha.42 未打包，最新真实 Windows 制品仍为 alpha.37。
+- [x] alpha.42 Windows x64 NSIS/ZIP、packaged 资源/ASAR、Electron 9 fuse、双进程隐藏 smoke、schema v2 发布证据与 alpha.12 安装生命周期只读预检通过；
+- [ ] 任一真实 Ollama/LM Studio/OpenAI-compatible 产品版本、模型质量、真实凭据/TLS 和供应商故障尚未验收；Windows 签名、真实系统安装/升级/卸载和干净机验收也未完成。
 
 ## 0.1.0-alpha.41 OpenAI-compatible“我的 AI”纵向链验收（2026-07-29）
 
