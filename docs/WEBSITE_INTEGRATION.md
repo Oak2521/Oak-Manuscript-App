@@ -2,14 +2,14 @@
 
 > 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.45 源码）
+## Provider 一览（当前 alpha.46 源码）
 
-alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI；alpha.44 增加桌面签名权益验证和网站同步历史客户端；alpha.45 增加独立服务端权益 signer/service/HTTP/runtime 与原子设备授权 SQL。受信账号与权益配置仍为 `pending_configuration` 且端点/key/公钥为空；数据库迁移未执行、API 与客户端未部署，因此普通 APP 仍不登录、刷新订阅或同步。商业仓库没有真实 service-role key、OAuth 配置、权益私钥或 AI key。
+alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI；alpha.44 增加桌面签名权益验证和网站同步历史客户端；alpha.45 增加独立签发链；alpha.46 增加规范化订阅事件和当前账号设备管理 API/runtime/SQL。受信账号与权益配置仍为 `pending_configuration` 且端点/key/公钥为空；数据库迁移未执行、API 与客户端未部署，因此普通 APP 仍不登录、刷新订阅或同步。商业仓库没有真实 service-role key、OAuth 配置、权益私钥或 AI key。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
 | `AuthProvider` | 系统浏览器 Authorization Code + PKCE S256/state、固定 Windows/macOS 深链、safeStorage token-store、刷新身份复核已完成离线源码/注入测试；默认配置为空时返回 `configuration_required`，不打开页面、不联网 | 在获准预生产环境核对正式 OAuth/OIDC、nonce/ID-token 取舍、真实刷新/退出/撤销、邮箱与 Google OAuth |
-| `LicenseProvider` | alpha.44 已实现桌面受信配置/验签/加密缓存；alpha.45 已实现独立服务端 signer、可信账号授权、固定 HTTP/runtime、原子设备上限 RPC 及客户端稳定错误映射；默认配置为空，仓库无生产私钥 | 实现支付/退款事件摄入、设备自助管理、私钥托管/轮换，执行迁移并填充生产配置完成真实 E2E；价格未拍板 |
+| `LicenseProvider` | alpha.44 已实现桌面受信配置/验签/加密缓存；alpha.45 已实现独立签发；alpha.46 已实现规范化订阅事件与账号设备列表/撤销服务；默认配置为空，仓库无生产私钥 | 选择支付商并实现原始 webhook 验签适配、网站设备管理 UI、私钥托管/轮换，执行迁移并填充生产配置完成真实 E2E；价格未拍板 |
 | `EvaluationProvider` | 用户点击后返回固定湖岸 HTTPS 评估页 URL，由主进程白名单校验并交给系统浏览器打开；APP 不在该 Provider 中生成或上传摘要 | 用户确认后提交脱敏摘要（§8.3–§8.4） |
 | `SyncProvider` | 可信 Python 来源 → exact 校验 → 完整预览 → 四选一确认 → 按账户 OS 加密队列；服务/API/Supabase、桌面 client/coordinator 和网站列表/属主删除 client 已有源码；默认无端点，迁移/服务/页面未部署 | 填充受信正式配置，完成预生产迁移、真实 E2E 与官网账号后台部署 |
 | `StandardsProvider` | 离线验证内置 release；本地签名包预览/安装/全局回滚、项目固定版本与显式升级已实现；生产 trust pin 缺失时导入禁用 | 用户主动触发的在线检查/下载、签名与撤回分发、可观测回滚；绝不上传稿件 |
@@ -44,7 +44,15 @@ alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；al
 
 `web/entitlement-runtime.js` 组合公开 GoTrue key、独立 service-role repository、服务端 signer 和必填 audit sink。`web/supabase/003_manuscript_entitlements.sql` 提供权益/设备表和账户锁下的原子授权 RPC，只授予 `service_role`；浏览器、桌面和普通用户 JWT 不得获得 service-role key 或签名私钥。部署必须分别注入 Ed25519 私钥、key ID、issuer、API keys 和容量，不得把任何秘密打入客户端 bundle。
 
-当前未执行 `003_manuscript_entitlements.sql`，没有真实支付事件来源、生产私钥/HSM/轮换、设备管理页面或真实端到端证据。alpha.45 的 fake GoTrue/RPC 纵向测试只能证明边界组合，不证明线上订阅可用。
+当前未执行 `003_manuscript_entitlements.sql` 或后续 004 migration，没有真实支付商 webhook 适配、生产私钥/HSM/轮换、设备管理页面或真实端到端证据。alpha.45 的 fake GoTrue/RPC 纵向测试只能证明签发边界组合，不证明线上订阅可用。
+
+## 规范化订阅事件与账号设备 API v1（alpha.46，未部署）
+
+`web/subscription-event-runtime.js` 不是公开 webhook 端点，而是供上游已验签账单适配器调用的 server-only ingestor。部署构造固定 provider ID；输入 exact 事件只含 provider event、账号/权益、原因、状态和时间窗。原始 webhook、签名、价格、付款资料与客户 PII 必须留在未来支付商专用适配器之外，不能透传或入库。provider event ID 与 canonical SHA-256 区分 applied/replayed/stale/conflict，乱序旧事件不得覆盖新权益。
+
+网站同源账号后台可调用 `GET /manuscript/api/v1/account/license` 获取 content-free 权益状态和最多 20 台设备，调用 `POST /manuscript/api/v1/account/license/devices/:device_id/revoke` 明确撤销一台属主设备。两条路由都要求 HTTPS 与 GoTrue Bearer，POST 另要求 exact same-origin；不存在和外来设备不可区分。浏览器 bundle 不持有 service-role key，公开响应不返回账号、权益 ID 或 revision。
+
+`web/supabase/004_subscription_events_and_devices.sql` 增加事件表、权益来源列和三个 service-role-only RPC。它必须在 001—003 之后执行。当前 SQL 未在真实 PostgreSQL/Supabase 解析或运行，网站 client 也尚未加入订阅/设备界面，因此不能称为设备自助后台已完成。
 
 ## Web 作业契约 v1、HTTP/GoTrue/Fetch/Blobs/Postgres/inspection/worker/result/cleanup 与账号适配（alpha.31）
 

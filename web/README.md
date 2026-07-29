@@ -1,6 +1,6 @@
 # Web 作业契约与同源 HTTP handler（alpha）
 
-`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.38 以独立服务/API/Supabase/runtime 实现长期 SyncRecord，alpha.44 为 `client/` 增加当前账号历史列表/刷新/属主删除；alpha.45 以 `entitlement-signer.js`、`entitlement-service.js`、`entitlement-http-handler.js`、`supabase-entitlement-repository.js`、`entitlement-runtime.js` 和 `supabase/003_manuscript_entitlements.sql` 实现未部署的签名权益签发链。源码可本机测试，但临时作业、长期同步与订阅权益均不是已上线生产服务。
+`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.38 以独立服务/API/Supabase/runtime 实现长期 SyncRecord，alpha.44 为 `client/` 增加当前账号历史列表/刷新/属主删除；alpha.45 实现未部署的签名权益签发链；alpha.46 以 `subscription-event-*`、`license-account-*` 和 `supabase/004_subscription_events_and_devices.sql` 增加规范化订阅事件及当前账号设备管理服务。源码可本机测试，但临时作业、长期同步与订阅权益均不是已上线生产服务。
 
 Web 服务端依赖与 Electron 桌面依赖隔离：
 
@@ -41,6 +41,14 @@ alpha.45 签名权益固定：
 - HTTP 成功响应发送前再次 exact 校验；错误和审计不含 token、账号、设备、稿件、路径、哈希、私钥或上游正文；
 - `entitlement-runtime.js` 分离公开 Supabase key、service-role key、私钥/key ID 与 audit sink。当前仅有注入测试和 SQL 静态检查，没有真实迁移、密钥托管、支付事件或部署。
 
+alpha.46 订阅事件与设备管理固定：
+
+- `subscription-event-runtime.js` 仅供上游已验证账单适配器调用，provider ID 由服务端构造绑定；exact 事件不接收原始 webhook、价格、付款资料、客户 PII 或稿件；
+- 事件以 canonical JSON SHA-256 和 provider event ID 实现 `applied|replayed|stale|conflict`，旧事件不能覆盖较新权益；支付商签名验证仍属于尚未实现的独立适配器；
+- 账号路由固定为 `GET /manuscript/api/v1/account/license` 与 `POST /manuscript/api/v1/account/license/devices/:device_id/revoke`；HTTPS/Bearer 必需，POST 另要求 exact same-origin；
+- overview 只返回公开权益时间窗与最多 20 台设备；撤销只作用于当前 owner，不存在/外来设备统一 404；错误与 audit 不含账号、设备实值、token 或稿件；
+- `supabase-entitlement-repository.js` 只允许四个 RPC；004 migration 增加 content-free event table、来源元数据、事件 apply、账号 overview 和 owner revoke。当前只有静态/注入验证，没有真实 PostgreSQL/Supabase 执行或网站客户端。
+
 alpha.23—alpha.31 固定：
 
 - API 前缀 `/manuscript/api/v1/jobs`，提供创建、状态、输入上传、一次性结果领取、取消和删除动作；不暴露 worker 开始/完成路由；结果领取只接受状态变更 POST，GET 不消费；
@@ -62,7 +70,7 @@ alpha.23—alpha.31 固定：
 - HTTP 错误与安全审计分别受 `web-http-error-v1`、`web-http-audit-v1` exact schema 约束。审计不记录主体、任务 ID、URL、请求头或稿件元数据；
 - handler 不设置 CORS，响应固定 `no-store` / `nosniff` / CSP / `no-referrer`。错误文案固定且不反射异常、路径、账号或稿件内容。
 
-生产实现仍须补齐：在隔离环境依序执行/复核 `001_web_job_state.sql`、`002_sync_records.sql` 与 `003_manuscript_entitlements.sql`，完成 GoTrue/Postgres/Blobs 真实 E2E、平台恶意软件扫描、容器/OS 禁网与资源隔离、支付/退款/宽限事件摄入、设备管理、私钥托管/轮换、部署计划双清扫/告警/故障演练、生产 PKCE/main transport 接线和网站后台联调。当前一次性领取不生成额外签名 URL/token，但仍须在真实平台验证删除、传输中断与三路零留存。
+生产实现仍须补齐：在隔离环境依序执行/复核 `001_web_job_state.sql`、`002_sync_records.sql`、`003_manuscript_entitlements.sql` 与 `004_subscription_events_and_devices.sql`，完成 GoTrue/Postgres/Blobs 真实 E2E、平台恶意软件扫描、容器/OS 禁网与资源隔离、支付商 webhook 验签适配、网站订阅/设备客户端、私钥托管/轮换、部署计划双清扫/告警/故障演练、生产 PKCE/main transport 接线和网站后台联调。当前一次性领取不生成额外签名 URL/token，但仍须在真实平台验证删除、传输中断与三路零留存。
 
 ## 参考调用顺序
 
@@ -129,7 +137,7 @@ const handleSyncRecordRequest = createSyncRecordFetchHandler({
 // 生产调度仍须放入有 OS 禁网、只读根和资源限制的隔离环境。
 ```
 
-部署前须由数据库所有者在隔离预生产项目按顺序执行并复核 `supabase/001_web_job_state.sql`、`supabase/002_sync_records.sql` 与 `supabase/003_manuscript_entitlements.sql`。GoTrue verifier 使用服务端可用的最小 API key；各 repository 单独使用仅存在于服务器环境的 service-role key，权益 runtime 另注入 Ed25519 私钥；这些秘密不得进入浏览器、客户端 bundle、日志或错误。不得只解码未验签 JWT，也不得把请求正文、普通代理头或 user metadata 角色映射为 principal。若改用 HttpOnly Cookie，session resolver 必须返回 `auth_mode:"cookie"` 与服务器绑定 CSRF；权益端点仍固定只接受 Bearer。计划任务应调用 `ZeroRetentionSweeper.runCycle()`，由它有界运行状态 `sweepDeletionDue()`、内容 `sweepExpiredObjects()` 和第二次状态收敛；必须监控 `attention_required` 与截断。周期清零仍不自动证明平台后台副本已删除，正式零留存需要生产生命周期证据。
+部署前须由数据库所有者在隔离预生产项目按顺序执行并复核 `supabase/001_web_job_state.sql`、`supabase/002_sync_records.sql`、`supabase/003_manuscript_entitlements.sql` 与 `supabase/004_subscription_events_and_devices.sql`。GoTrue verifier 使用服务端可用的最小 API key；各 repository 单独使用仅存在于服务器环境的 service-role key，权益 runtime 另注入 Ed25519 私钥；这些秘密不得进入浏览器、客户端 bundle、日志或错误。不得只解码未验签 JWT，也不得把请求正文、普通代理头或 user metadata 角色映射为 principal。若改用 HttpOnly Cookie，session resolver 必须返回 `auth_mode:"cookie"` 与服务器绑定 CSRF；权益端点仍固定只接受 Bearer。计划任务应调用 `ZeroRetentionSweeper.runCycle()`，由它有界运行状态 `sweepDeletionDue()`、内容 `sweepExpiredObjects()` 和第二次状态收敛；必须监控 `attention_required` 与截断。周期清零仍不自动证明平台后台副本已删除，正式零留存需要生产生命周期证据。
 
 ## 稳定错误码
 

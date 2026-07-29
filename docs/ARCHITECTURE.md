@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.45` 源码架构与最新 alpha.42 Windows packaged 证据：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、独立服务端/API/Supabase 持久层、桌面 PKCE/加密 token-store/同步失败恢复、账号/设备绑定的 Ed25519 权益客户端与独立服务端签发/原子设备授权链，以及三模式 AI/OS 加密凭据/单条预览/建议审阅。Web 临时作业保持独立零留存源码边界，网站客户端已能查看和属主删除同步历史。默认账号与权益配置无端点/密钥，仓库无生产私钥；alpha.45 源码与 alpha.42 Windows x64 ASAR/fuse/资源/smoke 分别验证。真实账号、计费事件、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.46` 源码架构与最新 alpha.42 Windows packaged 证据：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、桌面 PKCE/加密 token-store、账号/设备绑定的 Ed25519 权益客户端、独立签发、规范化订阅事件与属主设备管理服务，以及三模式 AI/OS 加密凭据/单条预览/建议审阅。Web 临时作业保持独立零留存源码边界，网站客户端已能查看和属主删除同步历史。默认账号与权益配置无端点/密钥，仓库无生产私钥；alpha.46 源码与 alpha.42 Windows x64 ASAR/fuse/资源/smoke 分别验证。真实账号、支付商 webhook、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
 
 ## 1. 总体分层
 
@@ -152,6 +152,10 @@ alpha.44 在 `web/client/` 增加当前账号的同步历史列表与属主删�
 缓存明文由 `license-cache-v1.schema.json` 定义，只作为 `OAKLIC1` safeStorage 密文保存；revision CAS、独占候选、`fsync`、原子换入、提交后解密复验、父链/链接/硬链接/读取竞态门禁沿用账号/同步 store 的 fail-closed 标准。active 与 grace 提供 Pro；expired、revoked、not-yet-valid、invalid、signed-out 与 not-cached 均为 Free。任何状态固定 `localProjectsLocked=false`，订阅失败不得劫持用户已有本地文件。
 
 alpha.45 的服务端链由 `entitlement-runtime.js` 组合 GoTrue verifier/session resolver、service-role repository、独立 Ed25519 signer、HTTP handler 和 Fetch adapter。`003_manuscript_entitlements.sql` 把权益与设备分表，强制 RLS，唯一 RPC 在 account advisory lock 内原子读取权益、复核既有设备或检查容量后登记新设备。Signer 不复用 Electron canonicalizer，私钥只允许服务器构造注入；HTTP 成功响应还要再次通过 exact shape/容量校验，错误与审计 content-free。支付/退款事件摄入、设备管理 UI、真实迁移/RLS/多实例、生产私钥托管/轮换与 E2E 仍是独立门禁；详见 `SIGNED_ENTITLEMENT_V1.md`。
+
+alpha.46 在 signer 上游增加 provider-bound 的规范化订阅快照 ingestor。支付商原始 webhook、签名、金额、支付工具和客户 PII 必须由未来的独立适配器处理；核心只接受权益原因/状态/时间窗，以 provider event ID 和 canonical SHA-256 实现重放、冲突和乱序语义。`004_subscription_events_and_devices.sql` 在同一账号 advisory lock 内保存 content-free 事件并更新权益来源真相，旧事件只记 `stale`，不能覆盖较新状态。
+
+同一迁移增加账号权益概览与属主设备撤销 RPC；`license-account-runtime.js` 组合 GoTrue、service-role repository、service 和固定 HTTP/Fetch 边界。GET 只返回当前账号的公开权益时间窗与最多 20 台设备，POST 只撤销 URL 指定且归属当前账号的设备；状态变更强制 exact same-origin。公开响应和 audit 均删除账号、权益 ID、revision 与实际设备路由值。网站客户端尚未消费这些路由，SQL 也未真实迁移。
 
 ### AD-018 Web 临时任务必须“可信主体—单任务同意—内容/元数据分道—删除失败可见”（2026-07-28，冻结）
 

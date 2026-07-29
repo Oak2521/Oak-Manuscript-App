@@ -2,15 +2,15 @@
 
 ## 桌面应用（推荐）
 
-当前开发源码为 `0.1.0-alpha.45`；最新已打包 Windows x64 NSIS/ZIP 仍是未签名 alpha.42，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.45 已包含桌面 PKCE/加密账号会话、签名订阅权益客户端、未部署的服务端签发/原子设备授权源码、同步失败恢复、网站同步历史客户端，以及 compatible 三类逐条 AI 建议；默认账号与权益配置仍为空，仓库没有生产私钥，普通启动和构建不会触发账号/权益联网或下载。
+当前开发源码为 `0.1.0-alpha.46`；最新已打包 Windows x64 NSIS/ZIP 仍是未签名 alpha.42，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.46 已包含桌面 PKCE/加密账号会话、签名订阅权益客户端、未部署的服务端签发、规范化订阅事件与设备管理服务、同步失败恢复、网站同步历史客户端，以及 compatible 三类逐条 AI 建议；默认账号与权益配置仍为空，仓库没有生产私钥，普通启动和构建不会触发账号/权益联网或下载。
 
-**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.45 结果为 Node 630/623/0/7、Python 362/0 failures/0 errors/3 skipped；跳过项不计作通过。alpha.45 独立隐藏源码 smoke 通过；packaged smoke、第二进程加密队列恢复、实际 EXE 和匿名输出树证据仍对应 alpha.42。
+**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.46 结果为 Node 648/641/0/7、Python 362/0 failures/0 errors/3 skipped；跳过项不计作通过。alpha.46 独立隐藏源码 smoke 通过；packaged smoke、第二进程加密队列恢复、实际 EXE 和匿名输出树证据仍对应 alpha.42。
 
-**Web 状态**：`web/client/` 已提供可本地渲染的临时处理工作台，保留湖岸账号登录/注册，包含“默认”引用体例、本次临时处理同意、创建/上传/轮询/取消/一次性领取；另提供当前账号 SyncRecord 历史列表、刷新和确认删除。服务端已有 GoTrue、Fetch、Netlify Blobs、Supabase/Postgres、上传检查、私有 worker、`/manuscript/api/v1/sync-records` 与 `/manuscript/api/v1/entitlement` 源码边界。三条 SQL 均未在真实 Supabase 执行，API/计划任务/页面也未部署；本地注入测试不等于平台零留存、订阅可用或线上可用。临时任务完成后自动生成同步记录仍禁用，支付/退款和设备后台未接通。用户不要把稿件交给任何声称基于该 alpha 的线上地址；正式地址只能在官网联调、隐私文本和生产验收后公布。
+**Web 状态**：`web/client/` 已提供可本地渲染的临时处理工作台，保留湖岸账号登录/注册，包含“默认”引用体例、本次临时处理同意、创建/上传/轮询/取消/一次性领取；另提供当前账号 SyncRecord 历史列表、刷新和确认删除。服务端已有 GoTrue、Fetch、Netlify Blobs、Supabase/Postgres、上传检查、私有 worker、`/manuscript/api/v1/sync-records`、`/manuscript/api/v1/entitlement` 与账号设备管理源码边界。四条 SQL 均未在真实 Supabase 执行，API/计划任务/页面也未部署；本地注入测试不等于平台零留存、订阅可用或线上可用。临时任务完成后自动生成同步记录仍禁用；支付商 webhook 和网站订阅/设备界面未接通。用户不要把稿件交给任何声称基于该 alpha 的线上地址；正式地址只能在官网联调、隐私文本和生产验收后公布。
 
 **账号与结果同步（当前边界）**：欢迎页、导出页和设置页保留湖岸账号入口。仓库受信配置为 `pending_configuration`，点击登录只会显示配置未完成，不打开浏览器或联网。alpha.39 已实现未来正式配置下的系统浏览器 PKCE、固定深链和 OS 加密账号会话，但尚未连接真实服务。登录用户导出后才会看到 SyncRecord v1 逐字段预览，并可选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。确认项进入系统加密本机队列；配置完整时设置页才显示逐项“发送到网站/确认重试并发送”，登录绝不自动上传。token 只在主进程密文中并与队列账号绑定；远端创建/幂等重放后才删除本机项，失败或账号切换则保留。当前默认配置下 APP 绝未上传到网站；系统加密不可用时同步安全停止，本地稿件功能不受影响。
 
-**订阅权益（当前边界）**：设置页显示当前 Free/Pro、有效/宽限/过期/撤销状态。查看状态不联网；只有已登录用户点击“刷新订阅权益”才会向未来配置的固定湖岸端点请求一次签名权益。客户端必须验证 Ed25519 签名及账号、设备、issuer、audience 和时间，成功后才更新 OS 加密缓存；失败只降为 Free，不锁已有项目。alpha.45 已有未部署的服务端签发、可信账号绑定和原子设备授权源码；当前权益配置仍为 `pending_configuration`，按钮不可用且不会联网。支付、退款、设备自助管理、生产私钥和真实服务均未上线。
+**订阅权益（当前边界）**：设置页显示当前 Free/Pro、有效/宽限/过期/撤销状态。查看状态不联网；只有已登录用户点击“刷新订阅权益”才会向未来配置的固定湖岸端点请求一次签名权益。客户端必须验证 Ed25519 签名及账号、设备、issuer、audience 和时间，成功后才更新 OS 加密缓存；失败只降为 Free，不锁已有项目。alpha.46 已有未部署的服务端签发、规范化订阅事件、账号权益概览和属主设备撤销 API；当前权益配置仍为 `pending_configuration`，按钮不可用且不会联网。网站设备管理 UI、支付商 webhook、生产私钥和真实服务均未上线，用户目前还不能在页面操作这些 API。
 
 **AI 设置与发送预览（当前边界）**：设置页提供“无 AI”“湖岸 AI”“我的 AI”。我的 AI 支持 OpenAI、Anthropic、Google Gemini、OpenAI-compatible、Ollama 和 LM Studio，属于 Pro 权益且不消耗湖岸 AI 配额；三个官方云供应商固定使用官方端点，自定义地址必须选择 OpenAI-compatible；远程地址必须使用 HTTPS，本机 HTTP 只接受 loopback。凭据不会回填到界面、报告或同步，供应商/地址变化后必须重新提供。
 
@@ -172,9 +172,9 @@ npm run verify:release-identity
 npm run release:evidence:verify:win
 ```
 
-验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest；不会扫描其他版本替代当前制品。alpha.42 的 NSIS、ZIP、SHA 文件与 schema v2 canonical manifest 已通过交叉验证；当前源码已升 alpha.45 且尚无对应制品，因此运行 alpha.45 发布验证应按设计拒绝缺失，不能复用 alpha.42 字节。
+验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest；不会扫描其他版本替代当前制品。alpha.42 的 NSIS、ZIP、SHA 文件与 schema v2 canonical manifest 已通过交叉验证；当前源码已升 alpha.46 且尚无对应制品，因此运行 alpha.46 发布验证应按设计拒绝缺失，不能复用 alpha.42 字节。
 
-安装生命周期验收器默认只读、不启动安装器，并要求当前源码版本存在精确制品。alpha.42 对归档 alpha.12 的只读预检已经通过；当前 alpha.45 未构建，因此不具备 alpha.45 预检输入：
+安装生命周期验收器默认只读、不启动安装器，并要求当前源码版本存在精确制品。alpha.42 对归档 alpha.12 的只读预检已经通过；当前 alpha.46 未构建，因此不具备 alpha.46 预检输入：
 
 ```powershell
 npm run verify:install-lifecycle:win

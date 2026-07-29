@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-29
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.45`
+> 当前版本：`0.1.0-alpha.46`
 > 当前分支：`chatgpt/commercial-v1`
-> 当前源码本地标签：`chatgpt-v0.1.0-alpha.45-entitlement-issuer`；既有 `chatgpt-v0.1.0-alpha.44-signed-entitlements` 为桌面签名权益检查点，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据
+> 当前源码本地标签：`chatgpt-v0.1.0-alpha.46-subscription-devices`；既有 `chatgpt-v0.1.0-alpha.45-entitlement-issuer` 为服务端签发检查点，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,15 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.46 规范化订阅事件与设备管理服务源码
+
+- 新增 provider 绑定的规范化订阅快照事件：只接收 `purchase|renewal|cancellation|refund|chargeback|manual`、权益状态与规范时间窗，不接收金额、支付工具、原始 webhook、客户 PII 或稿件；canonical JSON 与 SHA-256 指纹绑定 provider event ID；
+- 新增 `web/supabase/004_subscription_events_and_devices.sql`：content-free 事件表、权益来源列、事件幂等/冲突/乱序语义、当前账号权益概览和属主设备撤销 RPC。账户 advisory lock 内保证同一账号事件与设备状态原子更新，浏览器角色无表/RPC 权限；
+- 新增固定 `GET /manuscript/api/v1/account/license` 与 `POST /manuscript/api/v1/account/license/devices/:device_id/revoke`。HTTP 边界只接受 HTTPS/Bearer，状态变更要求 exact same-origin；公开响应删除账号、权益 ID 与 revision，审计 route 使用占位符且不记录 device ID；
+- repository 仍只调用四个固定白名单 RPC，严格校验响应归属、字段和容量。不存在设备与外来账号设备统一为 `DEVICE_NOT_FOUND`，防止枚举；生产形状 runtime 分离 public key、service-role key 与必填 audit sink；
+- 新增 18 项 Node 测试；里程碑纵向链 27/27、相关账号/权益/同步链 88/88。最终 `npm test`：Node 648 total / 641 pass / 0 fail / 7 skip（4.320 秒），Python 362 / 0 failures / 0 errors / 3 skipped（104.323 秒），墙钟 114.5 秒；资源信任 96 文件 / 2,158,481 字节，manifest `9e69054b…ce5`，anchor `e3e84afc…f698`；隐藏源码 smoke PASS，输出 `out/source-smoke/runs/ms5u8go3-2af4409c2a05d15c/projects/`；
+- 本轮未联网、未读取或写入真实账号/支付/数据库，未执行 SQL、部署、修改官网、推送或重新打包。账单事件假定上游适配器已完成支付商 webhook 验签；真实支付商、签名验证、网站设备管理 UI、迁移/RLS/并发与生产 E2E 仍未完成。
 
 ### 已完成：0.1.0-alpha.45 服务端签名权益签发链源码
 
@@ -605,7 +614,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - Windows：alpha.37 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke、schema v2 发布证据，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：临时作业链保持；alpha.38 另实现 SyncRecord 独立服务验证、同源 API、GoTrue/runtime、Supabase repository/002 迁移源码。生产环境/真实账号与 Blobs/Postgres E2E、病毒库/平台扫描、容器/OS 禁网与资源隔离、计费和官网嵌入仍未实现；
-- 账号/订阅/同步：离线 Provider/Free+Pro、逐字段确认、OS 加密队列和重启恢复、桌面 PKCE/加密 token-store/条件 main 接线、SyncRecord 服务链，以及签名权益客户端与服务端签发/原子设备授权源码已实现；默认账号/权益配置仍为空，生产私钥不存在，真实 PKCE/刷新/撤销、支付事件、设备后台、Supabase 迁移/部署和网站后台未连接；
+- 账号/订阅/同步：离线 Provider/Free+Pro、逐字段确认、OS 加密队列和重启恢复、桌面 PKCE/加密 token-store/条件 main 接线、SyncRecord 服务链、签名权益、规范化订阅事件及属主设备管理服务源码已实现；默认账号/权益配置仍为空，生产私钥不存在，真实 PKCE/刷新、支付商 webhook 验签适配、网站设备 UI、Supabase 迁移/部署和网站后台未连接；
 - AI：Ollama 0.32.5 + qwen3:4b 与 LM Studio llmster 0.0.20+1 + 同一 Qwen3 4B GGUF 已分别通过一个匿名连续空格问题的窄范围验收；其他版本/模型/硬件、多模型语义、多规则/真实稿件质量、官方云、远程 TLS 与湖岸 AI 仍未验收；
 - 标准库：治理结构和引用解析政策已完成，13 项标准、35 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
 - 标准升级：本地验证、签名包导入/回滚骨架、项目固定与显式升级已编码；生产 trust pin、在线获取/下载、签名撤回分发与联网自动更新未实现；
@@ -634,8 +643,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划。近期直接闭合“账号 → 权益 → 检查 → 明确同步”主链：
 
-1. alpha.45 已完成账号 → 原子设备授权 → 独立签名 → 桌面验签的仓库内纵向链；下一项是在同一 server-only 边界实现订阅/退款/宽限事件摄入契约与设备列表/撤销服务源码，不接触真实支付平台；
-2. 再补网站账号后台的设备管理客户端和订阅状态展示，保持稿件内容、文件身份与权益数据物理分离；
+1. alpha.46 已完成规范化订阅/退款/宽限事件摄入与属主设备列表/撤销服务源码；下一项直接补网站账号后台的订阅状态、设备列表和确认撤销客户端，保持稿件内容、文件身份与权益数据物理分离；
+2. 网站客户端完成后，把账号 → 订阅状态 → 设备撤销 → 桌面刷新权益串成一组无真实秘密的纵向 UI 测试，不把 fake service 写成线上可用；
 3. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，才填充 `desktop-auth.json` / `desktop-license.json`，执行真实 PKCE、数据库迁移、RLS、签发刷新、撤销和网站后台 E2E；
 4. OpenAI、Anthropic、Gemini 官方云适配仍必须先核对当前官方协议；不得套用 compatible 形状或凭记忆猜测，但不排在账号/订阅主线之前；
 5. 其后关闭发行门禁：具名许可/再分发签核、发行身份、Ace 自带浏览器/OS 隔离、Windows Authenticode/真实安装生命周期、macOS 双架构签名/公证/实机、Web 生产零留存；经联网授权后再核验标准官方来源和签名更新 transport。

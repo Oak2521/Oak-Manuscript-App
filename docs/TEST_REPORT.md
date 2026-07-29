@@ -2,7 +2,24 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.45 服务端签名权益签发链源码
+## 最新验证结论：0.1.0-alpha.46 规范化订阅事件与设备管理服务源码
+
+验证日期：2026-07-29。本轮未联网、未调用真实账号/支付或数据库服务，未选择支付商、验证真实 webhook、注入生产秘密、执行 SQL、部署、修改官网、推送或重新打包。
+
+| 项目 | 结果 | 证据与边界 |
+|---|---|---|
+| 规范化订阅事件 | **PASS（源码）** | exact snapshot 只含 provider event、账号/权益、原因、状态与时间窗；拒绝额外支付/PII 字段；purchase/renewal/refund/chargeback 状态约束和未来 5 分钟上限成立 |
+| 幂等与乱序语义 | **PASS（静态/注入）** | canonical JSON + SHA-256；同 provider/event 同指纹重放、不同指纹冲突、旧事件 stale 且不覆盖新权益；SQL 未做真实并发执行 |
+| 账号权益与设备服务 | **PASS（源码）** | 只接受可信 account principal；公开 overview 删除 account/entitlement ID/revision；最多 20 台；不存在与外来设备均返回 `DEVICE_NOT_FOUND` |
+| 设备管理 HTTP/runtime | **PASS（注入 HTTP）** | 固定 GET overview、POST revoke；HTTPS/Bearer、POST exact same-origin、1 KiB request、64 KiB response；错误/audit content-free，route 不记录 device ID |
+| Supabase repository/SQL | **PASS（静态/注入）** | 四个 RPC 固定白名单；004 migration 增加 content-free event table、source metadata、事件 apply、overview、owner revoke；浏览器无权限；未在 PostgreSQL/Supabase 执行 |
+| 定向测试 | **PASS** | 新里程碑链 27/27；相关账号/权益/同步链 88/88 |
+| 全量测试 | **PASS** | `npm test` 退出码 0；Node 648 total / 641 pass / 0 fail / 7 skip，4.320 秒；Python 362 / 0 failures / 0 errors / 3 skipped，104.323 秒；墙钟 114.5 秒 |
+| 源码 Electron smoke | **PASS** | 独立隐藏运行，Renderer sandbox 保持；`out/source-smoke/runs/ms5u8go3-2af4409c2a05d15c/projects/`；未配置账号/权益/AI 网络目标 |
+| 资源与静态门禁 | **PASS（alpha source）** | 96 文件 / 2,158,481 字节；manifest `9e69054bb3ba1f1858bef00d96e3fe5031ac745504115988bce403b289eb0ce5`；anchor `e3e84afc723a851b791664e614874e6e345832378aa818eade4e4df483f0f698`；Windows alpha、fuse、发行身份结构与 Electron runtime 检查退出 0 |
+| 生产订阅与发行 | **未运行/未完成** | 支付商 webhook 验签适配、真实迁移/RLS/并发、网站订阅/设备 UI、真实 OAuth、私钥托管、部署和生产 E2E 未完成；alpha.46 未打包，最新 Windows 制品仍为未签名 alpha.42 |
+
+## 前一验证结论：0.1.0-alpha.45 服务端签名权益签发链源码
 
 验证日期：2026-07-29。本轮未联网、未调用真实账号/订阅/支付或数据库服务，未注入生产私钥、端点或公钥，未执行 SQL、部署、修改官网、推送或重新打包。
 

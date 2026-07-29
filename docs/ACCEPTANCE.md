@@ -2,6 +2,20 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.46 规范化订阅事件与设备管理服务源码验收（2026-07-29）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.46`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 规范化订阅快照事件为 exact/canonical 契约，不接收价格、支付工具、原始 webhook、客户 PII 或稿件；provider ID 由 server-only runtime 固定绑定；
+- [x] provider event ID + canonical SHA-256 提供幂等、冲突和乱序语义；旧事件不会覆盖更新权益；purchase/renewal/refund/chargeback 状态组合失败关闭；
+- [x] 当前账号可读取 content-free 权益/设备概览并撤销自己的设备；不存在与外来设备不可区分；公开响应不含账号、权益 ID 或数据库 revision；
+- [x] 固定 GET overview 与 POST revoke 路由只接受 HTTPS/Bearer，POST 强制同源；错误和 audit 不记录 token、账号、设备 ID 或稿件；
+- [x] `004_subscription_events_and_devices.sql` 增加事件表、权益来源列和三个 service-role-only RPC；账户锁内处理事件和设备状态；
+- [x] 新增 18 项 Node 测试；里程碑链 27/27、相关链 88/88；全量 Node 648 / Python 362 零失败；资源信任 96 文件 / 2,158,481 字节；独立隐藏源码 smoke PASS；
+- [ ] 已选支付商的原始 webhook 签名、重放和供应商 API 已真实验证并接到规范化 ingestor；
+- [ ] 004 migration 已在隔离 PostgreSQL/Supabase 执行，RLS、并发、故障恢复、备份恢复和真实账号 E2E 通过；
+- [ ] 网站账号后台的订阅状态、设备列表/确认撤销 UI 已实现并部署；
+- [ ] alpha.46 Windows/macOS 安装包、代码签名、公证、真实安装生命周期与可售卖正式版门禁完成；最新 packaged 证据仍为未签名 alpha.42。
+
 ## 0.1.0-alpha.45 服务端签名权益签发链源码验收（2026-07-29）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.45`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；

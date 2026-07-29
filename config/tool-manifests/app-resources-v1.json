@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 91,
-  "total_bytes": 2153004,
+  "file_count": 96,
+  "total_bytes": 2158481,
   "files": [
     {
       "path": "config/app-config.json",
@@ -113,9 +113,34 @@
       "sha256": "f4221688bf7126f95b4c452ad9e763b9492f3c445e5aa82f0f6b2a81ff6af8bb"
     },
     {
+      "path": "config/schemas/license-account-http-audit-v1.schema.json",
+      "size_bytes": 1066,
+      "sha256": "504c3416cea656a3d61df291772dc2a6a01dd0ab9ddc93bc458c20542ef7e8c2"
+    },
+    {
+      "path": "config/schemas/license-account-http-error-v1.schema.json",
+      "size_bytes": 1091,
+      "sha256": "794900c12125dc4cb62458359378010f07492fe582cb5f36702646fb74913d76"
+    },
+    {
+      "path": "config/schemas/license-account-overview-v1.schema.json",
+      "size_bytes": 1812,
+      "sha256": "cf870acf1665faf2151333d067d2d0a342c32facbdabebd8ef4ed560c47c0fe9"
+    },
+    {
       "path": "config/schemas/license-cache-v1.schema.json",
       "size_bytes": 808,
       "sha256": "ab6ba1a21b1744f3e17d8477fdfba0e9f25dbb98df67c8b2b90ec41288427d0f"
+    },
+    {
+      "path": "config/schemas/license-device-revoke-result-v1.schema.json",
+      "size_bytes": 1083,
+      "sha256": "5f65a4a48912a2bfcc6536e5c1dc55420d2ab368308afcd7b08e618310116afe"
+    },
+    {
+      "path": "config/schemas/license-device-revoke-v1.schema.json",
+      "size_bytes": 425,
+      "sha256": "82c67d374337aecf835aa31b838dc40b8a309b5fab99812bdc056f877feb4923"
     },
     {
       "path": "config/schemas/license-http-audit-v1.schema.json",
@@ -235,7 +260,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "5c6984f0cdbf6e88add1bdbf9dc8de6e7e35feb677e7bb45786c1a7799d2cfaa"
+      "sha256": "2bd37d2feb099a0582063b76f2fbab04b8d98e9c3388fb9df3c913edc442dc25"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

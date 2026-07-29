@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.46（ChatGPT 规范化订阅事件与设备管理服务源码）
+
+> 源码检查点；本轮未联网、未接真实支付商、未执行迁移、未部署或打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。
+
+- 新增 provider-bound 规范化订阅快照 ingestor；exact 事件只含账号/权益、原因、状态与时间窗，不接收原始 webhook、价格、付款资料、客户 PII 或稿件；
+- 新增 canonical SHA-256 指纹与 `applied|replayed|stale|conflict` 语义；同 event ID 异内容失败关闭，乱序旧事件不覆盖较新权益；
+- 新增当前账号权益/设备概览与属主设备撤销 service、固定 HTTPS/Bearer/same-origin HTTP、Fetch runtime 和公开 Schema；不存在与外来设备不可区分，错误/audit content-free；
+- 新增 `004_subscription_events_and_devices.sql`：content-free event table、权益来源列、事件 apply、账号 overview 与设备 revoke RPC；浏览器角色无权限，账户 advisory lock 内处理；仅静态/注入验证；
+- APP/Python core/桌面与 Web lockfile 升至 alpha.46；新增 18 项 Node 测试；全量回归 Node 648/641/0/7、Python 362/0/0/3；资源信任 96 文件 / 2,158,481 字节，manifest `9e69054b…ce5`，anchor `e3e84afc…f698`；隐藏源码 smoke PASS；
+- 支付商 webhook 验签适配、网站订阅/设备 UI、真实 PostgreSQL/Supabase 迁移/RLS/并发、生产部署和新安装包仍未完成。
+
 ### 2026-07-29 — 0.1.0-alpha.45（ChatGPT 服务端签名权益签发链源码）
 
 > 源码检查点；本轮未联网、未注入生产私钥、未执行迁移、未部署或打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。
