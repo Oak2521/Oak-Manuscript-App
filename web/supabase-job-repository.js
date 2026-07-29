@@ -12,6 +12,7 @@ const RPC_NAMES = Object.freeze({
   compareAndSwap: "oak_manuscript_web_job_compare_and_swap",
   claimNext: "oak_manuscript_web_job_claim_next",
   finalizeDeletion: "oak_manuscript_web_job_finalize_deletion",
+  listCleanupDue: "oak_manuscript_web_job_list_cleanup_due",
   listExpired: "oak_manuscript_web_job_list_expired",
 });
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -476,6 +477,14 @@ class SupabaseJobRepository {
     canonicalTime(before, "before");
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) throw new TypeError("limit 非法");
     const value = await this._rpc(RPC_NAMES.listExpired, { p_before: before, p_limit: limit });
+    if (!Array.isArray(value) || value.length > limit) fail("JOB_DB_INVALID_RESPONSE");
+    return Object.freeze(value.map(validateInternalRecord));
+  }
+
+  async listCleanupDue({ before, limit = 100 } = {}) {
+    canonicalTime(before, "before");
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) throw new TypeError("limit 非法");
+    const value = await this._rpc(RPC_NAMES.listCleanupDue, { p_before: before, p_limit: limit });
     if (!Array.isArray(value) || value.length > limit) fail("JOB_DB_INVALID_RESPONSE");
     return Object.freeze(value.map(validateInternalRecord));
   }

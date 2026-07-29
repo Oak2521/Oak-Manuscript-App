@@ -186,8 +186,23 @@ test("lifecycle sweep deletes expired and corrupt known objects while reporting 
     { job_id: fourth, object_type: "input", reason: "metadata_unavailable" },
   ]);
   assert.equal(result.invalid_keys, 1);
+  assert.equal(result.truncated, false);
   assert.equal(store.entries.has(`oak-manuscript/jobs/v1/${second}/output`), true);
   assert.equal(store.entries.has(unavailableKey), true);
+});
+
+test("lifecycle sweep is bounded and reports a truncated pass", async () => {
+  const { store, storage } = storageHarness("2026-07-28T12:20:00.000Z");
+  const second = "webjob-10000000-0000-4000-8000-000000000002";
+  await storage.putInput(JOB_ID, Buffer.from("first"), { deleteAt: EXPIRES });
+  await storage.putInput(second, Buffer.from("second"), { deleteAt: EXPIRES });
+
+  const result = await storage.sweepExpiredObjects({ maxObjects: 1 });
+  assert.equal(result.scanned, 1);
+  assert.equal(result.deleted.length, 1);
+  assert.equal(result.pending.length, 0);
+  assert.equal(result.truncated, true);
+  assert.equal(store.entries.size, 1);
 });
 
 test("WebJobService completes and purges through the Netlify adapter", async () => {
@@ -242,6 +257,9 @@ test("unsafe identifiers, bounds, media, and times fail before touching the stor
   await assert.rejects(storage.putOutput(JOB_ID, Buffer.from("x"), {
     deleteAt: EXPIRES, mediaType: "application/octet-stream",
   }), /媒体类型/);
+  assert.equal(store.calls.length, 0);
+  await assert.rejects(storage.sweepExpiredObjects({ maxObjects: 0 }), /maxObjects/);
+  await assert.rejects(storage.sweepExpiredObjects({ maxObjects: 5_001 }), /maxObjects/);
   assert.equal(store.calls.length, 0);
   store.list = () => ({});
   await assert.rejects(storage.sweepExpiredObjects(), expectStorageCode("OBJECT_LIST_INVALID"));

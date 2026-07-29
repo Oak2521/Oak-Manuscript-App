@@ -4,6 +4,16 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.31（ChatGPT Web 有界双清扫检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.31`。本轮未联网、未部署、未修改官网、未执行真实 Supabase/Netlify E2E，也未重新打包。最新真实 Windows 制品仍为 alpha.23。
+
+- 新增第八个 service-role-only `list_cleanup_due` RPC：优先返回所有 `deletion_pending`，再返回已到期任务；删除失败不再必须等待 15 分钟 TTL 才能由计划任务重试；原 `list_expired` / `sweepExpired()` 保留兼容；
+- `sweepExpiredObjects({maxObjects})` 增加 1—5,000 单轮硬上限及 `truncated` 结果，防止一次计划任务无界扫描；到期、损坏、metadata 暂不可用、删除未确认与未知键语义保持不变；
+- 新增私有 `ZeroRetentionSweeper`，固定按“任务 → 对象 → 任务”运行；任一阶段失败仍继续其余阶段，使孤立对象删除后可在同一周期再次提交数据库墓碑；输出和审计只含时间、状态与计数，不含任务 ID、对象键、错误文本或稿件信息；
+- 本地报告即使三阶段清零也固定 `production_zero_retention_verified=false`。真实平台调度、告警、对象复制/备份生命周期和三路零留存仍须生产证据；
+- 定向 38/38、全部 Web 104/104；最终 `npm test` 153.3 秒：Node 474 total / 467 pass / 0 fail / 7 skip（4.063 秒），Python 357 total / 0 failures / 0 errors / 3 skipped（144.338 秒）；资源清单 79 文件 / 2,136,323 字节，manifest SHA-256 `9c6fededb293bc6baa1d58035b132cbb57dcaeb203d2161110f96979cdcf1ed2`，锚点 SHA-256 `72b4b54a9849108a7432aa7f7054cb72bd39686b3ecf5612c54bab5e3f5483ab`。
+
 ### 2026-07-28 — 0.1.0-alpha.30（ChatGPT Web 一次性结果领取检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.30`。本轮未联网、未部署、未修改官网、未执行真实 Supabase/Netlify E2E，也未重新打包。最新真实 Windows 制品仍为 alpha.23。

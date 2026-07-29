@@ -2,7 +2,25 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.30 Web 一次性结果领取
+## 最新验证结论：0.1.0-alpha.31 Web 有界双清扫
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网，没有使用真实密钥、执行 Supabase 迁移、连接 Netlify Blobs、修改官网、部署计划任务/容器、启动 Electron/安装器或生成 alpha.31 安装包。
+
+| 验证 | 结果 | 证据 |
+|---|---|---|
+| repository / 持久任务 / 对象清扫 / 协调器定向 | **PASS** | 38/38：第八个固定 RPC、TTL 前删除待办重试、1—5,000 对象硬上限、截断信号、任务—对象—任务顺序、阶段故障隔离、畸形结果 fail-closed、审计失败净化及零 ID/键/错误文本报告 |
+| 全部 Web 定向 | **PASS** | 104/104，含 client、Fetch、GoTrue、HTTP、内存参考状态机、Netlify 内容适配、Postgres repository、持久服务、上传检查器、私有 worker 与双清扫协调器 |
+| `npm test` | **PASS** | 退出码 0，墙钟 153.3 秒；Node 474 total / 467 pass / 0 fail / 7 skip（4.063 秒）；Python 357 total / 0 failures / 0 errors / 3 skipped（144.338 秒） |
+| 资源信任锁更新/复验 | **PASS** | 79 文件 / 2,136,323 字节；manifest SHA-256 `9c6fededb293bc6baa1d58035b132cbb57dcaeb203d2161110f96979cdcf1ed2`；anchor SHA-256 `72b4b54a9849108a7432aa7f7054cb72bd39686b3ecf5612c54bab5e3f5483ab` |
+| 发行身份只读复验 | **PASS（阻断状态正确）** | `complete=false`，12 个 Windows 完备性字段仍缺失；没有把占位值伪装成正式发行身份 |
+| alpha.31 Windows build / smoke / 安装生命周期 | **未运行** | Web 私有源码不进入 Electron `build.files`；不得沿用 alpha.23 证据声称 alpha.31 制品通过 |
+| 真实计划任务 / Supabase / Blobs / 三路零留存 | **未运行** | 报告契约固定 `production_zero_retention_verified=false`；本地 FakeRepository/FakeStore 的 `cycle_clear` 不是生产生命周期证明 |
+
+测试过程没有出现产品测试失败。一次附加命令先完成 Web 104/104，随后因对发行身份脚本传入其不支持的 `--check` 参数而整体退出 1；这不是产品失败。使用仓库正式命令 `npm run verify:release-identity` 重跑后退出 0，并准确报告 `complete=false` 与 12 个缺失字段。
+
+证据边界：当前证明本地协调器可有界运行状态/对象双清扫，`deletion_pending` 可在到期前重试，对象清扫后的数据库终态可在同一周期再次提交，且内容无关报告不会泄露任务标识或底层错误。它没有证明计划任务实际部署、Supabase SQL 真实解析/RLS、多实例竞态、Netlify 强一致/删除副本、备份生命周期、告警响应或三路生产零留存。最新可复验 Windows 制品仍为 alpha.23。
+
+## 历史验证结论：0.1.0-alpha.30 Web 一次性结果领取
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网，没有使用真实密钥、执行 Supabase 迁移、连接 Netlify Blobs、修改官网、部署容器、启动 Electron/安装器或生成 alpha.30 安装包。
 

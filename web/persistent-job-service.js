@@ -139,7 +139,7 @@ class PersistentWebJobService {
     auditSink = () => {},
   } = {}) {
     if (!repository || ["createOrReplay", "getOwned", "listOwned", "compareAndSwap",
-      "claimNext", "finalizeDeletion", "listExpired"]
+      "claimNext", "finalizeDeletion", "listExpired", "listCleanupDue"]
       .some((name) => typeof repository[name] !== "function")) {
       throw new TypeError("repository 未实现完整持久任务接口");
     }
@@ -779,9 +779,9 @@ class PersistentWebJobService {
     return this._purgeRecord(record, record.pending_deletion_reason);
   }
 
-  async sweepExpired({ limit = 100 } = {}) {
+  async sweepDeletionDue({ limit = 100 } = {}) {
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) throw new TypeError("limit 非法");
-    const records = await this.repository.listExpired({ before: this._now().toISOString(), limit });
+    const records = await this.repository.listCleanupDue({ before: this._now().toISOString(), limit });
     const deleted = [];
     const pending = [];
     for (const original of records) {
@@ -795,6 +795,10 @@ class PersistentWebJobService {
       }
     }
     return Object.freeze({ deleted: Object.freeze(deleted), pending: Object.freeze(pending) });
+  }
+
+  async sweepExpired(options = {}) {
+    return this.sweepDeletionDue(options);
   }
 }
 

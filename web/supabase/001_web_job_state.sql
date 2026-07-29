@@ -480,6 +480,29 @@ as $$
   ) q;
 $$;
 
+create or replace function public.oak_manuscript_web_job_list_cleanup_due(
+  p_before timestamptz,
+  p_limit integer default 100
+) returns jsonb
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select case when p_limit between 1 and 100 then
+    coalesce(jsonb_agg(public.oak_manuscript_web_job_record(q)
+      order by case when q.state = 'deletion_pending' then 0 else 1 end,
+        q.updated_at, q.expires_at, q.job_id), '[]'::jsonb)
+  else null end
+  from (
+    select * from public.oak_manuscript_web_jobs
+    where state = 'deletion_pending' or expires_at <= p_before
+    order by case when state = 'deletion_pending' then 0 else 1 end,
+      updated_at, expires_at, job_id
+    limit greatest(0, least(coalesce(p_limit, 0), 100))
+  ) q;
+$$;
+
 revoke all on function public.oak_manuscript_web_job_create_or_replay(
   text,text,text,text,text,jsonb,integer,integer,integer
 ) from public, anon, authenticated;
@@ -496,6 +519,8 @@ revoke all on function public.oak_manuscript_web_job_claim_next(uuid,integer)
   from public, anon, authenticated;
 revoke all on function public.oak_manuscript_web_job_list_expired(timestamptz,integer)
   from public, anon, authenticated;
+revoke all on function public.oak_manuscript_web_job_list_cleanup_due(timestamptz,integer)
+  from public, anon, authenticated;
 
 grant execute on function public.oak_manuscript_web_job_create_or_replay(
   text,text,text,text,text,jsonb,integer,integer,integer
@@ -510,6 +535,8 @@ grant execute on function public.oak_manuscript_web_job_finalize_deletion(text,t
 grant execute on function public.oak_manuscript_web_job_claim_next(uuid,integer)
   to service_role;
 grant execute on function public.oak_manuscript_web_job_list_expired(timestamptz,integer)
+  to service_role;
+grant execute on function public.oak_manuscript_web_job_list_cleanup_due(timestamptz,integer)
   to service_role;
 
 commit;

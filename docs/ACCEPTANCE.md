@@ -2,7 +2,18 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.30 Web 一次性结果领取验收（2026-07-28）
+## 0.1.0-alpha.31 Web 有界双清扫验收（2026-07-28）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.31`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 第八个固定 RPC 只授予 `service_role`，优先列出所有 `deletion_pending`，再列出已到期任务；删除失败可在 TTL 前被计划清扫重试；
+- [x] 对象清扫固定 prefix，每轮只接受 1—5,000 硬上限并明确返回 `truncated`；到期/损坏删除、metadata 暂不可用、删除未确认及未知键语义不被放宽；
+- [x] 私有协调器严格执行任务—对象—任务三阶段；单阶段失败不抑制后续阶段，对象孤儿清除后可在同一周期再次完成状态墓碑；
+- [x] 周期报告/audit 只含规范时间、阶段状态与计数，不含主体、任务 ID、对象键、异常文本或稿件信息；配置、畸形阶段结果、倒退时钟与审计失败均 fail-closed；
+- [x] 即使本地周期清零，报告仍固定 `production_zero_retention_verified=false`；不得用 FakeRepository/FakeStore 冒充平台生命周期证据；
+- [x] 定向 38/38、Web 104/104、Node 474、Python 357 全量零失败；资源锁 79 文件 / 2,136,323 字节；
+- [ ] 受控生产计划任务、告警、真实 Supabase/Blobs/GoTrue E2E、复制/备份删除、区域/并发/故障演练和三路零留存完成；因此本节不是上线或销售验收。
+
+## 0.1.0-alpha.30 Web 一次性结果领取验收（历史，2026-07-28）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.30`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] 结果领取固定为 HTTPS 同源、已认证 `POST /result`；Cookie 模式要求 CSRF，Bearer 模式无 CORS；GET 返回 405 且不消费结果；

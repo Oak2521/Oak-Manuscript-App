@@ -194,7 +194,7 @@ test("owned reads, lists, CAS, private claim, deletion finalization, and expiry 
     lease_expires_at: "2026-07-28T12:05:02.000Z",
     revision: 2,
   });
-  const responses = [record(), [record()], queued, processing, true, [queued]];
+  const responses = [record(), [record()], queued, processing, true, [queued], [queued]];
   const repo = repository(async (url, options) => {
     calls.push({ url, body: JSON.parse(options.body) });
     return jsonResponse(responses.shift());
@@ -223,6 +223,9 @@ test("owned reads, lists, CAS, private claim, deletion finalization, and expiry 
   assert.equal((await repo.claimNext({ lease_id: leaseId, lease_seconds: 300 })).lease_id, leaseId);
   assert.equal(await repo.finalizeDeletion({ owner_key: OWNER, job_id: JOB_ID, expected_revision: 2 }), true);
   assert.equal((await repo.listExpired({ before: "2026-07-28T12:15:00.000Z", limit: 20 })).length, 1);
+  assert.equal((await repo.listCleanupDue({
+    before: "2026-07-28T12:15:00.000Z", limit: 20,
+  })).length, 1);
   assert.deepEqual(calls.map((call) => call.url), [
     RPC_NAMES.get,
     RPC_NAMES.list,
@@ -230,6 +233,7 @@ test("owned reads, lists, CAS, private claim, deletion finalization, and expiry 
     RPC_NAMES.claimNext,
     RPC_NAMES.finalizeDeletion,
     RPC_NAMES.listExpired,
+    RPC_NAMES.listCleanupDue,
   ].map((name) => `${ORIGIN}/rest/v1/rpc/${name}`));
   assert.deepEqual(calls[2].body.p_expected_states, ["awaiting_upload"]);
   assert.equal(calls[2].body.p_next_state, "queued");
@@ -321,6 +325,7 @@ test("tracked SQL is transactional, service-role only, content-free, and concurr
     "oak_manuscript_web_job_create_or_replay",
     "oak_manuscript_web_job_compare_and_swap",
     "oak_manuscript_web_job_finalize_deletion",
+    "oak_manuscript_web_job_list_cleanup_due",
     "grant execute on function",
     "to service_role",
     "from public, anon, authenticated",
@@ -330,6 +335,8 @@ test("tracked SQL is transactional, service-role only, content-free, and concurr
   assert.equal(/grant\s+(?:all|select|insert|update|delete).*\bto\s+(?:anon|authenticated)\b/iu.test(sql), false);
   assert.equal(/\b(?:bytea|manuscript_bytes|manuscript_content|file_name|filename|file_path)\b/iu.test(sql), false);
   assert.equal(/\bexecute\s+(?:format\s*\(|[^;]*\|\|)/iu.test(sql), false);
+  assert.match(sql, /revoke all on function public\.oak_manuscript_web_job_list_cleanup_due\(timestamptz,integer\)\s+from public, anon, authenticated;/iu);
+  assert.match(sql, /grant execute on function public\.oak_manuscript_web_job_list_cleanup_due\(timestamptz,integer\)\s+to service_role;/iu);
 
   const internalSchema = JSON.parse(fs.readFileSync(path.join(
     __dirname, "..", "web", "schemas", "web-job-internal-v1.schema.json"), "utf8"));

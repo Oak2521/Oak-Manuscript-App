@@ -209,6 +209,20 @@ class FakePersistentRepository {
       .slice(0, limit)
       .map((record) => this._copy(record));
   }
+
+  async listCleanupDue({ before, limit }) {
+    return [...this.jobs.values()]
+      .filter((record) => record.state === "deletion_pending" ||
+        Date.parse(record.expires_at) <= Date.parse(before))
+      .sort((a, b) => {
+        const stateOrder = Number(a.state !== "deletion_pending") -
+          Number(b.state !== "deletion_pending");
+        return stateOrder || a.updated_at.localeCompare(b.updated_at) ||
+          a.expires_at.localeCompare(b.expires_at) || a.job_id.localeCompare(b.job_id);
+      })
+      .slice(0, limit)
+      .map((record) => this._copy(record));
+  }
 }
 
 class FailingDeleteStorage extends MemoryEphemeralStorage {
@@ -501,6 +515,27 @@ test("content deletion failure remains deletion_pending across restart and can b
   const second = serviceHarness({ repository, storage }).service;
   const receipt = await second.retryDeletion(OWNER, created.job_id);
   assert.equal(receipt.input_deleted, true);
+  assert.equal(repository.jobs.size, 0);
+});
+
+test("scheduled deletion sweep retries deletion_pending before ordinary expiry", async () => {
+  const repository = new FakePersistentRepository();
+  const storage = new FailingDeleteStorage();
+  const first = serviceHarness({ repository, storage }).service;
+  const created = await first.createJob(OWNER, createRequest());
+  await first.acceptUpload(OWNER, created.job_id, {
+    bytes: Buffer.from("secret"), media_type: "text/plain",
+  });
+  await assert.rejects(first.cancelJob(OWNER, created.job_id),
+    expectCode("ZERO_RETENTION_DELETE_FAILED"));
+  assert.equal(Date.parse((await first.getJob(OWNER, created.job_id)).expires_at) > Date.parse(NOW), true);
+
+  storage.failDeletes = false;
+  const restarted = serviceHarness({ repository, storage }).service;
+  const swept = await restarted.sweepDeletionDue();
+  assert.equal(swept.deleted.length, 1);
+  assert.equal(swept.pending.length, 0);
+  assert.equal(swept.deleted[0].reason, "canceled");
   assert.equal(repository.jobs.size, 0);
 });
 

@@ -223,7 +223,10 @@ class NetlifyEphemeralStorage {
     return new Date(value.getTime());
   }
 
-  async sweepExpiredObjects() {
+  async sweepExpiredObjects({ maxObjects = 1_000 } = {}) {
+    if (!Number.isSafeInteger(maxObjects) || maxObjects < 1 || maxObjects > 5_000) {
+      throw new TypeError("maxObjects 非法");
+    }
     const now = this._now().getTime();
     let pages;
     try {
@@ -232,11 +235,15 @@ class NetlifyEphemeralStorage {
       fail("STORAGE_UNAVAILABLE");
     }
     if (!pages || typeof pages[Symbol.asyncIterator] !== "function") fail("OBJECT_LIST_INVALID");
-    const result = { scanned: 0, deleted: [], pending: [], invalid_keys: 0 };
+    const result = { scanned: 0, deleted: [], pending: [], invalid_keys: 0, truncated: false };
     try {
-      for await (const page of pages) {
+      objectPages: for await (const page of pages) {
         if (!page || !Array.isArray(page.blobs)) fail("OBJECT_LIST_INVALID");
         for (const blob of page.blobs) {
+          if (result.scanned >= maxObjects) {
+            result.truncated = true;
+            break objectPages;
+          }
           result.scanned += 1;
           const identity = this._parseKey(blob?.key);
           if (!identity) {
@@ -279,6 +286,7 @@ class NetlifyEphemeralStorage {
       deleted: Object.freeze(result.deleted),
       pending: Object.freeze(result.pending),
       invalid_keys: result.invalid_keys,
+      truncated: result.truncated,
     });
   }
 }

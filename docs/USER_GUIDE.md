@@ -2,11 +2,11 @@
 
 ## 桌面应用（推荐）
 
-当前开发版本为 `0.1.0-alpha.30`；最新已打包版本仍是未签名的 alpha.23 Windows x64 NSIS/ZIP，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.30 保持标准包 2.0.0、默认引用解析、Ace 受控 utilityProcess、Electron 43 全部 9 项 fuse、按账户隔离的 OS 加密同步队列、Supabase/Postgres 持久任务、上传前结构/主动内容门禁和私有 worker 源码，并新增一次性结果领取；普通测试、启动和构建不会触发联网下载。
+当前开发版本为 `0.1.0-alpha.31`；最新已打包版本仍是未签名的 alpha.23 Windows x64 NSIS/ZIP，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.31 保持标准包 2.0.0、默认引用解析、Ace 受控 utilityProcess、Electron 43 全部 9 项 fuse、按账户隔离的 OS 加密同步队列、Supabase/Postgres 持久任务、上传前结构/主动内容门禁、私有 worker 和一次性结果领取源码，并新增有界双清扫协调；普通测试、启动和构建不会触发联网下载。
 
-**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.30 最终统一结果为 Node 467/460/0/7、Python 357/0 failures/0 errors/3 skipped，墙钟 117.2 秒；跳过项不计作通过。最新真实 source/packaged 双阶段 smoke 仍来自 alpha.23；本轮没有借用它证明 alpha.30 制品。
+**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.31 最终统一结果为 Node 474/467/0/7、Python 357/0 failures/0 errors/3 skipped，墙钟 153.3 秒；跳过项不计作通过。最新真实 source/packaged 双阶段 smoke 仍来自 alpha.23；本轮没有借用它证明 alpha.31 制品。
 
-**Web 状态**：`web/client/` 已提供可本地渲染的工作台，保留湖岸账号登录/注册，包含“默认”引用体例、本次临时处理同意、创建/上传/轮询/取消/一次性领取；服务端另有 GoTrue、Fetch、Netlify Blobs 内容适配/清扫、Supabase/Postgres 持久任务迁移、上传结构/主动内容检查、私有原子领取及固定 Python 共享核心子进程。结果在 15 分钟 TTL 内只能通过同源已认证 POST 领取一次；服务先删除临时副本再返回，因此传输或本机保存失败后必须重新检查。它尚未部署，SQL 未在真实 Supabase 执行；结构门禁不是病毒库扫描，本机进程隔离也不等于生产容器或 OS 禁网。结果同步按钮按设计禁用，计费未接通。用户不要把稿件交给任何声称基于该 alpha 的线上地址；正式地址只能在官网联调、隐私文本和生产零留存验收后公布。
+**Web 状态**：`web/client/` 已提供可本地渲染的工作台，保留湖岸账号登录/注册，包含“默认”引用体例、本次临时处理同意、创建/上传/轮询/取消/一次性领取；服务端另有 GoTrue、Fetch、Netlify Blobs 内容适配/有界清扫、Supabase/Postgres 持久任务迁移、上传结构/主动内容检查、私有原子领取、固定 Python 共享核心子进程及任务—对象—任务协调器。结果在 15 分钟 TTL 内只能通过同源已认证 POST 领取一次；服务先删除临时副本再返回，因此传输或本机保存失败后必须重新检查。它尚未部署，SQL 未在真实 Supabase 执行，计划清扫也未上线；本地 `cycle_clear` 不等于平台零留存。结构门禁不是病毒库扫描，本机进程隔离也不等于生产容器或 OS 禁网。结果同步按钮按设计禁用，计费未接通。用户不要把稿件交给任何声称基于该 alpha 的线上地址；正式地址只能在官网联调、隐私文本和生产零留存验收后公布。
 
 **账号与结果同步（当前边界）**：欢迎页、导出页和设置页保留湖岸账号入口。由于生产认证尚未配置，点击登录只会明确显示 `configuration_required`，不会打开浏览器或联网；真实登录状态只在自动化测试实例中模拟。登录用户导出后才会看到 SyncRecord v1 的逐字段预览，并可选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。确认项进入由系统安全存储加密的本机 `pending_transport` 队列，重启后可恢复；设置页只显示当前账号项，并可取消、重试或删除。当前没有网络 transport，绝未上传到网站；系统加密不可用时同步安全停止，本地稿件功能不受影响。
 
@@ -160,9 +160,9 @@ npm run verify:release-identity
 npm run release:evidence:verify:win
 ```
 
-验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。当前源码是 alpha.30 且没有对应制品，因此该命令会按设计拒绝；最新通过的 alpha.23 六项证据已归档在 `release/archive/0.1.0-alpha.23-final/`，不能替代 alpha.30。
+验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest。当前源码是 alpha.31 且没有对应制品，因此该命令会按设计拒绝；最新通过的 alpha.23 六项证据已归档在 `release/archive/0.1.0-alpha.23-final/`，不能替代 alpha.31。
 
-安装生命周期验收器默认只读、不启动安装器，并要求当前源码版本存在精确制品。alpha.30 尚未打包，所以当前运行会因缺制品而失败；最近一次成功只读预检是 alpha.23 对归档 alpha.12：
+安装生命周期验收器默认只读、不启动安装器，并要求当前源码版本存在精确制品。alpha.31 尚未打包，所以当前运行会因缺制品而失败；最近一次成功只读预检是 alpha.23 对归档 alpha.12：
 
 ```powershell
 npm run verify:install-lifecycle:win

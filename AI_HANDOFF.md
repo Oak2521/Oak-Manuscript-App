@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.30`
+> 当前版本：`0.1.0-alpha.31`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.30`（源码、本机子进程与离线仿真检查点；最新未签名 Windows 制品仍是 alpha.23）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.31`（源码、本机子进程与离线仿真检查点；最新未签名 Windows 制品仍是 alpha.23）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,16 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.31 Web 有界双清扫检查点
+
+- Postgres/repository 新增第八个 service-role-only `list_cleanup_due` RPC：先返回所有 `deletion_pending`，再返回已到期任务；计划清扫不再让删除失败待办等到 TTL。旧 `list_expired` 与 `sweepExpired()` 作为兼容入口保留；
+- Netlify 对象清扫新增每轮 1—5,000 硬上限和 `truncated` 信号；限制在固定 prefix，未知键仍只计数，metadata 暂时不可读或删除无法确认仍进入 pending；
+- 新增私有 `ZeroRetentionSweeper`，顺序固定为任务清扫、对象清扫、任务再清扫。单阶段失败被压缩为 `status:"failed"` 且不跳过后续阶段；报告和 audit 只含时间、阶段状态及计数，不含任务 ID、对象键、异常文本、主体或稿件信息；
+- 本地周期全部清零只得到 `cycle_clear`，`production_zero_retention_verified` 永远为 `false`；真实计划调度、告警、Supabase/Blobs 故障演练、对象复制/备份删除和三路零留存仍未验证；
+- 定向 38/38、全部 Web 104/104 PASS；最终 `npm test` 153.3 秒：Node 474 total / 467 pass / 0 fail / 7 skip（4.063 秒），Python 357 total / 0 failures / 0 errors / 3 skipped（144.338 秒）；
+- 资源清单 79 文件 / 2,136,323 字节，manifest SHA-256 `9c6fededb293bc6baa1d58035b132cbb57dcaeb203d2161110f96979cdcf1ed2`，锚点 SHA-256 `72b4b54a9849108a7432aa7f7054cb72bd39686b3ecf5612c54bab5e3f5483ab`；发行身份只读复验仍 `complete=false`，12 项缺失；
+- 本轮未联网、未使用真实密钥、未执行真实迁移/存储、未部署、未修改官网、未启动 Electron/安装器或打包。
 
 ### 已完成：0.1.0-alpha.30 Web 一次性结果领取检查点
 
@@ -502,7 +512,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
 5. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
 6. 在现有 Auth / License / Sync 离线契约和 OS 加密持久队列上实现生产登录凭据与独立网络 transport，再经授权连接 Supabase、支付和网站后台；
-7. alpha.30 已完成账号认证、15 分钟 TTL 内的一次性结果领取与返回前清理源码；下一步实现任务状态与对象存储双清扫、删除待办恢复和三路零留存证据。生产 worker 仍必须另有病毒/恶意软件平台扫描、容器/OS 禁网、只读根与资源限制；经授权后在隔离预生产环境执行真实 Supabase 迁移与 Netlify E2E，随后完成官网嵌入、结果同步、Free/Pro、支付、隐私、内测和正式发布门禁。
+7. alpha.31 已完成本地有界任务/对象双清扫、删除待办即时恢复与计数级周期证据；下一步把协调器接入受控私有计划任务/告警配置，并在另行授权的隔离预生产环境执行真实 Supabase 迁移与 Netlify E2E。生产 worker 仍必须另有病毒/恶意软件平台扫描、容器/OS 禁网、只读根与资源限制；平台生命周期、备份/复制删除和三路零留存必须独立取证，随后完成官网嵌入、结果同步、Free/Pro、支付、隐私、内测和正式发布门禁。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。
 
