@@ -4,6 +4,18 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.50（ChatGPT 标准更新服务端契约与桌面纵向链）
+
+> 源码与本地真实签名纵向证据；本轮未联网、未配置生产密钥/发布源、未部署、未推送、未打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。
+
+- 新增 `StandardsUpdateService`、固定公开 `POST /manuscript/standards/v1/check` Node handler 与 Fetch runtime；请求 exact schema 只含 APP/标准版本身份，拒绝 Authorization、Cookie、Transfer-Encoding、内容字段和未知字段；
+- 发布源只返回 null 或 exact 内部记录；服务复算 envelope SHA-256，严格区分空 204、原始 signed-package 200、同序列不同 manifest 409 与有界非反射错误；
+- 新增独立 request/error/audit Schema；audit 只含请求 ID、时间、方法、固定路由、HTTP 状态和错误码，发布源或审计接收器故障不会泄露内部信息；
+- 修正共享 Fetch adapter 对 204/205/304 必须构造 null body 的标准行为，既有权益与 Sync HTTP/runtime 回归继续通过；
+- 真实测试 Ed25519 release 已贯通内存发布源 → service → HTTP → Fetch → 桌面 `StandardsUpdateHttpClient` → `StandardsProvider` 验签/哈希/schema/兼容性 → 原子安装；sequence 2 历史 release 保持可验证；
+- 新专项 9/9；全量 Node 675/668/0/7、Python 362/0/0/3；资源信任 101 文件 / 2,163,288 字节，manifest `ad53e9d9…a5ec`、anchor `380adcb5…5905`；Web 与 Electron 隐藏源码 smoke PASS；
+- 生产发布源、对象存储/CDN、域名/TLS、trust pin、密钥托管/轮换、撤回清单、限流监控和真实网络联调仍未完成；销售门禁仍有 17 项，发行身份仍缺 12 字段。
+
 ### 2026-07-29 — 0.1.0-alpha.49（ChatGPT 标准在线升级受控链路）
 
 > 默认配置无更新地址且无生产签名公钥；本轮只使用本地伪响应，未联网、未部署、未打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。

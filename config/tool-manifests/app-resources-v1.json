@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 98,
-  "total_bytes": 2159692,
+  "file_count": 101,
+  "total_bytes": 2163288,
   "files": [
     {
       "path": "config/app-config.json",
@@ -178,6 +178,21 @@
       "sha256": "e936e2ab462d96502639eddd0594deea13528ddca646e35425b8a93885a37fc7"
     },
     {
+      "path": "config/schemas/standards-update-http-audit-v1.schema.json",
+      "size_bytes": 1503,
+      "sha256": "d971d394ee548db01c23dfc9a7618f6b9e9f096bf5dafec2fffe494316871f1e"
+    },
+    {
+      "path": "config/schemas/standards-update-http-error-v1.schema.json",
+      "size_bytes": 1204,
+      "sha256": "648b2314d42b5763879d380f070e3018c2a8959c94ac2bedd7814e51f47e287c"
+    },
+    {
+      "path": "config/schemas/standards-update-request-v1.schema.json",
+      "size_bytes": 889,
+      "sha256": "2949aaf137ead77c65b3017b2f9e59d1821b74085673587b8d66e4a55acc4be7"
+    },
+    {
       "path": "config/schemas/sync-http-audit-v1.schema.json",
       "size_bytes": 1557,
       "sha256": "eee009a7e72d616753f55e32030cd79fd695d6439ca2056005e547016b752fc9"
@@ -270,7 +285,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "5fd9c718214d7f3411a4bf9b6df32fe0dfb7d25f86b2391657631ee91fc3bbf9"
+      "sha256": "4f01310dea34480802c15b734935b84e6c52455db7343b905585be4bc45eac46"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

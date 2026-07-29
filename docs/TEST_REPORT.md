@@ -2,7 +2,26 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.49 标准在线升级受控链路
+## 最新验证结论：0.1.0-alpha.50 标准更新服务端契约与桌面纵向链
+
+验证日期：2026-07-29。本轮未联网、未注入生产公钥/私钥或真实发布源；使用内存发布源和运行时生成的测试 Ed25519 密钥/签名包。未部署、推送或重新打包。
+
+| 项目 | 结果 | 证据与边界 |
+|---|---|---|
+| 公开请求契约 | **PASS** | 固定 `POST /manuscript/standards/v1/check`；HTTPS、exact JSON、signed-package Accept、唯一正确 Content-Length；拒绝 Authorization/Cookie、Transfer-Encoding、未知/内容字段与错误路由/媒体 |
+| 发布服务 | **PASS（源码/注入）** | null 或 exact 发布记录；复算 envelope SHA-256；精确当前返回空 204，更高序列返回原始 package 200，同序列不同 manifest 返回 409；源异常/投毒不反射 |
+| 错误与审计 | **PASS** | 独立 exact request/error/audit Schema；audit 只含请求 ID、时间、方法、固定路由、状态和错误码，不含 APP/bundle/manifest、IP、头或发布源细节；sink 失败不改响应 |
+| Fetch runtime | **PASS** | 生产形状 runtime 强制注入发布源和 audit sink；共享 adapter 对 204/205/304 使用 null body，既有 entitlement/Sync HTTP 与 runtime 回归通过 |
+| 真实签名纵向链 | **PASS（本地测试密钥）** | 真实 Ed25519 release 经内存发布源 → service → Node HTTP → Fetch → 桌面 client → Provider 签名/哈希/schema/兼容性/高水位验证 → 原子安装；sequence 2 仍可验证 |
+| 新专项 | **PASS** | `web_standards_update_http.test.js` 9/9；覆盖 200/204/409、分帧/媒体/凭据/投毒/摘要/源故障和真实桌面安装 E2E |
+| 全量测试 | **PASS** | `npm test` 退出码 0；Node 675 total / 668 pass / 0 fail / 7 skip，4.036 秒；Python 362 / 0 failures / 0 errors / 3 skipped，102.413 秒；墙钟 110.9 秒 |
+| 隐藏源码 smoke | **PASS** | Electron Renderer sandbox 保持，输出 `out/source-smoke/runs/ms5xbqxo-8e71ad1602bfe629/projects/`；默认更新配置为空。Web 客户端 smoke 也 PASS，HTTP(S) 请求 0 |
+| 资源与运行时门禁 | **PASS（alpha）** | loose 101 文件 / 2,163,288 字节；manifest `ad53e9d9fe658c48bce60756a6ac8f46916881caaa1af42732e2730de4c6a5ec`，anchor `380adcb51ace64830e89daedcab4c3ea68f942a4b9daca724e8f06e68bde5905`；标准、Windows alpha、fuse、Electron runtime 与发行身份结构检查退出 0 |
+| 生产与销售门禁 | **未运行/未完成** | 生产发布源/对象存储/CDN、域名/TLS、trust pin、密钥托管/轮换、撤回清单、限流监控和真实网络未验证；source sale 仍有 17 项 blocker、发行身份缺 12 字段；alpha.50 未打包，最新 Windows 制品仍为未签名 alpha.42 |
+
+结论：alpha.50 证明标准更新服务端源码与真实桌面可信链能够正确组合，并保持服务“只给候选、不能授予信任”的边界；它不是生产发布系统或真实网络部署证据。
+
+## 历史验证结论：0.1.0-alpha.49 标准在线升级受控链路
 
 验证日期：2026-07-29。本轮未联网、未注入生产公钥或真实更新地址，全部 transport 使用本地伪响应；未部署、推送或重新打包。
 

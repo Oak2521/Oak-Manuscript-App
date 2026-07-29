@@ -2,9 +2,9 @@
 
 > 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.48 源码）
+## Provider 一览（当前 alpha.50 源码）
 
-alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI；alpha.44 增加桌面签名权益验证和网站同步历史客户端；alpha.45 增加独立签发链；alpha.46 增加规范化订阅事件和当前账号设备管理 API/runtime/SQL；alpha.47 增加网站订阅状态、掩码设备列表和逐台确认撤销客户端；alpha.48 以同一匿名状态验证网站撤销后桌面显式刷新 signed revoked 权益并安全降级。受信账号与权益配置仍为 `pending_configuration` 且端点/key/公钥为空；数据库迁移未执行、API 与客户端未部署，因此普通 APP 仍不登录、刷新订阅或同步。商业仓库没有真实 service-role key、OAuth 配置、权益私钥或 AI key。
+alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI；alpha.44—alpha.48 完成签名权益、网站账号设备客户端与匿名撤销传播链；alpha.49—alpha.50 完成用户触发的标准更新桌面 transport、公开服务端契约与真实测试签名本地纵向链。受信账号、权益与标准更新配置仍为 `pending_configuration` 且端点/key/公钥为空；数据库迁移、更新发布源、API 与客户端均未部署，因此普通 APP 仍不登录、刷新订阅、同步或在线检查标准。商业仓库没有真实 service-role key、OAuth 配置、权益/标准私钥或 AI key。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
@@ -12,7 +12,7 @@ alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；al
 | `LicenseProvider` | alpha.44—alpha.47 已实现桌面权益、签发、订阅/设备服务和网站客户端；alpha.48 已完成匿名撤销传播纵向链；默认配置为空，仓库无生产私钥 | 选择支付商并实现原始 webhook 验签适配、私钥托管/轮换，执行迁移、部署客户端并填充生产配置完成真实 E2E；价格未拍板 |
 | `EvaluationProvider` | 用户点击后返回固定湖岸 HTTPS 评估页 URL，由主进程白名单校验并交给系统浏览器打开；APP 不在该 Provider 中生成或上传摘要 | 用户确认后提交脱敏摘要（§8.3–§8.4） |
 | `SyncProvider` | 可信 Python 来源 → exact 校验 → 完整预览 → 四选一确认 → 按账户 OS 加密队列；服务/API/Supabase、桌面 client/coordinator 和网站列表/属主删除 client 已有源码；默认无端点，迁移/服务/页面未部署 | 填充受信正式配置，完成预生产迁移、真实 E2E 与官网账号后台部署 |
-| `StandardsProvider` | 离线验证内置 release；本地签名包预览/安装/全局回滚、项目固定版本与显式升级已实现；生产 trust pin 缺失时导入禁用 | 用户主动触发的在线检查/下载、签名与撤回分发、可观测回滚；绝不上传稿件 |
+| `StandardsProvider` | 离线可信链、本地导入/回滚、项目固定/显式升级，以及用户点击触发的 HTTPS client、服务端固定路由和本地真实签名 E2E 已实现；默认端点/trust pin 为空 | 建立生产发布源、密钥治理、签名撤回、限流/监控并完成真实网络联调；绝不上传稿件 |
 | `UpdateProvider` | 尚未实现或导出 | 签名应用更新 |
 | `FeedbackProvider` | 尚未实现或导出 | 用户主动发送不含正文的规则反馈 |
 | `AIProvider` / `AIRequestCoordinator` / compatible transport | 三模式、Pro/safeStorage、单条预览/确认/审阅和有界 HTTP 已实现；桌面只注册 OpenAI-compatible/Ollama/LM Studio，保存/预览零请求，建议不持久化或写稿；Ollama 与 LM Studio headless 各一固定组合通过匿名窄验收，LM Studio 静默模型替换会被拒绝 | OpenAI/Anthropic/Gemini 官方协议、其他 compatible 组合、多模型语义、宽泛质量和湖岸 AI 服务仍待完成；Web 用户凭据只限当前会话，绝不进入账号同步或长期网站存储 |
@@ -20,13 +20,19 @@ alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；al
 ## 当前离线边界与硬性验收（对应 §20.1 / §21）
 
 - 未登录状态**不触发**任何同步询问与网络调用；
-- Auth、License 与 Sync 的当前仓库默认组合不发起网络请求；只有相应受信配置从 `pending_configuration` 改为完整正式配置后才实例化网络 client。登录、订阅刷新和同步发送还分别要求用户主动操作。StandardsProvider 目前也只有本地文件路径，没有联网 transport。Evaluation 是例外：只有用户点击后，主进程才把固定白名单 HTTPS URL 交给系统浏览器，浏览器随后可能联网；Update/Feedback 当前根本没有实现，不能写成已有占位代码路径；
-- 标准包 transport 未来必须与本地验证分层：网络层只能提供候选字节，不能设置“已验证”状态、选择项目升级目标或绕过签名/CAS/高水位/回滚规则；默认 Electron session 继续离线；
+- Auth、License、Sync 与 Standards 的当前仓库默认组合不发起网络请求；只有相应受信配置从 `pending_configuration` 改为完整正式配置后才实例化网络 client。登录、订阅刷新、同步发送和标准检查还分别要求用户主动操作。Evaluation 是例外：只有用户点击后，主进程才把固定白名单 HTTPS URL 交给系统浏览器，浏览器随后可能联网；Update/Feedback 当前根本没有实现，不能写成已有占位代码路径；
+- 标准包 transport 与本地验证已分层：网络层只能提供候选字节，不能设置“已验证”状态、选择项目升级目标或绕过签名/CAS/高水位/回滚规则；默认 Electron session 继续离线；
 - 全局标准更新不等于项目升级。已有项目保持七字段 pin，用户查看完整差异并一次确认后才可迁移，之后强制重检；
 - 同步负载 JSON schema 带版本号；当前实现不改变 `project.json`，进程内队列不得伪造同步历史。生产服务端确认机制上线时，项目持久状态必须另行版本化并保持向后兼容；
 - 同步负载物理上不得包含稿件、正文、摘录、标题、文件名、本地路径、参考文献原文或任何文件哈希；
 - “同步结果”与 Web 版“用户主动提交临时处理任务”是两条不同数据流。Web 作业可以在明确操作后上传待处理文件，但必须使用隔离临时存储、TTL 删除和零留存审计，不能进入用户同步历史；
 - Windows、macOS 和 Web 共用同一湖岸官网账号与权益判定，不另建 APP 独立账号库。
+
+## 标准更新 API v1（alpha.50，未部署）
+
+固定公开路由为 `POST /manuscript/standards/v1/check`。它只接受 HTTPS、exact JSON、signed-package `Accept` 和正确 `Content-Length`，明确拒绝 Bearer、Cookie、Transfer-Encoding、内容字段和未知字段。请求只含 APP 版本、bundle、当前 release sequence 与 manifest SHA-256。
+
+服务端以 204 表示当前版本，以 200 和 `application/vnd.oak.standard-package+json` 原始字节返回更高序列候选。服务只复核发布记录结构与 envelope SHA-256，不替代桌面的签名、payload、schema、兼容性和防降级验证。生产运行时必须注入发布源与 content-free audit sink；当前没有对象存储、CDN、真实域名配置或生产密钥。完整接入、错误码和运维边界见 `STANDARDS_UPDATE_V1.md`。
 
 ## SyncRecord 长期结果 API v1（alpha.39，未部署）
 

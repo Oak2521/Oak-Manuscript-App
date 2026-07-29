@@ -60,7 +60,8 @@ function createFetchHandlerAdapter({ nodeHandler } = {}) {
     if (!captured.ended || captured.statusCode === null || captured.headers === null) {
       throw new TypeError("Node handler 未完整结束响应");
     }
-    return new Response(captured.body, {
+    const body = [204, 205, 304].includes(captured.statusCode) ? null : captured.body;
+    return new Response(body, {
       status: captured.statusCode,
       headers: captured.headers,
     });

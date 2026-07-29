@@ -161,6 +161,12 @@ alpha.47 的 `web/client/license-account-controller.js` 通过既有同源 Beare
 
 alpha.48 只增加纵向组合证据，不复制业务实现：同一测试内存状态经两个生产形状 runtime 分别服务网站账号 API 与桌面签发 API。桌面先验签并缓存 active envelope；网站撤销只改变服务端设备真相，不推送修改桌面缓存；桌面再次显式刷新后才验签 revoked envelope 并原子换入。该时序同时保证离线缓存可解释、撤销最终生效和本地项目永不锁定。测试适配器不是可部署 repository，真实数据库/RLS/并发仍须预生产验证。
 
+### AD-028 标准更新必须“公开内容无关检查—服务只给候选—桌面独立验信—项目不静默升级”（2026-07-29，冻结）
+
+alpha.49 在 Electron 主进程增加待配置 HTTPS transport。只有用户点击检查才发送 APP 版本、bundle、当前发布序列与 manifest 摘要；Renderer 不持有端点、候选字节或安装 plan。候选经既有签名/CAS/高水位/兼容性链验证后，主进程创建 10 分钟一次性计划并显示原生确认；取消立即销毁，安装只切换新建项目默认标准。
+
+alpha.50 增加公开固定 `POST /manuscript/standards/v1/check`、`StandardsUpdateService` 和 Fetch runtime。服务拒绝账号凭据与内容字段，只从注入的 exact 发布记录读取不可变候选，复算 envelope SHA-256 后返回空 204 或原始 signed-package bytes；错误与 audit 不含请求版本、manifest 或发布源细节。服务端仍不设置客户端“已验证”状态，真实 Ed25519 E2E 最终由桌面再次验证并原子安装。完整协议见 `STANDARDS_UPDATE_V1.md`；生产发布源、密钥、部署和撤回清单仍未实现。
+
 ### AD-018 Web 临时任务必须“可信主体—单任务同意—内容/元数据分道—删除失败可见”（2026-07-28，冻结）
 
 Web 创建请求不接收账号 ID；账号或匿名会话主体必须由上游可信会话层以独立参数注入。请求 exact schema 只允许幂等键、单任务处理同意、隐私版本和格式/类型/检查配置/引用体例/字节数，不允许文件名、路径、正文、片段或内容哈希。上传字节只进入临时存储适配器，公开状态与观察事件不含主体和稿件元数据；运行时大小上限不能放宽 tracked schema。

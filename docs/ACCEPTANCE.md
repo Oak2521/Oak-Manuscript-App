@@ -2,6 +2,25 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.50 标准更新服务端契约与桌面纵向链验收（2026-07-29）
+
+- [x] 固定公开 POST 路由只接受 HTTPS、exact JSON、signed-package Accept、唯一正确 Content-Length；拒绝账号凭据、Cookie、Transfer-Encoding、未知字段与内容字段；
+- [x] 请求只含 APP 版本、bundle、当前 release sequence 和 manifest SHA-256；错误与 audit 不含稿件、账号、token、版本摘要或发布源异常；
+- [x] 发布源只返回 null 或 exact 内部记录；服务复算 envelope SHA-256，拒绝未知字段、bundle 漂移、摘要漂移、空包和超限包；
+- [x] 当前身份精确匹配返回无正文 204；更高序列返回 exact media 的原始 signed-package bytes；同序列不同 manifest 返回稳定冲突；
+- [x] 真实测试 Ed25519 包贯通发布源 → service → Node HTTP → Fetch runtime → 桌面 HTTP client → Provider 验签/哈希/schema/兼容性 → 原子安装；旧 release 仍可验证；
+- [x] 全量 Node 675/668/0/7、Python 362/0/0/3，标准、资源、fuse、Electron runtime、发行身份结构与 Windows alpha 门禁通过；隐藏 Electron/Web smoke 通过；
+- [ ] 生产发布源、域名/TLS/CDN、trust pin、密钥托管/轮换、撤回清单、限流监控和真实网络联调未完成；alpha.50 未打包，最新 Windows 制品仍为未签名 alpha.42。
+
+## 0.1.0-alpha.49 标准在线升级桌面受控链验收（2026-07-29）
+
+- [x] 默认配置无端点且零网络；只有用户点击才发送内容无关版本身份；
+- [x] 候选受 24 MiB 上限、签名/哈希/schema/白名单/兼容性/高水位验证保护；
+- [x] 主进程原生确认绑定 10 分钟一次性计划，Renderer 无端点、候选字节或 plan ID；取消立即销毁；
+- [x] 安装只改变新建项目默认标准，已有项目继续固定旧版并须另行差异确认与重检；
+- [x] 全量测试、资源门禁和隐藏源码 smoke 通过；
+- [ ] 真实端点、生产 trust pin、服务端发布/撤回、部署与真实网络未完成。
+
 ## 0.1.0-alpha.48 网站撤销到桌面刷新纵向闭环验收（2026-07-29）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.48`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
