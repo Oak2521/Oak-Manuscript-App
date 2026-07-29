@@ -20,6 +20,8 @@ test("settings page exposes the three approved AI modes and six provider familie
   for (const id of [
     "ai-status-text", "ai-provider-select", "ai-model-input", "ai-base-url-input",
     "ai-credential-input", "btn-save-ai-settings", "btn-clear-ai-credential",
+    "ai-request-dialog", "ai-plan-request-json", "ai-plan-sends",
+    "ai-plan-does-not-send", "btn-confirm-ai-request", "ai-suggestion-text",
   ]) assert.match(html, new RegExp(`id=["']${id}["']`));
   assert.match(html, /不能静默写回稿件/);
   assert.match(html, /不会在失败时自动切换到湖岸 AI/);
@@ -32,6 +34,9 @@ test("credential crosses one fixed IPC and is never populated or rendered from s
   assert.match(html, /id="ai-credential-input" type="password"/);
   assert.match(preload, /configureAi: \(config\) => ipcRenderer\.invoke\("provider:ai-configure", config\)/);
   assert.match(preload, /clearAiCredential: \(\) => ipcRenderer\.invoke\("provider:ai-clear-credential"\)/);
+  assert.match(preload, /provider:ai-plan-suggestion/);
+  assert.match(preload, /provider:ai-confirm-suggestion/);
+  assert.match(preload, /provider:ai-cancel-suggestion/);
   const renderer = app.slice(app.indexOf("function renderAiSettings()"),
     app.indexOf("async function refreshAiStatus()"));
   assert.match(renderer, /ai-credential-input"\)\.value = ""/);
@@ -45,6 +50,23 @@ test("main process owns OS-encrypted AI persistence and registers no model trans
   assert.match(main, /safeStorage\.encryptString/);
   assert.match(main, /safeStorage\.decryptString/);
   assert.match(main, /registerAIIpc/);
+  assert.match(main, /new AIRequestCoordinator/);
+  assert.match(main, /transport: null/);
+  assert.match(main, /\{ ok: _ok, \.\.\.context \} = data/);
   assert.match(main, /\[ai\] encrypted local settings ready; transport disabled/);
   assert.doesNotMatch(main, /provider:ai-(?:request|complete|stream)/);
+});
+
+test("AI request preview and suggestion use text-only rendering and disable unavailable transport", () => {
+  const start = app.indexOf("function renderAiRequestPlan(plan)");
+  const end = app.indexOf("function updateAiEndpointInput", start);
+  assert.notEqual(start, -1);
+  assert.ok(end > start);
+  const renderer = app.slice(start, end);
+  assert.match(renderer, /ai-plan-request-json"\)\.textContent = JSON\.stringify/);
+  assert.match(renderer, /confirm\.disabled = !plan\.transport_available/);
+  assert.match(renderer, /replaceTextList/);
+  assert.doesNotMatch(renderer, /innerHTML/);
+  assert.match(app, /ai-suggestion-text"\)\.textContent = response\.suggestion\.text/);
+  assert.doesNotMatch(html, /on(?:click|change|submit)=/i);
 });

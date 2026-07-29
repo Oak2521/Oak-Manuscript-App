@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.32` 已实现的桌面隐私边界、三模式 AI 设置/OS 加密凭据，以及 Web 作业/同源 HTTP/Bearer/GoTrue/Fetch/临时对象存储/持久任务/上传门禁/私有领取、固定 Python 子进程、一次性结果领取和有界双清扫源码契约。现有 alpha.23 Windows 制品未签名，不是可售卖正式版。真实模型 transport、数据库迁移、生产病毒扫描、容器/OS 隔离、同步 transport、计费和官网发布仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.33` 已实现的桌面隐私边界、三模式 AI/OS 加密凭据/单条问题发送预览，以及 Web 作业/同源 HTTP/Bearer/GoTrue/Fetch/临时对象存储/持久任务/上传门禁/私有领取、固定 Python 子进程、一次性结果领取和有界双清扫源码契约。现有 alpha.23 Windows 制品未签名，不是可售卖正式版。真实模型 transport、数据库迁移、生产病毒扫描、容器/OS 隔离、同步 transport、计费和官网发布仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -56,7 +56,9 @@
 - “我的 AI”凭据只通过固定 IPC 一次性交给主进程，并在 OS `safeStorage` 加密后写入 `userData/ai/settings-v1.enc`；状态、配置导出、Renderer、项目、报告、日志和 SyncRecord 只允许暴露“是否存在凭据”，绝不返回密文或明文；
 - 加密状态使用 exact schema、canonical JSON、长度上限、revision CAS、单链接/路径身份检查、候选文件 `fsync`、原子替换和提交后解密复验；篡改、硬链接、路径逃逸或系统加密不可用一律 fail-closed；
 - OpenAI、Anthropic 和 Google 官方标签绑定固定官方 HTTPS 端点；自定义远程地址只能使用 OpenAI-compatible HTTPS，本机 HTTP 仅限精确 loopback；provider 或地址变化后不得沿用旧凭据；
-- alpha.32 没有任何模型请求 IPC 或 transport，不会联网。后续 transport 必须逐次由用户触发并预览发送范围；凭据永不同步，Web 凭据只限当前会话；失败不得静默回退湖岸 AI，响应只能作为建议且不能自动写回稿件。
+- `ai-context` 只读提取所选一条问题；binding 中的项目内 issue/check、working/标准摘要不返回 Renderer，也不进入 request_content。发送内容只允许规则、严重级别、标题、解释、脱敏位置、原文预览、标准引用、状态和用户附加要求；EPUB 内部资源路径被统一替换；
+- 预览计划只在主进程内存中最多保留 8 个、10 分钟、一次使用；上下文或 AI 配置变化、取消、过期或重复确认均在 transport 前拒绝。公开预览完整显示目的地、会发送/不会发送字段和语义请求，不含文件名、路径、项目/账号标识、哈希或凭据；
+- alpha.33 生产模型 transport 为 `null`，确认按钮禁用，不会联网。注入式测试只证明确认后凭据交付与只读响应接口；凭据永不同步，Web 凭据只限当前会话；失败不得静默回退湖岸 AI，响应只能作为内存建议且不能自动写回稿件。
 
 ### 4.4 Web 临时作业的零留存与同源 HTTP 契约
 

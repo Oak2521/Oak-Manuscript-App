@@ -34,6 +34,9 @@ test("sandboxed preload exposes only bounded account and sync operations", async
   await api.aiStatus();
   await api.configureAi({ mode: "off" });
   await api.clearAiCredential();
+  await api.planAiSuggestion("C:\\projects\\oak", "check-0001-0001", "保持原意");
+  await api.confirmAiSuggestion("ai-plan-1");
+  await api.cancelAiSuggestion("ai-plan-1");
   await api.syncPreference();
   await api.syncPreview("C:\\projects\\oak", "export", true);
   await api.syncConfirm("idem-1", "sync_once");
@@ -50,6 +53,11 @@ test("sandboxed preload exposes only bounded account and sync operations", async
     { channel: "provider:ai-status" },
     { channel: "provider:ai-configure", payload: { mode: "off" } },
     { channel: "provider:ai-clear-credential" },
+    { channel: "provider:ai-plan-suggestion", payload: {
+      project: "C:\\projects\\oak", issueId: "check-0001-0001", instruction: "保持原意",
+    } },
+    { channel: "provider:ai-confirm-suggestion", payload: { planId: "ai-plan-1" } },
+    { channel: "provider:ai-cancel-suggestion", payload: { planId: "ai-plan-1" } },
     { channel: "provider:sync-preference", payload: {} },
     {
       channel: "provider:sync-preview",

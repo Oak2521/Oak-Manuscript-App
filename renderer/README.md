@@ -8,7 +8,7 @@ P0 批量修复界面遵循“计划—集中预览—一次确认”：Renderer
 
 账号入口保留在欢迎页、导出页和设置页。生产认证未配置时，界面明确说明不联网；测试模拟状态不暴露给生产 Renderer。只有登录用户导出后才出现 SyncRecord v1 逐字段预览；四个选择通过 opaque 幂等 ID 确认，Renderer 不能提交任意负载。负载和队列使用 `textContent`/`replaceChildren` 渲染，不插入 HTML；设置页只显示当前账号的 OS 加密本机队列，可取消、重试、删除，并明确 `pending_transport` 尚未上传。
 
-`app.js` 中的 `window.__oakActions` 是按钮与自动化 smoke 共用的业务动作层，不是额外特权接口。当次 source/packaged 隐藏 smoke 必须通过真实 Renderer → preload → IPC → 固定 Python bootstrap 完成 DOCX/EPUB 的引用计划确认、检查、集中修复、恢复、重新修复、导出与验证，并用第二进程恢复同一 OS 加密队列。动态版本、计数和运行根不写入 ASAR，准确证据以仓库 `docs/TEST_REPORT.md` 为准。
+`app.js` 中的 `window.__oakActions` 是按钮与自动化 smoke 共用的业务动作层，不是额外特权接口。当次 source/packaged 隐藏 smoke 必须通过真实 Renderer → preload → IPC → 固定 Python bootstrap 完成 DOCX/EPUB 的引用计划确认、检查、AI 单条问题发送预览/transport 缺席禁用/取消零发送、集中修复、恢复、重新修复、导出与验证，并用第二进程恢复同一 OS 加密队列。动态版本、计数和运行根不写入 ASAR，准确证据以仓库 `docs/TEST_REPORT.md` 为准。
 
 标准资源页会分别显示项目固定版本与当前全局版本。已有项目只有在用户打开完整差异并一次确认后才会升级；目标由主进程选择，Renderer 不能提交任意 digest。升级成功后清空旧问题状态并自动重检。界面提供本地签名包安装与全局回滚入口，但当前构建没有生产信任根，因此本地导入默认禁用；没有联网自动下载。这些源码闭环不等于打包版或可售卖发行证据；生产账号/订阅/同步、已部署 Web UI/服务与 macOS 仍未实现。仓库已有的 Web HTTP handler 不进入桌面 Renderer 或 default session。
 

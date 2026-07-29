@@ -2,7 +2,18 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.32 三模式 AI 设置与加密凭据验收（2026-07-28）
+## 0.1.0-alpha.33 AI 单条问题发送预览与一次确认验收（2026-07-28）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.33`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] `ai-context` 严格只读，只提供当前单条问题；项目/检查绑定、working/规则摘要只留主进程，request_content 不含文件名、路径、项目/账号标识、其他问题或凭据；
+- [x] AI 计划有效期 10 分钟、最多 8 个、一次使用，并绑定上下文与 AI 配置 revision；取消、过期、重复、上下文/配置漂移均在 transport 前拒绝；
+- [x] UI 完整展示目的地、有效期、会发送/不会发送清单和完整语义请求；动态内容只用 `textContent`；
+- [x] 注入式 transport 证明凭据只在确认后交付；建议 exact/32 KiB、`suggestion_only`、`memory_only`、`automatic_writeback=false`；异常和超限不泄露凭据；
+- [x] AI Node 定向 35/35、Python 定向 5/5、Node 501、Python 362 全量零失败；扩展独立隐藏源码 Electron smoke 最终 PASS；资源锁 79 文件 / 2,139,277 字节；
+- [ ] 六类真实供应商 transport、最小权限网络隔离、协议/超时/重试/证书/代理/响应解析和真实凭据兼容性完成；当前生产 transport=`null` 且确认按钮禁用；
+- [ ] alpha.33 Windows/macOS packaged、签名、安装生命周期与干净机证据完成；最新真实 Windows 制品仍是 alpha.23。
+
+## 0.1.0-alpha.32 三模式 AI 设置与加密凭据验收（历史，2026-07-28）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.32`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] 无 AI / 湖岸 AI / 我的 AI 三模式与六类供应商可在设置页选择；我的 AI 要求 Pro，且明确不消耗湖岸 AI 配额；

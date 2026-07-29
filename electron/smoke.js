@@ -335,6 +335,42 @@ async function runSmoke(win, pathPolicy) {
       `[smoke]   Python core 身份：version=${coreIdentity.coreVersion}，rulepack=${coreIdentity.rulepack}`,
     );
 
+    if (sc.type === "paper") {
+      const aiStatus = await js(`(() => {
+        document.querySelector('input[name="ai-mode"][value="oak"]').checked = true;
+        return __oakActions.saveAiSettings();
+      })()`);
+      assert(
+        aiStatus.mode === "oak" && aiStatus.transport_configured === false,
+        "AI smoke 必须只配置湖岸 AI 预览模式且保持 transport 关闭",
+      );
+      const issueId = await js(`(() => {
+        document.querySelector("#issue-list li").click();
+        return __oakActions.getState().selectedIssue;
+      })()`);
+      assert(typeof issueId === "string" && issueId.length > 0, "AI smoke 必须选择一条真实问题");
+      const aiPlan = await js(`__oakActions.planAiSuggestion(
+        ${JSON.stringify(issueId)}, "请只解释这条问题，不要改写全文。"
+      )`);
+      assert(
+        aiPlan.transport_available === false && aiPlan.automatic_writeback === false,
+        "AI 预览必须保持零 transport 和零自动写回",
+      );
+      assert(
+        aiPlan.request && aiPlan.request.issue_context &&
+          typeof aiPlan.request.issue_context.preview === "string",
+        "AI 预览必须展示单条问题的完整发送内容",
+      );
+      const serializedPlan = JSON.stringify(aiPlan);
+      assert(!serializedPlan.includes(projectDir), "AI 公开预览不得包含项目路径");
+      assert(
+        await js('document.querySelector("#btn-confirm-ai-request").disabled') === true,
+        "模型 transport 缺席时确认发送按钮必须禁用",
+      );
+      assert(await js("__oakActions.cancelAiSuggestion()") === true, "AI 预览必须可取消");
+      console.log("[smoke]   AI：单条问题发送预览通过；transport 关闭且取消零发送");
+    }
+
     const firstPlan = await js("__oakActions.autoFix()");
     if (sc.expectFixes) assert(firstPlan.count > 0, `${sc.name}：批量计划应列出白名单修复`);
     if (firstPlan.count > 0) {

@@ -189,6 +189,14 @@ def _cmd_plan_fixes(args) -> int:
     return 0
 
 
+def _cmd_ai_context(args) -> int:
+    proj = Project.open(Path(args.project))
+    context = ops.build_ai_issue_context(proj, issue_id=args.issue_id)
+    _emit({"ok": True, **context})
+    print("已生成本机 AI 建议上下文；尚未联网或发送任何内容。", file=sys.stderr)
+    return 0
+
+
 def _cmd_plan_citation(args) -> int:
     proj = Project.open(Path(args.project))
     pack = _project_rulepack(proj, args.rulepack)
@@ -446,6 +454,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--project", required=True)
     p.add_argument("--event", required=True, choices=["check", "export"])
 
+    p = sub.add_parser("ai-context", help="生成单条问题的 AI 发送预览来源（严格只读，不发送）")
+    p.add_argument("--project", required=True)
+    p.add_argument("--issue-id", required=True)
+
     p = sub.add_parser("restore-checkpoint", help="安全恢复检查点（恢复前自动创建安全检查点）")
     p.add_argument("--project", required=True)
     p.add_argument("--checkpoint-id", required=True)
@@ -496,6 +508,7 @@ def main(argv: list[str] | None = None) -> int:
         "verify": _cmd_verify,
         "list-checkpoints": _cmd_list_checkpoints,
         "sync-source": _cmd_sync_source,
+        "ai-context": _cmd_ai_context,
         "restore-checkpoint": _cmd_restore_checkpoint,
         "external": _cmd_external,
         "external-plan": _cmd_external_plan,

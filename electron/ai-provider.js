@@ -37,6 +37,10 @@ const CONFIG_KEYS = Object.freeze([
 ]);
 const CREDENTIAL_ACTIONS = new Set(["keep", "replace", "clear"]);
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+const REQUEST_BINDING_KEYS = Object.freeze([
+  "schema_version", "revision", "mode", "provider", "model", "base_url",
+  "endpoint_kind", "has_credential",
+]);
 
 class AIProviderError extends Error {
   constructor(code, message) {
@@ -278,6 +282,46 @@ class AIProvider {
     });
   }
 
+  requestBinding(licenseStatus = null) {
+    if (this.state.mode === "off") {
+      throw new AIProviderError("AI_DISABLED", "请先在设置中选择湖岸 AI 或我的 AI");
+    }
+    if (this.state.mode === "byo") {
+      requirePro(licenseStatus);
+      const spec = AI_PROVIDER_SPECS[this.state.provider];
+      if (spec.credential_required && this.state.credential === null) {
+        throw new AIProviderError("CREDENTIAL_REQUIRED", "当前供应商需要 API 凭据");
+      }
+    }
+    return Object.freeze({
+      schema_version: "1.0",
+      revision: this.state.revision,
+      mode: this.state.mode,
+      provider: this.state.provider,
+      model: this.state.model,
+      base_url: this.state.base_url,
+      endpoint_kind: this.state.endpoint_kind,
+      has_credential: this.state.credential !== null,
+    });
+  }
+
+  async withRequestCredential(binding, licenseStatus, operation) {
+    exactKeys(binding, REQUEST_BINDING_KEYS, "AI 请求绑定");
+    if (typeof operation !== "function") throw new TypeError("AI 请求操作非法");
+    const current = this.requestBinding(licenseStatus);
+    if (JSON.stringify(current) !== JSON.stringify(binding)) {
+      throw new AIProviderError("AI_PLAN_STALE", "AI 配置已变化；请重新预览发送内容");
+    }
+    return operation(Object.freeze({
+      mode: this.state.mode,
+      provider: this.state.provider,
+      model: this.state.model,
+      base_url: this.state.base_url,
+      endpoint_kind: this.state.endpoint_kind,
+      credential: this.state.credential,
+    }));
+  }
+
   exportConfiguration() {
     const status = this.status();
     return Object.freeze({
@@ -297,5 +341,6 @@ module.exports = {
   AIProvider,
   canonicalBaseUrl,
   providerBaseUrl,
+  REQUEST_BINDING_KEYS,
   validateAISettingsState,
 };

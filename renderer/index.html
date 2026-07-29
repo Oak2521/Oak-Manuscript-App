@@ -350,6 +350,41 @@
     </div>
   </dialog>
 
+  <dialog id="ai-request-dialog" class="modal ai-request-modal" aria-labelledby="ai-request-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="ai-request-title">确认发送给 AI 的内容</h2>
+        <p class="muted">下面是本次单条建议的完整内容预览。生成预览本身不联网；只有点击一次确认发送，主进程才可把同一份内容交给已配置的模型 transport。</p>
+      </div>
+    </div>
+    <dl class="ai-destination-grid">
+      <div><dt>模式</dt><dd id="ai-plan-mode"></dd></div>
+      <div><dt>供应商</dt><dd id="ai-plan-provider"></dd></div>
+      <div><dt>模型</dt><dd id="ai-plan-model"></dd></div>
+      <div><dt>地址</dt><dd id="ai-plan-base-url"></dd></div>
+      <div><dt>预览有效期</dt><dd id="ai-plan-expires"></dd></div>
+    </dl>
+    <div id="ai-plan-transport" class="callout" aria-live="polite"></div>
+    <section class="ai-disclosure-section">
+      <h3>会发送</h3>
+      <ul id="ai-plan-sends"></ul>
+      <h3>不会发送</h3>
+      <ul id="ai-plan-does-not-send"></ul>
+    </section>
+    <section class="ai-request-section">
+      <h3>完整请求内容</h3>
+      <pre id="ai-plan-request-json" tabindex="0"></pre>
+    </section>
+    <section id="ai-suggestion-result" class="ai-suggestion-result hidden" aria-live="polite">
+      <h3>AI 建议（只读，不会写回稿件）</h3>
+      <pre id="ai-suggestion-text" tabindex="0"></pre>
+    </section>
+    <div class="modal-actions">
+      <button id="btn-cancel-ai-request">关闭（不发送）</button>
+      <button id="btn-confirm-ai-request" class="primary">确认发送一次</button>
+    </div>
+  </dialog>
+
   <div id="toast" class="hidden"></div>
   <script src="p0-ui-model.js"></script>
   <script src="app.js"></script>

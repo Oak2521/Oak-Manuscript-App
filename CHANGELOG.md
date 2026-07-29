@@ -4,6 +4,16 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.33（ChatGPT AI 发送预览与一次确认检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.33`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未部署、未修改官网或重新打包；最新真实 Windows 制品仍为 alpha.23。
+
+- 新增 Python `ai-context`：只读提取所选单条问题的最小发送内容；项目/检查/working/标准绑定只供本地过期判断，不进入公开预览；EPUB 内部资源路径脱敏；
+- 新增 `AIRequestCoordinator`：10 分钟、最多 8 个、一次性计划，绑定上下文与 AI 配置；预览/取消零 transport，问题或配置漂移、重复确认、未知字段、超限和 transport 异常全部 fail-closed；
+- 问题详情新增附加要求和完整发送预览：显示模式、供应商、模型、地址、有效期、会发送/不会发送字段及完整语义请求；建议只读、内存态、不自动写回；
+- 注入式 transport 测试覆盖确认后才交付凭据和安全返回，但生产 `transport:null`，确认按钮硬禁用；本版本不能调用真实模型；
+- AI Node 定向 35/35、Python 定向 5/5；最终 `npm test` 116.771 秒：Node 501 total / 494 pass / 0 fail / 7 skip（3.561 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（108.900 秒）；扩展隐藏源码 Electron smoke 最终 PASS；资源清单 79 文件 / 2,139,277 字节，manifest SHA-256 `dac22358086fdc38726cebc68bca32668fbae35167967b473b367b0d9ce98388`，锚点 SHA-256 `42d749a4e62f85c87a3c0d88a6242c919da2d8c26c07ca60312359dbcd410f98`。
+
 ### 2026-07-28 — 0.1.0-alpha.32（ChatGPT 三模式 AI 设置与加密凭据检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.32`。本轮未联网、未调用模型、未使用真实 AI 密钥、未部署、未修改官网或重新打包；最新真实 Windows 制品仍为 alpha.23。

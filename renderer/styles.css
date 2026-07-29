@@ -268,6 +268,24 @@ dialog.modal::backdrop { background: rgba(20, 29, 25, .58); }
 .ai-byo-fields > label { font-weight: 600; }
 .ai-byo-fields input, .ai-byo-fields select { width: 100%; min-width: 0; }
 .ai-byo-fields .muted { grid-column: 1 / -1; margin: 0; }
+.ai-suggestion-controls textarea { width: 100%; resize: vertical; margin: 5px 0 8px; }
+.ai-suggestion-controls button { margin-right: 8px; }
+.ai-request-modal { width: min(940px, calc(100vw - 48px)); }
+.ai-destination-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px;
+  margin: 6px 22px 12px;
+}
+.ai-destination-grid > div { padding: 9px 11px; border: 1px solid var(--line); border-radius: 7px; background: #fff; }
+.ai-destination-grid dt { color: var(--muted); font-size: 12px; }
+.ai-destination-grid dd { margin-top: 3px; font-weight: 600; overflow-wrap: anywhere; }
+.ai-disclosure-section, .ai-request-section, .ai-suggestion-result { margin: 14px 22px; }
+.ai-disclosure-section h3, .ai-request-section h3, .ai-suggestion-result h3 { font-size: 14px; margin: 10px 0 5px; }
+.ai-disclosure-section ul { margin-left: 22px; }
+#ai-plan-request-json, #ai-suggestion-text {
+  max-height: 300px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere;
+  padding: 12px; border: 1px solid var(--line); border-radius: 7px; background: #fff;
+  font: 12px/1.55 Consolas, "SFMono-Regular", monospace;
+}
 .upgrade-diff-section { margin: 0 22px 16px; }
 .upgrade-diff-section h3 { margin: 0 0 7px; color: var(--oak-dark); font-size: 15px; }
 .upgrade-diff-list {
@@ -302,5 +320,6 @@ dialog.modal::backdrop { background: rgba(20, 29, 25, .58); }
   .sync-queue-item { grid-template-columns: 1fr; }
   .sync-queue-actions { justify-content: flex-start; }
   .ai-mode-grid, .ai-byo-fields { grid-template-columns: 1fr; }
+  .ai-destination-grid { grid-template-columns: 1fr; }
   .ai-byo-fields .muted { grid-column: auto; }
 }

@@ -335,6 +335,60 @@ def save_issues(project: Project, issues: list[dict]) -> None:
     write_json(project.issues_path(required=False), issues)
 
 
+def _ai_location_label(location: dict) -> str:
+    """Return a useful location without exposing an EPUB internal resource path."""
+    if location.get("resource"):
+        return "电子书内容资源（内部路径未发送）"
+    if location.get("part") == "footnotes" and location.get("note_id") is not None:
+        return f"脚注 {location['note_id']}"
+    if location.get("paragraph") is not None:
+        return f"正文第 {location['paragraph']} 段"
+    return "文档"
+
+
+def build_ai_issue_context(project: Project, *, issue_id: str) -> dict:
+    """Build the exact, minimal issue context that may enter an AI request preview.
+
+    ``binding`` is local-only freshness evidence. Electron must never place it in the
+    model request. ``request_content`` is the complete manuscript-derived disclosure.
+    This function is strictly read-only.
+    """
+    if not isinstance(issue_id, str) or not re.fullmatch(
+        r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", issue_id
+    ):
+        raise OakError("AI 建议问题 ID 非法。")
+    if project.data.get("rulepack_check_required", False):
+        raise OakError("规则包已变更，必须先重新运行 check 才能请求 AI 建议。")
+    checks = project.data.get("checks", [])
+    if not checks:
+        raise OakError("尚未运行检查，无法生成 AI 建议上下文。")
+    _require_current_check_identity(project)
+    _ensure_source_unchanged(project)
+    issue = next((item for item in load_issues(project) if item["issue_id"] == issue_id), None)
+    if issue is None:
+        raise OakError(f"找不到问题：{issue_id}")
+    return {
+        "schema_version": "1.0",
+        "context_type": "oak_manuscript_issue_suggestion",
+        "binding": {
+            "issue_id": issue["issue_id"],
+            "check_id": checks[-1]["check_id"],
+            "working_sha256": sha256_file(project.working_path),
+            "rulepack_manifest_sha256": project.data["rulepack"]["manifest_sha256"],
+        },
+        "request_content": {
+            "rule_id": issue["rule_id"],
+            "severity": issue["severity"],
+            "title": issue["title"],
+            "explanation": issue["explanation"],
+            "location": _ai_location_label(issue["location"]),
+            "preview": issue["preview"],
+            "standard_refs": list(issue["standard_refs"]),
+            "status": issue["status"],
+        },
+    }
+
+
 def _require_current_check_identity(project: Project) -> None:
     checks = project.data.get("checks", [])
     if not checks:

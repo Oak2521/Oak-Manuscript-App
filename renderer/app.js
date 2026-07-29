@@ -29,6 +29,8 @@ const state = {
   authStatus: null,
   licenseStatus: null,
   aiStatus: null,
+  aiRequestPlan: null,
+  aiRequestConfirming: false,
   syncPreview: null,
   syncConfirming: false,
   syncQueue: [],
@@ -348,6 +350,12 @@ function renderDetail(issue) {
     <div class="detail-block"><h4>问题解释</h4><p class="expl"></p></div>
     <div class="detail-block"><h4>参考标准</h4><p class="refs muted"></p></div>
     <div class="detail-block"><h4>修复方式</h4><p class="fix muted"></p></div>
+    <div class="detail-block ai-suggestion-controls">
+      <h4>AI 建议（可选）</h4>
+      <textarea class="ai-instruction-input" maxlength="2000" rows="3" placeholder="可选：补充你希望 AI 重点解释的问题。留空则使用默认要求。"></textarea>
+      <button class="ghost ai-preview-button">预览将发送给 AI 的内容</button>
+      <p class="ai-preview-help muted"></p>
+    </div>
     <div class="detail-actions">
       <button class="primary" data-act="accepted">接受</button>
       <button data-act="rejected">拒绝</button>
@@ -362,6 +370,21 @@ function renderDetail(issue) {
   el.querySelector(".fix").textContent = issue.auto_fixable
     ? "白名单机械修复：APP 会先集中展示本批全部修改，您一次确认后整批处理；修复前自动创建检查点，可撤销。"
     : "需要您人工判断与修改，工具不自动改动。";
+  const aiButton = el.querySelector(".ai-preview-button");
+  const aiStatus = state.aiStatus;
+  const canPreview = Boolean(aiStatus && aiStatus.mode !== "off" &&
+    aiStatus.persistence && aiStatus.persistence.state === "ready" &&
+    aiStatus.configuration_state !== "credential_required" &&
+    !(aiStatus.mode === "byo" && aiStatus.pro_eligible === false));
+  aiButton.disabled = !canPreview;
+  el.querySelector(".ai-preview-help").textContent = !aiStatus || aiStatus.mode === "off"
+    ? "请先在“标准与设置”中选择湖岸 AI 或我的 AI。"
+    : !canPreview
+      ? "当前 AI 配置或权益尚不能生成发送预览；请先完成设置。"
+      : "只生成单条问题的本机预览；不会发送完整稿件、其他问题、路径、哈希、账号或凭据。";
+  aiButton.addEventListener("click", () => actions.planAiSuggestion(
+    issue.issue_id, el.querySelector(".ai-instruction-input").value,
+  ).catch((error) => toast(String(error.message || error), 6000)));
   el.querySelectorAll("[data-act]").forEach((btn) =>
     btn.addEventListener("click", () => actions.issueAction(issue.issue_id, btn.dataset.act)));
 }
@@ -461,6 +484,9 @@ function renderCheckpointList() {
 }
 
 function resetCurrentProject({ clearProjectDir = false } = {}) {
+  if (state.aiRequestPlan) {
+    window.oak.cancelAiSuggestion(state.aiRequestPlan.plan_id).catch(() => {});
+  }
   state.project = null;
   state.lastCheck = null;
   state.selectedIssue = null;
@@ -474,6 +500,7 @@ function resetCurrentProject({ clearProjectDir = false } = {}) {
   state.selectedCheckpointId = null;
   state.rulepackUpgradePlan = null;
   state.syncPreview = null;
+  state.aiRequestPlan = null;
   if (clearProjectDir) {
     state.projectDir = null;
     $("#chosen-dir").textContent = "未选择（需要空目录）";
@@ -833,6 +860,57 @@ const actions = {
       : status === "rejected" ? "已拒绝：复检后不再提醒此问题" : "已标记为暂不处理");
   },
 
+  async planAiSuggestion(issueId, instruction = "") {
+    if (!state.project) throw new Error("请先创建或打开项目");
+    if (state.aiRequestConfirming) throw new Error("AI 请求确认正在处理");
+    const response = unwrap(await window.oak.planAiSuggestion(
+      state.project, issueId, instruction,
+    ));
+    state.aiRequestPlan = response.plan;
+    renderAiRequestPlan(response.plan);
+    const dialog = $("#ai-request-dialog");
+    if (!dialog.open) dialog.showModal();
+    return response.plan;
+  },
+
+  async saveAiSettings() {
+    return saveAiSettings();
+  },
+
+  async cancelAiSuggestion() {
+    if (state.aiRequestConfirming) return false;
+    const plan = state.aiRequestPlan;
+    state.aiRequestPlan = null;
+    if (plan) unwrap(await window.oak.cancelAiSuggestion(plan.plan_id));
+    const dialog = $("#ai-request-dialog");
+    if (dialog.open) dialog.close("cancel");
+    return true;
+  },
+
+  async confirmAiSuggestion() {
+    const plan = state.aiRequestPlan;
+    if (!plan) throw new Error("没有待确认的 AI 发送预览");
+    if (!plan.transport_available) throw new Error("模型 transport 尚未接入；没有发送任何内容");
+    if (state.aiRequestConfirming) throw new Error("AI 请求确认正在处理");
+    state.aiRequestConfirming = true;
+    $("#btn-confirm-ai-request").disabled = true;
+    $("#btn-cancel-ai-request").disabled = true;
+    try {
+      const response = unwrap(await window.oak.confirmAiSuggestion(plan.plan_id));
+      state.aiRequestPlan = null;
+      $("#ai-suggestion-text").textContent = response.suggestion.text;
+      $("#ai-suggestion-result").classList.remove("hidden");
+      $("#ai-plan-transport").textContent =
+        "建议仅保存在当前界面内存中；没有写入稿件、问题状态、项目、报告或同步记录。";
+      $("#btn-confirm-ai-request").textContent = "已完成（不会写回）";
+      $("#btn-cancel-ai-request").textContent = "关闭";
+      return response.suggestion;
+    } finally {
+      state.aiRequestConfirming = false;
+      $("#btn-cancel-ai-request").disabled = false;
+    }
+  },
+
   async doExport(outDir) {
     const r = unwrap(await window.oak.exportAll(state.project, outDir || undefined));
     state.exportFiles = r.result.files;
@@ -1018,6 +1096,8 @@ const actions = {
       checkpoints: state.checkpoints.length,
       rulepackUpgradePlan: state.rulepackUpgradePlan ? state.rulepackUpgradePlan.plan_id : null,
       syncPreview: state.syncPreview ? state.syncPreview.record.idempotency_id : null,
+      selectedIssue: state.selectedIssue,
+      aiRequestPlan: state.aiRequestPlan ? state.aiRequestPlan.plan_id : null,
     };
   },
 };
@@ -1254,6 +1334,34 @@ function selectedAiMode() {
   return selected ? selected.value : "off";
 }
 
+function replaceTextList(root, items) {
+  root.replaceChildren();
+  for (const item of items) {
+    const li = document.createElement("li");
+    li.textContent = item;
+    root.appendChild(li);
+  }
+}
+
+function renderAiRequestPlan(plan) {
+  $("#ai-plan-mode").textContent = plan.destination.mode === "byo" ? "我的 AI" : "湖岸 AI";
+  $("#ai-plan-provider").textContent = plan.destination.provider_label;
+  $("#ai-plan-model").textContent = plan.destination.model || "由湖岸服务确定";
+  $("#ai-plan-base-url").textContent = plan.destination.base_url || "湖岸 AI 服务（生产地址尚未配置）";
+  $("#ai-plan-expires").textContent = plan.expires_at;
+  replaceTextList($("#ai-plan-sends"), plan.disclosure.sends);
+  replaceTextList($("#ai-plan-does-not-send"), plan.disclosure.does_not_send);
+  $("#ai-plan-request-json").textContent = JSON.stringify(plan.request, null, 2);
+  $("#ai-suggestion-text").textContent = "";
+  $("#ai-suggestion-result").classList.add("hidden");
+  const confirm = $("#btn-confirm-ai-request");
+  confirm.disabled = !plan.transport_available;
+  confirm.textContent = plan.transport_available ? "确认发送一次" : "模型 transport 尚未接入";
+  $("#ai-plan-transport").textContent = plan.transport_available
+    ? "尚未发送。点击确认后只发送上面显示的同一份内容；计划只能使用一次。"
+    : "当前检查点没有模型 transport；本预览不会联网，确认按钮保持禁用。";
+}
+
 function updateAiEndpointInput({ providerChanged = false } = {}) {
   const provider = $("#ai-provider-select").value;
   const fixedCloud = ["openai", "anthropic", "google"].includes(provider);
@@ -1284,6 +1392,10 @@ function renderAiSettings() {
   const pro = state.licenseStatus && state.licenseStatus.effectiveTier === "pro";
   const entitlement = byo && !pro ? " 我的 AI 需要有效 Pro 权益。" : "";
   $("#ai-status-text").textContent = `${status.message}${entitlement}`;
+  if (state.lastCheck && state.selectedIssue) {
+    const selected = state.lastCheck.issues.find((issue) => issue.issue_id === state.selectedIssue);
+    if (selected) renderDetail(selected);
+  }
 }
 
 async function refreshAiStatus() {
@@ -1542,6 +1654,14 @@ document.addEventListener("DOMContentLoaded", () => {
     saveAiSettings().catch((error) => toast(String(error.message || error), 6000)));
   $("#btn-clear-ai-credential").addEventListener("click", () =>
     clearAiCredential().catch((error) => toast(String(error.message || error), 6000)));
+  $("#btn-cancel-ai-request").addEventListener("click", () =>
+    actions.cancelAiSuggestion().catch((error) => toast(String(error.message || error), 6000)));
+  $("#btn-confirm-ai-request").addEventListener("click", () =>
+    actions.confirmAiSuggestion().catch((error) => toast(String(error.message || error), 6000)));
+  $("#ai-request-dialog").addEventListener("cancel", (event) => {
+    event.preventDefault();
+    actions.cancelAiSuggestion().catch((error) => toast(String(error.message || error), 6000));
+  });
   $("#btn-sync-once").addEventListener("click", () =>
     actions.confirmSync("sync_once").catch((error) => toast(String(error.message || error), 5000)));
   $("#btn-sync-ask-each-time").addEventListener("click", () =>

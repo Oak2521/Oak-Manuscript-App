@@ -1,12 +1,12 @@
 # 湖岸稿件（Oak Manuscript）
 
-本地优先的稿件检查与修订产品。当前开发版本为 `0.1.0-alpha.32`，已有 Electron 桌面端、Python 检查核心、经真实 packaged 门禁和隐藏烟测验证的 alpha.23 Windows x64 NSIS/ZIP 制品、离线标准包验证/项目固定/显式升级/回滚链路、三模式 AI 设置与 OS 加密用户凭据，以及 Web 临时作业状态机、同源 HTTPS handler、GoTrue 验证、Fetch 适配、首个未部署工作台、Netlify Blobs 临时对象存储、Supabase/Postgres 持久任务状态、私有原子领取队列、上传结构/主动内容前置门禁、固定 Python 子进程处理、一次性结果领取及有界双清扫协调源码；商业正式版目标为 Windows、macOS 与 Web。按论文、纸质出版物、电子书三类目标检查稿件，提供可追溯标准依据的问题解释、集中确认的白名单机械订正、检查点恢复、修订稿与检查报告导出。
+本地优先的稿件检查与修订产品。当前开发版本为 `0.1.0-alpha.33`，已有 Electron 桌面端、Python 检查核心、经真实 packaged 门禁和隐藏烟测验证的 alpha.23 Windows x64 NSIS/ZIP 制品、离线标准包验证/项目固定/显式升级/回滚链路、三模式 AI 设置、OS 加密用户凭据与单条问题完整发送预览，以及 Web 临时作业状态机、同源 HTTPS handler、GoTrue 验证、Fetch 适配、首个未部署工作台、Netlify Blobs 临时对象存储、Supabase/Postgres 持久任务状态、私有原子领取队列、上传结构/主动内容前置门禁、固定 Python 子进程处理、一次性结果领取及有界双清扫协调源码；商业正式版目标为 Windows、macOS 与 Web。按论文、纸质出版物、电子书三类目标检查稿件，提供可追溯标准依据的问题解释、集中确认的白名单机械订正、检查点恢复、修订稿与检查报告导出。
 
 **当前桌面核心承诺**：稿件默认只在本机处理；永不原地修改原稿（SHA-256 全程校验）；不强制注册；报告与导出不设营销门槛。
 
-`0.1.0-alpha.32` 新增“无 AI / 湖岸 AI / 我的 AI”设置，支持六类云端、自托管和本机供应商配置，并只在 Electron 主进程的系统加密存储中保存凭据。我的 AI 受 Pro 门禁、凭据不回读/不同步、失败不静默回退，任何输出只能作为建议且禁止自动写稿。当前模型 transport 尚未实现，因此设置页会明确显示不会发起网络请求；这不是可用 AI 调用功能。
+`0.1.0-alpha.33` 可从问题详情生成单条 AI 发送预览，完整列出目的地、会发送/不会发送字段及语义请求。计划十分钟有效、一次使用，并绑定当前问题和 AI 配置；预览和取消都不会交付凭据或调用 transport。当前生产模型 transport 仍为 `null`，确认按钮硬禁用，因此本版本仍不能调用真实模型；注入式测试通过不等于供应商已接通。
 
-最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.32 全量回归为 Node 492 total / 485 pass / 0 fail / 7 skip、Python 357 total / 0 failures / 0 errors / 3 skipped；独立隐藏源码 Electron smoke PASS。本检查点没有联网或重复打包。最新真实 Windows 制品仍是 alpha.23：NSIS 189,995,462 字节（SHA-256 `3ae05010…ad3d`），ZIP 233,814,202 字节（`625b0fea…8d05`）。真实安装生命周期尚未执行；制品仍未签名，发行身份契约 `complete=false`，packaged 资源门禁保留 12 项 sale blocker。
+最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.33 全量回归为 Node 501 total / 494 pass / 0 fail / 7 skip、Python 362 total / 0 failures / 0 errors / 3 skipped；扩展独立隐藏源码 Electron smoke PASS。本检查点没有联网或重复打包。最新真实 Windows 制品仍是 alpha.23：NSIS 189,995,462 字节（SHA-256 `3ae05010…ad3d`），ZIP 233,814,202 字节（`625b0fea…8d05`）。真实安装生命周期尚未执行；制品仍未签名，发行身份契约 `complete=false`，packaged 资源门禁保留 12 项 sale blocker。
 
 当前桌面安全边界包括：默认 Electron session 离线与固定 CSP；PDF 使用禁 JavaScript/导航/网络的非持久隔离 session；项目 schema/路径完整校验与跨进程内核写锁；创建项目在锁内以单一输入文件描述符复制到 `source`，再生成 `working`；自选导出目录逐级验证、全部目标预检和逐文件原子换入；标准包以 canonical manifest、内容寻址存储、高水位和精确回滚目标 fail-closed。已有项目不会因全局标准更新而静默换规则，必须先查看差异并显式确认，升级后强制重检。
 

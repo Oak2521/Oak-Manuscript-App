@@ -12,6 +12,7 @@ const pathPolicy = require("./path-policy");
 const bridge = require("./python-bridge");
 const providers = require("./providers");
 const { registerAIIpc } = require("./ai-ipc");
+const { AIRequestCoordinator } = require("./ai-request");
 const { registerAccountSyncIpc } = require("./account-sync-ipc");
 const { createAceUtilityRunner } = require("./ace-utility-runner");
 const { registerExternalValidationIpc } = require("./external-validation-ipc");
@@ -177,10 +178,28 @@ registerAccountSyncIpc({
   },
 });
 
+const aiRequests = new AIRequestCoordinator({
+  aiProvider: providers.aiProvider,
+  licenseProvider: providers.licenseProvider,
+  contextSource: async (project, issueId) => {
+    const { data } = await core([
+      "ai-context", "--project", project, "--issue-id", issueId,
+    ]);
+    if (!data || data.ok !== true) throw new Error("AI 上下文核心结果非法");
+    const { ok: _ok, ...context } = data;
+    return context;
+  },
+  // Production model transport is deliberately absent until provider protocols,
+  // request isolation, timeout/response limits and explicit network tests pass.
+  transport: null,
+});
+
 registerAIIpc({
   ipcMain,
   aiProvider: providers.aiProvider,
   licenseProvider: providers.licenseProvider,
+  aiRequests,
+  pathPolicy,
 });
 
 registerExternalValidationIpc({

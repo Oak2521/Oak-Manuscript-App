@@ -65,6 +65,12 @@ const api = {
   aiStatus: () => ipcRenderer.invoke("provider:ai-status"),
   configureAi: (config) => ipcRenderer.invoke("provider:ai-configure", config),
   clearAiCredential: () => ipcRenderer.invoke("provider:ai-clear-credential"),
+  planAiSuggestion: (project, issueId, instruction) =>
+    ipcRenderer.invoke("provider:ai-plan-suggestion", { project, issueId, instruction }),
+  confirmAiSuggestion: (planId) =>
+    ipcRenderer.invoke("provider:ai-confirm-suggestion", { planId }),
+  cancelAiSuggestion: (planId) =>
+    ipcRenderer.invoke("provider:ai-cancel-suggestion", { planId }),
   openEvaluation: () => ipcRenderer.invoke("provider:open-evaluation"),
   appInfo: () => ipcRenderer.invoke("app:info"),
 };

@@ -2,7 +2,25 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.32 三模式 AI 设置与加密凭据
+## 最新验证结论：0.1.0-alpha.33 AI 单条问题发送预览与一次确认契约
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未修改官网、未部署或生成 alpha.33 安装包。
+
+| 验证 | 结果 | 证据 |
+|---|---|---|
+| AI Provider / request coordinator / IPC / UI 定向 | **PASS** | 35/35：三模式与固定官方端点、严格上下文 schema、完整公开预览、10 分钟一次性计划、取消零 transport、确认后才交付凭据、上下文/配置漂移拒绝、错误净化、结果 exact/32 KiB、内存只读建议、DOM 安全与 production transport 缺席 |
+| Python `ai-context` 定向 | **PASS** | 5/5：真实项目单条问题 exact 内容、binding/发送内容分层、源稿/working/issues/project 零写入、路径/项目 ID/检查 ID/哈希不进入 request_content、无检查/无问题/规则过期拒绝及真实 CLI |
+| `npm test` | **PASS** | 退出码 0，墙钟 116.771 秒；Node 501 total / 494 pass / 0 fail / 7 skip（3.561 秒）；Python 362 total / 0 failures / 0 errors / 3 skipped（108.900 秒） |
+| 扩展源码 Electron smoke（首次） | **FAIL（产品集成错误，已修复）** | 真实 UI 到 `ai-context` 后，CLI 的统一 `ok:true` 状态字段进入 exact 上下文 validator，被正确拒绝为字段集合非法；零网络、零稿件修改 |
+| 扩展源码 Electron smoke（最终） | **PASS** | 独立隐藏 Electron `SMOKE-RESULT: PASS`；真实完成湖岸 AI 设置、真实问题选择、单条发送预览、项目路径缺席、transport=false、确认按钮禁用、取消零发送，然后继续完成 DOCX/EPUB 修复/撤销/导出/验证及同步队列恢复 |
+| 资源信任锁更新/复验 | **PASS** | 79 文件 / 2,139,277 字节；manifest SHA-256 `dac22358086fdc38726cebc68bca32668fbae35167967b473b367b0d9ce98388`；anchor SHA-256 `42d749a4e62f85c87a3c0d88a6242c919da2d8c26c07ca60312359dbcd410f98` |
+| 发行身份只读复验 | **PASS（阻断状态正确）** | `complete=false`，12 个 Windows 完备性字段仍缺失 |
+| 真实 OpenAI/Anthropic/Gemini/OpenAI-compatible/Ollama/LM Studio transport | **未实现、未运行** | 主进程明确注入 `transport:null`；UI 确认按钮禁用；注入式 transport 仅证明编排契约，不证明任何供应商协议或网络隔离 |
+| alpha.33 Windows packaged / 安装生命周期 / macOS / Web 部署 | **未运行** | 最新可复验 Windows 制品仍是 alpha.23；源码 smoke 不证明新制品或跨平台通过 |
+
+证据边界：本轮证明 APP 能从可信本地核心只读取得一条问题的最小上下文，向用户完整展示语义请求和目的地，并用一次性计划绑定问题状态与 AI 配置；预览和取消均不会调用 transport。注入式测试证明“确认后才交付凭据—建议只读返回”的接口，但生产 transport 故意为空。因此它不证明真实供应商兼容性、TLS/代理/证书策略、超时/重试、流式响应、湖岸 AI 服务或模型建议质量。
+
+## 历史验证结论：0.1.0-alpha.32 三模式 AI 设置与加密凭据
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用模型、未使用真实 AI 密钥、未修改官网、未部署或生成 alpha.32 安装包。
 
