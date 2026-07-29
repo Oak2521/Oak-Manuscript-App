@@ -1,6 +1,6 @@
 # Web 作业契约与同源 HTTP handler（alpha）
 
-`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.38 以 `sync-record-service.js`、`sync-record-http-handler.js`、`supabase-sync-record-repository.js`、`sync-record-runtime.js` 和 `supabase/002_sync_records.sql` 实现长期 SyncRecord 的独立验证/API/持久层组合；alpha.39 只改变桌面条件接线，不改变 Web 服务合同。源码可本机测试，但临时作业与长期同步均不是已上线生产服务。
+`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.38 以 `sync-record-service.js`、`sync-record-http-handler.js`、`supabase-sync-record-repository.js`、`sync-record-runtime.js` 和 `supabase/002_sync_records.sql` 实现长期 SyncRecord 的独立验证/API/持久层组合；alpha.44 为 `client/` 增加当前账号历史列表/刷新/属主删除。源码可本机测试，但临时作业与长期同步均不是已上线生产服务。
 
 Web 服务端依赖与 Electron 桌面依赖隔离：
 
@@ -40,7 +40,7 @@ alpha.23—alpha.31 固定：
 - Supabase 适配器拒绝缺失、短、带空白/逗号、重复或合并的 Authorization；注入 verifier 只能返回 exact `{subject_id}`，适配器输出不含 token、角色、邮箱或完整 user；
 - GoTrue verifier 只接受规范 HTTPS origin，固定 GET `/auth/v1/user`，不发送 Cookie、不跟随重定向、默认 5 秒超时、响应上限 64 KiB；400/401/403 映射为未认证，限流/5xx/网络/超时/媒体/JSON/subject 异常使用稳定非反射错误；
 - Fetch adapter 流式传递请求体，保留 handler 的读取前门禁并拒绝已消费 Request 或未完整结束的响应；不在适配对象上保留原始 Fetch Request；
-- `client/` 读取网站 `window.oblAuth` 会话，显式 `credentials:"omit"` 发送 Bearer；创建负载由 exact client contract 生成且不含文件名/路径。页面包含登录/注册、默认引用、本次处理同意、创建/上传/轮询/取消/下载；生产同步尚未接通并明确禁用；
+- `client/` 读取网站 `window.oblAuth` 会话，显式 `credentials:"omit"` 发送 Bearer；创建负载由 exact client contract 生成且不含文件名/路径。页面包含登录/注册、默认引用、本次处理同意、创建/上传/轮询/取消/下载，以及当前账号 SyncRecord strict parse/列表/刷新/属主删除；临时作业自动同步仍明确禁用；
 - Netlify 适配器固定 `consistency:"strong"` 的站点级 store、规范 key 与 `onlyIfNew` 条件创建；模糊失败只在现有字节和 exact metadata 相同的情况下幂等恢复，删除后再次强一致确认不存在；
 - `sweepExpiredObjects({maxObjects})` 分页扫描固定 prefix 并按 `delete_at` 删除；单轮只允许 1—5,000 项并返回 `truncated`。已知任务对象 metadata 确认损坏时优先删除，metadata 暂时不可读时保留并返回 pending，未确认删除也返回 pending。Netlify Blobs 不自动执行该 metadata，生产必须另行调度和监控清扫；
 - Supabase/Postgres 迁移强制两表 RLS，浏览器角色无表/RPC 权限，八个固定 RPC 仅授予 `service_role`；事务创建/重放使用 advisory lock，后续状态使用 revision CAS，私有领取使用 `FOR UPDATE SKIP LOCKED` 并要求完整租约窗，`list_cleanup_due` 优先恢复删除待办，删除完成保留 content-free terminal tombstone；

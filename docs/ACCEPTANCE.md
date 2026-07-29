@@ -2,6 +2,18 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.44 签名订阅权益与网站账号后台源码验收（2026-07-29）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.44`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 桌面权益配置为 exact/canonical 受信资源；默认 `pending_configuration` 没有 endpoint/issuer/key，状态读取和普通启动零权益网络请求；
+- [x] signed-entitlement v1 exact Schema、Ed25519 验签、issuer/audience/账号/设备/时间绑定成立；未知字段、篡改、错号、错设备、错 key、未生效和撤销均 fail-closed；
+- [x] `OAKLIC1` safeStorage 缓存具备 revision CAS、独占候选、`fsync`、原子替换、换入复验和文件身份门禁；无效响应不覆盖有效缓存；
+- [x] 只有已登录用户明确点击设置页刷新才允许固定 HTTPS/Bearer 请求；请求前后复核账号稳定；所有失效状态降为 Free，永不锁已有本地项目；
+- [x] 网站客户端源码能为当前账号 strict parse、列表、刷新和属主删除 SyncRecord；使用安全 DOM 文本渲染，退出即清空，临时 Web 作业不自动同步；
+- [x] `npm test` Node 615 / Python 362 全量零失败；资源信任 88 文件 / 2,150,289 字节；独立隐藏 alpha.44 源码 smoke PASS；
+- [ ] 服务端签发、支付/退款、设备管理、生产公私钥轮换、真实 OAuth/数据库迁移/RLS/API/网站部署及端到端订阅验收完成；
+- [ ] alpha.44 Windows/macOS 安装包、代码签名、公证、真实安装生命周期与可售卖正式版门禁完成；最新 packaged 证据仍为未签名 alpha.42。
+
 ## 0.1.0-alpha.43 LM Studio headless 窄验收与模型身份拒绝（2026-07-29）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.43`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；

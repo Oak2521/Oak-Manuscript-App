@@ -2,6 +2,26 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
+## 最新验证结论：0.1.0-alpha.44 签名订阅权益与网站账号后台源码
+
+验证日期：2026-07-29。本轮未联网、未调用真实账号/订阅/支付或数据库服务，未配置端点、密钥或生产公钥，未迁移、部署、修改官网或重新打包。
+
+| 项目 | 结果 | 证据与边界 |
+|---|---|---|
+| 桌面权益配置 | **PASS（源码）** | `pending_configuration` 与完整 `configured` 互斥；HTTPS endpoint/issuer、固定 audience、1—4 个唯一 Ed25519 JWK 严格校验；默认配置无网络目标 |
+| 签名权益验证 | **PASS（源码）** | exact signed-entitlement Schema；Ed25519 canonical payload；issuer/audience/account/device/tier/state/时间绑定；篡改、错号、错设备、未知 key 和未知字段 fail-closed |
+| 权益状态 | **PASS（源码）** | active/grace 为 Pro；expired/revoked/not-yet-valid/invalid/signed-out 为 Free；所有状态 `localProjectsLocked=false`；状态查询零网络 |
+| 加密缓存 | **PASS（源码）** | `OAKLIC1` safeStorage、canonical JSON、revision CAS、独占候选、`fsync`、原子替换、换入复验；链接、硬链接、路径、篡改、短读和竞态拒绝 |
+| 显式刷新 | **PASS（注入 HTTP）** | 只允许已登录用户点击刷新；固定 HTTPS/Bearer POST，不发送 Cookie/不重定向/有界响应；请求前后复核账号稳定，验证成功后才替换缓存 |
+| 网站账号后台 | **PASS（源码）** | 已登录客户端 GET 列表、浏览器侧 strict parse、安全 DOM 展示及确认后 owner-scoped DELETE；退出清空；临时 Web 作业仍不会自动同步 |
+| 定向测试 | **PASS** | 新增/更新桌面权益、store、HTTP、IPC、Renderer、Web client 与 smoke harness 测试全部通过；signed-entitlement 7/7，Web client/service/http 23/23 |
+| 全量测试 | **PASS** | `npm test` 退出码 0；Node 615 total / 608 pass / 0 fail / 7 skip，3.843 秒；Python 362 / 0 failures / 0 errors / 3 skipped，102.353 秒；墙钟 110.7 秒 |
+| 源码 Electron smoke | **PASS** | 当前源码独立隐藏运行，Renderer sandbox 保持；`out/source-smoke/runs/ms5sbt1b-80ec3e07939966bd/projects/`；未使用 `--no-sandbox`，未产生账号/权益/AI 网络请求 |
+| 资源信任 | **PASS（源码）** | 88 文件 / 2,150,289 字节；manifest SHA-256 `f824378d8fa6b31ca55058b977df26eabbea469c7d1e8b62d80885c44d892f61`；anchor `7c389cba4812b7e1ad3df4df6ee58fb0e980f897aabf3d9fca7f48abd2386177` |
+| 生产订阅与网站部署 | **未运行/未完成** | 未实现服务端签发、支付/退款、设备后台；未执行真实 OAuth、数据库迁移、RLS、多实例、网站部署或生产 E2E；alpha.44 未打包，最新 Windows 制品仍为未签名 alpha.42 |
+
+源码 smoke 在文件系统沙箱内的三次诊断运行中出现 Electron GPU/renderer 子进程 Windows `0xC0000135` / `ERR_FAILED`，应用初始化本身已到达；这些运行不计作通过。修正 Electron CLI 开关顺序并固定 `--disable-gpu --disable-software-rasterizer` 后，使用独立隐藏、非文件系统沙箱进程取得上述 PASS。该处理没有关闭 Electron Renderer sandbox，也没有用 `--no-sandbox` 绕过产品安全设置。
+
 ## 最新验证结论：0.1.0-alpha.43 LM Studio llmster 0.0.20+1 / Qwen3 4B 窄范围兼容验收
 
 验证日期：2026-07-29。用户已批准下载。只从 LM Studio 官方域名下载固定安装脚本、SHA-512 和 headless full ZIP；没有执行官方安装脚本。运行时、HOME/APPDATA/TEMP、模型链接、日志和证据全部位于仓库 `out/external-validation/lm-studio/llmster-0.0.20-1/`，API 只监听 `127.0.0.1:12400`。没有读取用户稿件、项目、账号或 AI 凭据，没有部署、推送、修改官网或系统 PATH/启动项。

@@ -99,7 +99,7 @@ function runSourceSmoke({
   ]) ensureLocalDirectory(paths.projectRoot, target);
 
   const expectedVersion = readExpectedAppVersion(paths.projectRoot);
-  const args = [paths.projectRoot, ...smokeArguments(paths)];
+  const args = [...smokeArguments(paths), paths.projectRoot];
   const result = spawn(paths.electronExecutable, args, {
     cwd: paths.projectRoot,
     env: createSmokeEnvironment(paths, inheritedEnv, expectedVersion, {
@@ -119,7 +119,7 @@ function runSourceSmoke({
     failMarker: "SMOKE-RESULT: FAIL",
     label: "源码冒烟",
   });
-  const recovery = spawn(paths.electronExecutable, [paths.projectRoot, ...syncRecoveryArguments(paths)], {
+  const recovery = spawn(paths.electronExecutable, [...syncRecoveryArguments(paths), paths.projectRoot], {
     cwd: paths.projectRoot,
     env: createSmokeEnvironment(paths, inheritedEnv, expectedVersion, {
       expectedPackaged: "0",

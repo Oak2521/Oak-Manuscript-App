@@ -413,6 +413,39 @@ const PRO_CAPABILITIES = Object.freeze(Object.fromEntries(
   Object.keys(FREE_CAPABILITIES).map((key) => [key, true]),
 ));
 
+function buildLicenseStatus({
+  tier = "free",
+  entitlementState = "local_default",
+  validUntil = null,
+  graceUntil = null,
+  signatureVerified = false,
+  productionConfigured = false,
+  refreshAvailable = false,
+  message = null,
+} = {}) {
+  const safeTier = enumValue(tier, new Set(["free", "pro"]), "tier");
+  const safeState = safeString(entitlementState, "entitlementState", /^[A-Za-z][A-Za-z0-9_-]{0,31}$/);
+  const effectiveTier = safeTier === "pro" && !["expired", "invalid", "revoked", "not_yet_valid", "signed_out", "not_cached"].includes(safeState)
+    ? "pro"
+    : "free";
+  return {
+    tier: safeTier,
+    effectiveTier,
+    entitlementState: safeState,
+    validUntil,
+    graceUntil,
+    signatureVerified: signatureVerified === true,
+    productionConfigured: productionConfigured === true,
+    refreshAvailable: refreshAvailable === true,
+    localProjectsLocked: false,
+    deviceLimit: effectiveTier === "pro" ? 3 : 1,
+    capabilities: clone(effectiveTier === "pro" ? PRO_CAPABILITIES : FREE_CAPABILITIES),
+    message: typeof message === "string" ? message : effectiveTier === "pro"
+      ? `Pro 本地模拟权益（${safeState}）；生产订阅服务尚未接入，本地文件始终可访问。`
+      : "Free 本地默认权益；生产订阅服务尚未接入，本地文件始终可访问。",
+  };
+}
+
 class LicenseProvider {
   constructor({
     tier = "free",
@@ -432,9 +465,24 @@ class LicenseProvider {
       throw new Error("graceUntil 不能早于 validUntil");
     }
     this.clock = clock;
+    this.production = null;
+  }
+
+  configureProduction(provider) {
+    if (!provider || typeof provider.status !== "function" || typeof provider.refresh !== "function") {
+      throw new TypeError("production license provider 接口不完整");
+    }
+    this.production = provider;
+    return this.status();
+  }
+
+  refresh(authStatus) {
+    if (this.production === null) throw new Error("生产订阅权益服务尚未配置，未发起网络请求");
+    return this.production.refresh(authStatus);
   }
 
   status() {
+    if (this.production !== null) return this.production.status();
     let entitlementState = this.entitlementState;
     if (this.tier === "pro" && this.validUntil !== null) {
       const now = this.clock().getTime();
@@ -444,24 +492,14 @@ class LicenseProvider {
           ? "grace"
           : "expired";
     }
-    const effectiveTier = this.tier === "pro" && !["expired", "invalid"].includes(entitlementState)
-      ? "pro"
-      : "free";
-    return {
+    return buildLicenseStatus({
       tier: this.tier,
-      effectiveTier,
       entitlementState,
       validUntil: this.validUntil,
       graceUntil: this.graceUntil,
       signatureVerified: false,
       productionConfigured: false,
-      localProjectsLocked: false,
-      deviceLimit: effectiveTier === "pro" ? 3 : 1,
-      capabilities: clone(effectiveTier === "pro" ? PRO_CAPABILITIES : FREE_CAPABILITIES),
-      message: effectiveTier === "pro"
-        ? `Pro 本地模拟权益（${entitlementState}）；生产订阅服务尚未接入，本地文件始终可访问。`
-        : "Free 本地默认权益；生产订阅服务尚未接入，本地文件始终可访问。",
-    };
+    });
   }
 }
 
@@ -780,6 +818,7 @@ module.exports = {
   validateSyncRecordV1,
   validateStoredQueueItem,
   validateSyncStoreState,
+  buildLicenseStatus,
   SYNC_CHOICES,
   authProvider,
   licenseProvider,

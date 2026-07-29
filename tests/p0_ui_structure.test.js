@@ -170,6 +170,7 @@ test("account entries and sync preview expose explicit, non-blocking choices wit
     "btn-login2",
     "auth-status-text",
     "license-status-text",
+    "btn-refresh-license",
     "sync-preview-dialog",
     "sync-preview-fields",
     "btn-sync-once",
@@ -185,4 +186,8 @@ test("account entries and sync preview expose explicit, non-blocking choices wit
   assert.match(app, /sync-preview-fields[\s\S]*replaceChildren/);
   assert.doesNotMatch(app, /sync-preview[^\n]*innerHTML/);
   assert.match(app, /window\.oak\.syncConfirm\(preview\.record\.idempotency_id, choice\)/);
+  assert.match(app, /window\.oak\.refreshLicense\(\)/);
+  const authToggle = app.slice(app.indexOf("async function toggleAccountAuth()"), app.indexOf("function renderAccountStatus()"));
+  assert.match(authToggle, /window\.oak\.logout\(\)[\s\S]*await refreshAccountStatus\(\)/,
+    "logout must re-derive license and AI state instead of rendering the previous account's Pro status");
 });

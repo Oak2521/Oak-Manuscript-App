@@ -91,11 +91,54 @@ test("Web client rejects invalid enums, limits, consent time, and idempotency", 
   assert.throws(() => contract.parseJobStatus({ ...status, job_id: "undefined" }), /响应非法/);
 });
 
+test("Web account background parses an exact content-free SyncRecord list into a safe view model", () => {
+  const record = {
+    schema_version: "1.0", record_type: "oak_manuscript_result",
+    project_id: "0123456789abcdef", run_id: "check-0001",
+    idempotency_id: "sync-v1:0123456789abcdef:check-0001", event: "export",
+    document: { format: "docx", manuscript_type: "paper", check_config: "full", language_bucket: "zh", length_bucket: "5千—2万字" },
+    citation: { requested_style: "default", resolved_style: "gbt7714-2025", mode: "style_specific", confidence: "high", reason_code: "paper_zh", resolver_version: "1.0.0" },
+    versions: { rulepack: "2.0.0", app: "0.1.0-alpha.44", platform: "win32" },
+    counts: {
+      total: 3, fixable: 1,
+      by_severity: { error: 1, warning: 2, suggestion: 0 },
+      by_dimension: { citation: 1, punctuation: 2 }, by_status: { open: 3 },
+    },
+    external_validation: { epubcheck: "not_applicable", ace: "not_applicable" },
+    export_state: "completed", created_at: "2026-07-29T12:00:00.000Z", authorized_at: "2026-07-29T12:01:00.000Z",
+  };
+  const parsed = contract.parseSyncRecordList({
+    schema_version: "1.0", truncated: false,
+    items: [{ idempotency_id: record.idempotency_id, received_at: "2026-07-29T12:02:00.000Z", record }],
+  });
+  assert.deepEqual(parsed, {
+    truncated: false,
+    items: [{
+      idempotencyId: record.idempotency_id,
+      receivedAt: "2026-07-29T12:02:00.000Z",
+      projectId: "0123456789abcdef", runId: "check-0001", event: "export",
+      format: "docx", manuscriptType: "paper", checkConfig: "full",
+      languageBucket: "zh", lengthBucket: "5千—2万字",
+      requestedStyle: "default", resolvedStyle: "gbt7714-2025",
+      total: 3, fixable: 1, errors: 1, warnings: 2, suggestions: 0,
+      rulepackVersion: "2.0.0", appVersion: "0.1.0-alpha.44", platform: "win32",
+      exportState: "completed",
+    }],
+  });
+  assert.throws(() => contract.parseSyncRecordList({
+    schema_version: "1.0", truncated: false,
+    items: [{ idempotency_id: record.idempotency_id, received_at: "2026-07-29T12:02:00.000Z", record: { ...record, title: "秘密标题" } }],
+  }), /同步记录/);
+  assert.equal(contract.syncRecordPath(record.idempotency_id), `/manuscript/api/v1/sync-records/${record.idempotency_id}`);
+  assert.deepEqual(contract.parseSyncDeleteResponse({ schema_version: "1.0", deleted: true, idempotency_id: record.idempotency_id }), { idempotencyId: record.idempotency_id });
+});
+
 test("Web page preserves login/register, default citation, consent, cancel, download, and sync notice", () => {
   for (const required of [
     'id="login-link"', 'href="/register/"', 'id="manuscript-file"',
     '<option value="default">默认', 'id="processing-consent"', 'id="cancel-job"',
     'id="download-result"', 'id="sync-panel"', "同步功能尚未启用", "结果只能领取一次",
+    'id="sync-history-panel"', 'id="sync-history-list"', 'id="refresh-sync-history"',
   ]) assert.equal(HTML.includes(required), true, required);
   assert.equal(HTML.includes("登录本身不等于同意同步"), true);
   assert.equal(HTML.includes("文件名不会写入任务元数据"), true);
@@ -112,5 +155,8 @@ test("Web client uses safe text rendering and no browser persistence or analytic
   assert.equal(JS.includes('credentials: "omit"'), true);
   assert.equal(JS.includes('headers.set("Authorization", "Bearer " + token)'), true);
   assert.match(JS, /\/result", \{ method: "POST" \}/);
+  assert.equal(JS.includes('api("/manuscript/api/v1/sync-records", { method: "GET" })'), true);
+  assert.equal(JS.includes('contract.syncRecordPath(idempotencyId)'), true);
+  assert.equal(JS.includes('method: "DELETE"'), true);
   assert.equal(JS.includes('setStatus("结果已领取；服务器临时副本已在返回前删除。'), true);
 });

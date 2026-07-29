@@ -56,4 +56,4 @@ release/     # 发布产物（不入库）
 
 ## 6. 里程碑与当前阶段
 
-当前开发版本为 `0.1.0-alpha.43`。P0、离线标准可信链、Windows builder 独立全树锁、统一账号/Free-Pro/`SyncRecord v1`、桌面 PKCE/加密 token-store/同步失败恢复，以及 OpenAI-compatible/Ollama/LM Studio 的逐条预览确认与只读 AI 建议源码已经实现；Ollama 与 LM Studio 各一个固定组合通过窄范围匿名验收，但不构成全面兼容承诺。账号受信配置仍为 `pending_configuration`，官方云 AI 未接入。最新真实 Windows 制品仍为 alpha.42：NSIS/ZIP、packaged ASAR/9-fuse/资源门禁和哈希绑定 smoke 证据已复验，但未签名且不是可售卖正式版。本地哈希证据不是不可伪造签名。来源/许可证人工审计、自带浏览器、OS 级网络隔离、真实安装生命周期、生产账号/订阅/同步/湖岸 AI、macOS 和 Web 部署仍未完成。普通 build/test 永不联网；任何重新下载仍须用户明确批准。具体事实必须以代码、`npm test` 和 `docs/DEVELOPMENT_STATUS.md` 交叉核对。
+当前开发版本为 `0.1.0-alpha.44`。P0、离线标准可信链、统一账号/SyncRecord、桌面 PKCE/加密会话、账号/设备绑定的 Ed25519 签名权益验证、网站同步历史列表/属主删除客户端，以及 compatible 三类只读 AI 建议源码已经实现；Ollama 与 LM Studio 各一个固定组合通过窄范围匿名验收。账号与权益受信配置均为 `pending_configuration`，生产签发/计费/API/数据库/网站部署和官方云 AI 未完成。最新真实 Windows 制品仍为未签名 alpha.42，不是可售卖正式版；macOS、真实安装生命周期、代码签名、公证、来源/许可人工签署和 OS 级隔离仍是门禁。普通 build/test 永不联网；任何重新下载仍须用户明确批准。具体事实必须以代码、`npm test` 和 `docs/DEVELOPMENT_STATUS.md` 交叉核对。

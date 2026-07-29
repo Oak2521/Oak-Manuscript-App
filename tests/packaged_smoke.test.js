@@ -448,6 +448,8 @@ test("packaged runner launches the fixed executable hidden and accepts exit 0 pl
   assert.equal(Object.hasOwn(invocations[1].options.env, "OAK_SMOKE_EXTERNAL_VALIDATION"), false);
   assert.equal(Object.hasOwn(invocations[0].options.env, "NODE_OPTIONS"), false);
   assert.equal(invocations[0].args.includes("--disable-background-networking"), true);
+  assert.equal(invocations[0].args.includes("--disable-gpu"), true);
+  assert.equal(invocations[0].args.includes("--disable-software-rasterizer"), true);
   assert.equal(invocations[0].args.some((arg) => arg.startsWith("--user-data-dir=")), true);
 });
 
@@ -479,8 +481,8 @@ test("source smoke keeps every writable Electron path inside repo/out and launch
   assert.equal(result.ok, true);
   assert.equal(invocations.length, 2);
   assert.equal(invocations[0].command, electronExecutable);
-  assert.deepEqual(invocations[0].args, [root, ...smokeArguments(paths)]);
-  assert.deepEqual(invocations[1].args, [root, ...syncRecoveryArguments(paths)]);
+  assert.deepEqual(invocations[0].args, [...smokeArguments(paths), root]);
+  assert.deepEqual(invocations[1].args, [...syncRecoveryArguments(paths), root]);
   assert.equal(invocations[0].options.windowsHide, true);
   assert.equal(invocations[0].options.shell, false);
   assert.equal(invocations[0].options.env[EXPECT_PACKAGED_ENV], "0");

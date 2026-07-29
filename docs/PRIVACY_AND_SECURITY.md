@@ -1,11 +1,11 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.43` 源码已实现的桌面隐私边界、SyncRecord 服务端/API/Supabase、PKCE/加密 token-store/同步失败恢复、三模式 AI/OS 加密凭据、compatible transport、失败恢复和 LM Studio 模型身份拒绝，以及 Web 临时作业源码契约。默认账号配置没有网络目标；最新 alpha.42 Windows 制品已通过 packaged 安全门禁但仍未签名，不是可售卖正式版。Ollama 0.32.5 与 LM Studio llmster 0.0.20+1 各一固定组合仅完成一个匿名规则的窄范围验收；真实账号、官方云、其他模型组合、数据库迁移、API 部署、生产隔离、计费和官网发布仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.44` 源码已实现的桌面隐私边界、SyncRecord 服务端/API/Supabase、PKCE/加密 token-store/同步失败恢复、Ed25519 签名权益/加密缓存、三模式 AI，以及 Web 临时作业和同步历史客户端源码契约。默认账号与权益配置没有网络目标；最新 alpha.42 Windows 制品已通过 packaged 安全门禁但仍未签名，不是可售卖正式版。真实账号、权益签发/计费、数据库迁移、API/官网部署和生产隔离仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
 - 当前桌面 alpha 的稿件检查、修复计划、订正、恢复、报告和导出全部本地完成；默认网络关闭、默认分析关闭；
-- 当前版本不要求注册即可使用本地核心；账号入口、PKCE/加密会话源码、Free/Pro 能力矩阵和同步确认已经存在，但受信生产端点仍为空，因此不会登录或同步联网。任何权益状态都不得锁住已有本地项目或导出文件；
+- 当前版本不要求注册即可使用本地核心；账号入口、PKCE/加密会话、签名权益验证和同步确认源码已经存在，但受信生产端点/公钥仍为空，因此不会登录、刷新订阅或同步联网。任何权益状态都不得锁住已有本地项目或导出文件；
 - 不把广告、水印、跟踪信息写进用户稿件或修订稿。
 
 ## 2. 源稿不可变（最高优先级之一）
@@ -49,6 +49,14 @@
 - 队列、幂等 ID 和项目阻止项按账户隔离；内部 `account_id` 不返回 Renderer。未登录查询固定返回空集，取消/重试/删除必须重新取得当前 authenticated 状态；系统加密不可用时不创建同步预览或保存负载，本地稿件功能不受影响；
 - `pending_transport` 仍只表示“已在本机加密等待”。alpha.39 的固定 HTTPS/Bearer client/coordinator 只在受信账号配置完整时实例化，token 必须与队列账号绑定；界面只在用户逐项点击后发送，不后台自动 flush。仓库默认端点为空，因此当前没有账号网络传输或网站写入；
 - PKCE verifier、access/refresh token 只进入 `userData/auth/session-v1.enc` 的 `OAKAUTH1` safeStorage 密文；Renderer、项目、报告、同步记录和日志不得接收。正式 OAuth/OIDC、nonce/ID-token、撤销和生产端点仍须真实协议/E2E；不得解除 default session 离线门禁。
+
+### 4.2.1 签名订阅权益的最小网络与缓存边界
+
+- 权益状态查询只读取本机缓存，绝不联网；只有已登录用户点击“刷新订阅权益”后，主进程才向受信配置中的固定 HTTPS endpoint 发送 device ID 与账号 Bearer token；不发送稿件、项目、SyncRecord、文件名、路径、内容哈希、AI 设置或 Cookie；
+- 响应必须是 Ed25519 签名的 exact entitlement，并绑定 issuer、audience、当前账号、stable device ID、Pro tier 和规范时间；Renderer 不能提供端点、公钥、claims、token 或任意响应；
+- 缓存明文只含 device ID 与签名 envelope，进入 `userData/license/entitlement-v1.enc` 的 `OAKLIC1` safeStorage 密文；canonical/revision/原子提交和文件身份门禁与账号/同步 store 同级；
+- 退出、错账号、撤销、过期、未生效、篡改或损坏统一降为 Free，不删除本地项目，不锁导出；恶意刷新结果不能覆盖已验证缓存；
+- 默认 `desktop-license.json` 为 `pending_configuration`，因此当前普通 APP 不会访问权益端点。生产签发、私钥保管/轮换、支付、设备后台和真实 E2E 尚未完成；详见 `SIGNED_ENTITLEMENT_V1.md`。
 
 ### 4.3 AI 配置与凭据边界
 
@@ -127,7 +135,7 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - Windows CPython 3.13.14 另由 provenance v1 绑定 PSF 官方 ZIP/Sigstore/SPDX、34 文件清单、33 个原字节文件、唯一 `_pth` 精确追加和原样许可证；证据原始 SHA-256 同时进入运行时 manifest 与 ASAR 资源锚点。完整 Sigstore/GPG 与具名许可签署仍待办，机器验证不能替代法律/再分发审阅。
 - Electron 桥和门禁共用固定 Python bootstrap：`-I -S -X utf8`，显式把经路径策略验证的 core 绝对目录插入 `sys.path[0]` 后用 `runpy` 执行；同时清理可注入模块或启动参数的继承环境，并始终以参数数组和 `shell=false` 启动。CPython 探针核对 `sys.implementation`、精确三段版本、`releaselevel=final` 与 `serial=0`，不只匹配宽松版本字符串。
 - 打包配置必须显式开启 ASAR、保持 embedded ASAR integrity，并注册全量 fuse `afterPack`。顶层锁定 `@electron/fuses 2.1.3`，以 `strictlyRequireAllFuses=true` 写入 Electron 43 的全部 9 项；索引 8 `WasmTrapHandlers=true`。写后立即回读，随后再独立读取真实二进制；路径逃逸、不安全父链、链接/硬链接、实际 Framework 文件身份变化、API/索引和状态漂移均拒绝。完整合同见 `ELECTRON_FUSE_POLICY.md`。
-- alpha.42 源码锚点绑定 84 个 loose 应用文件，包括账号配置/会话 schema、发行身份/同步队列、Web/Sync HTTP schema 和目标平台运行锁；真实 packaged 门禁已从实际 ASAR 读取同一锚点与 production package 的 exact `oakReleaseIdentity`，并复验 loose 全树。读取器解析当前 raw header并精确读满字节，不依赖路径缓存；打包启动在标准存储和窗口前复核完整资源树。Python 显式 `-B` 禁止探针写入字节码；锚点、身份和清单不读取或记录用户稿件内容。
+- alpha.44 源码锚点绑定 88 个 loose 应用文件，包括账号/权益/同步配置与 schema、发行身份、Web/Sync HTTP schema 和目标平台运行锁；最新真实 packaged 门禁仍对应 alpha.42，已从实际 ASAR 读取其同版锚点与 production package 的 exact `oakReleaseIdentity` 并复验 loose 全树。读取器解析当前 raw header 并精确读满字节，不依赖路径缓存；打包启动在标准存储和窗口前复核完整资源树。Python 显式 `-B` 禁止探针写入字节码；锚点、身份和清单不读取或记录用户稿件内容。
 - Java 与 Ace/Node/Electron 外部工具进程也清理类路径、模块和启动参数注入变量，并以固定参数数组、`shell=false` 启动。
 - 所有锁和清单使用 locale-independent UTF-16 code unit 排序；Ace tracked lock 同时固定 stage manifest 原始字节哈希，JSON 语义等价但字节漂移也拒绝。JRE/Ace 的候选 stage 与受版本控制锁在显式更新时事务提交，失败恢复旧目录和旧锁，避免身份撕裂。
 - Ace 的空/未知 license 声明和空许可证文件直接拒绝。现有许可证文件或生成元数据通知只满足 alpha 可追溯性；全部 236 包仍需正式逐包人工审计。

@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-29
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.43`
+> 当前版本：`0.1.0-alpha.44`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.43-lmstudio-e2e`（当前源码/LM Studio 窄验收）、`chatgpt-v0.1.0-alpha.42-packaged`（最新 Windows 打包证据）；真实 Ollama 补充验收为 `chatgpt-v0.1.0-alpha.42-ollama-e2e`
+> 当前源码本地标签：`chatgpt-v0.1.0-alpha.44-signed-entitlements`；既有 `chatgpt-v0.1.0-alpha.43-lmstudio-e2e` 为 LM Studio 窄验收，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据；真实 Ollama 补充验收为 `chatgpt-v0.1.0-alpha.42-ollama-e2e`
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,16 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.44 签名订阅权益与网站账号后台源码
+
+- 桌面新增 `desktop-license.json` 与三个 JSON Schema；配置必须是完整 `configured` 或精确 `pending_configuration`，默认没有端点/issuer/公钥，因此普通运行不产生权益网络请求；
+- 新增固定 HTTPS/Bearer 权益 client、Ed25519 signed-entitlement exact validator、账号/设备/issuer/audience/时间绑定、stable device ID 和 `active|grace|expired|revoked|not_yet_valid|invalid` 失败关闭状态；只有设置页“刷新订阅权益”会联网，状态读取不会；
+- 权益明文以 `OAKLIC1` safeStorage 密文保存，revision CAS、独占候选、`fsync`、原子替换、换入复验、链接/硬链接/竞态门禁成立；恶意或错账号响应不能覆盖有效缓存；任何失效只降为 Free，`localProjectsLocked=false`；
+- Web 客户端新增当前登录账号的 SyncRecord 列表/刷新/属主删除；浏览器侧再次 strict parse，拒绝未知或内容字段，使用安全 DOM 文本渲染。Web 作业完成后自动同步仍禁用，两条数据流没有混合；
+- 修正源码 smoke 的 Electron 参数顺序并固定禁 GPU 参数；沙箱内 Electron 子进程因 Windows GPU/renderer 启动失败留下诊断，当前源码随后在独立隐藏、非文件系统沙箱进程真实通过，输出 `out/source-smoke/runs/ms5sbt1b-80ec3e07939966bd/projects/`，没有使用 `--no-sandbox`；
+- 最终 `npm test`：Node 615 total / 608 pass / 0 fail / 7 skip（3.843 秒），Python 362 / 0 failures / 0 errors / 3 skipped（102.353 秒），墙钟 110.7 秒；资源信任 88 文件 / 2,150,289 字节，manifest `f824378d…2f61`，anchor `7c389cba…6177`；
+- 本轮未联网、未部署、未配置真实账号/权益端点或密钥、未迁移数据库、未修改官网、未重新打包。权益签发服务、支付/退款/设备后台、真实 E2E、生产网站后台和三端发行仍待完成；详见 `docs/SIGNED_ENTITLEMENT_V1.md`。
 
 ### 已完成：0.1.0-alpha.43 LM Studio headless 窄验收与模型身份拒绝
 

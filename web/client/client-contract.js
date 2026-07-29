@@ -28,6 +28,13 @@
     "schema_version", "record_type", "job_id", "state", "created_at", "expires_at",
     "input_retained", "result_available", "deletion_due_at",
   ]);
+  var SYNC_BASE = "/manuscript/api/v1/sync-records";
+  var SYNC_ID_PATTERN = /^sync-v1:[0-9a-f]{16}:check-[0-9]{4,}$/;
+  var SYNC_RECORD_KEYS = Object.freeze([
+    "schema_version", "record_type", "project_id", "run_id", "idempotency_id", "event",
+    "document", "citation", "versions", "counts", "external_validation", "export_state",
+    "created_at", "authorized_at",
+  ]);
 
   function includes(list, value) { return list.indexOf(value) !== -1; }
 
@@ -114,11 +121,130 @@
     });
   }
 
+  function canonicalTime(value) {
+    return typeof value === "string" && !Number.isNaN(Date.parse(value)) &&
+      new Date(value).toISOString() === value;
+  }
+
+  function safeCountMap(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).length > 64) return false;
+    return Object.entries(value).every(function (entry) {
+      return /^[a-z][a-z0-9_-]{0,63}$/.test(entry[0]) && Number.isSafeInteger(entry[1]) && entry[1] >= 0;
+    });
+  }
+
+  function parseSyncRecord(record) {
+    var expected = SYNC_RECORD_KEYS.slice();
+    if (record && Object.prototype.hasOwnProperty.call(record, "issues")) expected.push("issues");
+    if (!exactKeys(record, expected) || record.schema_version !== "1.0" ||
+        record.record_type !== "oak_manuscript_result" ||
+        typeof record.project_id !== "string" || !/^[0-9a-f]{16}$/.test(record.project_id) ||
+        typeof record.run_id !== "string" || !/^check-[0-9]{4,}$/.test(record.run_id) ||
+        typeof record.idempotency_id !== "string" || !SYNC_ID_PATTERN.test(record.idempotency_id) ||
+        record.idempotency_id !== "sync-v1:" + record.project_id + ":" + record.run_id ||
+        !includes(["check", "export"], record.event) || !canonicalTime(record.created_at) ||
+        !canonicalTime(record.authorized_at) || Date.parse(record.authorized_at) < Date.parse(record.created_at)) {
+      throw new TypeError("网站同步记录响应非法");
+    }
+    if (!exactKeys(record.document, ["format", "manuscript_type", "check_config", "language_bucket", "length_bucket"]) ||
+        !includes(FORMATS, record.document.format) || !includes(MANUSCRIPT_TYPES, record.document.manuscript_type) ||
+        !includes(CHECK_CONFIGS, record.document.check_config) ||
+        !includes(["zh", "en", "mixed", "unknown"], record.document.language_bucket) ||
+        typeof record.document.length_bucket !== "string" || record.document.length_bucket.length < 1 || record.document.length_bucket.length > 32) {
+      throw new TypeError("网站同步记录响应非法");
+    }
+    if (!exactKeys(record.citation, ["requested_style", "resolved_style", "mode", "confidence", "reason_code", "resolver_version"]) ||
+        !includes(CITATION_STYLES, record.citation.requested_style) ||
+        !includes(CITATION_STYLES, record.citation.resolved_style) ||
+        !includes(["style_specific", "limited", "disabled"], record.citation.mode) ||
+        !includes(["high", "medium", "low", "not_applicable"], record.citation.confidence) ||
+        typeof record.citation.reason_code !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(record.citation.reason_code) ||
+        typeof record.citation.resolver_version !== "string" || !/^[0-9A-Za-z][0-9A-Za-z.+-]{0,63}$/.test(record.citation.resolver_version)) {
+      throw new TypeError("网站同步记录响应非法");
+    }
+    if (!exactKeys(record.versions, ["rulepack", "app", "platform"]) ||
+        typeof record.versions.rulepack !== "string" || typeof record.versions.app !== "string" ||
+        !includes(["win32", "darwin", "web"], record.versions.platform)) {
+      throw new TypeError("网站同步记录响应非法");
+    }
+    if (!exactKeys(record.counts, ["total", "fixable", "by_severity", "by_dimension", "by_status"]) ||
+        !Number.isSafeInteger(record.counts.total) || record.counts.total < 0 ||
+        !Number.isSafeInteger(record.counts.fixable) || record.counts.fixable < 0 || record.counts.fixable > record.counts.total ||
+        !exactKeys(record.counts.by_severity, ["error", "warning", "suggestion"]) ||
+        !safeCountMap(record.counts.by_severity) || !safeCountMap(record.counts.by_dimension) || !safeCountMap(record.counts.by_status) ||
+        record.counts.by_severity.error + record.counts.by_severity.warning + record.counts.by_severity.suggestion !== record.counts.total) {
+      throw new TypeError("网站同步记录响应非法");
+    }
+    if (!exactKeys(record.external_validation, ["epubcheck", "ace"]) ||
+        !includes(["not_applicable", "not_run", "passed", "failed"], record.external_validation.epubcheck) ||
+        !includes(["not_applicable", "not_run", "passed", "failed"], record.external_validation.ace) ||
+        !includes(["not_started", "completed", "partial"], record.export_state)) {
+      throw new TypeError("网站同步记录响应非法");
+    }
+    if (Object.prototype.hasOwnProperty.call(record, "issues")) {
+      if (!Array.isArray(record.issues) || record.issues.length > 1000 || record.issues.some(function (issue) {
+        return !exactKeys(issue, ["rule_id", "severity", "dimension", "status", "fixable"]) ||
+          typeof issue.rule_id !== "string" || typeof issue.dimension !== "string" ||
+          !includes(["error", "warning", "suggestion"], issue.severity) ||
+          !includes(["open", "accepted", "rejected", "deferred", "resolved"], issue.status) ||
+          typeof issue.fixable !== "boolean";
+      })) throw new TypeError("网站同步记录响应非法");
+    }
+    return {
+      projectId: record.project_id, runId: record.run_id, event: record.event,
+      format: record.document.format, manuscriptType: record.document.manuscript_type,
+      checkConfig: record.document.check_config, languageBucket: record.document.language_bucket,
+      lengthBucket: record.document.length_bucket, requestedStyle: record.citation.requested_style,
+      resolvedStyle: record.citation.resolved_style, total: record.counts.total,
+      fixable: record.counts.fixable, errors: record.counts.by_severity.error,
+      warnings: record.counts.by_severity.warning, suggestions: record.counts.by_severity.suggestion,
+      rulepackVersion: record.versions.rulepack, appVersion: record.versions.app,
+      platform: record.versions.platform, exportState: record.export_state,
+    };
+  }
+
+  function parseSyncRecordList(input) {
+    if (!exactKeys(input, ["schema_version", "items", "truncated"]) || input.schema_version !== "1.0" ||
+        !Array.isArray(input.items) || input.items.length > 50 || typeof input.truncated !== "boolean") {
+      throw new TypeError("网站同步记录列表响应非法");
+    }
+    return Object.freeze({
+      truncated: input.truncated,
+      items: input.items.map(function (item) {
+        if (!exactKeys(item, ["idempotency_id", "received_at", "record"]) ||
+            typeof item.idempotency_id !== "string" || !SYNC_ID_PATTERN.test(item.idempotency_id) ||
+            !canonicalTime(item.received_at) || item.record.idempotency_id !== item.idempotency_id) {
+          throw new TypeError("网站同步记录列表响应非法");
+        }
+        return Object.freeze(Object.assign({
+          idempotencyId: item.idempotency_id,
+          receivedAt: item.received_at,
+        }, parseSyncRecord(item.record)));
+      }),
+    });
+  }
+
+  function syncRecordPath(idempotencyId) {
+    if (typeof idempotencyId !== "string" || !SYNC_ID_PATTERN.test(idempotencyId)) throw new TypeError("同步记录标识非法");
+    return SYNC_BASE + "/" + idempotencyId;
+  }
+
+  function parseSyncDeleteResponse(input) {
+    if (!exactKeys(input, ["schema_version", "deleted", "idempotency_id"]) || input.schema_version !== "1.0" ||
+        input.deleted !== true || typeof input.idempotency_id !== "string" || !SYNC_ID_PATTERN.test(input.idempotency_id)) {
+      throw new TypeError("同步记录删除响应非法");
+    }
+    return Object.freeze({ idempotencyId: input.idempotency_id });
+  }
+
   return Object.freeze({
     MAX_BYTES: MAX_BYTES,
     buildCreatePayload: buildCreatePayload,
     formatFromFilename: formatFromFilename,
     mediaTypeForFormat: mediaTypeForFormat,
     parseJobStatus: parseJobStatus,
+    parseSyncDeleteResponse: parseSyncDeleteResponse,
+    parseSyncRecordList: parseSyncRecordList,
+    syncRecordPath: syncRecordPath,
   });
 });

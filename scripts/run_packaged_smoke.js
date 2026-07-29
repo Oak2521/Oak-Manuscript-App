@@ -249,6 +249,8 @@ function smokeArguments(paths) {
     "--disable-component-update",
     "--disable-default-apps",
     "--disable-domain-reliability",
+    "--disable-gpu",
+    "--disable-software-rasterizer",
     "--disable-sync",
     "--metrics-recording-only",
     "--no-first-run",

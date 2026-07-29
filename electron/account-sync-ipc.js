@@ -61,6 +61,12 @@ function registerAccountSyncIpc({
     } catch (error) { return fail(error); }
   });
   ipcMain.handle("provider:license-status", () => ok(licenseProvider.status()));
+  ipcMain.handle("provider:license-refresh", async () => {
+    try {
+      const status = authenticatedStatus(authProvider);
+      return ok({ status: await licenseProvider.refresh(status) });
+    } catch (error) { return fail(error); }
+  });
   ipcMain.handle("provider:sync-preference", (_event, payload = {}) => {
     try {
       if (payload.value !== undefined) syncProvider.setPreference(payload.value);

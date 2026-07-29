@@ -1,6 +1,6 @@
 # SyncRecord v1 — 结果与元数据同步契约
 
-> 状态：`0.1.0-alpha.40` 已在既有客户端/核心离线契约、逐字段预览、OS 加密队列、独立服务/API/Supabase 源码之上，实现桌面系统浏览器 PKCE、独立加密 token-store、主进程条件 transport、逐项显式发送和失败幂等恢复；这些能力随 alpha.42 Windows packaged smoke 复验通过。受信账号配置仍为 `pending_configuration` 且无端点/key；迁移未执行、API 未部署、网站后台未实现，所以普通 APP 仍不发同步请求。AI 建议文本、审阅会话和 AI HTTP 底座均不进入 SyncRecord。本文件不能作为“数据已可同步到网站”的证明。
+> 状态：`0.1.0-alpha.44` 已在既有客户端/核心离线契约、逐字段预览、OS 加密队列、独立服务/API/Supabase 和桌面 PKCE/条件 transport 源码之上，增加网站账号后台的列表/刷新/属主删除客户端；既有桌面链随 alpha.42 Windows packaged smoke 复验通过。受信账号配置仍为 `pending_configuration` 且无端点/key；迁移、API 和页面均未部署，所以普通 APP 仍不发同步请求。AI 建议文本、审阅会话和权益缓存均不进入 SyncRecord。本文件不能作为“数据已可同步到网站”的证明。
 
 ## 1. 信任边界
 
@@ -14,7 +14,7 @@
   -> 已登录用户逐字段预览
   -> 四选一明确确认
   -> safeStorage 加密幂等队列
-  -> [尚未由 main 实例化] SyncTransportCoordinator
+  -> [仅正式配置时由 main 实例化] SyncTransportCoordinator
   -> 固定 HTTPS/Bearer SyncHttpClient
   -> /manuscript/api/v1/sync-records
   -> GoTrue 验证后的可信主体
@@ -75,9 +75,10 @@ alpha.39 在 alpha.38 的 `SyncHttpClient` / `SyncTransportCoordinator` 上接�
 - 固定 `oak-manuscript-auth://callback` 只允许唯一 code/state；Windows second-instance 与 macOS open-url 共用严格解析。token、额外参数、错 scheme、过期/错配/重放 state 均拒绝；
 - pending verifier 与 access/refresh token 仅保存在 `userData/auth/session-v1.enc` 的 safeStorage 密文；code exchange 后与 refresh 后都经固定 user endpoint 复核 exact account ID；
 - 本地测试可模拟 authenticated、signed_out、expired、revoked，但生产运行不开放模拟入口；
-- `LicenseProvider` 给出 Free/Pro 能力矩阵，并可按 `validUntil` / `graceUntil` 计算 active、grace、expired；模拟授权没有签名证据，`signatureVerified=false`；
+- alpha.44 的生产 `LicenseProvider` 只接受受信配置中的 Ed25519 signed-entitlement，精确绑定 issuer/audience/账号/设备/时间；状态查询零网络，只有设置页显式刷新才请求固定端点；
+- 权益缓存只进入 `userData/license/entitlement-v1.enc` 的 `OAKLIC1` safeStorage 密文；无效响应不覆盖有效缓存；
 - 订阅过期只影响新的 Pro 权益，`localProjectsLocked` 永远为 false；
-- 真实 OAuth/OIDC 契约、nonce/ID-token 取舍、设备撤销服务、生产签名授权缓存和真实密钥/端点均未联调。
+- 真实 OAuth/OIDC 契约、nonce/ID-token 取舍、服务端权益签发/支付/设备撤销、生产密钥轮换和真实端点均未联调；详见 `SIGNED_ENTITLEMENT_V1.md`。
 
 ## 6. alpha.39 服务端与桌面 transport 源码边界
 
@@ -85,7 +86,8 @@ alpha.39 在 alpha.38 的 `SyncHttpClient` / `SyncTransportCoordinator` 上接�
 - `web/sync-record-http-handler.js` 固定 `POST/GET /manuscript/api/v1/sync-records` 及 `GET/DELETE /:id`，强制 HTTPS、同源/Fetch Metadata、Cookie CSRF 或已验证 Bearer、JSON framing/大小和固定非反射错误；审计受 exact schema 限制且接收器失败不改变响应；
 - `web/supabase-sync-record-repository.js` 只能调用四个固定 service-role RPC；`web/supabase/002_sync_records.sql` 对内容无关记录表启用强制 RLS，撤销浏览器角色权限，并用账户 advisory transaction lock 原子化“计数—创建/重放”；
 - `web/sync-record-runtime.js` 明确分离公开 Supabase API key、service-role key 与审计接收器，组合 GoTrue、会话解析、repository、service、HTTP handler 和 Fetch adapter；
-- `electron/sync-http-client.js` 与 `electron/sync-transport-coordinator.js` 只存在于主进程边界；不会读取 Renderer 自报 token/URL，也不会把远端失败伪装为成功。
+- `electron/sync-http-client.js` 与 `electron/sync-transport-coordinator.js` 只存在于主进程边界；不会读取 Renderer 自报 token/URL，也不会把远端失败伪装为成功；
+- alpha.44 的 `web/client/` 对列表响应再次 strict parse，只安全展示当前账号记录，并在用户确认后调用 owner-scoped DELETE；退出登录清空本地视图。
 
 这些是源码合同和离线测试结果，不是数据库已迁移、API 已部署或 APP 已联网的证据。
 
@@ -95,5 +97,5 @@ alpha.39 在 alpha.38 的 `SyncHttpClient` / `SyncTransportCoordinator` 上接�
 2. 在正式 OAuth/OIDC 契约确定后验证真实 PKCE、nonce/ID-token 取舍、刷新/退出/过期/撤销；默认 Electron session 必须继续离线；
 3. 补完限次退避、模糊失败、浏览器打开失败、并发回调，以及远端提交与本地队列删除之间的崩溃恢复验收；
 4. 部署同源 API，验证真实 GoTrue、Postgres RLS/RPC、多实例并发、备份/恢复、限额、删除和无密钥泄露；
-5. 实现 APP 与网站后台的查看、导出、删除和内容无关审计记录；
+5. 部署并真实验收 APP 与网站后台的查看、删除和内容无关审计记录；补充尚未实现的导出；
 6. 完成正文、文件名、路径、片段、哈希泄露反向生产集成测试及真实隐私验收。

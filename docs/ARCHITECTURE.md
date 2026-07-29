@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.43` 源码架构与最新 alpha.42 Windows packaged 证据：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、独立服务端/API/Supabase 持久层、桌面 PKCE/加密 token-store/同步失败恢复，以及三模式 AI/OS 加密凭据/单条预览/建议审阅、compatible transport、失败恢复和 LM Studio 模型身份拒绝。Web 临时作业保持独立零留存源码边界。默认账号配置无端点；alpha.43 源码与 alpha.42 Windows x64 ASAR/fuse/资源/smoke 分别验证。真实账号/Sync API、官方云 AI、产品级模型矩阵、数据库迁移、生产隔离、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.44` 源码架构与最新 alpha.42 Windows packaged 证据：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、独立服务端/API/Supabase 持久层、桌面 PKCE/加密 token-store/同步失败恢复、账号/设备绑定的 Ed25519 签名权益与 safeStorage 缓存，以及三模式 AI/OS 加密凭据/单条预览/建议审阅。Web 临时作业保持独立零留存源码边界，网站客户端已能查看和属主删除同步历史。默认账号与权益配置无端点/密钥；alpha.44 源码与 alpha.42 Windows x64 ASAR/fuse/资源/smoke 分别验证。真实账号、权益签发/计费、Sync API/数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
 
 ## 1. 总体分层
 
@@ -18,7 +18,8 @@ Electron Main
   ├─ StandardsStore：严格 payload / 签名 / CAS / 高水位 / 撤回 / 事务恢复
   ├─ standard-bound-core：项目 release 预检 + 七字段 Python 绑定
   ├─ core-ipc：引用计划 / 检查参数的固定白名单
-  ├─ AuthProvider / LicenseProvider：待配置零网络、PKCE/token-store 条件接线与 Free/Pro 权益矩阵
+  ├─ AuthProvider：待配置零网络、系统浏览器 PKCE、safeStorage token-store 与账号复核
+  ├─ ProductionLicenseProvider：受信配置、显式 HTTPS 刷新、Ed25519 验签、账号/设备绑定与加密缓存
   ├─ account-sync-ipc / SyncProvider：可信来源负载、逐字段预览、四选一授权、账户隔离队列
   ├─ sync-store / safeStorage：canonical 状态、revision CAS、原子加密持久化与重启恢复
   ├─ SyncTransportCoordinator / SyncHttpClient：配置完整时实例化的 Bearer 发送、幂等回放与本地提交协调
@@ -140,6 +141,16 @@ Renderer 不能构造同步负载，也不能提供 token、任意 URL 或 trans
 
 `web/supabase/002_sync_records.sql` 的长期表不含稿件、标题、路径、文件名、片段或内容哈希，强制 RLS 且不给浏览器角色表/RPC 权限；四个固定 RPC 仅授予 `service_role`。创建/重放在账户 advisory transaction lock 内原子执行容量限制、幂等比对和插入；读取、列表和删除始终绑定可信 owner，外来与不存在记录不可区分。alpha.38 只有 SQL 静态契约和 Fake fetch/repository 测试，未执行真实迁移、RLS、多实例、备份恢复、官网后台或删除审计，因此不能表述为生产同步已开通。
 
+alpha.44 在 `web/client/` 增加当前账号的同步历史列表与属主删除 UI。浏览器端使用独立 strict parser 再次拒绝未知字段和内容字段，只以 `textContent`/DOM 节点展示；退出登录清空。它是同一未部署 API 的生产形状客户端，不改变“迁移、RLS、API 和网站部署尚未验证”的结论，也不把 Web 临时作业自动转为长期记录。
+
+### AD-027 订阅权益必须“服务端签名—账号/设备绑定—显式刷新—失败关闭”（2026-07-29，冻结）
+
+`config/desktop-license.json` 是唯一端点、issuer、audience 和公钥来源。它必须是无端点/公钥的精确 `pending_configuration`，或完整规范 HTTPS 配置与 1—4 个唯一 Ed25519 JWK；Renderer、环境变量、登录响应或同步 API 不得提供替代 key/URL。默认配置下 main 不实例化 HTTP client，普通启动与 `status()` 零网络。
+
+用户登录后只有点击“刷新订阅权益”才会触发固定 Bearer POST。响应必须符合 `signed-entitlement-v1.schema.json` 的 exact envelope；Ed25519 签名覆盖 canonical UTF-8 payload，并精确绑定 trusted key、issuer、`oak-manuscript-desktop` audience、当前账号、stable device ID、Pro tier、设备状态和规范时间顺序。transport 前后都复核认证账号稳定；验证失败、错号、篡改和恶意响应不能替换已有缓存。
+
+缓存明文由 `license-cache-v1.schema.json` 定义，只作为 `OAKLIC1` safeStorage 密文保存；revision CAS、独占候选、`fsync`、原子换入、提交后解密复验、父链/链接/硬链接/读取竞态门禁沿用账号/同步 store 的 fail-closed 标准。active 与 grace 提供 Pro；expired、revoked、not-yet-valid、invalid、signed-out 与 not-cached 均为 Free。任何状态固定 `localProjectsLocked=false`，订阅失败不得劫持用户已有本地文件。服务端签发、支付/退款、设备管理、密钥轮换与真实 E2E 是独立未完成门禁；详见 `SIGNED_ENTITLEMENT_V1.md`。
+
 ### AD-018 Web 临时任务必须“可信主体—单任务同意—内容/元数据分道—删除失败可见”（2026-07-28，冻结）
 
 Web 创建请求不接收账号 ID；账号或匿名会话主体必须由上游可信会话层以独立参数注入。请求 exact schema 只允许幂等键、单任务处理同意、隐私版本和格式/类型/检查配置/引用体例/字节数，不允许文件名、路径、正文、片段或内容哈希。上传字节只进入临时存储适配器，公开状态与观察事件不含主体和稿件元数据；运行时大小上限不能放宽 tracked schema。
@@ -150,7 +161,7 @@ alpha.23 在 `web/job-contract.js` 的内存参考状态机上增加 `web/http-h
 
 handler 的 trusted session 现在显式区分 `bearer` 与 `cookie`。两者都要求 HTTPS，状态变更都要求精确同源 Origin，响应不开放 CORS；Cookie 因浏览器自动携带凭据而继续要求 timing-safe CSRF，Authorization Bearer 不建立额外 CSRF 状态。该选择与官网当前 Supabase access token 模式一致，同时保留未来 HttpOnly Cookie 部署的安全分支。上传前门禁、固定错误和无内容审计边界不变。
 
-`web/client/` 使用网站既有 `window.oblAuth` 读取 Supabase session，并以 `credentials:"omit"` 显式发送 Bearer；创建元数据由 exact client contract 构造，不含文件名/路径。页面包含登录/注册、默认引用、单任务处理同意、上传/轮询/取消/一次性领取；同步区明确保持禁用。生产仍缺受信代理部署、真实 Blobs/Postgres/计划清扫联调、病毒库/平台扫描、容器/OS 禁网与资源隔离、计费与结果同步。反向代理必须用受信基础设施信号实现 `isSecureRequest`，不得直接相信客户端 `X-Forwarded-Proto`。因此仍不能称为网页版已上线或生产零留存已验证。Web 临时上传与 SyncRecord 长期结果同步继续是两条独立数据流。
+`web/client/` 使用网站既有 `window.oblAuth` 读取 Supabase session，并以 `credentials:"omit"` 显式发送 Bearer；创建元数据由 exact client contract 构造，不含文件名/路径。页面包含登录/注册、默认引用、单任务处理同意、上传/轮询/取消/一次性领取；临时作业到 SyncRecord 的生产转换仍禁用。alpha.44 另为既有长期记录增加列表/刷新/属主删除客户端，但生产仍缺受信代理部署、真实 Blobs/Postgres/计划清扫联调、病毒库/平台扫描、容器/OS 禁网与资源隔离、计费与结果同步部署。反向代理必须用受信基础设施信号实现 `isSecureRequest`，不得直接相信客户端 `X-Forwarded-Proto`。因此仍不能称为网页版已上线或生产零留存已验证。Web 临时上传与 SyncRecord 长期结果同步继续是两条独立数据流。
 
 alpha.26 新增 `web/netlify-ephemeral-storage.js`。SDK 只存在于独立 `web/` 私有子包，不进入 Electron 根依赖。工厂固定站点级 store 和 `consistency:"strong"`；对象键仅为固定 prefix / job UUID / input|output。`set(...,{onlyIfNew:true})` 禁止覆盖；模糊写失败只在强一致回读的字节与 exact metadata 同时一致时幂等恢复。读取验证对象类型、任务号、规范 `delete_at`、媒体类型和字节数；删除后再 `getMetadata(...,{consistency:"strong"})`，非 null 即失败。
 

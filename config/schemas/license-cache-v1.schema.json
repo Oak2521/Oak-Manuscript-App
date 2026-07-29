@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript/license-cache-v1.schema.json",
+  "title": "Oak Manuscript encrypted license cache plaintext v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "store_type", "revision", "device_id", "entitlement"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "store_type": { "const": "oak_manuscript_license_cache" },
+    "revision": { "type": "integer", "minimum": 1 },
+    "device_id": { "type": "string", "pattern": "^device-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" },
+    "entitlement": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "signed-entitlement-v1.schema.json" }
+      ]
+    }
+  }
+}

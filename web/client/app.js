@@ -24,6 +24,10 @@
     status: document.getElementById("job-status"),
     download: document.getElementById("download-result"),
     syncPanel: document.getElementById("sync-panel"),
+    syncHistoryPanel: document.getElementById("sync-history-panel"),
+    syncHistoryStatus: document.getElementById("sync-history-status"),
+    syncHistoryList: document.getElementById("sync-history-list"),
+    refreshSyncHistory: document.getElementById("refresh-sync-history"),
   };
 
   function setControls(enabled) {
@@ -62,6 +66,8 @@
       nodes.accountLink.hidden = true;
       nodes.loginRequired.hidden = false;
       setControls(false);
+      nodes.syncHistoryPanel.hidden = true;
+      nodes.syncHistoryList.replaceChildren();
       return;
     }
     nodes.accountState.textContent = "已登录湖岸账号";
@@ -70,6 +76,8 @@
     nodes.accountLink.hidden = false;
     nodes.loginRequired.hidden = true;
     setControls(currentJobId === null);
+    nodes.syncHistoryPanel.hidden = false;
+    await loadSyncHistory();
   }
 
   async function api(path, options) {
@@ -98,6 +106,77 @@
   function stopPolling() {
     if (pollTimer !== null) window.clearTimeout(pollTimer);
     pollTimer = null;
+  }
+
+  function field(label, value) {
+    var wrapper = document.createElement("div");
+    var term = document.createElement("dt");
+    var detail = document.createElement("dd");
+    term.textContent = label;
+    detail.textContent = String(value);
+    wrapper.append(term, detail);
+    return wrapper;
+  }
+
+  function renderSyncHistory(result) {
+    nodes.syncHistoryList.replaceChildren();
+    if (result.items.length === 0) {
+      nodes.syncHistoryStatus.textContent = "当前账号还没有已同步的检查记录。";
+      return;
+    }
+    nodes.syncHistoryStatus.textContent = result.truncated
+      ? "显示最近 50 条记录；更早记录暂未加载。"
+      : "共显示 " + result.items.length + " 条记录。";
+    result.items.forEach(function (item) {
+      var card = document.createElement("article");
+      card.className = "sync-history-item";
+      var title = document.createElement("h3");
+      title.textContent = item.format.toUpperCase() + " · " + item.manuscriptType + " · " + item.event;
+      var summary = document.createElement("dl");
+      summary.append(
+        field("同步时间", new Date(item.receivedAt).toLocaleString("zh-CN")),
+        field("问题总数", item.total),
+        field("可机械修复", item.fixable),
+        field("必须处理 / 建议 / 可选", item.errors + " / " + item.warnings + " / " + item.suggestions),
+        field("引用体例", item.requestedStyle + " → " + item.resolvedStyle),
+        field("APP / 规则包", item.appVersion + " / " + item.rulepackVersion)
+      );
+      var remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "secondary";
+      remove.textContent = "删除这条同步记录";
+      remove.addEventListener("click", function () { deleteSyncRecord(item.idempotencyId); });
+      card.append(title, summary, remove);
+      nodes.syncHistoryList.append(card);
+    });
+  }
+
+  async function loadSyncHistory() {
+    nodes.refreshSyncHistory.disabled = true;
+    nodes.syncHistoryStatus.textContent = "正在读取已同步记录…";
+    try {
+      var response = await api("/manuscript/api/v1/sync-records", { method: "GET" });
+      renderSyncHistory(contract.parseSyncRecordList(await response.json()));
+    } catch (error) {
+      nodes.syncHistoryList.replaceChildren();
+      nodes.syncHistoryStatus.textContent = "暂时无法读取同步记录：" + error.message;
+    } finally {
+      nodes.refreshSyncHistory.disabled = false;
+    }
+  }
+
+  async function deleteSyncRecord(idempotencyId) {
+    if (!window.confirm("确认从湖岸账号后台删除这条同步记录？本机项目和导出不会受影响。")) return;
+    nodes.refreshSyncHistory.disabled = true;
+    try {
+      var response = await api(contract.syncRecordPath(idempotencyId), { method: "DELETE" });
+      var deleted = contract.parseSyncDeleteResponse(await response.json());
+      if (deleted.idempotencyId !== idempotencyId) throw new Error("删除回执与所选记录不一致。");
+      await loadSyncHistory();
+    } catch (error) {
+      nodes.syncHistoryStatus.textContent = "删除失败：" + error.message;
+      nodes.refreshSyncHistory.disabled = false;
+    }
   }
 
   async function pollStatus() {
@@ -213,6 +292,7 @@
   nodes.form.addEventListener("submit", submitJob);
   nodes.cancel.addEventListener("click", cancelJob);
   nodes.download.addEventListener("click", downloadResult);
+  nodes.refreshSyncHistory.addEventListener("click", loadSyncHistory);
   document.addEventListener("obl-auth-ready", refreshAccount, { once: true });
   window.setTimeout(refreshAccount, 0);
   if (window.oblAuth && window.oblAuth.client) {

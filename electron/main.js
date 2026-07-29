@@ -29,6 +29,10 @@ const { EncryptedAuthStore } = require("./encrypted-auth-store");
 const { loadDesktopAuthConfig } = require("./desktop-auth-config");
 const { AuthHttpClient } = require("./auth-http-client");
 const { DesktopAuthProvider } = require("./desktop-auth-provider");
+const { loadDesktopLicenseConfig } = require("./desktop-license-config");
+const { ProductionLicenseProvider } = require("./license-entitlement");
+const { LicenseHttpClient } = require("./license-http-client");
+const { EncryptedLicenseStore } = require("./license-store");
 const { SyncHttpClient } = require("./sync-http-client");
 const { SyncTransportCoordinator } = require("./sync-transport-coordinator");
 const { createStandardBoundCore } = require("./standard-bound-core");
@@ -467,6 +471,29 @@ app.whenReady().then(async () => {
   } catch (error) {
     syncCoordinator = null;
     console.error("[auth] production account boundary unavailable:", error && error.message);
+  }
+  try {
+    const licenseConfig = loadDesktopLicenseConfig(pathPolicy.configDir());
+    if (licenseConfig.status === "configured") {
+      if (!safeStorage.isEncryptionAvailable()) throw new Error("当前系统安全存储不可用");
+      const licenseStore = new EncryptedLicenseStore({
+        rootDir: path.join(app.getPath("userData"), "license"),
+        protect: (plaintext) => safeStorage.encryptString(plaintext),
+        unprotect: (ciphertext) => safeStorage.decryptString(ciphertext),
+      });
+      providers.licenseProvider.configureProduction(new ProductionLicenseProvider({
+        config: licenseConfig,
+        store: licenseStore,
+        client: new LicenseHttpClient({ endpoint: licenseConfig.entitlement_endpoint }),
+        accessTokenProvider: (binding) => providers.authProvider.accessToken(binding),
+        authStatusProvider: () => providers.authProvider.status(),
+      }));
+      console.log("[license] signed encrypted entitlement cache ready; refresh remains user-triggered");
+    } else {
+      console.log("[license] production endpoint and signing keys pending; local Free fallback retained");
+    }
+  } catch (error) {
+    console.error("[license] production entitlement boundary unavailable:", error && error.message);
   }
   authReady = true;
   const startupCallback = authCallbackFromArgs(process.argv);

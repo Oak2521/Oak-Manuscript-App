@@ -12,12 +12,14 @@
 | `app-protocol.js` | `oak-manuscript://renderer/` 四文件白名单；在 file 协议额外权限关闭时安全加载 ASAR UI |
 | `core-result.js` | 区分退出码 1 业务结果与退出码 2 错误，并保留 Python 结构化错误字段 |
 | `core-ipc.js` | `plan-citation` / `check` 的项目路径、六种体例和 opaque citation plan ID 白名单；注册固定 IPC |
-| `providers/index.js` | Auth/License 离线状态机、Free/Pro 权益矩阵、SyncRecord v1 exact 构造/校验与按账户持久队列 |
+| `providers/index.js` | Auth、生产 License 组合、Free/Pro 权益矩阵、SyncRecord v1 exact 构造/校验与按账户持久队列 |
 | `sync-store.js` | safeStorage 加密封装、canonical 状态、revision CAS、原子替换和重启恢复 |
 | `sync-http-client.js` | 固定同源 HTTPS/Bearer SyncRecord POST、请求/响应容量、超时、幂等回显与错误净化 |
 | `sync-transport-coordinator.js` | 账号稳定性、单项并发、成功后本机删除、失败持久化与崩溃后幂等重放协调 |
 | `desktop-auth-config.js` / `desktop-auth-provider.js` | 受信待配置门禁、系统浏览器 PKCE S256/state、固定深链与账号绑定 access-token provider |
 | `encrypted-auth-store.js` / `auth-http-client.js` | safeStorage 域分离加密会话及固定有界 token/user HTTPS 客户端 |
+| `desktop-license-config.js` / `license-http-client.js` | 待配置零网络门禁与显式固定 HTTPS/Bearer 权益请求 |
+| `license-entitlement.js` / `license-store.js` | Ed25519 signed-entitlement 验证、账号/设备/时间绑定、状态派生及 `OAKLIC1` safeStorage 原子缓存 |
 | `account-sync-ipc.js` | 只从可信 Python 来源构造同步预览，缓存负载，并接收 opaque 幂等 ID 与四种固定选择 |
 | `external-validation-ipc.js` | 只接收受控项目路径，编排 Python plan/prepare/finalize 与固定 Ace helper |
 | `ace-utility-runner.js` | 固定 utilityProcess module/参数/环境、输出上限、超时和输出目录身份复核 |
@@ -41,7 +43,7 @@
 
 打包安全另由 `scripts/electron_fuse_policy.js` 固定：必须启用 ASAR 与 embedded integrity、用顶层 `@electron/fuses 2.1.3` 显式设置 Electron 43 全部 9 项，并在 electron-builder 后从真实应用二进制读回。索引 8 已定义为 `WasmTrapHandlers`；未来未知 wire 项仍 fail-closed。alpha.10 已把 Ace 迁移到 `utilityProcess` 并固定 `RunAsNode=false`。详见 `docs/ELECTRON_FUSE_POLICY.md`。
 
-当前源码的 `resource-trust-anchor.json` 绑定应用 loose 文件（含发行身份、同步队列、Web 作业/同步 HTTP 错误与审计 exact schema、AI 请求预览/审阅 schema）的 canonical 清单和目标平台四类运行锁；精确文件数、字节数与摘要以 `docs/TEST_REPORT.md` 为准。alpha.43 源码锚点已复验；最新真实 packaged 锚点、ASAR、fuse 与隐藏 smoke 仍对应 alpha.42。Windows Python/EpubCheck/JRE/Electron/builder 锁再分别绑定五类官方来源证据摘要；packaged 门禁从真实 ASAR 读取 production `package.json` 与 `oakReleaseIdentity`。
+当前源码的 `resource-trust-anchor.json` 绑定应用 loose 文件（含发行身份、账号/权益/同步 exact schema、Web 作业/同步契约、AI 请求预览/审阅 schema）的 canonical 清单和目标平台四类运行锁；精确文件数、字节数与摘要以 `docs/TEST_REPORT.md` 为准。alpha.44 源码锚点已复验；最新真实 packaged 锚点、ASAR、fuse 与隐藏 smoke 仍对应 alpha.42。Windows Python/EpubCheck/JRE/Electron/builder 锁再分别绑定五类官方来源证据摘要；packaged 门禁从真实 ASAR 读取 production `package.json` 与 `oakReleaseIdentity`。
 
 PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专用 CSP 只允许自包含 HTML 所需的内联样式和 `data:` 图片。加载报告前后核对文件身份，拒绝项目根/`exports`/报告/目标的 symlink、junction/reparse、硬链接和目录身份换入，最后同目录原子写入。
 
@@ -50,6 +52,8 @@ PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专�
 `app:info` 返回 `appVersion`、经当前存储重新验证的七字段 `standardIdentity` 和 `packaged=app.isPackaged`。smoke 必须先通过 Renderer 规划并确认引用解析，再读取本次创建的 `project.json` 及其引用报告，核对 Python core 版本、check ID、`citation_resolution`，以及 APP/项目/检查/报告的完整标准身份；条件外部 smoke 还要求 EpubCheck/Ace 确实运行，打包 smoke 强制 `packaged=true`。打包态 Python、JRE 或 Ace stage 失配时必须失败关闭，不得回退用户环境中的同名代码资源；Electron 43.1.0 `win32-x64` 自身仍由受版本控制的全树锁固定：2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `f5c2c915633c1917bc37377f8232bde4259588eb138bc4072a3c7df976e27486`，并绑定官方 ZIP/SHASUMS256/npm checksums provenance。当前 Ace 浏览器运行时仍依赖用户系统 Chrome。
 
 账号与同步 IPC 不接受 Renderer 自带的负载、token、URL 或 transport；主进程通过固定 `sync-source` 命令取值并重建 SyncRecord v1。alpha.39 只在受信账号配置完整且 safeStorage 可用时实例化系统浏览器 PKCE、token/user client 与 Sync coordinator；默认 `pending_configuration` 没有任何网络目标。Renderer 只能查询状态、发起登录或逐项发送/重试，令牌/verifier 永不跨 preload。远端创建或幂等重放后才删除本机队列，失败和账号切换保留记录。详见 `docs/SYNC_RECORD_V1.md`。
+
+订阅权益同样不接受 Renderer 自报 claims、token、URL 或公钥。alpha.44 只在受信权益配置完整且 safeStorage 可用时组合 HTTP client/provider；`status()` 只验本机密文，只有已登录用户调用固定 refresh IPC 才请求一次服务。Ed25519 envelope 必须绑定当前账号、stable device ID、issuer/audience 与时间；失败降 Free 且不锁本地项目。默认配置为空；详见 `docs/SIGNED_ENTITLEMENT_V1.md`。
 
 AI transport 不接受 Renderer 自报 URL、凭据或任意负载。`AIProvider` 从 OS 加密设置生成绑定，`AIRequestCoordinator` 从受信 Python core 读取单条问题并公开完整发送预览；只有一次确认后才把绑定与同一语义请求交给 Router。alpha.41 只注册 OpenAI-compatible、Ollama、LM Studio；alpha.42 收敛七类安全错误并强制失败后重新预览；alpha.43 进一步拒绝 LM Studio 静默模型替换，只允许文本响应中的精确空 `tool_calls` 数组。Ollama 与 LM Studio 各一固定组合有窄证据，但官方云、其他组合和湖岸 AI 仍不可用或未验收。
 

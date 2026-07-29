@@ -95,6 +95,19 @@
       <p>生产同步尚未接通。正式启用时，这里必须先列出全部结果字段，再提供“仅同步本次、以后仍询问、暂不同步、不再询问此项目”。稿件正文、文件名、路径、片段和内容哈希不得同步。</p>
       <button type="button" disabled>同步功能尚未启用</button>
     </section>
+
+    <section id="sync-history-panel" class="sync-history-panel" aria-labelledby="sync-history-title" hidden>
+      <div class="section-heading">
+        <div>
+          <p class="step">账号后台</p>
+          <h2 id="sync-history-title">已同步的检查记录</h2>
+        </div>
+        <button id="refresh-sync-history" class="secondary" type="button">刷新记录</button>
+      </div>
+      <p>这里只显示你明确同步的结构化结果；不会显示稿件正文、标题、文件名、路径、引用原文或内容哈希。</p>
+      <p id="sync-history-status" class="notice" role="status" aria-live="polite"></p>
+      <div id="sync-history-list" class="sync-history-list"></div>
+    </section>
   </main>
 
   <footer>

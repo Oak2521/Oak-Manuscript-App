@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 84,
-  "total_bytes": 2145925,
+  "file_count": 88,
+  "total_bytes": 2150289,
   "files": [
     {
       "path": "config/app-config.json",
@@ -21,6 +21,11 @@
       "path": "config/desktop-auth.json",
       "size_bytes": 368,
       "sha256": "c78fa7593103170ee03729960c46d9e403ecc1e479cee4a00699d451a9ce5d5d"
+    },
+    {
+      "path": "config/desktop-license.json",
+      "size_bytes": 230,
+      "sha256": "957384c22ea95599ff87f9483019f3ce5ce4323560ac644abf253ea02ff512d0"
     },
     {
       "path": "config/provenance/cpython-3.13.14-win32-x64.json",
@@ -83,6 +88,11 @@
       "sha256": "1326f797246a6da1881a6c1d7c458ddf65ef3e4e17e69ee843272abea200d219"
     },
     {
+      "path": "config/schemas/desktop-license-v1.schema.json",
+      "size_bytes": 1505,
+      "sha256": "06f9531def60cb5728e5ec74c03f3f9d4225600c0b574a4ebc4f2c935d845aff"
+    },
+    {
       "path": "config/schemas/electron-provenance-v1.schema.json",
       "size_bytes": 6053,
       "sha256": "8faf04bfd72ed7a1602af43a22b11ded30680c6bdad1bf1866792b36ca44263d"
@@ -98,6 +108,11 @@
       "sha256": "f4221688bf7126f95b4c452ad9e763b9492f3c445e5aa82f0f6b2a81ff6af8bb"
     },
     {
+      "path": "config/schemas/license-cache-v1.schema.json",
+      "size_bytes": 808,
+      "sha256": "ab6ba1a21b1744f3e17d8477fdfba0e9f25dbb98df67c8b2b90ec41288427d0f"
+    },
+    {
       "path": "config/schemas/release-identity-v1.schema.json",
       "size_bytes": 2396,
       "sha256": "adbe8151e239d102e71830e7272ff7af77425e6eaf481a0d6c22ef3aeb9e4054"
@@ -106,6 +121,11 @@
       "path": "config/schemas/runtime-provenance-v1.schema.json",
       "size_bytes": 8048,
       "sha256": "ec62294c37342aae9eeac4354a9d8f836775595f386d92cec8cbdd0aa37c1db9"
+    },
+    {
+      "path": "config/schemas/signed-entitlement-v1.schema.json",
+      "size_bytes": 1821,
+      "sha256": "e936e2ab462d96502639eddd0594deea13528ddca646e35425b8a93885a37fc7"
     },
     {
       "path": "config/schemas/sync-http-audit-v1.schema.json",
@@ -200,7 +220,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "1b9e146c11f66f80cf99def6cbb2980ea843d679cad9e67de1e92f82586f2103"
+      "sha256": "30e67834c5925067488ab39e5e3bfaa724d7273638b5e9102271eaa8fbb9c2be"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

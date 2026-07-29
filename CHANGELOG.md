@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.44（ChatGPT 签名订阅权益与网站账号后台源码）
+
+> 源码检查点；默认账号/权益配置为空且零网络，未部署、未迁移、未重新打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。
+
+- 新增严格桌面权益配置、Ed25519 signed-entitlement v1 Schema/验签、账号与设备绑定、有效期/宽限/撤销状态和显式刷新；无效状态统一降为 Free，绝不锁已有本地项目；
+- 新增 `OAKLIC1` safeStorage 加密权益缓存，具备 canonical JSON、revision CAS、原子提交、复验及链接/硬链接/竞态拒绝；错账号、篡改或恶意响应不能覆盖有效缓存；
+- 网站客户端新增登录账号的 SyncRecord 历史列表、刷新和属主删除，使用独立浏览器侧严格解析和安全文本渲染；临时 Web 作业仍不会自动生成同步记录；
+- 修正源码 smoke 的 Electron 命令行参数顺序并固定禁 GPU 参数；当前源码最终独立隐藏 smoke PASS，路径 `out/source-smoke/runs/ms5sbt1b-80ec3e07939966bd/projects/`；
+- APP/Python core/桌面与 Web lockfile 升至 alpha.44；最终回归 Node 615/608/0/7、Python 362/0/0/3；资源信任 88 文件 / 2,150,289 字节，manifest `f824378d…2f61`，anchor `7c389cba…6177`；
+- 服务端权益签发、支付/退款、设备管理、真实 OAuth/数据库迁移/网站部署、Windows 新包、macOS 和可售卖正式版仍未完成。
+
 ### 2026-07-29 — 0.1.0-alpha.43（ChatGPT LM Studio headless 窄验收与模型身份拒绝）
 
 > 源码检查点；最新已验证 Windows NSIS/ZIP 仍为 alpha.42，本轮未重构建或改称 alpha.43 制品。

@@ -31,6 +31,7 @@ test("sandboxed preload exposes only bounded account and sync operations", async
   await api.beginLogin();
   await api.logout();
   await api.licenseStatus();
+  await api.refreshLicense();
   await api.aiStatus();
   await api.configureAi({ mode: "off" });
   await api.clearAiCredential();
@@ -52,6 +53,7 @@ test("sandboxed preload exposes only bounded account and sync operations", async
     { channel: "provider:auth-begin" },
     { channel: "provider:auth-logout" },
     { channel: "provider:license-status" },
+    { channel: "provider:license-refresh" },
     { channel: "provider:ai-status" },
     { channel: "provider:ai-configure", payload: { mode: "off" } },
     { channel: "provider:ai-clear-credential" },
@@ -78,6 +80,40 @@ test("sandboxed preload exposes only bounded account and sync operations", async
     { channel: "provider:sync-delete", payload: { queueId: "queue-1" } },
     { channel: "provider:sync-send", payload: { queueId: "queue-1" } },
   ]);
+});
+
+test("license refresh IPC requires a currently authenticated account and forwards no renderer payload", async () => {
+  const handlers = new Map();
+  let accountId = null;
+  const refreshes = [];
+  const authProvider = {
+    status: () => accountId
+      ? { state: "authenticated", loggedIn: true, accountId }
+      : { state: "signed_out", loggedIn: false, accountId: null },
+    beginLogin: () => ({}), logout: () => ({}),
+  };
+  registerAccountSyncIpc({
+    ipcMain: { handle: (name, fn) => handlers.set(name, fn) },
+    pathPolicy: { looksLikeProject: () => true },
+    authProvider,
+    licenseProvider: {
+      status: () => ({ effectiveTier: "free" }),
+      refresh: async (status) => { refreshes.push(status); return { effectiveTier: "pro" }; },
+    },
+    syncProvider: {
+      getPreference: () => "never_asked", setPreference: () => "never_asked",
+      preview: () => ({}), confirm: () => ({}), listQueue: () => [],
+      cancel: () => ({}), retry: () => ({}), delete: () => false,
+    },
+    syncRecordSource: async () => ({}),
+  });
+  assert.equal((await handlers.get("provider:license-refresh")(null, { forgedTier: "pro" })).ok, false);
+  assert.equal(refreshes.length, 0);
+  accountId = "account-1";
+  const refreshed = await handlers.get("provider:license-refresh")(null, { forgedTier: "pro" });
+  assert.equal(refreshed.ok, true);
+  assert.equal(refreshed.status.effectiveTier, "pro");
+  assert.deepEqual(refreshes, [{ state: "authenticated", loggedIn: true, accountId: "account-1" }]);
 });
 
 test("account/sync IPC obtains the record from trusted core source, not renderer content", async () => {

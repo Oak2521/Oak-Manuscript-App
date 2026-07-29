@@ -1380,8 +1380,7 @@ async function toggleAccountAuth() {
   if (status.loggedIn) {
     const signedOut = unwrap(await window.oak.logout());
     state.authStatus = signedOut;
-    renderAccountStatus();
-    await refreshSyncQueue();
+    await refreshAccountStatus();
     toast("已退出湖岸账号；本地项目和导出仍可使用。", 3600);
     return signedOut;
   }
@@ -1407,7 +1406,26 @@ function renderAccountStatus() {
   if (license) {
     const tier = (license.effectiveTier || license.tier) === "pro" ? "Pro" : "Free";
     $("#license-status-text").textContent =
-      `${tier} 权益（${license.entitlementState}）；本地项目与已有导出永不因账号或订阅状态锁定。`;
+      `${tier} 权益（${license.entitlementState}）。${license.message || "本地项目与已有导出永不因账号或订阅状态锁定。"}`;
+    $("#btn-refresh-license").disabled = !auth?.loggedIn ||
+      license.productionConfigured !== true || license.refreshAvailable !== true;
+  }
+}
+
+async function refreshLicenseStatus() {
+  const button = $("#btn-refresh-license");
+  button.disabled = true;
+  try {
+    const result = unwrap(await window.oak.refreshLicense());
+    state.licenseStatus = result.status;
+    renderAccountStatus();
+    const ai = unwrap(await window.oak.aiStatus());
+    state.aiStatus = ai.status;
+    renderAiSettings();
+    toast("订阅权益已从湖岸账号服务刷新并完成签名验证。", 4200);
+    return result.status;
+  } finally {
+    renderAccountStatus();
   }
 }
 
@@ -1746,6 +1764,8 @@ document.addEventListener("DOMContentLoaded", () => {
     toggleAccountAuth().catch((error) => toast(String(error.message || error), 5000)));
   $("#btn-login2").addEventListener("click", () =>
     toggleAccountAuth().catch((error) => toast(String(error.message || error), 5000)));
+  $("#btn-refresh-license").addEventListener("click", () =>
+    refreshLicenseStatus().catch((error) => toast(String(error.message || error), 5000)));
   $("#btn-login-export").addEventListener("click", () =>
     toggleAccountAuth().catch((error) => toast(String(error.message || error), 5000)));
   $$('input[name="ai-mode"]').forEach((input) => input.addEventListener("change", () => {
