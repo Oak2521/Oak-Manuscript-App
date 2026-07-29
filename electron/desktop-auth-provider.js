@@ -57,7 +57,7 @@ class DesktopAuthProvider {
   constructor({ config, store = null, client = null, openExternal = null, clock = () => new Date(), randomBytes = crypto.randomBytes } = {}) {
     if (!config || !["pending_configuration", "configured"].includes(config.status)) throw new TypeError("桌面账号配置非法");
     this.config = config; this.store = store; this.client = client; this.openExternal = openExternal; this.clock = clock; this.randomBytes = randomBytes;
-    this.callbackInFlight = false;
+    this.loginInFlight = false; this.callbackInFlight = false;
     this.state = EMPTY_STATE; this.available = config.status === "pending_configuration";
     if (config.status === "configured") {
       if (!store || typeof store.load !== "function" || typeof store.save !== "function" || !client ||
@@ -80,16 +80,25 @@ class DesktopAuthProvider {
   async beginLogin() {
     if (this.config.status !== "configured") return { state: "configuration_required", opened: false, authMode: "system_browser_pkce", message: "生产账号服务尚未配置，未发起网络请求。" };
     if (!this.available) throw new Error("系统加密账号存储不可用");
-    const verifier = b64url(this.randomBytes(64)); const state = b64url(this.randomBytes(32));
-    const now = this.clock(); const pending = { state, code_verifier: verifier, redirect_uri: REDIRECT_URI, created_at: now.toISOString(), expires_at: new Date(now.getTime() + PENDING_TTL_MS).toISOString() };
-    this._save({ pending });
-    const url = new URL(this.config.authorization_endpoint);
-    url.searchParams.set("response_type", "code"); url.searchParams.set("client_id", this.config.client_id);
-    url.searchParams.set("redirect_uri", REDIRECT_URI); url.searchParams.set("scope", this.config.scopes.join(" "));
-    url.searchParams.set("state", state); url.searchParams.set("code_challenge", b64url(crypto.createHash("sha256").update(verifier, "ascii").digest()));
-    url.searchParams.set("code_challenge_method", "S256");
-    await this.openExternal(url.toString());
-    return { state: "awaiting_callback", opened: true, authMode: "system_browser_pkce", message: "已在系统浏览器打开湖岸账号页面；请完成登录。" };
+    if (this.loginInFlight) throw new Error("登录页面正在打开，拒绝重复启动");
+    this.loginInFlight = true;
+    try {
+      const verifier = b64url(this.randomBytes(64)); const state = b64url(this.randomBytes(32));
+      const now = this.clock(); const pending = { state, code_verifier: verifier, redirect_uri: REDIRECT_URI, created_at: now.toISOString(), expires_at: new Date(now.getTime() + PENDING_TTL_MS).toISOString() };
+      this._save({ pending });
+      const url = new URL(this.config.authorization_endpoint);
+      url.searchParams.set("response_type", "code"); url.searchParams.set("client_id", this.config.client_id);
+      url.searchParams.set("redirect_uri", REDIRECT_URI); url.searchParams.set("scope", this.config.scopes.join(" "));
+      url.searchParams.set("state", state); url.searchParams.set("code_challenge", b64url(crypto.createHash("sha256").update(verifier, "ascii").digest()));
+      url.searchParams.set("code_challenge_method", "S256");
+      try { await this.openExternal(url.toString()); }
+      catch {
+        try { if (this.state.pending?.state === state) this._save({ pending: null }); }
+        catch { throw new Error("无法打开系统浏览器且未能清理登录状态；登录已安全停止"); }
+        throw new Error("无法打开系统浏览器；本次登录已取消");
+      }
+      return { state: "awaiting_callback", opened: true, authMode: "system_browser_pkce", message: "已在系统浏览器打开湖岸账号页面；请完成登录。" };
+    } finally { this.loginInFlight = false; }
   }
   async handleCallback(value) {
     if (this.config.status !== "configured" || !this.available) throw new Error("湖岸账号尚未配置或不可用");
@@ -101,6 +110,7 @@ class DesktopAuthProvider {
     }
     this.callbackInFlight = true;
     try {
+      this._save({ pending: null });
       const tokens = await this.client.exchangeAuthorizationCode({ code, codeVerifier: pending.code_verifier });
       const identity = await this.client.identity(tokens.access_token); const now = this.clock();
       const session = { account_id: accountId(identity.accountId), access_token: tokens.access_token, refresh_token: tokens.refresh_token, token_type: "bearer", issued_at: now.toISOString(), expires_at: new Date(now.getTime() + tokens.expires_in * 1000).toISOString(), refresh_expires_at: null };

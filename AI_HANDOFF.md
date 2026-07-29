@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-29
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.39`
+> 当前版本：`0.1.0-alpha.40`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.39`（提交后建立；桌面 PKCE、加密 token-store 与显式同步主进程接线源码检查点）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.40`（提交后建立；登录故障恢复与同步幂等收敛源码检查点）
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,14 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.40 登录故障恢复与同步幂等收敛
+
+- APP、Python core、桌面/Web lockfile 统一为 alpha.40；资源信任清单保持 84 文件 / 2,145,925 字节，manifest SHA-256 `bceda7ca2b9cb63c48e38a59f33e24b8b56b03901a68e8d8b72b409cfb170136`，源码锚点 `e0e24a7a65bb62904712accd646f69644654682d890c15cab5d8120168d4362c`；标准包/规则/fixer 未变化；
+- 浏览器启动失败会清除刚保存的 pending verifier；并发登录启动被拒绝。合法 pending 可跨应用重启继续，回调在 token exchange 前单次消费，兑换失败或并发回调不能重放；
+- refresh 暂时失败保留原加密会话；远端同步成功而本地队列提交失败时保留同一幂等记录，必须由用户明确重试，并可用远端 `replayed` 回执收敛；
+- 最终 `npm test`：Node 581 total / 574 pass / 0 fail / 7 skip（3.785 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（102.436 秒）；隐藏源码 Electron smoke PASS，输出 `out/source-smoke/runs/ms5liy5e-f2bb924644313e23/projects/`；
+- 本轮未联网、未使用真实账号/端点/API key、未迁移、未部署、未修改官网、未重新打包。没有真实 OAuth/OIDC、GoTrue/RLS、网站后台或远端同步证据；最新真实 Windows 制品和 packaged 证据保持 alpha.37。
 
 ### 已完成：0.1.0-alpha.39 桌面 PKCE、加密会话与显式同步主进程接线
 
@@ -574,11 +582,11 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划。近期直接闭合“账号 → 权益 → 检查 → 明确同步”主链：
 
-1. 在不连接生产系统的条件下补完 alpha.39 账号故障语义：token exchange/refresh 模糊失败、进程崩溃恢复、系统浏览器打开失败、回调并发，以及远端成功后本地删除失败的注入测试；不要把源码模拟写成真实 OAuth 验收；
+1. alpha.40 已离线闭合浏览器失败、登录/回调并发、pending 跨重启、回调单次消费、refresh 暂时失败和远端成功/本地提交失败的幂等重试语义；下一步不再扩写模拟认证层；
 2. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，才填充 `desktop-auth.json` 并执行真实 PKCE/刷新/退出/撤销、`002_sync_records.sql`、GoTrue/RLS/多实例/备份/删除 E2E 和网站账号后台联调；当前不得连接生产系统；
 3. 真实联调前确定 OIDC nonce/ID-token 验证或纯 OAuth user endpoint 的正式协议，不在未知服务契约上伪造 nonce 已完成；
-4. 其后并行关闭发行门禁：具名许可/再分发签核、发行身份、Ace 自带浏览器/OS 隔离、Windows Authenticode/真实安装生命周期、macOS 双架构签名/公证/实机，以及临时作业的生产恶意软件扫描与三路零留存；
-5. 经联网授权后再核验标准官方来源并实现签名更新 transport；任何新规则必须有反例、匿名样本、回归和真实审校签核。
+4. 若预生产资料尚未具备，转回本地产品主链，优先实现一个用户可见、可独立验收的完整功能，不继续横向堆叠账号契约；
+5. 其后关闭发行门禁：具名许可/再分发签核、发行身份、Ace 自带浏览器/OS 隔离、Windows Authenticode/真实安装生命周期、macOS 双架构签名/公证/实机，以及临时作业的生产恶意软件扫描与三路零留存；经联网授权后再核验标准官方来源和签名更新 transport。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。
 

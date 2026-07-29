@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.39` 源码架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、独立服务端/API/Supabase 持久层，以及条件接线的桌面 PKCE/OS 加密 token-store/显式 transport，三模式 AI/OS 加密凭据/单条问题发送预览/建议人工审阅/未接线有界 HTTP 底座，以及 Web 临时作业的零留存源码边界。默认账号配置无端点；最新真实 Windows 制品仍为 alpha.37，其 schema v2 发布清单已绑定 packaged-smoke 哈希证据。真实账号与 Sync API 部署、真实模型适配、数据库迁移、平台计划任务/生命周期、病毒/信誉扫描、容器与 OS 无网隔离、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.40` 源码架构：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、独立服务端/API/Supabase 持久层，以及条件接线的桌面 PKCE/OS 加密 token-store/显式 transport 与失败幂等恢复，三模式 AI/OS 加密凭据/单条问题发送预览/建议人工审阅/未接线有界 HTTP 底座，以及 Web 临时作业的零留存源码边界。默认账号配置无端点；最新真实 Windows 制品仍为 alpha.37，其 schema v2 发布清单已绑定 packaged-smoke 哈希证据。真实账号与 Sync API 部署、真实模型适配、数据库迁移、平台计划任务/生命周期、病毒/信誉扫描、容器与 OS 无网隔离、联网标准获取、完整发行身份、代码签名、真实安装生命周期和 macOS 仍待实现和验收。
 
 ## 1. 总体分层
 

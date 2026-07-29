@@ -2,6 +2,15 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.40 登录故障恢复与同步幂等收敛验收（2026-07-29）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.40`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 浏览器打开失败清除 pending verifier，并发登录启动被拒绝；合法 pending 可跨应用重启继续；
+- [x] 回调在 token exchange 前单次消费，并发或失败后的同一回调不能重放；refresh 暂时失败保留原加密会话供重试；
+- [x] 远端成功而本机队列提交失败时保留显式可重试记录，同一幂等 ID 的 `replayed` 回执可最终删除本机项；
+- [x] `npm test` Node 581 / Python 362 全量零失败；资源清单 84 文件 / 2,145,925 字节；独立隐藏 alpha.40 源码 smoke PASS；
+- [ ] 真实 OAuth/OIDC/GoTrue/RLS/数据库迁移/网站后台/远端同步未运行；alpha.40 未打包，最新真实 Windows 制品仍为 alpha.37。
+
 ## 0.1.0-alpha.39 桌面 PKCE 与显式同步主进程接线验收（2026-07-29）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.39`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；

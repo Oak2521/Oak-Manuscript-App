@@ -1,6 +1,6 @@
 # ELECTRON_FUSE_POLICY — Electron 打包硬化合同
 
-> 当前源码为 `0.1.0-alpha.39`，最新真实打包二进制证据仍为 `0.1.0-alpha.37`。本文件描述源码配置、打包后强制写入与回读、ASAR 资源/production package 身份、packaged-smoke 哈希证据及受限应用协议合同。Web SDK、Postgres 迁移、服务端 repository、上传检查、私有 worker、一次性领取与 Python 子进程处理器位于 `web/` 私有子包且不在 Electron `build.files` 中；alpha.39 的桌面 Auth/Sync client/coordinator 已条件接线，但默认受信配置为空且不联网。
+> 当前源码为 `0.1.0-alpha.40`，最新真实打包二进制证据仍为 `0.1.0-alpha.37`。本文件描述源码配置、打包后强制写入与回读、ASAR 资源/production package 身份、packaged-smoke 哈希证据及受限应用协议合同。Web SDK、Postgres 迁移、服务端 repository、上传检查、私有 worker、一次性领取与 Python 子进程处理器位于 `web/` 私有子包且不在 Electron `build.files` 中；alpha.40 的桌面 Auth/Sync client/coordinator 与离线失败恢复已实现，但默认受信配置为空且不联网。
 
 ## 固定策略
 

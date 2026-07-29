@@ -2,7 +2,7 @@
 
 > 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.39 源码）
+## Provider 一览（当前 alpha.40 源码）
 
 alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI。受信配置仍为 `pending_configuration` 且全部端点/key 为空；数据库迁移未执行、API 未部署、网站后台未修改，因此普通 APP 仍不联网也不声称同步成功。桌面 AI transport 仍为 `null`，适配器注册表为空。商业仓库没有真实 service-role key、OAuth 配置或 AI key。
 

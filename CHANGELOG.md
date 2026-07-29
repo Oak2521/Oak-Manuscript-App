@@ -4,6 +4,16 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.40（ChatGPT 登录故障恢复与同步幂等收敛）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.40`（提交后建立）。本轮未联网、未使用真实账号或端点、未迁移数据库、未部署、未修改官网，也未重新打包；最新真实 Windows 制品仍为 alpha.37。
+
+- 系统浏览器启动失败时原子清除已持久化 PKCE verifier，并返回固定非反射错误；同一进程中的并发登录启动被拒绝；
+- 合法 pending 登录可跨应用重启继续，但回调在 token exchange 前即单次消费；兑换失败或并发重放不能再次使用同一 state/code；
+- 短暂 refresh 失败保留原加密会话供显式重试，成功刷新继续独立复核账号绑定；
+- 远端已返回 `created`、本机队列删除却失败时，队列记录为可重试错误；用户明确重试后以同一幂等 ID 接受 `replayed` 并删除本地项；
+- 最终 `npm test`：Node 581 total / 574 pass / 0 fail / 7 skip（3.785 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（102.436 秒）；隐藏源码 Electron smoke PASS，输出 `out/source-smoke/runs/ms5liy5e-f2bb924644313e23/projects/`；资源清单 84 文件 / 2,145,925 字节，manifest SHA-256 `bceda7ca2b9cb63c48e38a59f33e24b8b56b03901a68e8d8b72b409cfb170136`，anchor SHA-256 `e0e24a7a65bb62904712accd646f69644654682d890c15cab5d8120168d4362c`。
+
 ### 2026-07-29 — 0.1.0-alpha.39（ChatGPT 桌面 PKCE 与显式同步主进程接线）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.39`（提交后建立）。本轮未联网、未使用真实账号/端点/API key、未迁移数据库、未部署、未修改官网，也未重新打包；最新真实 Windows 制品仍为 alpha.37。

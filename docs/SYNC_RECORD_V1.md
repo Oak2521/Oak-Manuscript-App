@@ -1,6 +1,6 @@
 # SyncRecord v1 — 结果与元数据同步契约
 
-> 状态：`0.1.0-alpha.39` 已在既有客户端/核心离线契约、逐字段预览、OS 加密队列、独立服务/API/Supabase 源码之上，实现桌面系统浏览器 PKCE、独立加密 token-store、主进程条件 transport 接线和逐项显式发送 UI。受信账号配置仍为 `pending_configuration` 且无端点/key；迁移未执行、API 未部署、网站后台未实现，所以普通 APP 仍不发同步请求。最新 packaged smoke 仍为 alpha.37。AI 建议文本、审阅会话和 AI HTTP 底座均不进入 SyncRecord。本文件不能作为“数据已可同步到网站”的证明。
+> 状态：`0.1.0-alpha.40` 已在既有客户端/核心离线契约、逐字段预览、OS 加密队列、独立服务/API/Supabase 源码之上，实现桌面系统浏览器 PKCE、独立加密 token-store、主进程条件 transport、逐项显式发送和失败幂等恢复。受信账号配置仍为 `pending_configuration` 且无端点/key；迁移未执行、API 未部署、网站后台未实现，所以普通 APP 仍不发同步请求。最新 packaged smoke 仍为 alpha.37。AI 建议文本、审阅会话和 AI HTTP 底座均不进入 SyncRecord。本文件不能作为“数据已可同步到网站”的证明。
 
 ## 1. 信任边界
 

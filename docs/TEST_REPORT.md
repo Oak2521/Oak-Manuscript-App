@@ -2,7 +2,22 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.39 桌面 PKCE、加密会话与显式同步接线
+## 最新验证结论：0.1.0-alpha.40 登录故障恢复与同步幂等收敛
+
+验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未使用真实账号/端点/API key、未执行数据库迁移、未部署或修改官网，也未读写项目目录外内容。源码 Electron smoke 在独立隐藏进程执行；没有重新打包，最新真实 Windows 制品保持 alpha.37。
+
+| 验证 | 结果 | 证据 |
+|---|---|---|
+| Auth/Sync failure focused | **PASS** | 15/15；覆盖浏览器失败清理、重复启动、pending 跨重启、回调先消费后 exchange、并发回调、refresh 暂时失败、远端成功后本地提交失败及 `replayed` 收敛 |
+| 最终顺序 `npm test` | **PASS** | 退出码 0，墙钟 110.7 秒；Node 581 total / 574 pass / 0 fail / 7 skip（3.7848373 秒）；Python 362 total / 0 failures / 0 errors / 3 skipped（102.436 秒） |
+| 资源信任复验 | **PASS** | 84 文件 / 2,145,925 字节，manifest SHA-256 `bceda7ca2b9cb63c48e38a59f33e24b8b56b03901a68e8d8b72b409cfb170136`，anchor SHA-256 `e0e24a7a65bb62904712accd646f69644654682d890c15cab5d8120168d4362c` |
+| 独立隐藏源码 Electron smoke | **PASS** | `SMOKE-RESULT: PASS`；输出 `out/source-smoke/runs/ms5liy5e-f2bb924644313e23/projects/`；默认账号配置没有网络端点 |
+| 真实 OAuth/OIDC、GoTrue、RLS 与远端同步 | **未运行** | `desktop-auth.json` 仍为 `pending_configuration`，全部端点/key 为 null；所有失败注入均为本机模拟，不等于真实服务验收 |
+| alpha.40 packaged / Windows 安装 / macOS | **未运行** | 最新真实 NSIS/ZIP 与 packaged smoke 仍为 alpha.37；源码测试不能代表 alpha.40 制品或 macOS 通过 |
+
+证据边界：本轮证明登录和同步的本机异常状态能够安全、可重试地收敛，不证明真实 OAuth/OIDC 协议、生产数据库/API、官网账号后台或商业发行完成。
+
+## 历史验证结论：0.1.0-alpha.39 桌面 PKCE、加密会话与显式同步接线
 
 验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未使用真实账号/端点/API key、未执行数据库迁移、未部署或修改官网，也未读写项目目录外内容。源码 Electron smoke 在独立隐藏进程执行；没有重新打包，最新真实 Windows 制品保持 alpha.37。
 

@@ -116,6 +116,28 @@ test("successful or replayed upload deletes only the exact local queue item", as
   }
 });
 
+test("remote success followed by local deletion failure keeps an explicitly retryable idempotent item", async () => {
+  const { provider, queueId, record } = queuedProvider();
+  const auth = authProvider(); let outcome = "created";
+  const originalSucceeded = provider.transportSucceeded.bind(provider);
+  provider.transportSucceeded = () => { throw new Error("local commit failed"); };
+  const coordinator = new SyncTransportCoordinator({
+    syncProvider: provider,
+    authProvider: auth,
+    accessTokenProvider: async ({ accountId }) => ({ accessToken: TOKEN, accountId }),
+    transport: { async send() { return { outcome, idempotency_id: record.idempotency_id, received_at: "2026-07-28T12:05:00.000Z" }; } },
+  });
+  await assert.rejects(coordinator.flush(queueId), (error) => error.code === "TRANSPORT_UNAVAILABLE" && error.retryable === true);
+  let item = provider.listQueue(AUTH_A)[0];
+  assert.equal(item.last_error, "TRANSPORT_UNAVAILABLE");
+  assert.equal(item.attempts, 1);
+
+  provider.transportSucceeded = originalSucceeded;
+  provider.retry(queueId, AUTH_A); outcome = "replayed";
+  assert.equal((await coordinator.flush(queueId)).outcome, "replayed");
+  assert.equal(provider.listQueue(AUTH_A).length, 0);
+});
+
 test("bounded transport failures persist attempts and stable error code until explicit retry", async () => {
   const { provider, queueId } = queuedProvider();
   const auth = authProvider();

@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.39` 源码已实现的桌面隐私边界、SyncRecord 服务端/API/Supabase、条件接线的 PKCE/OS 加密 token-store/显式同步 transport、三模式 AI/OS 加密凭据与未接线有界 HTTP 底座，以及 Web 临时作业的纵向源码契约。默认账号配置没有网络目标；最新 alpha.37 Windows 制品未签名，不是可售卖正式版。真实账号/模型联调、数据库迁移、API 部署、生产病毒扫描、容器/OS 隔离、计费和官网发布仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.40` 源码已实现的桌面隐私边界、SyncRecord 服务端/API/Supabase、条件接线的 PKCE/OS 加密 token-store/显式同步 transport 与失败恢复、三模式 AI/OS 加密凭据与未接线有界 HTTP 底座，以及 Web 临时作业的纵向源码契约。默认账号配置没有网络目标；最新 alpha.37 Windows 制品未签名，不是可售卖正式版。真实账号/模型联调、数据库迁移、API 部署、生产病毒扫描、容器/OS 隔离、计费和官网发布仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -82,7 +82,7 @@
 - `sync-record-service.js` 独立执行 exact key、永久禁止键、ID/时间、计数一致性、记录条数和 64 KiB 上限验证；不能把 Electron 已验证当作服务端信任；
 - `oak_manuscript_sync_records` 只保存 SyncRecord v1 白名单 JSON 及 owner/时间，不保存稿件、正文、标题、片段、路径、文件名、参考文献原文或内容哈希。数据库递归拒绝可疑键，强制 RLS，浏览器角色无表/RPC 权限；
 - service-role repository 只能调用四个固定 RPC，不把密钥写入 URL/Cookie/错误。创建/重放在账户 advisory transaction lock 内原子执行容量限制和幂等判断；列表在一次 RPC 快照返回记录与 total，删除只按可信 owner；
-- 上述服务端部分为 alpha.38 源码、桌面接线为 alpha.39 源码，证据均是离线 Fake fetch/SQL 静态契约。没有真实迁移、OAuth/OIDC、GoTrue/RLS、多实例、备份、删除、日志和密钥泄露生产证据，也没有网站后台；不得据此宣称云端隐私验收完成。
+- 上述服务端部分为 alpha.38 源码、桌面接线为 alpha.39 源码、失败恢复为 alpha.40 源码，证据均是离线 Fake fetch/SQL 静态契约。没有真实迁移、OAuth/OIDC、GoTrue/RLS、多实例、备份、删除、日志和密钥泄露生产证据，也没有网站后台；不得据此宣称云端隐私验收完成。
 
 ## 5. 文件与压缩包安全
 
@@ -126,7 +126,7 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - Windows CPython 3.13.14 另由 provenance v1 绑定 PSF 官方 ZIP/Sigstore/SPDX、34 文件清单、33 个原字节文件、唯一 `_pth` 精确追加和原样许可证；证据原始 SHA-256 同时进入运行时 manifest 与 ASAR 资源锚点。完整 Sigstore/GPG 与具名许可签署仍待办，机器验证不能替代法律/再分发审阅。
 - Electron 桥和门禁共用固定 Python bootstrap：`-I -S -X utf8`，显式把经路径策略验证的 core 绝对目录插入 `sys.path[0]` 后用 `runpy` 执行；同时清理可注入模块或启动参数的继承环境，并始终以参数数组和 `shell=false` 启动。CPython 探针核对 `sys.implementation`、精确三段版本、`releaselevel=final` 与 `serial=0`，不只匹配宽松版本字符串。
 - 打包配置必须显式开启 ASAR、保持 embedded ASAR integrity，并注册全量 fuse `afterPack`。顶层锁定 `@electron/fuses 2.1.3`，以 `strictlyRequireAllFuses=true` 写入 Electron 43 的全部 9 项；索引 8 `WasmTrapHandlers=true`。写后立即回读，随后再独立读取真实二进制；路径逃逸、不安全父链、链接/硬链接、实际 Framework 文件身份变化、API/索引和状态漂移均拒绝。完整合同见 `ELECTRON_FUSE_POLICY.md`。
-- alpha.39 源码锚点绑定 84 个 loose 应用文件，包括账号配置/会话 schema、发行身份/同步队列、Web/Sync HTTP schema 和目标平台运行锁；最新真实 packaged 锚点仍为 alpha.37 的 79 文件版本。packaged 门禁另从实际 ASAR production package 读取 exact `oakReleaseIdentity`。读取器解析当前 raw header并精确读满字节，不依赖路径缓存；打包启动在标准存储和窗口前复核完整资源树。Python 显式 `-B` 禁止探针写入字节码；锚点、身份和清单不读取或记录用户稿件内容。
+- alpha.40 源码锚点绑定 84 个 loose 应用文件，包括账号配置/会话 schema、发行身份/同步队列、Web/Sync HTTP schema 和目标平台运行锁；最新真实 packaged 锚点仍为 alpha.37 的 79 文件版本。packaged 门禁另从实际 ASAR production package 读取 exact `oakReleaseIdentity`。读取器解析当前 raw header并精确读满字节，不依赖路径缓存；打包启动在标准存储和窗口前复核完整资源树。Python 显式 `-B` 禁止探针写入字节码；锚点、身份和清单不读取或记录用户稿件内容。
 - Java 与 Ace/Node/Electron 外部工具进程也清理类路径、模块和启动参数注入变量，并以固定参数数组、`shell=false` 启动。
 - 所有锁和清单使用 locale-independent UTF-16 code unit 排序；Ace tracked lock 同时固定 stage manifest 原始字节哈希，JSON 语义等价但字节漂移也拒绝。JRE/Ace 的候选 stage 与受版本控制锁在显式更新时事务提交，失败恢复旧目录和旧锁，避免身份撕裂。
 - Ace 的空/未知 license 声明和空许可证文件直接拒绝。现有许可证文件或生成元数据通知只满足 alpha 可追溯性；全部 236 包仍需正式逐包人工审计。
