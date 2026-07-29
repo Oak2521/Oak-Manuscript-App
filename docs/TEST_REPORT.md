@@ -2,7 +2,27 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.54 账号同步闭环与 Windows packaged 检查点
+## 最新验证结论：0.1.0-alpha.55 Web 部署组合与迁移字节门禁
+
+验证日期：2026-07-29。本轮未联网、未使用真实账号、密钥、数据库或网站，未执行 SQL、迁移、部署、推送或重新打包。最新真实 Windows packaged 证据仍属于未签名 alpha.54。
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| Web production composition | **PASS** | `web/web-job-runtime.js` 以 exact 配置/适配器组成 GoTrue、同源 handler、强一致 Blobs、Supabase repository、固定 Python processor、私有 worker 与双清扫；缺字段、多字段、公开/service-role key 混用、版本或迁移摘要漂移均在 store/network 前拒绝 |
+| 秘密与最小暴露 | **PASS** | runtime 不读取 `process.env`，Python worker 继承环境为空；外部只取得 handler/worker/cleanup/readiness，JSON、runtime 和 content-free audit 不包含 API key、service-role key 或内部组件 |
+| 迁移束完整性 | **PASS** | `npm run verify:web:migrations` 锁定 `001`—`004` 四份 SQL 的精确集合、顺序、字节数、SHA-256、UTF-8/LF 与 `begin`/`commit`；manifest SHA-256 `0989697d2648b9505d5cf6e2c6e2b9cb519f6b806cad5e686354179f4c2e14b7` |
+| 聚焦 Node 测试 | **PASS（6/6）** | 生产组合、零启动网络、密钥不泄露、强一致 store 参数、配置反向路径、SQL 篡改/额外文件/顺序替换/canonical 漂移全部覆盖 |
+| 首次全量回归 | **FAIL（已修复）** | 698 pass / 1 fail / 7 skip；唯一失败是 `ollama_compatibility.test.js` 的静态当前版本仍期望 alpha.54，不是运行逻辑失败；期望更新为 alpha.55 后重跑 |
+| 最终 Node 全量 | **PASS** | 706 total / 699 pass / 0 fail / 7 skip，3.986 秒；跳过项不计作通过 |
+| 最终 Python 全量 | **PASS** | 362 total / 0 failures / 0 errors / 3 skipped，103.900 秒；跳过项不计作通过 |
+| Web 客户端隐藏 smoke | **PASS** | `npm run smoke:web-client`；桌面/移动证据写入 `out/web-client-smoke/`，匿名假服务期间 forbidden network 为 0；不证明线上账号/API |
+| Electron 源码隐藏 smoke | **PASS** | `npm run smoke`；`out/source-smoke/runs/ms62s5qd-369c44f6782b5865/projects/`，保持 Electron sandbox；默认配置无账号/权益/标准/AI 网络 |
+| 源码资源信任 | **PASS** | 108 文件 / 2,171,922 字节；manifest `e73b95135a59880e5463bcd1124dc0f397c085f9d24443d64b8dad6066ffa00e`，anchor `28bdea231047d89d7b779dd43d8bb3a10450426e8b6ae33c3af52e7ccb6b8baf` |
+| 生产 readiness | **未通过（按设计）** | `database_migrations_applied=not_verified`、`os_network_isolation_verified=false`、`production_zero_retention_verified=false`、`production_ready=false`；没有真实 Supabase/Netlify、计划任务、告警、恶意软件扫描或官网部署证据 |
+
+结论：alpha.55 关闭的是“Web 临时作业缺少唯一部署组合入口、迁移来源未精确锁定”两个源码缺口。它没有证明迁移已应用、平台隔离成立、零留存成立或网站已上线；最新可运行 Windows 分发包仍是未签名 alpha.54。
+
+## 历史验证结论：0.1.0-alpha.54 账号同步闭环与 Windows packaged 检查点
 
 验证日期：2026-07-29。本轮未联网、未使用真实账号/令牌/数据库/网站，tracked desktop auth config 仍为 `pending_configuration`。未迁移、部署或推送；Windows 打包完全使用仓库内离线依赖。
 

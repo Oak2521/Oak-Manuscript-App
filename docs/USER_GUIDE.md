@@ -2,11 +2,11 @@
 
 ## 桌面应用（推荐）
 
-当前开发源码与最新已打包 Windows x64 NSIS/ZIP 均为 `0.1.0-alpha.54`；制品未签名，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.54 已包含桌面 PKCE/加密账号会话、签名订阅权益客户端、未部署的服务端签发/订阅事件/设备服务、确认后即时同步与失败恢复、网站同步历史和订阅/掩码设备客户端，以及网站撤销后桌面显式刷新降级的匿名纵向证据；默认账号与权益配置仍为空，仓库没有生产私钥，普通启动和构建不会触发账号/权益联网或下载。
+当前开发源码为 `0.1.0-alpha.55`，最新已打包 Windows x64 NSIS/ZIP 仍为 `0.1.0-alpha.54`；制品未签名，不是可售卖正式版。macOS 安装包、可用 Web 版、Windows 签名和干净机验收仍待完成。alpha.55 在既有账号/同步/权益源码链上增加 Web 临时作业生产组合和迁移来源门禁；默认账号与权益配置仍为空，仓库没有生产私钥，普通启动和构建不会触发账号/权益联网或下载。
 
-**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.54 结果为 Node 700/693/0/7、Python 362/0 failures/0 errors/3 skipped；跳过项不计作通过。alpha.54 Electron 源码与 packaged smoke、第二进程加密队列恢复、实际 EXE 和匿名输出树证据均通过；Web 客户端 UI 最新 smoke 仍为未改动该页面后的 alpha.51。
+**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.55 结果为 Node 706/699/0/7、Python 362/0 failures/0 errors/3 skipped；跳过项不计作通过。alpha.55 Electron 源码与 Web 客户端 smoke 均通过；最新 packaged smoke、第二进程加密队列恢复、实际 EXE 和匿名输出树证据仍属于 alpha.54。
 
-**Web 状态**：`web/client/` 已提供可本地渲染的临时处理工作台，保留湖岸账号登录/注册，包含“默认”引用体例、本次临时处理同意、创建/上传/轮询/取消/一次性领取；另提供当前账号 SyncRecord 历史列表、刷新/确认删除，以及订阅状态、掩码设备和逐台确认撤销。服务端已有 GoTrue、Fetch、Netlify Blobs、Supabase/Postgres、上传检查、私有 worker、`/manuscript/api/v1/sync-records`、`/manuscript/api/v1/entitlement` 与账号设备管理源码边界。四条 SQL 均未在真实 Supabase 执行，API/计划任务/页面也未部署；本地注入测试不等于平台零留存、订阅可用或线上可用。临时任务完成后自动生成同步记录仍禁用；支付商 webhook 未接通。用户不要把稿件交给任何声称基于该 alpha 的线上地址；正式地址只能在官网联调、隐私文本和生产验收后公布。
+**Web 状态**：`web/client/` 已提供可本地渲染的临时处理工作台，保留湖岸账号登录/注册，包含“默认”引用体例、本次临时处理同意、创建/上传/轮询/取消/一次性领取；另提供当前账号 SyncRecord 历史列表、刷新/确认删除，以及订阅状态、掩码设备和逐台确认撤销。服务端已有 GoTrue、Fetch、Netlify Blobs、Supabase/Postgres、上传检查、私有 worker 和账号相关 API；alpha.55 新增唯一生产组合入口。部署人员须先运行 `npm run verify:web:migrations`，再以 exact 配置绑定清单摘要；这仍不表示四条 SQL 已在真实 Supabase 执行。API/计划任务/页面未部署，本地注入测试不等于平台零留存、订阅可用或线上可用。临时任务完成后自动生成同步记录仍禁用；支付商 webhook 未接通。用户不要把稿件交给任何声称基于该 alpha 的线上地址；正式地址只能在官网联调、隐私文本和生产验收后公布。
 
 **账号与结果同步（当前边界）**：欢迎页、导出页和设置页保留湖岸账号入口。仓库受信配置为 `pending_configuration`，点击登录只会显示配置未完成，不打开浏览器或联网。登录用户导出后才会看到 SyncRecord v1 逐字段预览，并可选择仅本次同步、同步本次以后仍询问、暂不同步或不再询问此项目。预览本身不发送；选择前两项即明确授权本次同步：记录先进入系统加密本机队列，正式 transport 存在时立即发送，成功后显示已同步并删除队列项；失败则安全留队，须到设置页明确重试。未配置 transport 时只入队且明确尚未上传。登录、启动和队列恢复绝不自动发送。token 只在主进程密文中并与队列账号绑定；远端创建/幂等重放后才删除本机项，失败或账号切换则保留。当前默认配置下 APP 绝未上传到网站；系统加密不可用时同步安全停止，本地稿件功能不受影响。
 

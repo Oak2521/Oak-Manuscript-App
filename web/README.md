@@ -1,6 +1,6 @@
 # Web 作业契约与同源 HTTP handler（alpha）
 
-`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.38 以独立服务/API/Supabase/runtime 实现长期 SyncRecord，alpha.44—alpha.48 实现账号历史、签名权益、设备管理和匿名撤销传播链；alpha.50—alpha.53 增加标准更新/撤回及桌面恢复入口；alpha.54 以单一匿名本地 E2E 贯通桌面明确同步、服务端 owner 绑定和网站历史 strict parse。源码可本机测试，但临时作业、长期同步、订阅权益和标准更新/撤回服务均未部署。
+`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.55 新增 `web-job-runtime.js` 作为临时任务的唯一生产组合入口，并用 `supabase/migrations-v1.json` 锁定四份 SQL 的顺序与精确字节。源码可本机测试，但临时作业、长期同步、订阅权益和标准更新/撤回服务均未部署。
 
 Web 服务端依赖与 Electron 桌面依赖隔离：
 
@@ -77,69 +77,71 @@ alpha.23—alpha.31 固定：
 - HTTP 错误与安全审计分别受 `web-http-error-v1`、`web-http-audit-v1` exact schema 约束。审计不记录主体、任务 ID、URL、请求头或稿件元数据；
 - handler 不设置 CORS，响应固定 `no-store` / `nosniff` / CSP / `no-referrer`。错误文案固定且不反射异常、路径、账号或稿件内容。
 
-生产实现仍须补齐：在隔离环境依序执行/复核 `001_web_job_state.sql`、`002_sync_records.sql`、`003_manuscript_entitlements.sql` 与 `004_subscription_events_and_devices.sql`，完成 GoTrue/Postgres/Blobs 真实 E2E、平台恶意软件扫描、容器/OS 禁网与资源隔离、支付商 webhook 验签适配、网站订阅/设备客户端、私钥托管/轮换、部署计划双清扫/告警/故障演练、生产 PKCE/main transport 接线和网站后台联调。当前一次性领取不生成额外签名 URL/token，但仍须在真实平台验证删除、传输中断与三路零留存。
+生产实现仍须补齐：在隔离环境依序执行/复核四份 canonical migration，完成 GoTrue/Postgres/Blobs 真实 E2E、平台恶意软件扫描、容器/OS 禁网与资源隔离、支付商 webhook 验签适配、私钥托管/轮换、部署计划双清扫/告警/故障演练、生产 PKCE/main transport 接线和网站后台联调。当前一次性领取不生成额外签名 URL/token，但仍须在真实平台验证删除、传输中断与三路零留存。
+
+## 生产组合与迁移来源门禁（alpha.55）
+
+部署适配层应只通过 `createWebJobProductionRuntime({ configuration, adapters })` 创建临时稿件运行时。配置与适配器均为 exact 对象；公开 Supabase key 和 service-role key 必须分离，所有 store/network/spawn/audit/clock/ID 能力显式注入。构造过程不读取 `process.env`，也不在启动时联网；processor 使用空继承环境。返回值只包含 `handleRequest`、`runWorkerOnce`、`runCleanupCycle` 与去敏 `readiness`。
+
+部署前先运行：
+
+```bash
+npm run verify:web:migrations
+```
+
+当前 canonical manifest SHA-256 为 `0989697d2648b9505d5cf6e2c6e2b9cb519f6b806cad5e686354179f4c2e14b7`，并必须作为 `expected_migration_manifest_sha256` 传入组合配置。该值绑定仓库来源，不能证明目标数据库已经应用迁移。runtime readiness 固定报告 `database_migrations_applied: "not_verified"`、`os_network_isolation_verified: false`、`production_zero_retention_verified: false`、`production_ready: false`；部署层不得覆盖这些字段制造上线结论。
 
 ## 参考调用顺序
 
 ```js
-const { PersistentWebJobService } = require("./persistent-job-service");
-const { SupabaseJobRepository } = require("./supabase-job-repository");
-const { createWebJobHttpHandler } = require("./http-handler");
-const { createSupabaseSessionResolver } = require("./supabase-session-adapter");
-const { createGoTrueAccessTokenVerifier } = require("./gotrue-verifier");
-const { createFetchHandlerAdapter } = require("./fetch-adapter");
-const { createNetlifyEphemeralStorage } = require("./netlify-ephemeral-storage");
-const { PrivateLeaseWorker } = require("./private-lease-worker");
-const { PythonCoreProcessProcessor } = require("./python-core-process-processor");
-const { ZeroRetentionSweeper } = require("./zero-retention-sweeper");
+const { spawn } = require("node:child_process");
+const { randomUUID } = require("node:crypto");
+const { getStore } = require("@netlify/blobs");
+const {
+  MIGRATION_MANIFEST_SHA256,
+  createWebJobProductionRuntime,
+} = require("./web-job-runtime");
 const { createSyncRecordFetchHandler } = require("./sync-record-runtime");
 
-const productionEphemeralStorage = createNetlifyEphemeralStorage();
-const productionJobRepository = new SupabaseJobRepository({
-  supabaseOrigin: process.env.SUPABASE_URL,
-  serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-});
-const processor = new PythonCoreProcessProcessor({
-  pythonExecutable: process.env.OAK_WEB_PYTHON,
-  coreDir: process.env.OAK_WEB_CORE,
-  scratchRoot: process.env.OAK_WEB_SCRATCH,
-});
-const jobs = new PersistentWebJobService({
-  repository: productionJobRepository,
-  storage: productionEphemeralStorage,
-  contentInspector: processor,
-});
-const productionGoTrueVerifier = createGoTrueAccessTokenVerifier({
-  supabaseOrigin: process.env.SUPABASE_URL,
-  apiKey: process.env.SUPABASE_API_KEY,
-});
-const trustedSessionAdapter = createSupabaseSessionResolver({
-  verifyAccessToken: productionGoTrueVerifier,
-});
-const handler = createWebJobHttpHandler({
-  service: jobs,
-  expectedOrigin: "https://www.oakbylake.com",
-  resolveSession: trustedSessionAdapter,
-  securityEventSink: contentFreeAuditSink,
-});
-const handleFetchRequest = createFetchHandlerAdapter({ nodeHandler: handler });
-const worker = new PrivateLeaseWorker({ service: jobs, processor });
-const cleanup = new ZeroRetentionSweeper({
-  taskService: jobs,
-  objectStorage: productionEphemeralStorage,
-  auditSink: contentFreeCleanupAuditSink,
+// deploymentConfig / deploymentSecrets 由平台适配层显式读取和验证；
+// runtime 本身不读取 process.env，也不会把这些对象返回给调用方。
+const jobRuntime = createWebJobProductionRuntime({
+  configuration: {
+    schema_version: "1.0",
+    api_origin: deploymentConfig.apiOrigin,
+    supabase_origin: deploymentConfig.supabaseOrigin,
+    supabase_api_key: deploymentSecrets.supabasePublicKey,
+    supabase_service_role_key: deploymentSecrets.supabaseServiceRoleKey,
+    python_executable: deploymentConfig.pythonExecutable,
+    python_core_dir: deploymentConfig.pythonCoreDir,
+    scratch_root: deploymentConfig.scratchRoot,
+    blob_store_name: "oak-manuscript-ephemeral-v1",
+    blob_prefix: "oak-manuscript/jobs/v1",
+    expected_migration_manifest_sha256: MIGRATION_MANIFEST_SHA256,
+  },
+  adapters: {
+    fetch_impl: fetch,
+    get_store_impl: getStore,
+    spawn_impl: spawn,
+    security_event_sink: contentFreeAuditSink,
+    job_audit_sink: contentFreeJobAuditSink,
+    cleanup_audit_sink: contentFreeCleanupAuditSink,
+    clock: () => new Date(),
+    request_id_factory: randomUUID,
+    uuid_factory: randomUUID,
+  },
 });
 const handleSyncRecordRequest = createSyncRecordFetchHandler({
-  apiOrigin: "https://www.oakbylake.com",
-  supabaseOrigin: process.env.SUPABASE_URL,
-  supabaseApiKey: process.env.SUPABASE_API_KEY,
-  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  apiOrigin: deploymentConfig.apiOrigin,
+  supabaseOrigin: deploymentConfig.supabaseOrigin,
+  supabaseApiKey: deploymentSecrets.supabasePublicKey,
+  supabaseServiceRoleKey: deploymentSecrets.supabaseServiceRoleKey,
   securityEventSink: contentFreeSyncAuditSink,
 });
 
-// 由官网同源 HTTPS 平台把标准 Request 交给 handleFetchRequest。
-// 由私有调度器调用 worker.runOnce()；领取与完成都不经过公开 HTTP。
-// 由另一受控私有计划任务调用 cleanup.runCycle() 并对 attention_required 告警。
+// 由官网同源 HTTPS 平台把标准 Request 交给 jobRuntime.handleRequest。
+// 由私有调度器调用 jobRuntime.runWorkerOnce()；领取与完成不经过公开 HTTP。
+// 由另一受控计划任务调用 jobRuntime.runCleanupCycle() 并对 attention_required 告警。
 // 同源平台只把 /manuscript/api/v1/sync-records 请求交给 handleSyncRecordRequest。
 // 生产调度仍须放入有 OS 禁网、只读根和资源限制的隔离环境。
 ```

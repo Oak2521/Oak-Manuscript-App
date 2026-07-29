@@ -2,6 +2,16 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.55 Web 部署组合与迁移字节门禁验收（2026-07-29）
+
+- [x] 存在唯一的 Web 临时作业生产组合入口，以 exact 配置和 exact 适配器组成 GoTrue、同源 handler、强一致临时 store、Supabase repository、固定 Python processor、private worker 与清扫器；
+- [x] 缺失/额外配置、公开 key 与 service-role key 相同、schema/version 或迁移摘要漂移均在网络/store 创建前 fail-closed；
+- [x] Python processor 不继承宿主环境；runtime/readiness/audit 不暴露密钥、repository、store 或稿件内容；
+- [x] canonical 迁移清单精确锁定四份 SQL 的集合、顺序、大小、SHA-256、UTF-8/LF 和事务边界，篡改、增补或顺序替换均拒绝；
+- [x] 聚焦 6/6、最终 Node 706/699/0/7、Python 362/0/0/3、Web 客户端与 Electron 源码隐藏 smoke、资源信任均通过；
+- [ ] 真实数据库迁移、Netlify/Supabase、OS 禁网、生产零留存、计划任务/告警、真实账号/API/官网部署已验证；当前均未运行，readiness 必须保持 `production_ready=false`；
+- [ ] alpha.55 Windows/macOS 制品、签名、公证和真实安装生命周期完成；当前最新真实 Windows packaged 仍为未签名 alpha.54。
+
 ## 0.1.0-alpha.54 明确确认后的即时结果同步闭环验收（2026-07-29）
 
 - [x] 同步预览继续零入队、零发送；`transportConfigured` 由主进程 coordinator 实际状态判定，Renderer 不能自报 payload、token、URL 或 transport；

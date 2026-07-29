@@ -604,3 +604,14 @@ Provider 故障不得进入 Python 检查核心，也不得使已有本地项目
 - 首次发布证据生成因 release 根存在 alpha.42 残留而正确 fail-closed；旧制品保留进版本化 archive 后才生成 alpha.54 证据，证明门禁没有跨版本混用；
 - Windows 制品仍为 `NotSigned`，真实安装/升级/降级/卸载未执行；source/packaged sale 分别仍有 17/12 项 blocker，发行身份仍缺 12 字段；
 - 真实 OAuth/GoTrue/Supabase、支付商 webhook、数据库迁移/RLS、多实例、官网/API 部署、生产账号 E2E、macOS 构建/签名/公证和正式发布均未完成。因此该制品只能用于受控内测，目标 `1.0.0` 和“可售卖订阅正式版”尚未达到。
+
+## 二十五、alpha.55 Web 部署组合与迁移来源门禁检查点（2026-07-29）
+
+本节只记录源码部署前置条件，不代表 Web 版已经上线：
+
+- 已新增 Web 临时稿件任务的唯一生产组合入口，以 exact 配置和适配器组装 GoTrue 会话、同源 HTTP、强一致临时对象存储、Supabase 状态、固定 Python 共享核心、私有 worker 和零留存清扫器；
+- 公开 Supabase key 与 service-role key 必须分离；所有 store/network/spawn/audit/clock/ID 能力显式注入，构造过程不读取 `process.env`，Python worker 不继承宿主环境；
+- runtime 只向部署层暴露公开请求、私有 worker、清扫入口与去敏 readiness；缺失/多余字段、密钥混用、schema/version 或迁移摘要漂移均在创建 store 或联网前失败关闭；
+- 已新增 canonical 迁移清单和只读验证命令，锁定四份 SQL 的完整集合、顺序、字节数、SHA-256、UTF-8/LF 与事务边界，避免部署代码与数据库来源静默漂移；
+- readiness 明确保留真实迁移、OS 禁网和生产零留存为未验证，`production_ready=false`；该状态不能由本地测试或部署包装层改写；
+- alpha.55 最终 Node 706 / Python 362 零失败，Web 客户端与 Electron 源码隐藏 smoke 通过；本轮未联网、执行迁移、部署、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.54，目标 `1.0.0` 和“可售卖订阅正式版”尚未达到。

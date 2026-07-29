@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.54` 源码架构与同版 Windows packaged 证据：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权、确认后即时发送与 OS 加密失败队列、桌面 PKCE/加密 token-store、账号/设备绑定的 Ed25519 权益客户端、独立签发、规范化订阅事件与属主设备管理服务，以及三模式 AI/OS 加密凭据/单条预览/建议审阅。Web 临时作业保持独立零留存源码边界，网站客户端已能查看/删除同步历史并管理订阅状态与掩码设备；账号同步商业主流程与网站撤销到桌面显式刷新降级均已由本地匿名纵向链证明。默认账号与权益配置无端点/密钥，仓库无生产私钥；alpha.54 源码与 Windows x64 ASAR/fuse/资源/smoke 均已验证。真实账号、支付商 webhook、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.55` 源码架构；最新真实 Windows packaged 证据仍为 alpha.54。本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权、确认后即时发送与 OS 加密失败队列、桌面 PKCE/加密 token-store、签名权益、订阅/设备服务和三模式 AI 已有源码链。alpha.55 为 Web 临时作业新增 exact 生产组合入口与四份 SQL 的顺序/精确字节门禁；readiness 故意不声称真实迁移、OS 禁网或生产零留存。默认账号与权益配置无端点/密钥，仓库无生产私钥；真实账号、支付商 webhook、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
 
 ## 1. 总体分层
 
@@ -230,6 +230,12 @@ alpha.31 增加仅 `service_role` 可调用的 `oak_manuscript_web_job_list_clea
 对象存储扫描必须接受每轮硬上限并返回 `truncated`，避免计划函数在对象数量异常时无界运行。私有 `ZeroRetentionSweeper` 固定依次执行状态清扫、对象清扫、状态再清扫：第一次尽快处理已知删除待办，中间删除孤立对象，最后让先前因对象残留未能完成的状态在同一周期再次收敛。任何阶段失败都只把该阶段标为 failed，不得跳过其它清扫阶段。
 
 周期报告只保留规范起止时间、阶段状态、扫描/删除/pending/非法键计数与截断信号，不得包含主体、任务 ID、对象键、异常文本或稿件元数据。只有三个阶段均完成、pending/非法键为零且对象扫描未截断时，当前周期才是 `cycle_clear`；这仍只是应用层本地证据，所以 `production_zero_retention_verified` 必须固定为 false。只有真实计划任务、告警、Supabase/Blobs 故障演练、复制/备份生命周期及三路删除证据另行完成后，才能在生产验收文档中作更强结论。
+
+### AD-030 Web 部署入口必须“唯一组合—exact 配置—迁移字节绑定—readiness 不越界”（2026-07-29，冻结）
+
+alpha.55 以 `web/web-job-runtime.js` 作为临时稿件任务的唯一生产组合根。调用方必须一次提供 exact 配置与 exact 函数适配器；公开 Supabase key、service-role key、Python/core/scratch 路径、强一致 Blobs store、审计 sink、时钟与 ID 工厂均不能隐式从 `process.env` 或全局状态取得。缺失/额外字段、公开与 service-role key 混用、schema/version 或迁移摘要漂移，都必须在 store 工厂或网络调用之前拒绝。Python processor 的继承环境固定为空，runtime 对外只暴露公开 handler、私有 worker、清扫入口和去敏 readiness。
+
+`web/supabase/migrations-v1.json` 是迁移来源束的 canonical 清单；`npm run verify:web:migrations` 对 `001`—`004` 的完整文件集合、顺序、字节数、SHA-256、UTF-8/LF 与事务包裹做只读检查。组合配置必须绑定当前清单摘要，防止应用代码与待执行 SQL 静默漂移。该摘要只证明仓库里的来源字节，不证明 SQL 已在任何数据库执行；readiness 因而固定保留 `database_migrations_applied=not_verified`、`os_network_isolation_verified=false`、`production_zero_retention_verified=false` 与 `production_ready=false`，直到独立生产验收产生更强证据。
 
 alpha.39 的 `DesktopAuthProvider` 以受信 `desktop-auth.json` 为唯一端点来源。配置为 `pending_configuration` 时，授权、token、user、Sync API origin、client 与 public key 必须全部为 null，登录返回 `configuration_required` 且不打开页面。配置完整时，主进程生成随机 state/verifier、先将 pending 状态写入独立 `OAKAUTH1` safeStorage 密文，再通过系统浏览器发起 Authorization Code + PKCE S256；Windows second-instance 与 macOS open-url 只接受固定 `oak-manuscript-auth://callback` 的唯一 `code+state`，拒绝 token/额外参数/错配/过期/重放。code exchange 后必须再调用固定 user endpoint 取得 exact account ID；刷新后同样复核账号，错绑清除会话。access/refresh token 和 verifier 不进入 Renderer、项目、报告或日志。
 

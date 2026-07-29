@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-29
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.54`
+> 当前版本：`0.1.0-alpha.55`
 > 当前分支：`chatgpt/commercial-v1`
-> 当前本地标签：`chatgpt-v0.1.0-alpha.54-account-sync-flow`（功能源码）与 `chatgpt-v0.1.0-alpha.54-packaged`（Windows 打包检查点）；既有 `chatgpt-v0.1.0-alpha.42-packaged` 保留为历史证据
+> 当前源码标签：`chatgpt-v0.1.0-alpha.55-web-deployment-gate`；最新真实 Windows 打包标签仍为 `chatgpt-v0.1.0-alpha.54-packaged`
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,15 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.55 Web 部署组合与迁移字节门禁（源码检查点）
+
+- 新增唯一生产组合入口 `web/web-job-runtime.js`，用 exact 配置与 exact 函数适配器组装 GoTrue 会话、同源 HTTP handler、Netlify 强一致临时存储、Supabase repository、固定 Python core processor、私有 lease worker 与零留存清扫器；缺字段、多字段、混用公开/service-role key、版本不匹配或迁移摘要漂移均在创建 store 或网络活动前 fail-closed；
+- Python worker 显式以空继承环境启动，生产组合不读取 `process.env`；对外只暴露 `handleRequest`、`runWorkerOnce`、`runCleanupCycle` 和去敏 readiness，不暴露 repository、storage、密钥或内部组件；
+- 新增 canonical `web/supabase/migrations-v1.json` 和 `npm run verify:web:migrations`，精确锁定 `001`—`004` 四份 SQL 的文件集合、顺序、字节数、SHA-256、UTF-8/LF 与事务包裹；当前清单 SHA-256 为 `0989697d2648b9505d5cf6e2c6e2b9cb519f6b806cad5e686354179f4c2e14b7`；
+- readiness 故意保留 `database_migrations_applied=not_verified`、`os_network_isolation_verified=false`、`production_zero_retention_verified=false` 和 `production_ready=false`。该里程碑只证明本地组合与来源迁移束，没有运行真实数据库、Netlify/Supabase、账号、网站、后台计划任务或生产网络；
+- 最终全量 `npm test`：Node 706 total / 699 pass / 0 fail / 7 skip，Python 362 / 0 failures / 0 errors / 3 skipped；Web 客户端隐藏 smoke 与 Electron 源码隐藏 smoke 均 PASS；资源信任 108 文件 / 2,171,922 字节，manifest `e73b95135a59880e5463bcd1124dc0f397c085f9d24443d64b8dad6066ffa00e`、anchor `28bdea231047d89d7b779dd43d8bb3a10450426e8b6ae33c3af52e7ccb6b8baf`；
+- 本轮没有联网、下载、部署、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.54；alpha.55 只是源码检查点。
 
 ### 已完成：0.1.0-alpha.54 Windows packaged 检查点
 
@@ -731,11 +740,11 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 5. 下一执行顺序
 
-不要重新做宽泛规划。alpha.54 已闭合“账号 → 权益 → 检查 → 明确同步 → 网站历史”的本地生产形状主链；下一步直接推进生产联调前置条件：
+不要重新做宽泛规划。alpha.55 已补齐 Web 临时作业的生产组合和迁移来源门禁；下一步直接推进生产联调前置条件：
 
-1. alpha.54 已用单一 E2E 证明登录、Pro 权益、本地结果、明确确认、即时发送、服务端 owner 绑定和网站历史解析可组合；继续保持预览零发送、失败保留加密队列和设置页明确重试。该证据只属本地注入，下一步不得重复开发同一链或冒充真实生产联调；
+1. 不再重复开发 Web 组合或账号同步本地链；`web-job-runtime.js` 和迁移 manifest 只证明来源/组合正确，readiness 继续保持生产未就绪；
 2. 具体支付商 webhook 验签实现必须等用户授权联网并选定平台后，依据官方协议单独开发；当前规范化事件入口继续只接受上游已经验签的 content-free 快照；
-3. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，才填充 `desktop-auth.json` / `desktop-license.json`，执行真实 PKCE、数据库迁移、RLS、签发刷新、撤销和网站后台 E2E；
+3. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，先按 manifest 执行/复核真实迁移与 RLS，再填充 `desktop-auth.json` / `desktop-license.json`，执行真实 PKCE、最小临时任务、三路清扫、签发刷新、撤销和网站后台 E2E；
 4. OpenAI、Anthropic、Gemini 官方云适配仍必须先核对当前官方协议；不得套用 compatible 形状或凭记忆猜测，但不排在账号/订阅主线之前；
 5. 其后关闭发行门禁：具名许可/再分发签核、发行身份、Ace 自带浏览器/OS 隔离、Windows Authenticode/真实安装生命周期、macOS 双架构签名/公证/实机、Web 生产零留存；经联网授权后再核验标准官方来源并执行真实更新服务联调。
 
@@ -749,6 +758,7 @@ npm run test:node
 npm run test:python
 $env:OAK_TEST_ACE='1'; python scripts\run_tests.py
 npm run verify:resource-trust
+npm run verify:web:migrations
 npm run verify:provenance:python:win
 npm run verify:provenance:epubcheck
 npm run verify:provenance:jre:win

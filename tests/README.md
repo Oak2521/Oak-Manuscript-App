@@ -1,6 +1,6 @@
 # tests/ — Node 契约、发布资源与打包验证
 
-`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.54 最终统一结果为 Node **700 total / 693 pass / 0 fail / 7 skip / 4.398 秒**，Python **362 项 / 0 失败 / 0 错误 / 3 跳过 / 104.874 秒**，墙钟 114.1 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
+`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.55 最终统一结果为 Node **706 total / 699 pass / 0 fail / 7 skip / 3.986 秒**，Python **362 项 / 0 失败 / 0 错误 / 3 跳过 / 103.900 秒**，墙钟 153.9 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
 
 本目录覆盖：
 
@@ -26,7 +26,7 @@
 - Windows 发布证据只接受 package/lock 当前版本的精确 NSIS/ZIP；覆盖 PE/ZIP 结构、旧制品/版本漂移、稳定文件身份、SHA256SUMS 与 canonical manifest 交叉绑定、两文件提交回滚、clear 全预检，以及真实缺制品 fail-closed；
 - 发行商身份门禁覆盖当前显式待定状态、完整 Windows/macOS 身份、源码 `build.appId`、ASAR production `oakReleaseIdentity`、重复键、unknown/reordered 字段、固定 schema/canonical 字节、占位文本、官方 URL、package 漂移和只读 CLI；
 - Windows 安装生命周期验收默认只读并精确绑定源码当前版本；专项测试覆盖 alpha.23/alpha.12 成功夹具、SemVer、NSIS x86 启动器与 x64 主程序、两开关授权门、零授权零启动/零输出、九阶段状态机、HKCU/快捷方式探针、持久化 sentinel、降级成功时 fail-closed 与 canonical 证据篡改。alpha.42 对归档 alpha.12 的真实只读预检已通过；
-- Web 作业、HTTP、Supabase、GoTrue、Fetch、客户端、Netlify 内容存储、持久任务、上传检查、私有 worker、双清扫与独立 SyncRecord 服务/API/repository/runtime 测试合计 130 项。alpha.38 的 26 项同步服务测试覆盖服务端独立白名单、可信主体、账号隔离、幂等/上限、列表快照、查看/删除、HTTPS/同源/CSRF/Bearer、固定 service-role RPC、RLS SQL 静态契约、生产式 Fetch 组合和异步审计失败隔离。Python Web 专项仍覆盖共享核心 one-shot、UTF-8/NUL、格式伪装、危险 ZIP、宏/ActiveX/嵌入/DDE、脚本 EPUB、固定子进程、身份最小化、拒绝零入库和预留释放。database/network/store 仍为注入仿真或静态检查，不冒充真实迁移、部署、容器/OS 禁网、病毒库或零留存测试；
+- Web 作业、HTTP、Supabase、GoTrue、Fetch、客户端、Netlify 内容存储、持久任务、上传检查、私有 worker、双清扫与独立 SyncRecord 服务/API/repository/runtime 均有专项覆盖；alpha.55 新增 6 项生产组合/迁移束测试，覆盖零启动网络、密钥不泄露、exact 配置、强一致 store、SQL 篡改/增补/顺序/canonical 反向路径。Python Web 专项仍覆盖共享核心 one-shot、危险 ZIP/主动内容、固定子进程和拒绝零入库。database/network/store 仍为注入仿真或静态检查，不冒充真实迁移、部署、容器/OS 禁网、病毒库或零留存测试；
 - 许可证字段/文件为空的拒绝路径，以及“有许可证文件仍不能替代全部 236 包人工审计”的 sale blocker 契约；
 - 资源门禁两阶段顺序：静态全量检查有任一错误时不执行 Python/Java，静态全绿后才运行探针；非原生 host/arch fail-closed，纯静态必须显式 `--no-runtime-probe`；
 - Electron 桥与资源探针共享 `-I -B -S -X utf8` bootstrap、显式受控 core 目录及隔离环境；`-B` 在 `-I` 忽略环境变量时仍禁止污染受信资源；
@@ -40,4 +40,4 @@ Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零�
 
 真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。当前 packaged smoke 强制通过受控链路运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言；缺失或陈旧 EXE 不得复用。
 
-最新 Web 客户端隐藏 Chromium smoke 仍为 alpha.51 **PASS**，证据在 `out/web-client-smoke/`，匿名假服务期间 HTTP(S) 请求为 0；alpha.54 未修改 Web UI。alpha.54 源码 Electron smoke 在 Codex 沙箱内两次因 GPU 子进程 DLL 载入失败退出，沙箱外同一隐藏脚本最终 **PASS**，运行根为 `out/source-smoke/runs/ms611umr-1948430f091121ac/projects/`，未使用 `--no-sandbox`。同版隐藏 packaged smoke 为 **SMOKE + SYNC-RECOVERY PASS**，运行根为 `out/packaged-smoke/runs/ms629abp-11818f84be690e63/projects/`；其 canonical 证据把实际 EXE、双进程结果摘要和匿名输出树绑定进 schema v2 发布清单。哈希不是代码签名，实际系统安装生命周期仍未运行。
+alpha.55 Web 客户端隐藏 Chromium smoke **PASS**，证据在 `out/web-client-smoke/`，匿名假服务期间 HTTP(S) 请求为 0；页面本轮未修改。alpha.55 源码 Electron smoke **PASS**，运行根为 `out/source-smoke/runs/ms62s5qd-369c44f6782b5865/projects/`，未使用 `--no-sandbox`。最新隐藏 packaged smoke 仍为 alpha.54 的 **SMOKE + SYNC-RECOVERY PASS**，运行根为 `out/packaged-smoke/runs/ms629abp-11818f84be690e63/projects/`。哈希不是代码签名，实际系统安装生命周期仍未运行。

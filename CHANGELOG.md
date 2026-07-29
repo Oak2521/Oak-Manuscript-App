@@ -4,6 +4,16 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.55（ChatGPT Web 部署组合与迁移字节门禁）
+
+> 源码检查点；本轮未联网、未使用真实账号/密钥/数据库或网站，未执行迁移、部署、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.54。
+
+- 新增 `web/web-job-runtime.js`，以 exact 配置和 exact 函数适配器组成临时稿件 HTTP、私有 worker 和清扫闭环；公开 key 与 service-role key 必须不同，Python 子进程不继承宿主环境；
+- runtime 仅暴露公开 handler、私有 worker、清扫入口和去敏 readiness；缺失/额外字段、密钥混用、schema/version 漂移或迁移摘要不匹配均在 store/network 之前拒绝；
+- 新增 `web/supabase/migrations-v1.json` 与 `npm run verify:web:migrations`，锁定四份 SQL 的完整集合、顺序、字节数、SHA-256、canonical UTF-8/LF 和事务边界；清单 SHA-256 为 `0989697d2648b9505d5cf6e2c6e2b9cb519f6b806cad5e686354179f4c2e14b7`；
+- readiness 明确保留真实迁移、OS 禁网和生产零留存为未验证，`production_ready=false`，不把本地依赖注入测试冒充部署证据；
+- 最终统一回归：Node 706 total / 699 pass / 0 fail / 7 skip；Python 362 / 0 failures / 0 errors / 3 skipped；Web 客户端和 Electron 源码隐藏 smoke 均 PASS。
+
 ### 2026-07-29 — 0.1.0-alpha.54（ChatGPT 明确确认后的即时结果同步闭环）
 
 > 未部署商业流程与 Windows packaged 检查点；本轮未联网、未使用真实账号/令牌/数据库或网站，也未推送。alpha.54 Windows 制品未签名，不是可售卖正式版。

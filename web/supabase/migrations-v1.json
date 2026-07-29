@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "bundle_type": "oak_manuscript_supabase_migrations",
+  "migrations": [
+    {
+      "sequence": 1,
+      "filename": "001_web_job_state.sql",
+      "size_bytes": 21904,
+      "sha256": "c5a302958fa235e6d3919495a8968907d5799320d092864501473b366639206a"
+    },
+    {
+      "sequence": 2,
+      "filename": "002_sync_records.sql",
+      "size_bytes": 10504,
+      "sha256": "3ad0677d5d07c37f5ffa6eb536520f4de8f8f4207dd99a66e25f76b223142c51"
+    },
+    {
+      "sequence": 3,
+      "filename": "003_manuscript_entitlements.sql",
+      "size_bytes": 6832,
+      "sha256": "cf6e763cbffe55725de3a1a090116536cfa7bdbbf28de8f6ebe6ba4a14aa4f5c"
+    },
+    {
+      "sequence": 4,
+      "filename": "004_subscription_events_and_devices.sql",
+      "size_bytes": 15582,
+      "sha256": "3bef3bbbc09bab77582e6b50e2df20126e586a3a0745e349f1a01ab7a3612894"
+    }
+  ]
+}

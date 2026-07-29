@@ -2,9 +2,9 @@
 
 > 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.54 源码）
+## Provider 一览（当前 alpha.55 源码）
 
-alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store 和主进程条件 transport；alpha.44—alpha.48 完成签名权益、网站账号设备客户端与匿名撤销传播链；alpha.49—alpha.53 完成标准更新/撤回及安全恢复入口；alpha.54 增加明确确认后的即时发送、失败安全留队和桌面—服务端 owner—网站历史的单一生产形状本地 E2E。受信账号、权益与标准联网配置仍为 `pending_configuration` 且端点/key/公钥为空。数据库迁移、更新/撤回发布源、API 与客户端均未部署，因此普通 APP 仍不登录、刷新订阅、同步或在线检查标准。商业仓库没有真实 service-role key、OAuth 配置、权益/标准私钥或 AI key。
+alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store 和主进程条件 transport；alpha.44—alpha.48 完成签名权益、网站账号设备客户端与匿名撤销传播链；alpha.49—alpha.53 完成标准更新/撤回及安全恢复入口；alpha.54 增加明确确认后的即时发送纵向链；alpha.55 增加 Web 临时稿件的 exact 生产组合入口和四份 SQL 的迁移来源门禁。受信账号、权益与标准联网配置仍为 `pending_configuration`。数据库迁移、发布源、API 与客户端均未部署，因此普通 APP 仍不登录、刷新订阅、同步或在线检查标准。商业仓库没有真实 service-role key、OAuth 配置、权益/标准私钥或 AI key。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
@@ -88,6 +88,8 @@ alpha.51—alpha.53 的撤回清单合同见 `STANDARDS_REVOCATION_V1.md`。固�
 `web/http-handler.js` 固定 `/manuscript/api/v1/jobs` 下的六个公开动作：创建、状态、输入上传、一次性结果领取、取消和删除。它不提供 worker 开始/完成接口；后台处理必须走私有队列。状态变更要求规范 HTTPS origin、精确同源 `Origin` 以及合法的 Fetch Metadata。`web/supabase-session-adapter.js` 只接受唯一、格式有界的 Authorization Bearer；`web/gotrue-verifier.js` 固定向规范 HTTPS Supabase origin 的 `/auth/v1/user` 发起无 Cookie、无重定向、有超时/响应上限的 GET，并只输出 exact subject。`web/fetch-adapter.js` 把标准 Fetch 请求流接入 handler。Bearer 不另建 CSRF 状态，Cookie 会话仍强制 CSRF；响应不设置 CORS，错误与审计不记录 token、主体、任务 ID、URL、请求头或稿件信息。
 
 `web/supabase/001_web_job_state.sql` 建立强制 RLS 的任务/幂等表及八个 service-role-only RPC；创建/重放用 advisory transaction lock，状态更新用 revision CAS，删除保留 content-free terminal tombstone，私有领取用 `FOR UPDATE SKIP LOCKED` 且要求完整租约窗，清扫列表优先返回 `deletion_pending`。`web/persistent-job-service.js`、`web/python-core-process-processor.js`、`web/private-lease-worker.js` 与 `web/zero-retention-sweeper.js` 依次负责持久状态、上传 `web-inspect`/共享核心 `web-check` 固定子进程、身份最小化处理及任务—对象—任务清扫。原 `WebJobService` 只保留为内存参考实现。迁移必须先在隔离预生产 Supabase 由有权人员执行和复核，不能由浏览器或普通用户 JWT 运行。
+
+alpha.55 的 `web/web-job-runtime.js` 是上述临时作业组件的唯一生产组合根；调用方必须显式注入 exact 配置/适配器、分离公开与 service-role key，并绑定 `web/supabase/migrations-v1.json` 当前 SHA-256。`npm run verify:web:migrations` 只读验证四份 SQL 的完整集合、顺序和精确字节。runtime readiness 固定保留真实迁移、OS 禁网与生产零留存为未验证，不能由部署脚本改写成通过。该门禁防止错误部署输入，不证明任何远端平台已经配置或执行。
 
 | 方法 | 路径 | 用途 | 成功状态 |
 |---|---|---|---:|
