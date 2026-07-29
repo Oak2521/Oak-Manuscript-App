@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.37`
+> 当前版本：`0.1.0-alpha.38`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.37`（未签名 Windows x64 NSIS/ZIP、packaged 资源/fuse、哈希绑定 smoke 证据与发布摘要检查点）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.38`（提交后建立；SyncRecord 服务/API/Supabase 与未接线桌面 transport 源码检查点）
 
 ## 1. 权威入口与工作区
 
@@ -30,7 +30,17 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 2. 当前现场事实
 
-### 已完成：0.1.0-alpha.37 packaged smoke 哈希证据检查点
+### 已完成：0.1.0-alpha.38 SyncRecord 服务端与桌面 transport 源码检查点
+
+- APP、Python core、桌面/Web lockfile 统一为 alpha.38；资源信任清单 81 文件 / 2,142,090 字节，manifest SHA-256 `fbc0ca36bcb670156a34769d743607590062878f583c6edc7dfcb66d37130ab2`，源码锚点 `f90b54f365293c6386135d1bf7daf28637131c1731146227b9e189a8bddd0b87`；标准包/规则/fixer 未变化；
+- 新增独立 `SyncRecordService`：服务端不信任 Electron validator，重新执行 exact 字段/永久禁止键/ID/时间/计数/容量校验，并以可信主体绑定容量、幂等创建/重放/冲突、单快照列表、读取和属主删除；
+- 新增固定 `/manuscript/api/v1/sync-records` 同源 HTTPS handler、两份 exact 错误/审计 schema 和生产形状 runtime；支持 GoTrue Bearer 或 Cookie+CSRF，审计不含主体/记录/稿件且同步或异步 sink 失败不改变响应；
+- 新增 `SupabaseSyncRecordRepository` 与 `supabase/002_sync_records.sql`：只调用四个 service-role RPC；content-free 长期表强制 RLS、浏览器零权限，账户 advisory transaction lock 原子化容量/幂等创建，owner-scoped list/get/delete；SQL 未在真实数据库执行；
+- 新增未实例化的桌面 `SyncHttpClient` / `SyncTransportCoordinator`：固定规范 HTTPS origin、Bearer only、无 Cookie/重定向、有界响应；token 必须带与当前队列账号一致的主进程绑定，错绑在 transport 前拒绝；单项单在途并复核账号稳定，只有远端 `created|replayed` 才删除精确本机队列项；失败保留供显式重试；
+- 专项 37/37、Web 130/130；最终 `npm test` 110.517 秒：Node 560 total / 553 pass / 0 fail / 7 skip（3.8298105 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（102.371 秒）；独立隐藏源码 smoke PASS，输出 `out/source-smoke/runs/ms5kbrfu-69765feff8e3381c/projects/`；
+- 本轮未联网、未使用真实账号/API/service-role key、未迁移、未部署、未修改官网、未重新打包。生产 AuthProvider 无 token，main 未实例化 coordinator，普通 APP 仍不发同步请求。最新真实 Windows 制品和 packaged 证据保持 alpha.37。
+
+### 已完成：0.1.0-alpha.37 packaged smoke 哈希证据检查点（历史）
 
 - APP、Python core、桌面/Web lockfile 统一为 alpha.37；资源信任清单 79 文件 / 2,139,277 字节，manifest SHA-256 `4ce4810d54f180d961f644b8f5d66e7b3aba6996e1a0c5c64b75397c93ab1b97`，ASAR 锚点 `4f306d10d385c8b913b03782a8672eb66022096bab836bffed5bb9ed027bbf92`；
 - Windows x64 NSIS 190,013,357 字节 / SHA-256 `26af70e0ca533ee6dc09feae50ba420f7cb11e5dfba270f27870e1e679ece095`；ZIP 233,838,480 字节 / `e4288fbf621b837b0272c938113457928aa422573848129e46308a29a300697d`；`SHA256SUMS.txt` 摘要 `3d4ac24633b8134b484377872ea3a6fdd8d3d8cea7ed067025d939a71fb76774`；
@@ -525,8 +535,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - 打包版 Ace：alpha.37 已有真实 packaged utilityProcess/loopback Chrome 功能证据，并由发布清单消费 EXE、输出树与双进程结果的 canonical 哈希证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、代码签名/可信见证和正式人工许可审计；
 - Windows：alpha.37 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke、schema v2 发布证据，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
-- Web：exact 作业 schema、内存参考状态机、同源 HTTPS、GoTrue、Fetch、工作台、Netlify Blobs 内容适配/清扫、Supabase/Postgres 持久任务/幂等迁移、上传结构/主动内容门禁、service-role-only 私有原子领取、身份最小化 worker、固定 Python 共享核心子进程与一次性结果领取已实现；生产环境/真实账号与 Blobs/Postgres E2E、病毒库/平台扫描、容器/OS 禁网与资源隔离、计费、结果同步和官网嵌入尚未实现；
-- 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览、按账户隔离的 OS 加密队列和重启恢复已实现；生产 Supabase、登录凭据存储、签名授权、支付、网络 transport 和网站后台未连接；
+- Web：临时作业链保持；alpha.38 另实现 SyncRecord 独立服务验证、同源 API、GoTrue/runtime、Supabase repository/002 迁移源码。生产环境/真实账号与 Blobs/Postgres E2E、病毒库/平台扫描、容器/OS 禁网与资源隔离、计费和官网嵌入仍未实现；
+- 账号/订阅/同步：离线 Provider/Free+Pro、逐字段确认、OS 加密队列和重启恢复，以及固定桌面 client/coordinator 与服务端幂等/归属/删除源码已实现；生产 PKCE token 安全存储、main 接线、真实 Supabase 迁移/部署、签名权益、支付和网站后台未连接；
 - 标准库：治理结构和引用解析政策已完成，13 项标准、35 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
 - 标准升级：本地验证、签名包导入/回滚骨架、项目固定与显式升级已编码；生产 trust pin、在线获取/下载、签名撤回分发与联网自动更新未实现；
 - 正式发布仍缺隐私/条款最终文本、证书、生产密钥、人工内测、macOS 硬件和网站联调。
@@ -552,15 +562,13 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 5. 下一执行顺序
 
-不要重新做宽泛规划，按 v2.0 方案继续：
+不要重新做宽泛规划。近期直接闭合“账号 → 权益 → 检查 → 明确同步”主链：
 
-1. 已完成 Windows 安装生命周期编排器与 alpha.37 对归档 alpha.12 的只读预检；下一步须单独取得系统写入授权后，真实执行 alpha.12 → alpha.37 安装/升级/降级探测/卸载，核对 HKCU 与快捷方式并保留 canonical 证据；若历史安装器确实回退，必须把它记为产品 blocker，不能修改证据口径；
-2. CPython、EpubCheck、Temurin/JRE、Electron 与 builder 的机器来源证据已完成；下一步必须由具名人员完成许可、商标、第三方通知、签名边界与再分发签核，再完成 Windows 代码签名方案并逐项关闭相应 packaged sale blocker；代码不能替代该签署；
-3. Ace 的 provenance/全闭包许可证、自带浏览器、OS 级网络隔离及签名/可信见证仍未完成；alpha.37 已完成本地哈希绑定 smoke 证据，但不得称为不可伪造证明；
-4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；
-5. 在 macOS 分别准备 x64/arm64 Electron、Python、JRE，构建后完成签名、公证、staple、Gatekeeper 和实机 smoke；
-6. 在现有 Auth / License / Sync 离线契约和 OS 加密持久队列上实现生产登录凭据与独立网络 transport，再经授权连接 Supabase、支付和网站后台；
-7. alpha.31 已完成本地有界任务/对象双清扫、删除待办即时恢复与计数级周期证据；下一步把协调器接入受控私有计划任务/告警配置，并在另行授权的隔离预生产环境执行真实 Supabase 迁移与 Netlify E2E。生产 worker 仍必须另有病毒/恶意软件平台扫描、容器/OS 禁网、只读根与资源限制；平台生命周期、备份/复制删除和三路零留存必须独立取证，随后完成官网嵌入、结果同步、Free/Pro、支付、隐私、内测和正式发布门禁。
+1. 在离线/假凭据测试下实现生产形状的系统浏览器 PKCE 回调、state/nonce/PKCE 校验、OS 安全 token-store、刷新/过期/撤销状态和主进程 access-token provider；未配置时继续零网络、fail-closed；
+2. 把 alpha.38 `SyncTransportCoordinator` 接入 main 与明确发送/重试 UI，保持 Renderer 无 token/URL/负载构造权，补进程崩溃、远端成功后本地删除失败、账号切换和幂等重放测试；
+3. 真实 `002_sync_records.sql` 迁移、GoTrue/RLS/多实例/备份/删除 E2E 和网站账号后台必须在另行授权的隔离预生产环境完成；当前不得连接生产系统；
+4. 其后并行关闭发行门禁：具名许可/再分发签核、发行身份、Ace 自带浏览器/OS 隔离、Windows Authenticode/真实安装生命周期、macOS 双架构签名/公证/实机，以及临时作业的生产恶意软件扫描与三路零留存；
+5. 经联网授权后再核验标准官方来源并实现签名更新 transport；任何新规则必须有反例、匿名样本、回归和真实审校签核。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。
 

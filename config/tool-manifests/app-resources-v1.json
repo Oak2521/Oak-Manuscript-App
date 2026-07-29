@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 79,
-  "total_bytes": 2139277,
+  "file_count": 81,
+  "total_bytes": 2142090,
   "files": [
     {
       "path": "config/app-config.json",
@@ -91,6 +91,16 @@
       "path": "config/schemas/runtime-provenance-v1.schema.json",
       "size_bytes": 8048,
       "sha256": "ec62294c37342aae9eeac4354a9d8f836775595f386d92cec8cbdd0aa37c1db9"
+    },
+    {
+      "path": "config/schemas/sync-http-audit-v1.schema.json",
+      "size_bytes": 1557,
+      "sha256": "eee009a7e72d616753f55e32030cd79fd695d6439ca2056005e547016b752fc9"
+    },
+    {
+      "path": "config/schemas/sync-http-error-v1.schema.json",
+      "size_bytes": 1256,
+      "sha256": "658b6060187817eee91583626565e15b75f857d99369a419d26c83590dd399b3"
     },
     {
       "path": "config/schemas/sync-queue-store-v1.schema.json",
@@ -175,7 +185,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "6cbe2e73da383c887245968f7ded2f9cbf391bcaea34af67da17535a58e5f149"
+      "sha256": "f29257589df97c8a488ac78e96f3252dc19c6a0dfe125258f0dfd3497dd87a10"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

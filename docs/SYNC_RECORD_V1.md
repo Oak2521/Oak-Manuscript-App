@@ -1,6 +1,6 @@
 # SyncRecord v1 — 结果与元数据同步契约
 
-> 状态：`0.1.0-alpha.37` 保留客户端/核心离线契约、逐字段预览、按账户隔离的 OS 加密持久队列和第二进程重启恢复；packaged smoke 证据只绑定该恢复结果的进程摘要，不包含队列明文。Supabase Bearer 适配器只服务 Web 临时任务身份，不是 SyncRecord transport。AI 建议文本、审阅会话和 AI HTTP 底座均不进入 SyncRecord。生产账号凭据、网络 transport、服务端验收与网站后台尚未实现，本文件不能作为“数据已可同步到网站”的证明。
+> 状态：`0.1.0-alpha.38` 已在既有客户端/核心离线契约、逐字段预览和 OS 加密持久队列之上，实现独立的 SyncRecord 服务端验证、同源 HTTPS API、Supabase service-role repository/迁移源码，以及桌面 Bearer 客户端与发送协调器。它们尚未接入主进程生产 `AuthProvider`，迁移未在真实 Supabase 执行，API 未部署，网站后台也未实现；普通 APP 仍不发出同步请求。最新 packaged smoke 仍为 alpha.37，只证明本机队列跨进程恢复且不含队列明文。AI 建议文本、审阅会话和 AI HTTP 底座均不进入 SyncRecord。本文件不能作为“数据已可同步到网站”的证明。
 
 ## 1. 信任边界
 
@@ -13,10 +13,16 @@
   -> validateSyncRecordV1 拒绝未知/禁止字段
   -> 已登录用户逐字段预览
   -> 四选一明确确认
-  -> safeStorage 加密幂等队列（生产 transport 未配置）
+  -> safeStorage 加密幂等队列
+  -> [尚未由 main 实例化] SyncTransportCoordinator
+  -> 固定 HTTPS/Bearer SyncHttpClient
+  -> /manuscript/api/v1/sync-records
+  -> GoTrue 验证后的可信主体
+  -> 服务端独立 exact 校验与账号归属绑定
+  -> service-role-only RPC / 强制 RLS 的长期结果表
 ```
 
-Renderer 只能向主进程提交项目句柄、`check | export` 事件、是否包含结构化问题记录、幂等 ID 和固定选择枚举；不能提交同步 payload、令牌或网络目标。未来服务端必须对同一 schema 再验证一次，不得信任客户端已过滤。
+Renderer 只能向主进程提交项目句柄、`check | export` 事件、是否包含结构化问题记录、幂等 ID 和固定选择枚举；不能提交同步 payload、令牌或网络目标。alpha.38 的服务端验证器独立于 Electron 验证器，按同一 SyncRecord v1 语义再次拒绝未知/禁止字段并把 owner 绑定到可信会话主体，不信任客户端已过滤。
 
 ## 2. 权威 schema
 
@@ -61,7 +67,7 @@ Renderer 只能向主进程提交项目句柄、`check | export` 事件、是否
 
 本机持久状态的机器契约为 `config/schemas/sync-queue-store-v1.schema.json`。Electron `safeStorage` 提供 OS 绑定加密；磁盘文件为 `OAKSYNC1 + uint32 长度 + 密文`。明文必须是 exact/canonical JSON，写入采用同目录独占候选、文件 `fsync`、原子替换、提交后解密复验和 revision compare-and-swap。链接、硬链接、目录逃逸、大小超限、篡改、非 canonical、短读、读取期间身份变化或并发旧 revision 均拒绝。系统加密不可用或队列损坏时，同步预览和保存 fail-closed，本地检查、修复与导出继续可用。
 
-当前仍没有生产网络 transport、后台发送、退避调度或网站后台；关闭并重新打开 APP 只会恢复本机待发送状态，不会产生上传。
+alpha.38 已提供未实例化的 `SyncHttpClient` 与 `SyncTransportCoordinator`：只允许固定规范 HTTPS origin、固定 API 路径、Bearer、无 Cookie/重定向、有界超时与响应；token provider 必须返回 token 及其所属账号的 exact 绑定，错绑在 transport 前拒绝。同一队列项只允许一个在途请求，远端创建或幂等重放后才删除精确本地项，失败/账号切换/本地提交失败则保留并记录稳定错误以便显式重试。生产 `AuthProvider` 尚不能提供 access token，主进程未创建协调器，也没有后台调度或网站后台；关闭并重新打开当前 APP 只会恢复本机待发送状态，不会产生上传。
 
 ## 5. 账号与权益模拟边界
 
@@ -71,12 +77,21 @@ Renderer 只能向主进程提交项目句柄、`check | export` 事件、是否
 - 订阅过期只影响新的 Pro 权益，`localProjectsLocked` 永远为 false；
 - 队列已使用 `safeStorage`，但这不是登录 token 存储；令牌凭据、设备撤销服务和生产签名授权缓存均未实现。
 
-## 6. 生产对接前必须补齐
+## 6. alpha.38 服务端与 transport 源码边界
 
-1. 经授权核对网站当前 Supabase、账号和后台 schema；
-2. 实现独立最小权限网络 transport，保持默认 Electron session 离线；
-3. 系统浏览器 PKCE、回调校验、OS 安全凭据存储、退出/过期/撤销；
-4. 服务端同 schema 白名单、账号归属、幂等唯一约束和授权时间写入；
-5. 在现有加密、取消、重试、崩溃恢复与删除基础上，实现发送中状态、限次退避、网络错误分类和与 transport 的崩溃一致性；
-6. APP 与网站后台的查看、导出、删除和审计记录；
-7. 正文、文件名、路径、片段、哈希泄露反向集成测试及真实隐私验收。
+- `web/sync-record-service.js` 独立验证记录、账号归属、幂等创建/重放/冲突、分页列表、读取与删除；列表由 repository 单次快照返回 `{rows,total}`，避免结果与总数跨查询漂移；
+- `web/sync-record-http-handler.js` 固定 `POST/GET /manuscript/api/v1/sync-records` 及 `GET/DELETE /:id`，强制 HTTPS、同源/Fetch Metadata、Cookie CSRF 或已验证 Bearer、JSON framing/大小和固定非反射错误；审计受 exact schema 限制且接收器失败不改变响应；
+- `web/supabase-sync-record-repository.js` 只能调用四个固定 service-role RPC；`web/supabase/002_sync_records.sql` 对内容无关记录表启用强制 RLS，撤销浏览器角色权限，并用账户 advisory transaction lock 原子化“计数—创建/重放”；
+- `web/sync-record-runtime.js` 明确分离公开 Supabase API key、service-role key 与审计接收器，组合 GoTrue、会话解析、repository、service、HTTP handler 和 Fetch adapter；
+- `electron/sync-http-client.js` 与 `electron/sync-transport-coordinator.js` 只存在于主进程边界；不会读取 Renderer 自报 token/URL，也不会把远端失败伪装为成功。
+
+这些是源码合同和离线测试结果，不是数据库已迁移、API 已部署或 APP 已联网的证据。
+
+## 7. 生产对接前必须补齐
+
+1. 经授权现场核对网站当前 Supabase、账号和后台 schema，并在隔离预生产执行/复核 `002_sync_records.sql`；
+2. 完成系统浏览器 PKCE、回调校验、OS 安全 token 存储、刷新/退出/过期/撤销，再把 access-token provider 和 coordinator 接入主进程；默认 Electron session 必须继续离线；
+3. 完成显式发送/重试 UI、限次退避、离线/认证/服务故障分类，以及远端提交与本地队列删除之间的崩溃恢复验收；
+4. 部署同源 API，验证真实 GoTrue、Postgres RLS/RPC、多实例并发、备份/恢复、限额、删除和无密钥泄露；
+5. 实现 APP 与网站后台的查看、导出、删除和内容无关审计记录；
+6. 完成正文、文件名、路径、片段、哈希泄露反向生产集成测试及真实隐私验收。

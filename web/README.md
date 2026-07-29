@@ -1,6 +1,6 @@
 # Web 作业契约与同源 HTTP handler（alpha）
 
-`job-contract.js` 是商业方案 v2.0 的服务端任务契约与内存参考实现；`persistent-job-service.js` 是跨实例持久服务；`python-core-process-processor.js` 在同一固定子进程边界提供上传 `web-inspect` 和共享核心 `web-check`，`private-lease-worker.js` 负责私有原子领取；`zero-retention-sweeper.js` 协调有界任务/对象双清扫；`http-handler.js` 是不监听端口的 Node HTTP 边界；`supabase-session-adapter.js`、`gotrue-verifier.js` 和 `fetch-adapter.js` 构成账号与平台桥；`client/` 是首个未部署工作台；`netlify-ephemeral-storage.js` 把 input/output 内容接到站点级 Netlify Blobs；`supabase-job-repository.js` 和 `supabase/001_web_job_state.sql` 只持久化内容无关任务/幂等状态。它们共同形成可测试的源码/本机纵向边界，但仍不是已上线的生产上传服务。
+`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.38 另以 `sync-record-service.js`、`sync-record-http-handler.js`、`supabase-sync-record-repository.js`、`sync-record-runtime.js` 和 `supabase/002_sync_records.sql` 实现长期 SyncRecord 的独立验证/API/持久层组合。`supabase-session-adapter.js`、`gotrue-verifier.js` 和 `fetch-adapter.js` 由两条数据流复用；`client/` 仍是未部署工作台。源码可本机测试，但临时作业与长期同步均不是已上线生产服务。
 
 Web 服务端依赖与 Electron 桌面依赖隔离：
 
@@ -23,6 +23,15 @@ npm audit --prefix web --omit=dev
 - 持久数据库只保存主体归属、最小文档枚举、状态、预留/租约、非内容请求指纹和终态幂等墓碑，不保存稿件字节；
 - 任务结果不会自动生成或发送 SyncRecord，长期账号记录仍须走独立的显式同步流程。
 
+alpha.38 长期 SyncRecord 固定：
+
+- API 前缀 `/manuscript/api/v1/sync-records`：`POST/GET` collection，`GET/DELETE` item；请求不能自报 owner，先验证 GoTrue/Cookie 会话，再由服务端独立 exact validator 复核 SyncRecord v1；
+- `sync-record-service.js` 提供账户容量、幂等创建/重放/冲突、分页列表、读取和属主删除；repository 的 list 单次返回 `{rows,total}`，避免跨查询快照不一致；
+- `supabase-sync-record-repository.js` 只调用四个白名单 RPC，固定 HTTPS、service-role、无 Cookie/重定向、超时/响应上限及严格响应归属；
+- `supabase/002_sync_records.sql` 建立不含稿件内容、标题、路径、文件名、片段或哈希的长期表，强制 RLS、撤销浏览器权限，并用账户 advisory transaction lock 原子执行容量检查和幂等创建；
+- `sync-record-runtime.js` 明确分离公开 Supabase API key、service-role key 与必填审计接收器；它只组合依赖，不读取真实部署环境；
+- Electron client/coordinator 未由 main 实例化，生产 AuthProvider 也没有 access token，当前 APP 不会调用此 API；SQL 未在真实 PostgreSQL/Supabase 执行。
+
 alpha.23—alpha.31 固定：
 
 - API 前缀 `/manuscript/api/v1/jobs`，提供创建、状态、输入上传、一次性结果领取、取消和删除动作；不暴露 worker 开始/完成路由；结果领取只接受状态变更 POST，GET 不消费；
@@ -44,7 +53,7 @@ alpha.23—alpha.31 固定：
 - HTTP 错误与安全审计分别受 `web-http-error-v1`、`web-http-audit-v1` exact schema 约束。审计不记录主体、任务 ID、URL、请求头或稿件元数据；
 - handler 不设置 CORS，响应固定 `no-store` / `nosniff` / CSP / `no-referrer`。错误文案固定且不反射异常、路径、账号或稿件内容。
 
-生产实现仍须补齐：在隔离环境执行/复核 Supabase 迁移并完成 GoTrue/Postgres/Blobs 真实 E2E、平台恶意软件扫描、容器/OS 禁网与资源隔离、限额与计费、部署计划双清扫/告警/故障演练、结果同步和网站联调。当前一次性领取不生成额外签名 URL/token，但仍须在真实平台验证删除、传输中断与三路零留存。
+生产实现仍须补齐：在隔离环境执行/复核 `001_web_job_state.sql` 与 `002_sync_records.sql`，完成 GoTrue/Postgres/Blobs 真实 E2E、平台恶意软件扫描、容器/OS 禁网与资源隔离、限额与计费、部署计划双清扫/告警/故障演练、生产 PKCE/main transport 接线和网站后台联调。当前一次性领取不生成额外签名 URL/token，但仍须在真实平台验证删除、传输中断与三路零留存。
 
 ## 参考调用顺序
 
@@ -59,6 +68,7 @@ const { createNetlifyEphemeralStorage } = require("./netlify-ephemeral-storage")
 const { PrivateLeaseWorker } = require("./private-lease-worker");
 const { PythonCoreProcessProcessor } = require("./python-core-process-processor");
 const { ZeroRetentionSweeper } = require("./zero-retention-sweeper");
+const { createSyncRecordFetchHandler } = require("./sync-record-runtime");
 
 const productionEphemeralStorage = createNetlifyEphemeralStorage();
 const productionJobRepository = new SupabaseJobRepository({
@@ -95,14 +105,22 @@ const cleanup = new ZeroRetentionSweeper({
   objectStorage: productionEphemeralStorage,
   auditSink: contentFreeCleanupAuditSink,
 });
+const handleSyncRecordRequest = createSyncRecordFetchHandler({
+  apiOrigin: "https://www.oakbylake.com",
+  supabaseOrigin: process.env.SUPABASE_URL,
+  supabaseApiKey: process.env.SUPABASE_API_KEY,
+  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  securityEventSink: contentFreeSyncAuditSink,
+});
 
 // 由官网同源 HTTPS 平台把标准 Request 交给 handleFetchRequest。
 // 由私有调度器调用 worker.runOnce()；领取与完成都不经过公开 HTTP。
 // 由另一受控私有计划任务调用 cleanup.runCycle() 并对 attention_required 告警。
+// 同源平台只把 /manuscript/api/v1/sync-records 请求交给 handleSyncRecordRequest。
 // 生产调度仍须放入有 OS 禁网、只读根和资源限制的隔离环境。
 ```
 
-部署前须由数据库所有者在隔离预生产项目执行并复核 `supabase/001_web_job_state.sql`。GoTrue verifier 使用服务端可用的最小 API key；任务 repository 单独使用仅存在于服务器环境的 service-role key，后者不得进入浏览器、客户端 bundle、日志或错误。不得只解码未验签 JWT，也不得把请求正文、普通代理头或 user metadata 角色映射为 principal。若改用 HttpOnly Cookie，session resolver 必须返回 `auth_mode:"cookie"` 与服务器绑定 CSRF。计划任务应调用 `ZeroRetentionSweeper.runCycle()`，由它有界运行状态 `sweepDeletionDue()`、内容 `sweepExpiredObjects()` 和第二次状态收敛；必须监控 `attention_required` 与截断。周期清零仍不自动证明平台后台副本已删除，正式零留存需要生产生命周期证据。
+部署前须由数据库所有者在隔离预生产项目按顺序执行并复核 `supabase/001_web_job_state.sql` 与 `supabase/002_sync_records.sql`。GoTrue verifier 使用服务端可用的最小 API key；两类 repository 单独使用仅存在于服务器环境的 service-role key，后者不得进入浏览器、客户端 bundle、日志或错误。不得只解码未验签 JWT，也不得把请求正文、普通代理头或 user metadata 角色映射为 principal。若改用 HttpOnly Cookie，session resolver 必须返回 `auth_mode:"cookie"` 与服务器绑定 CSRF。计划任务应调用 `ZeroRetentionSweeper.runCycle()`，由它有界运行状态 `sweepDeletionDue()`、内容 `sweepExpiredObjects()` 和第二次状态收敛；必须监控 `attention_required` 与截断。周期清零仍不自动证明平台后台副本已删除，正式零留存需要生产生命周期证据。
 
 ## 稳定错误码
 

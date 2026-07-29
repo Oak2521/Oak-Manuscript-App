@@ -2,6 +2,17 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.38 SyncRecord 服务端与桌面 transport 源码验收（2026-07-28）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.38`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] 服务端独立 exact validator 不信任 Electron 结论，拒绝正文/标题/路径/文件名/哈希及未知字段；可信主体绑定、容量、幂等创建/重放/冲突、快照列表、读取和属主删除通过离线测试；
+- [x] `/manuscript/api/v1/sync-records` 固定 HTTPS/同源/Fetch Metadata、Bearer 或 Cookie+CSRF、JSON framing/64 KiB、非反射错误和 content-free audit；同步/异步审计接收器失败不改变 HTTP 结果；
+- [x] Supabase repository 只调用四个固定 service-role RPC，响应归属/canonical/容量有界；`002_sync_records.sql` 强制 RLS、撤销浏览器权限、递归禁止内容键并用账户 advisory transaction lock 原子创建/重放；列表单次返回 `{rows,total}`；
+- [x] 桌面 client 只允许固定规范 HTTPS origin、固定路径、Bearer、无 Cookie/重定向和有界响应；coordinator 保证单项单在途、账号稳定，只有远端 created/replayed 后才删除精确本地项；
+- [x] 六组 Sync 专项 37/37 通过；桌面 token 必须与当前队列账号精确绑定，错绑在 transport 前拒绝；应用资源清单更新为 81 文件 / 2,142,090 字节，manifest SHA-256 `fbc0ca36bcb670156a34769d743607590062878f583c6edc7dfcb66d37130ab2`，anchor SHA-256 `f90b54f365293c6386135d1bf7daf28637131c1731146227b9e189a8bddd0b87`；
+- [x] 最终顺序 `npm test`：Node 560 / Python 362 全量零失败；alpha.38 独立隐藏源码 smoke PASS；本轮不重新打包，最新真实 Windows 制品保持 alpha.37；
+- [ ] 生产系统浏览器 PKCE/token 安全存储、main 接线、真实 PostgreSQL/Supabase 迁移、GoTrue/RLS/多实例 E2E、官网同步后台、删除/备份审计和无密钥泄露验收完成。
+
 ## 0.1.0-alpha.37 packaged smoke 证据绑定验收（2026-07-28）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.37`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；

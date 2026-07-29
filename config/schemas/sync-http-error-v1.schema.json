@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript-sync-http-error-v1.schema.json",
+  "title": "Oak Manuscript Sync HTTP Error v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "error", "request_id"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "enum": [
+            "ACCOUNT_RECORD_LIMIT", "AUTH_REQUIRED", "BODY_LENGTH_MISMATCH",
+            "CROSS_SITE_REQUEST", "CSRF_REQUIRED", "IDEMPOTENCY_CONFLICT",
+            "INSECURE_TRANSPORT", "INVALID_HEADERS", "INVALID_JSON", "INVALID_RECORD",
+            "LENGTH_REQUIRED", "METHOD_NOT_ALLOWED", "NOT_FOUND", "RECORD_NOT_FOUND",
+            "REQUEST_TOO_LARGE", "SERVICE_UNAVAILABLE", "TRANSFER_ENCODING_NOT_ALLOWED",
+            "UNSUPPORTED_MEDIA_TYPE"
+          ]
+        },
+        "message": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "request_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    }
+  }
+}

@@ -2,7 +2,24 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.37 packaged smoke 证据绑定制品
+## 最新验证结论：0.1.0-alpha.38 SyncRecord 服务端与桌面 transport 源码
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实账号/API/service-role/AI 密钥、未执行数据库迁移、未部署或修改官网，也未读写项目目录外内容。源码 Electron smoke 以独立隐藏进程执行；本轮没有重新打包，最新真实 Windows 制品保持 alpha.37。
+
+| 验证 | 结果 | 证据 |
+|---|---|---|
+| Sync 服务/API/repository/runtime + 桌面 client/coordinator 专项 | **PASS** | 最终 37 total / 37 pass / 0 fail；独立服务验证、账号归属、幂等/容量/快照列表/读取/删除、HTTPS/同源/CSRF/Bearer/审计、四个固定 RPC、桌面单项单在途、token—账号错绑拒绝与本地队列提交均覆盖 |
+| 首次全量 Node（发现预期清单漂移） | **FAIL，已纠正** | 558 total / 550 pass / 1 fail / 7 skip；唯一失败是新增两份 tracked schema 后资源清单未更新。随后显式执行 `node scripts/resource_trust_manifest.js --update-lock`，没有绕过或放宽门禁 |
+| 更新后独立 Node / Python | **PASS** | Node 558 total / 551 pass / 0 fail / 7 skip（3.9835884 秒）；Python 362 total / 0 failures / 0 errors / 3 skipped（测试 107.209 秒，命令墙钟 147.9 秒） |
+| 最终顺序 `npm test` | **PASS** | 退出码 0，墙钟 110.517 秒；Node 560 total / 553 pass / 0 fail / 7 skip（3.8298105 秒）；Python 362 total / 0 failures / 0 errors / 3 skipped（102.371 秒） |
+| JS 语法与资源信任只读复验 | **PASS** | 六个新增 JS 模块 `node --check` 全通过；81 文件 / 2,142,090 字节，manifest SHA-256 `fbc0ca36bcb670156a34769d743607590062878f583c6edc7dfcb66d37130ab2`，anchor SHA-256 `f90b54f365293c6386135d1bf7daf28637131c1731146227b9e189a8bddd0b87` |
+| 独立隐藏源码 Electron smoke | **PASS** | `SMOKE-RESULT: PASS`；alpha.38 源码；输出 `out/source-smoke/runs/ms5kbrfu-69765feff8e3381c/projects/`；普通 main 仍未实例化 Sync transport，没有网络请求 |
+| SQL / Supabase / GoTrue / main / 网站联调 | **未运行** | `002_sync_records.sql` 只做源码静态契约测试；没有真实 PostgreSQL 解析、迁移、RLS、多实例、备份/恢复、生产 token、主进程发送、网站后台或删除审计证据 |
+| alpha.38 packaged / Windows 安装 / macOS | **未运行** | 这是源码检查点；最新可复验 NSIS/ZIP 与 packaged smoke 仍为 alpha.37，不能用 alpha.38 源码测试代表新制品或跨平台通过 |
+
+证据边界：本轮证明“本机明确授权队列 → 固定桌面 transport → 可信会话 → 服务端独立验证 → owner-scoped 持久 repository”的源码合同能在离线仿真中闭合，并保持普通 APP 零网络。它不证明生产认证、数据库、部署、网站后台、真实删除/备份或跨端发行完成。
+
+## 历史验证结论：0.1.0-alpha.37 packaged smoke 证据绑定制品
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未修改官网或项目目录外内容；Electron smoke 均以隐藏进程执行。
 

@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.38（ChatGPT SyncRecord 服务端与桌面 transport 源码检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.38`。本轮未联网、未使用真实账号/API/service-role/AI 密钥、未迁移数据库、未部署或修改官网，也未重新打包；最新真实 Windows 制品仍为 alpha.37。
+
+- 新增独立服务端 SyncRecord v1 validator/service：不信任 Electron 过滤结论，严格复核字段/禁止键/ID/时间/计数/容量，并以可信主体实现账户容量、幂等创建/重放/冲突、单快照列表、读取和属主删除；
+- 新增固定 `/manuscript/api/v1/sync-records` 同源 HTTPS handler、两份 exact 错误/审计 schema 和生产形状 Fetch runtime；支持 GoTrue Bearer 或 Cookie+CSRF，固定非反射错误，异步审计失败不影响响应；
+- 新增固定 service-role-only Supabase repository 与 `002_sync_records.sql`：content-free 长期表强制 RLS、浏览器零权限、四个白名单 RPC、账户 advisory transaction lock、owner-scoped list/get/delete；迁移未在真实 PostgreSQL/Supabase 执行；
+- 新增未实例化的桌面 HTTPS/Bearer Sync client 与 coordinator：token 必须携带与当前队列账号一致的主进程绑定，错绑在 transport 前拒绝；单项单在途、发送前后账号稳定、远端 created/replayed 后才删除精确本地项，失败保留并写稳定错误供显式重试；生产 AuthProvider 仍无 token，main 不联网；
+- 资源清单更新为 81 文件 / 2,142,090 字节，manifest SHA-256 `fbc0ca36bcb670156a34769d743607590062878f583c6edc7dfcb66d37130ab2`，源码锚点 `f90b54f365293c6386135d1bf7daf28637131c1731146227b9e189a8bddd0b87`；
+- 新增专项 37/37、Web 130/130；最终 `npm test` 110.517 秒：Node 560 total / 553 pass / 0 fail / 7 skip（3.8298105 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（102.371 秒）；独立隐藏源码 Electron smoke PASS。没有 alpha.38 packaged、真实 GoTrue/RLS/多实例、网站后台或生产同步证据。
+
 ### 2026-07-28 — 0.1.0-alpha.37（ChatGPT packaged smoke 证据绑定检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.37`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未部署或修改官网；生成的是未签名 Windows x64 内测制品，不是可售卖正式版。

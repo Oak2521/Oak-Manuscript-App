@@ -1,6 +1,6 @@
 # SPEC_MODELS — 问题 / 规则 / 标准模型
 
-> 问题与规则模型仍为 v1.0；标准注册表为治理 schema 2.0。同步负载于 2026-07-26 按商业方案 v2.0 改为“结果与元数据白名单”，废止旧文件级同步占位；`0.1.0-alpha.8` 已实现 SyncRecord v1 离线契约。`0.1.0-alpha.5` 引入规则包 2.0.0 与向后兼容的 `citation_resolution` 模型；机器可读定义以 `config/` 下 JSON 和核心严格校验器为准，本文件为语义规范。
+> 问题与规则模型仍为 v1.0；标准注册表为治理 schema 2.0。同步负载于 2026-07-26 按商业方案 v2.0 改为“结果与元数据白名单”，废止旧文件级同步占位；`0.1.0-alpha.8` 实现 SyncRecord v1 客户端离线契约，`0.1.0-alpha.38` 增加独立服务验证、HTTP/Supabase 持久边界和未接线桌面 transport。`0.1.0-alpha.5` 引入规则包 2.0.0 与向后兼容的 `citation_resolution` 模型；机器可读定义以 `config/` 下 JSON 和核心严格校验器为准，本文件为语义规范。
 
 ## 1. 问题模型（Issue，方案 §6.3）
 
@@ -181,11 +181,11 @@
 
 运行前可信性约束：Ace 只有在 stage manifest、受版本控制的 full lock、236 包闭包、补丁与全部文件一致时才可执行，Python 运行路径须独立复核；EpubCheck/JRE 同理先通过分发与平台锁。非原生 platform/arch 不能产生运行状态；显式 `--no-runtime-probe` 的纯静态门禁结果也不得写入 `external_tools` 作为 `passed` 或 `failed`。
 
-## 8. 同步负载 schema（SyncRecord v1，alpha.8 离线契约已实现）
+## 8. 同步负载 schema（SyncRecord v1，alpha.38 服务/transport 源码已实现）
 
 商业方案只允许同步检查结果与必要元数据。旧 v1 占位中的 `project_display_name`、Issue `preview` 和 `file` 级上传全部废止，不得为兼容旧文档而实现。
 
-机器可读客户端权威为 `config/schemas/sync-record-v1.schema.json`，完整语义与信任边界见 `SYNC_RECORD_V1.md`。当前服务端尚未实现；上线前必须以同一 schema 和反泄露测试建立服务端验证器。允许字段：
+机器可读客户端权威为 `config/schemas/sync-record-v1.schema.json`，完整语义与信任边界见 `SYNC_RECORD_V1.md`。alpha.38 的服务端以独立代码重建同一语义验证，不信任客户端结论；HTTP 错误/审计另由 `sync-http-error-v1`、`sync-http-audit-v1` 约束。允许字段：
 
 - 随机项目 ID、run ID、幂等 ID；
 - 文件格式、稿件类型、检查配置、语言类别和长度区间；
@@ -196,11 +196,11 @@
 
 禁止字段：稿件、正文、标题、摘要、关键词、任何短预览或片段、原稿/修订稿、文件名、本地路径、用户名或设备目录、参考文献/脚注/图片原文、文件或正文哈希及其他内容指纹。
 
-未登录状态不询问、不发送；登录不等于授权。Renderer 不可构造负载；主进程从 Python `sync-source` 取得只读来源并构造 exact-schema 记录。发送前必须逐字段展示同一份缓存负载并由用户选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。alpha.21 起使用按账户隔离的 OS 加密 `pending_transport` 队列并支持重启恢复，但没有网络上传；入队不等于同步成功。Web 端用户主动发起的临时稿件处理属于独立作业协议，不得混入结果同步 schema 或长期账号历史。
+未登录状态不询问、不发送；登录不等于授权。Renderer 不可构造负载；主进程从 Python `sync-source` 取得只读来源并构造 exact-schema 记录。发送前必须逐字段展示同一份缓存负载并由用户选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。alpha.21 起使用按账户隔离的 OS 加密 `pending_transport` 队列并支持重启恢复；alpha.38 增加固定 HTTPS/Bearer client、单项单在途 coordinator、服务端幂等/归属验证及强制 RLS/service-role-only RPC，但生产 Auth token、main 接线、真实迁移和部署均不存在，普通 APP 仍不会上传，入队不等于同步成功。Web 端用户主动发起的临时稿件处理属于独立作业协议，不得混入结果同步 schema 或长期账号历史。
 
 ## 9. Web 临时作业模型（alpha.30 契约、上传门禁、持久状态、私有 worker 与一次性领取边界）
 
-五份公开机器可读 schema 分别定义创建请求、公开状态、删除回执、HTTP 错误和无内容安全审计：`web-job-create-v1`、`web-job-status-v1`、`web-job-deletion-v1`、`web-http-error-v1`、`web-http-audit-v1`；两份 Web 私有 schema 定义数据库内部任务记录与创建/重放结果。参考内存状态机位于 `web/job-contract.js`，生产形状的持久服务、私有领取编排和固定共享核心进程分别位于 `web/persistent-job-service.js`、`web/private-lease-worker.js`、`web/python-core-process-processor.js`。HTTP handler 与 Supabase/GoTrue/Fetch/客户端边界分别位于对应模块。`web/netlify-ephemeral-storage.js` 只持久化 input/output 内容对象及 exact 生命周期 metadata；`web/supabase/001_web_job_state.sql` 只持久化主体归属、最小文档枚举、任务状态、预留/租约、非内容指纹和幂等墓碑，两者不得混存。
+五份公开机器可读 schema 分别定义创建请求、公开状态、删除回执、HTTP 错误和无内容安全审计：`web-job-create-v1`、`web-job-status-v1`、`web-job-deletion-v1`、`web-http-error-v1`、`web-http-audit-v1`；两份 Web 私有 schema 定义数据库内部任务记录与创建/重放结果。另两份 Sync HTTP schema 只定义固定错误与 content-free 审计，不改变 SyncRecord v1 本体。参考内存状态机位于 `web/job-contract.js`，生产形状的持久服务、私有领取编排和固定共享核心进程分别位于 `web/persistent-job-service.js`、`web/private-lease-worker.js`、`web/python-core-process-processor.js`。HTTP handler 与 Supabase/GoTrue/Fetch/客户端边界分别位于对应模块。`web/netlify-ephemeral-storage.js` 只持久化 input/output 内容对象及 exact 生命周期 metadata；`web/supabase/001_web_job_state.sql` 只持久化主体归属、最小文档枚举、任务状态、预留/租约、非内容指纹和幂等墓碑，两者不得混存。
 
 创建请求 exact 字段：
 

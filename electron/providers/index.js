@@ -679,6 +679,54 @@ class SyncProvider {
     return this._publicItem(this.queue.get(queueId));
   }
 
+  transportCandidate(queueId, authStatus) {
+    const item = this._item(queueId, authStatus);
+    if (item.state !== "pending_transport") throw new Error("同步队列项不是待发送状态");
+    if (item.last_error !== null) throw new Error("同步队列项必须先由用户明确重试");
+    return clone({
+      queue_id: item.queue_id,
+      idempotency_id: item.idempotency_id,
+      payload: item.payload,
+    });
+  }
+
+  transportFailed(queueId, authStatus, errorCode) {
+    const item = this._item(queueId, authStatus);
+    if (item.state !== "pending_transport") throw new Error("同步队列项不是待发送状态");
+    const code = safeString(errorCode, "同步 transport errorCode", /^[A-Z][A-Z0-9_]{0,63}$/);
+    const now = this.clock().toISOString();
+    this._transaction((draft) => {
+      const target = draft.queue.get(queueId);
+      if (!target || target.idempotency_id !== item.idempotency_id) {
+        throw new Error("同步队列项身份已变化");
+      }
+      target.updated_at = now;
+      target.attempts += 1;
+      target.last_error = code;
+    });
+    return this._publicItem(this.queue.get(queueId));
+  }
+
+  transportSucceeded(queueId, authStatus, idempotencyId) {
+    const item = this._item(queueId, authStatus);
+    const expected = safeString(
+      idempotencyId,
+      "同步 transport idempotencyId",
+      /^sync-v1:[0-9a-f]{16}:check-[0-9]{4,}$/,
+    );
+    if (item.state !== "pending_transport" || item.last_error !== null ||
+        item.idempotency_id !== expected) throw new Error("同步成功回执与队列项不一致");
+    this._transaction((draft) => {
+      const target = draft.queue.get(queueId);
+      if (!target || target.account_id !== item.account_id || target.idempotency_id !== expected) {
+        throw new Error("同步队列项身份已变化");
+      }
+      draft.byIdempotency.delete(draft._idempotencyKey(target.account_id, target.idempotency_id));
+      draft.queue.delete(queueId);
+    });
+    return true;
+  }
+
   delete(queueId, authStatus) {
     const item = this._item(queueId, authStatus);
     this._transaction((draft) => {
