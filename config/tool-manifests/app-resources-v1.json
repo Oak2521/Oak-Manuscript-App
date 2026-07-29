@@ -9,8 +9,8 @@
   "excluded_paths": [
     "config/tool-manifests/app-resources-v1.json"
   ],
-  "file_count": 107,
-  "total_bytes": 2170426,
+  "file_count": 108,
+  "total_bytes": 2171922,
   "files": [
     {
       "path": "config/app-config.json",
@@ -29,8 +29,8 @@
     },
     {
       "path": "config/desktop-standards-update.json",
-      "size_bytes": 146,
-      "sha256": "32ccb7bebb66f0045a948bebd827f022f195f28238cbf1903ca391dbb26c5ad1"
+      "size_bytes": 177,
+      "sha256": "7bb751e239f87bbb53c97de3da0ea534433778f6aa21cfb07b4bad15a0fb2975"
     },
     {
       "path": "config/provenance/cpython-3.13.14-win32-x64.json",
@@ -96,6 +96,11 @@
       "path": "config/schemas/desktop-license-v1.schema.json",
       "size_bytes": 1505,
       "sha256": "06f9531def60cb5728e5ec74c03f3f9d4225600c0b574a4ebc4f2c935d845aff"
+    },
+    {
+      "path": "config/schemas/desktop-standards-update-v1.1.schema.json",
+      "size_bytes": 1465,
+      "sha256": "6f0cbb7f929749db544362481cc48cec1147d1afe3c350f71aecc353d74a3274"
     },
     {
       "path": "config/schemas/desktop-standards-update-v1.schema.json",
@@ -315,7 +320,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "baafd3c4cf57a173f6747ff71f6b1be23435d41c0cc5c01d0ab2f6ca801b6830"
+      "sha256": "e858b730fda1cd3f58b39152e9ad33c9d9ffb99faad0e7e5c4cc5cdeadac8b85"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

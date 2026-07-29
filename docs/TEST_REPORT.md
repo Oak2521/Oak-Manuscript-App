@@ -2,7 +2,26 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.52 标准撤回固定获取纵向链
+## 最新验证结论：0.1.0-alpha.53 撤回优先的标准更新与恢复入口
+
+验证日期：2026-07-29。本轮未联网、未注入生产 release/revocation 公钥或私钥；tracked desktop config 仍为 `pending_configuration` 且两个端点均为 null。未接入真实发布源、未部署、推送或重新打包。
+
+| 项目 | 结果 | 证据与边界 |
+|---|---|---|
+| Exact 桌面配置 | **PASS** | schema/runtime 均为 1.1；configured 必须同时提供同源规范 HTTPS 固定 `/revocations` 与 `/check` 路径，pending 二者必须为 null；未知字段、错路由、跨源和半配置均拒绝 |
+| Main 原子接线 | **PASS（源码）** | update/revocation 两个候选客户端均成功构造后才同时交给 Provider；任一缺失时 `network_*_enabled` 不能共同成立，renderer 按二者合取禁用操作 |
+| 用户触发顺序 | **PASS** | 一次 `standards:check-online` 严格执行 recovery status → revocation refresh → release check；撤回阶段失败时 release lookup 为 0；没有后台计时器或自动请求 |
+| 撤回恢复 UI | **PASS** | active 撤回后普通业务仍 fail-closed，标准条目与 release 摘要隐藏；安全恢复状态允许同一按钮继续工作，更高未撤回候选通过专门原生警告与一次性确认安装 |
+| 数据边界 | **PASS** | renderer/preload 不含端点、原始 envelope 或安装权限；撤回请求仍只含 APP 版本和 bundle，release 请求只含版本摘要，不含稿件、项目、账号、设备、路径或结果 |
+| 相关专项 | **PASS** | `node --test tests/standards_update_transport.test.js tests/standards_ipc.test.js tests/standards_provider.test.js`：35 total / 34 pass / 0 fail / 1 skip，1.724 秒 |
+| 全量测试 | **PASS** | `npm test` 退出码 0；Node 697 total / 690 pass / 0 fail / 7 skip，4.190 秒；Python 362 / 0 failures / 0 errors / 3 skipped，103.145 秒；墙钟 111.9 秒 |
+| 隐藏源码 smoke | **PASS** | alpha.53 在独立隐藏窗口保持 Renderer sandbox，未用 `--no-sandbox`；输出 `out/source-smoke/runs/ms60frv5-2e8814a05b924920/projects/`；pending 配置下标准、账号、权益或 AI 网络均未启用 |
+| 资源与运行时门禁 | **PASS（alpha）** | loose 108 文件 / 2,171,922 字节；manifest `2012cc682dd5e3b526bfce5ff7f33e1372ed270a2811305ecc6c52d8e0cb58b1`，anchor `0634a9e9f06e2550a11215c204bfec9498c650f1793e37f36656625e336d56f6`；标准、Windows alpha、fuse、Electron runtime 与发行身份结构检查退出 0 |
+| 生产与销售门禁 | **未运行/未完成** | 真实 release/revocation 端点和发布源、生产 trust pin、密钥治理、监控/告警、紧急手册、真实网络和部署未验证；source sale 仍 17 blocker、发行身份缺 12 字段；alpha.53 未打包，最新 Windows 制品仍为未签名 alpha.42 |
+
+结论：alpha.53 证明撤回清单在一次明确用户动作中优先于 release 检查，并在 active 撤回后保留受控安全前进入口；它不是生产标准服务、后台自动升级或线上运维系统的证据。
+
+## 历史验证结论：0.1.0-alpha.52 标准撤回固定获取纵向链
 
 验证日期：2026-07-29。本轮未联网、未注入生产 release/revocation 公钥或私钥；测试使用进程内 Fetch 适配器、匿名本地文件和运行时生成的 Ed25519 密钥。未接入 main/IPC/UI、调度或真实发布源，未部署、推送或重新打包。
 
@@ -170,7 +189,7 @@
 
 源码 smoke 在文件系统沙箱内的三次诊断运行中出现 Electron GPU/renderer 子进程 Windows `0xC0000135` / `ERR_FAILED`，应用初始化本身已到达；这些运行不计作通过。修正 Electron CLI 开关顺序并固定 `--disable-gpu --disable-software-rasterizer` 后，使用独立隐藏、非文件系统沙箱进程取得上述 PASS。该处理没有关闭 Electron Renderer sandbox，也没有用 `--no-sandbox` 绕过产品安全设置。
 
-## 最新验证结论：0.1.0-alpha.43 LM Studio llmster 0.0.20+1 / Qwen3 4B 窄范围兼容验收
+## 历史验证结论：0.1.0-alpha.43 LM Studio llmster 0.0.20+1 / Qwen3 4B 窄范围兼容验收
 
 验证日期：2026-07-29。用户已批准下载。只从 LM Studio 官方域名下载固定安装脚本、SHA-512 和 headless full ZIP；没有执行官方安装脚本。运行时、HOME/APPDATA/TEMP、模型链接、日志和证据全部位于仓库 `out/external-validation/lm-studio/llmster-0.0.20-1/`，API 只监听 `127.0.0.1:12400`。没有读取用户稿件、项目、账号或 AI 凭据，没有部署、推送、修改官网或系统 PATH/启动项。
 
@@ -1058,7 +1077,7 @@ alpha.11 隐藏 smoke 运行根：`out/source-smoke/runs/ms4eowx9-64e0aab5311e2a
 | `ui-smoke-docx` | DOCX | 0.1.0-alpha.9 | 4 | 1 | 3 | 13 | 5 | 251,650 | unchanged |
 | `ui-smoke-epub` | EPUB | 0.1.0-alpha.9 | 4 | 1 | 3 | 5 | 2 | 177,417 | unchanged |
 
-## 最新验证结论：0.1.0-alpha.8 统一账号、权益与 SyncRecord v1 离线契约
+## 历史验证结论：0.1.0-alpha.8 统一账号、权益与 SyncRecord v1 离线契约
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网，未调用生产账号/支付/同步服务，未下载 builder 归档，未生成安装器、ZIP 或发布证据。
 
@@ -1102,7 +1121,7 @@ alpha.11 隐藏 smoke 运行根：`out/source-smoke/runs/ms4eowx9-64e0aab5311e2a
 
 首次在普通沙箱内启动 GUI smoke 时，Electron GPU 子进程因沙箱环境退出，业务步骤尚未开始、项目目录为空；临时 GPU 绕行导致 Renderer 不进入业务流程，已全部撤回。随后按用户已授权的隐藏窗口方式在沙箱外运行原始 smoke 配置并通过。只有后者计作本轮业务证据；没有残留 Electron 进程。
 
-## 最新验证结论：0.1.0-alpha.7 Windows 发布制品证据链
+## 历史验证结论：0.1.0-alpha.7 Windows 发布制品证据链
 
 环境：Windows 11；Python 3.14.6；Node 24.16.0；npm 11.13.0；Electron 43.1.0；Java 21.0.11。
 

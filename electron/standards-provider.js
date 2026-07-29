@@ -543,6 +543,11 @@ class StandardsProvider {
     return this.status();
   }
 
+  async verifiedRecoveryStatus() {
+    await this._requireReady({ allowMigrationSource: true });
+    return this.status();
+  }
+
   async verifiedActiveIdentity() {
     await this._requireReady();
     return this.store.verifiedActiveIdentity();

@@ -162,7 +162,8 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - 服务端只返回经内部 envelope 摘要复核的候选，不能设置“已验证”；桌面仍独立执行 Ed25519、canonical manifest、全文件哈希、schema、白名单、兼容性和高水位验证。
 - alpha.51 增加独立 `revocation` 角色签名的 canonical 撤回清单。清单只含 bundle、时间窗和 manifest 摘要；持久集合只增不减，active/候选/回滚目标命中即 fail-closed。撤回只改变可信使用状态，不删除 CAS、项目身份、既有检查结果或已生成导出；恢复必须前进到更高且未撤回的签名 release；
 - alpha.52 的固定撤回获取请求只含 APP 版本和标准 bundle，不发送账号、设备、项目、稿件、路径、当前 manifest 或本地撤回集合；服务 audit 只含请求 ID、时间、方法、固定路由、状态和错误码。测试 Fetch 为进程内适配，不是实际联网；
-- 默认配置继续零网络。生产发布源、release/revocation trust pin、密钥治理、主进程配置/IPC/UI、调度、限流/监控和真实网络尚未完成。
+- alpha.53 以 exact 1.1 配置同时约束同源 release/revocation 固定路由；main 只在两个客户端均成功构造后启用。用户一次点击必须先验签并应用撤回清单，成功后才查询 release；撤回阶段失败时不发送第二个请求。active 撤回后 UI 隐藏其标准内容但保留经过验证的安全前进入口；Renderer 不持有端点、清单/候选字节或安装权限；
+- 默认配置继续零网络。生产发布源、release/revocation trust pin、密钥治理、调度、限流/监控和真实网络尚未完成；源码 main/IPC/UI 接线不等于生产服务可用。
 
 ### Windows 安装生命周期的授权与数据边界
 

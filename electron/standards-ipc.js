@@ -33,7 +33,7 @@ function registerStandardsIpc({
 
   ipcMain.handle("standards:status", async () => {
     try {
-      return ok({ status: await provider.verifiedStatus() });
+      return ok({ status: await provider.verifiedRecoveryStatus() });
     } catch (error) {
       return toFailureResponse(error);
     }
@@ -44,18 +44,32 @@ function registerStandardsIpc({
       const listing = await provider.listStandards();
       return ok({ ...listing, status: provider.status() });
     } catch (error) {
+      if (error && error.code === "REVOKED_PACKAGE") {
+        try {
+          return ok({
+            standards: [],
+            registry_version: null,
+            release: null,
+            status: await provider.verifiedRecoveryStatus(),
+          });
+        } catch (recoveryError) {
+          return toFailureResponse(recoveryError);
+        }
+      }
       return toFailureResponse(error);
     }
   });
 
   ipcMain.handle("standards:check-online", async () => {
     try {
-      const status = await provider.verifiedStatus();
-      if (!status.network_updates_enabled) {
-        const error = new Error("标准在线更新尚未配置，本版本不会联网检查");
+      const status = await provider.verifiedRecoveryStatus();
+      if (!status.network_updates_enabled || !status.network_revocations_enabled) {
+        const error = new Error("标准撤回与在线更新尚未完整配置，本版本不会联网检查");
         error.code = "STANDARDS_UPDATE_DISABLED";
         throw error;
       }
+      const revocations = await provider.refreshRemoteRevocations();
+      const activeWasRevoked = revocations.active_revoked === true;
       const checked = await provider.checkForRemoteUpdate();
       if (checked.outcome === "current") {
         return ok({ canceled: false, current: true });
@@ -68,9 +82,11 @@ function registerStandardsIpc({
       const preview = checked;
       const confirmation = await dialog.showMessageBox(getWindow(), {
         type: "warning",
-        title: "确认安装在线标准更新",
+        title: activeWasRevoked ? "当前标准已撤回：确认安装安全更新" : "确认安装在线标准更新",
         message: `安装标准与规则包 ${preview.version}（序列 ${preview.release_sequence}）？`,
-        detail: `${summarizeChanges(preview.change_summary)}\n\n`
+        detail: `${activeWasRevoked
+          ? "当前标准已由受信清单撤回，普通检查、修复和报告重新生成已经停止。此候选是恢复工作的安全前进版本。\n\n"
+          : ""}${summarizeChanges(preview.change_summary)}\n\n`
           + "候选包已通过签名、哈希、模式与兼容性核验。安装后，新建项目自动使用此版本；已有项目继续固定原版本，须另行查看差异并确认升级。",
         buttons: ["安装更新", "取消"],
         defaultId: 1,
@@ -82,7 +98,12 @@ function registerStandardsIpc({
         return ok({ canceled: true });
       }
       const result = await provider.installRemoteUpdate(preview.plan_id);
-      return ok({ canceled: false, current: false, result });
+      return ok({
+        canceled: false,
+        current: false,
+        result,
+        ...(activeWasRevoked ? { active_was_revoked: true } : {}),
+      });
     } catch (error) {
       return toFailureResponse(error);
     }

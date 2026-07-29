@@ -1353,18 +1353,24 @@ async function renderStandardsPage() {
     $("#standards-active-text").textContent = active
       ? `当前默认标准包：${active.version}（发布序列 ${active.release_sequence}，${active.source === "bundled" ? "APP 内置" : "已签名安装"}）`
       : "当前没有可用的标准包。";
-    $("#standards-update-text").textContent = standardStatus.error
-      ? `标准库核验失败：${standardStatus.error.message}`
-      : standardStatus.network_updates_enabled
-        ? "签名更新已启用；仅在您点击“检查在线更新”后联网。"
+    const recoveryNetworkEnabled = standardStatus.network_updates_enabled &&
+      standardStatus.network_revocations_enabled;
+    $("#standards-update-text").textContent = standardStatus.error?.code === "REVOKED_PACKAGE"
+      ? `当前标准已撤回：${standardStatus.error.message}。可点击“检查在线更新”寻找安全前进版本。`
+      : standardStatus.error
+        ? `标准库核验失败：${standardStatus.error.message}`
+      : recoveryNetworkEnabled
+        ? "签名撤回与更新已启用；仅在您点击后，先验证撤回清单，再检查更新。"
         : standardStatus.trust_configured
-          ? "本地签名包导入已启用；正式在线更新地址尚未配置。"
+          ? "本地签名包导入已启用；正式撤回/更新地址尚未完整配置。"
         : "签名校验与回滚机制已启用，但正式 release 公钥尚未配置；当前只能使用摘要固定的内置标准包。";
-    $("#btn-check-standards").disabled = !standardStatus.network_updates_enabled;
+    $("#btn-check-standards").disabled = !recoveryNetworkEnabled;
     $("#btn-install-standards").disabled = !standardStatus.local_signed_import_enabled;
     $("#btn-rollback-standards").disabled = !standardStatus.previous;
     const info = unwrap(await window.oak.appInfo());
-    $("#rulepack-info").textContent = `规则包：${info.rulepack} ｜ 标准包 manifest：${r.release.manifest_sha256.slice(0, 16)}… ｜ APP 版本：${info.appVersion}`;
+    $("#rulepack-info").textContent = r.release
+      ? `规则包：${info.rulepack} ｜ 标准包 manifest：${r.release.manifest_sha256.slice(0, 16)}… ｜ APP 版本：${info.appVersion}`
+      : `规则包：${info.rulepack} ｜ 当前标准内容已停止展示 ｜ APP 版本：${info.appVersion}`;
     $("#app-meta").textContent = `规则包 ${info.rulepack}`;
     await renderProjectStandardStatus();
   } catch (err) {
@@ -1815,7 +1821,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await window.oak.installStandardUpdate();
       if (!response.ok) { toast(response.error, 6000); return; }
       if (response.canceled) { toast("未安装标准更新"); return; }
-      toast(`标准包已更新为 ${response.result.active.version}；已有项目尚未改变。`, 5000);
+      toast(response.active_was_revoked
+        ? `已从撤回状态安全前进到标准包 ${response.result.active.version}；已有项目尚未改变。`
+        : `标准包已更新为 ${response.result.active.version}；已有项目尚未改变。`, 5000);
     } catch (error) {
       toast(String(error.message || error), 6000);
     } finally {

@@ -14,6 +14,7 @@ function fixture({ trustConfigured = true } = {}) {
     previous: null,
     local_signed_import_enabled: trustConfigured,
     network_updates_enabled: trustConfigured,
+    network_revocations_enabled: trustConfigured,
   };
   const activeIdentity = {
     name: "oak-rules",
@@ -49,6 +50,7 @@ function fixture({ trustConfigured = true } = {}) {
   };
   const provider = {
     async verifiedStatus() { calls.push(["status"]); return status; },
+    async verifiedRecoveryStatus() { calls.push(["recovery-status"]); return status; },
     status() { return status; },
     async listStandards() {
       calls.push(["list"]);
@@ -74,6 +76,10 @@ function fixture({ trustConfigured = true } = {}) {
         envelope_sha256: "e".repeat(64),
         change_summary: ["在线变更一", "在线变更二"],
       };
+    },
+    async refreshRemoteRevocations() {
+      calls.push(["refresh-revocations"]);
+      return { active_revoked: false, revoked_manifest_sha256s: [] };
     },
     async installRemoteUpdate(planId) {
       calls.push(["install-remote", planId]);
@@ -182,6 +188,58 @@ test("standards IPC exposes verified status and active listing", async () => {
   assert.equal(listing.standards[0].standard_id, "OAK-001");
 });
 
+test("revoked active standard hides its content but preserves the verified recovery action", async () => {
+  const context = fixture();
+  const revokedStatus = {
+    ...context.provider.status(),
+    ready: false,
+    error: {
+      code: "REVOKED_PACKAGE",
+      message: "当前标准包已撤回",
+    },
+  };
+  context.provider.listStandards = async () => {
+    context.calls.push(["list"]);
+    const error = new Error("当前标准包已撤回");
+    error.code = "REVOKED_PACKAGE";
+    throw error;
+  };
+  context.provider.verifiedRecoveryStatus = async () => {
+    context.calls.push(["recovery-status"]);
+    return revokedStatus;
+  };
+
+  const listing = await context.handlers.get("standards:list")();
+  assert.deepEqual(listing, {
+    ok: true,
+    standards: [],
+    registry_version: null,
+    release: null,
+    status: revokedStatus,
+  });
+  assert.equal(listing.status.network_updates_enabled, true);
+  assert.equal(listing.status.network_revocations_enabled, true);
+});
+
+test("revoked listing returns a bounded failure for a recovery-status verification race", async () => {
+  const context = fixture();
+  context.provider.listStandards = async () => {
+    const error = new Error("当前标准包已撤回");
+    error.code = "REVOKED_PACKAGE";
+    throw error;
+  };
+  context.provider.verifiedRecoveryStatus = async () => {
+    const error = new Error("恢复状态核验失败");
+    error.code = "STANDARD_STORE_STATE_INVALID";
+    throw error;
+  };
+
+  const listing = await context.handlers.get("standards:list")();
+  assert.equal(listing.ok, false);
+  assert.equal(listing.code, "STANDARD_STORE_STATE_INVALID");
+  assert.equal(listing.error, "恢复状态核验失败");
+});
+
 test("local standard install previews all changes and binds confirmation to the preview", async () => {
   const { calls, handlers, preview } = fixture();
   const response = await handlers.get("standards:install-local")();
@@ -201,6 +259,7 @@ test("online standard update is one user-triggered check followed by one native 
   assert.equal(response.ok, true);
   assert.equal(response.canceled, false);
   assert.equal(response.result.active.version, "1.0.2");
+  assert.deepEqual(calls.slice(1, 3), [["refresh-revocations"], ["check-remote"]]);
   assert.deepEqual(calls.find((call) => call[0] === "install-remote"), [
     "install-remote", "11111111-1111-4111-8111-111111111111",
   ]);
@@ -209,6 +268,44 @@ test("online standard update is one user-triggered check followed by one native 
   assert.match(confirmation.detail, /在线变更一/);
   assert.equal(confirmation.defaultId, 1);
   assert.equal(confirmation.cancelId, 1);
+});
+
+test("online check warns when the active standard was revoked and permits only safe forward update", async () => {
+  const context = fixture();
+  context.provider.refreshRemoteRevocations = async () => {
+    context.calls.push(["refresh-revocations"]);
+    return { active_revoked: true, revoked_manifest_sha256s: ["a".repeat(64)] };
+  };
+  const response = await context.handlers.get("standards:check-online")();
+  assert.equal(response.ok, true);
+  assert.equal(response.active_was_revoked, true);
+  const confirmation = context.calls.find((call) => call[0] === "confirm-dialog")[1];
+  assert.match(confirmation.title, /已撤回/);
+  assert.match(confirmation.detail, /普通检查.*停止/);
+});
+
+test("revocation refresh failure stops release lookup and partial transport is disabled", async () => {
+  const failed = fixture();
+  failed.provider.refreshRemoteRevocations = async () => {
+    failed.calls.push(["refresh-revocations"]);
+    const error = new Error("撤回服务暂时不可用");
+    error.code = "STANDARDS_REVOCATION_UNAVAILABLE";
+    throw error;
+  };
+  const response = await failed.handlers.get("standards:check-online")();
+  assert.equal(response.ok, false);
+  assert.equal(response.code, "STANDARDS_REVOCATION_UNAVAILABLE");
+  assert.equal(failed.calls.some((call) => call[0] === "check-remote"), false);
+
+  const partial = fixture();
+  partial.provider.verifiedRecoveryStatus = async () => ({
+    ...partial.provider.status(),
+    network_revocations_enabled: false,
+  });
+  const disabled = await partial.handlers.get("standards:check-online")();
+  assert.equal(disabled.ok, false);
+  assert.equal(disabled.code, "STANDARDS_UPDATE_DISABLED");
+  assert.equal(partial.calls.some((call) => call[0] === "refresh-revocations"), false);
 });
 
 test("online update cancellation, current result, and disabled transport never install", async () => {

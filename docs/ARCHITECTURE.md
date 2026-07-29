@@ -173,7 +173,9 @@ alpha.51 保持 trust store `1.0` 为 release-only，并以 exact `1.1` 同时�
 
 应用清单使用既有跨进程 pending transaction、前后态摘要和原子恢复。active 被撤回后，普通 active/项目业务验证 fail-closed；受控 migration-source 验证仍可读取完整身份，以安装更高且未撤回的 release。远程更新响应或候选验签完成后、创建预览计划前必须重新读取可信状态；途中落地的撤回优先，不能因旧快照生成可安装计划。撤回不清理 CAS、项目 pin、既有检查 JSON 或已生成 `exports/`；重新生成报告属于新操作，必须等待可信 active 恢复。
 
-alpha.52 增加独立公开 `POST /manuscript/standards/v1/revocations`。请求只含 APP 版本和 bundle，不含账号、设备、项目、稿件、当前 manifest 或撤回集合；服务从注入式不可变发布源复算 payload/envelope 摘要并返回原始 signed bytes，没有记录必须失败而非暗示“无撤回”。桌面有界客户端固定路径/媒体/容量/超时，最终信任仍由 Provider 的 revocation 角色验签与追加式事务决定。该链只经进程内 Fetch 适配器验证，尚未进入受信桌面配置、main/IPC/UI、调度或真实部署。完整协议见 `STANDARDS_REVOCATION_V1.md`；不能写成线上撤回系统已完成。
+alpha.52 增加独立公开 `POST /manuscript/standards/v1/revocations`。请求只含 APP 版本和 bundle，不含账号、设备、项目、稿件、当前 manifest 或撤回集合；服务从注入式不可变发布源复算 payload/envelope 摘要并返回原始 signed bytes，没有记录必须失败而非暗示“无撤回”。桌面有界客户端固定路径/媒体/容量/超时，最终信任仍由 Provider 的 revocation 角色验签与追加式事务决定。
+
+alpha.53 将 release/revocation 端点纳入同一个 exact 1.1 桌面配置：配置态必须同源、规范 HTTPS、两个固定路径齐全，待配置态二者同时为 null；main 只在两个客户端都成功构造后同时启用。一次用户点击固定按 recovery status → revocation refresh → release check 执行，撤回阶段失败时绝不查询候选。active 已撤回时普通业务仍停用且 UI 不展示其标准内容，但受控恢复状态可保留同一入口，只允许安装更高、未撤回且完整验签的 release。Renderer 不获得端点、signed bytes 或安装权限；当前 tracked 配置仍为空，链路只经本地注入/源码 smoke 验证，没有真实网络、调度或部署。完整协议见 `STANDARDS_REVOCATION_V1.md`；不能写成线上撤回系统已完成。
 
 ### AD-018 Web 临时任务必须“可信主体—单任务同意—内容/元数据分道—删除失败可见”（2026-07-28，冻结）
 

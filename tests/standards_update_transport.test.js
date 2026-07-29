@@ -15,6 +15,7 @@ const {
 
 const ROOT = path.resolve(__dirname, "..");
 const ENDPOINT = "https://updates.oakbylake.com/manuscript/standards/v1/check";
+const REVOCATION_ENDPOINT = "https://updates.oakbylake.com/manuscript/standards/v1/revocations";
 const MANIFEST = "a".repeat(64);
 
 function request() {
@@ -26,32 +27,43 @@ function request() {
   };
 }
 
-function configured() {
+function configured(overrides = {}) {
   return {
-    schema_version: "1.0",
+    schema_version: "1.1",
     config_type: "oak_manuscript_standards_update",
     status: "configured",
     update_endpoint: ENDPOINT,
+    revocation_endpoint: REVOCATION_ENDPOINT,
+    ...overrides,
   };
 }
 
 test("tracked standards update config is exact and pending configuration performs no partial setup", () => {
   const tracked = loadDesktopStandardsUpdateConfig(path.join(ROOT, "config"));
   assert.deepEqual(tracked, {
-    schema_version: "1.0",
+    schema_version: "1.1",
     config_type: "oak_manuscript_standards_update",
     status: "pending_configuration",
     update_endpoint: null,
+    revocation_endpoint: null,
   });
   const schema = JSON.parse(fs.readFileSync(
-    path.join(ROOT, "config", "schemas", "desktop-standards-update-v1.schema.json"), "utf8",
+    path.join(ROOT, "config", "schemas", "desktop-standards-update-v1.1.schema.json"), "utf8",
   ));
   assert.equal(schema.additionalProperties, false);
-  assert.deepEqual(schema.required, ["schema_version", "config_type", "status", "update_endpoint"]);
+  assert.deepEqual(schema.required, [
+    "schema_version", "config_type", "status", "update_endpoint", "revocation_endpoint",
+  ]);
   assert.equal(validateDesktopStandardsUpdateConfig(configured()).update_endpoint, ENDPOINT);
   assert.throws(() => validateDesktopStandardsUpdateConfig({ ...configured(), account_id: "private" }), /标准更新配置/);
   assert.throws(() => validateDesktopStandardsUpdateConfig({ ...configured(), update_endpoint: "http://updates.oakbylake.com/check" }), /HTTPS/);
   assert.throws(() => validateDesktopStandardsUpdateConfig({ ...tracked, update_endpoint: ENDPOINT }), /待配置/);
+  assert.throws(() => validateDesktopStandardsUpdateConfig(configured({
+    revocation_endpoint: "https://other.example/manuscript/standards/v1/revocations",
+  })), /同源/);
+  assert.throws(() => validateDesktopStandardsUpdateConfig(configured({
+    update_endpoint: "https://updates.oakbylake.com/wrong",
+  })), /固定路径/);
 });
 
 test("standards update client sends one exact content-free POST and returns bounded raw signed envelope bytes", async () => {
@@ -148,10 +160,14 @@ test("desktop wiring keeps endpoint and install authority in main process behind
 
   assert.match(main, /loadDesktopStandardsUpdateConfig/);
   assert.match(main, /new StandardsUpdateHttpClient/);
+  assert.match(main, /new StandardsRevocationHttpClient/);
+  assert.match(main, /standardsUpdateClient = updateCandidate;\s+standardsRevocationClient = revocationCandidate;/);
   assert.match(main, /standardsUpdateConfig\.status === "configured"/);
   assert.match(preload, /checkStandardUpdates:\s*\(\)\s*=>\s*ipcRenderer\.invoke\("standards:check-online"\)/);
   assert.doesNotMatch(preload, /checkStandardUpdates:\s*\([^)]/);
   assert.match(html, /id="btn-check-standards"/);
+  assert.match(html, /先获取并验证撤回清单/);
   assert.match(renderer, /window\.oak\.checkStandardUpdates\(\)/);
-  assert.doesNotMatch(renderer, /updates\.oakbylake\.com|update_endpoint|envelopeBytes/);
+  assert.match(renderer, /network_updates_enabled\s*&&\s*standardStatus\.network_revocations_enabled/);
+  assert.doesNotMatch(renderer, /updates\.oakbylake\.com|update_endpoint|revocation_endpoint|envelopeBytes/);
 });

@@ -441,6 +441,9 @@ test("signed revocation of the active release blocks new work but preserves hist
   ));
   assert.equal(applied.active_revoked, true);
   assert.equal(provider.status().ready, false);
+  const recoveryStatus = await provider.verifiedRecoveryStatus();
+  assert.equal(recoveryStatus.ready, false);
+  assert.equal(recoveryStatus.error.code, "REVOKED_PACKAGE");
   await assert.rejects(
     () => provider.verifiedActiveIdentity(),
     (error) => error && error.code === "REVOKED_PACKAGE",

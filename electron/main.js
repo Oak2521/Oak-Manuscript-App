@@ -34,6 +34,7 @@ const { loadDesktopStandardsUpdateConfig } = require("./desktop-standards-update
 const { ProductionLicenseProvider } = require("./license-entitlement");
 const { LicenseHttpClient } = require("./license-http-client");
 const { StandardsUpdateHttpClient } = require("./standards-update-http-client");
+const { StandardsRevocationHttpClient } = require("./standards-revocation-http-client");
 const { EncryptedLicenseStore } = require("./license-store");
 const { SyncHttpClient } = require("./sync-http-client");
 const { SyncTransportCoordinator } = require("./sync-transport-coordinator");
@@ -553,13 +554,19 @@ app.whenReady().then(async () => {
   const standardsStoreRoot = path.join(app.getPath("userData"), "standards");
   bridge.configureStandardsStoreRoot(standardsStoreRoot);
   let standardsUpdateClient = null;
+  let standardsRevocationClient = null;
   try {
     const standardsUpdateConfig = loadDesktopStandardsUpdateConfig(pathPolicy.configDir());
     if (standardsUpdateConfig.status === "configured") {
-      standardsUpdateClient = new StandardsUpdateHttpClient({
+      const updateCandidate = new StandardsUpdateHttpClient({
         endpoint: standardsUpdateConfig.update_endpoint,
       });
-      console.log("[standards] signed update transport ready; checks remain user-triggered");
+      const revocationCandidate = new StandardsRevocationHttpClient({
+        endpoint: standardsUpdateConfig.revocation_endpoint,
+      });
+      standardsUpdateClient = updateCandidate;
+      standardsRevocationClient = revocationCandidate;
+      console.log("[standards] signed revocation/update transports ready; checks remain user-triggered");
     } else {
       console.log("[standards] online update endpoint pending; offline standards remain available");
     }
@@ -572,6 +579,7 @@ app.whenReady().then(async () => {
     configDir: pathPolicy.configDir(),
     appVersion: app.getVersion(),
     updateClient: standardsUpdateClient,
+    revocationClient: standardsRevocationClient,
   });
   standardBoundCore = createStandardBoundCore({ bridge, provider: standardsProvider });
   registerStandardsIpc({
