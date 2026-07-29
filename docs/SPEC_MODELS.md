@@ -1,6 +1,6 @@
 # SPEC_MODELS — 问题 / 规则 / 标准模型
 
-> 问题与规则模型仍为 v1.0；标准注册表为治理 schema 2.0。同步负载于 2026-07-26 按商业方案 v2.0 改为“结果与元数据白名单”，废止旧文件级同步占位；`0.1.0-alpha.8` 实现 SyncRecord v1 客户端离线契约，alpha.38—alpha.40 增加独立服务/持久边界、桌面 PKCE/transport 和故障恢复；alpha.41 增加 compatible AI 非流式适配，alpha.42 增加稳定失败分类，alpha.43 为 LM Studio 增加响应模型身份一致性并允许普通文本的精确空工具数组。`0.1.0-alpha.5` 引入规则包 2.0.0 与向后兼容的 `citation_resolution` 模型；机器可读定义以 `config/` 下 JSON 和核心严格校验器为准，本文件为语义规范。
+> 问题与规则模型仍为 v1.0；标准注册表为治理 schema 2.0。alpha.57 从已验证标准数组派生只含分类计数的治理摘要，不改变本模型或标准 payload。同步负载于 2026-07-26 按商业方案 v2.0 改为“结果与元数据白名单”，废止旧文件级同步占位；`0.1.0-alpha.8` 实现 SyncRecord v1 客户端离线契约，alpha.38—alpha.40 增加独立服务/持久边界、桌面 PKCE/transport 和故障恢复；alpha.41 增加 compatible AI 非流式适配，alpha.42 增加稳定失败分类，alpha.43 为 LM Studio 增加响应模型身份一致性并允许普通文本的精确空工具数组。`0.1.0-alpha.5` 引入规则包 2.0.0 与向后兼容的 `citation_resolution` 模型；机器可读定义以 `config/` 下 JSON 和核心严格校验器为准，本文件为语义规范。
 
 ## 1. 问题模型（Issue，方案 §6.3）
 
@@ -103,6 +103,7 @@
 - 每条 Issue 的 `standard_refs` 必须指向本注册表中存在的 `standard_id`；每项标准反向列出 `rule_ids`，两侧须完全一致；
 - `verified` 必须有真实核验日期；空外部 URL 只允许非湖岸解释项同时为 `under_review + unavailable`；`superseded` 必须指向替代项；
 - schema 字段完整不代表内容已审校。当前 13 项中外部来源核验为 0，reviewed_by 仍含角色占位，不能用结构通过替代事实审核。
+- `standards:list` 的 `governance_summary` 只汇总总数、四类审阅状态、三类来源、三类来源核验状态、外部来源子计数和门禁布尔值；它不复制标题、URL、reviewer 或规则内容。门禁满足不等于具名审校或正式发行完成。
 
 ## 5. 引用体例请求与默认解析（v2.0.0，方案 §6.2）
 

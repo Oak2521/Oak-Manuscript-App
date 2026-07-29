@@ -1,6 +1,6 @@
 # SyncRecord v1 — 结果与元数据同步契约
 
-> 状态：当前源码为 `0.1.0-alpha.56`；SyncRecord 功能链仍以 alpha.54 的“明确确认后即时发送、失败安全留队”纵向证据为准，最新 Windows packaged smoke 也仍为 alpha.54。alpha.55—alpha.56 只增加 Web 临时作业组合、迁移来源和平台能力门禁，没有改变本契约，也没有执行真实迁移。受信账号配置仍为 `pending_configuration`；API 和页面均未部署，所以普通 APP 仍不发同步请求。
+> 状态：当前源码为 `0.1.0-alpha.57`；SyncRecord 功能链仍以 alpha.54 的“明确确认后即时发送、失败安全留队”纵向证据为准，最新 Windows packaged smoke 也仍为 alpha.54。alpha.55—alpha.57 只增加 Web 部署门禁和标准治理披露，没有改变本契约，也没有执行真实迁移。受信账号配置仍为 `pending_configuration`；API 和页面均未部署，所以普通 APP 仍不发同步请求。
 
 ## 1. 信任边界
 

@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.57（ChatGPT 标准治理状态透明化）
+
+> 源码检查点；标准/规则 payload 未改，未联网核验来源，未部署、迁移、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.54。
+
+- 新增 exact、冻结、content-free 的标准治理摘要；从已验证注册表统计 13 项标准的审阅、来源类型与来源核验状态，输入含重复 ID 或未知枚举即失败关闭；
+- `StandardsProvider.listStandards()` 返回治理摘要；标准页分开显示“规则已启用 / 待复核”和“已核验 / 待核验 / 来源未取得”，不再用“有效”掩盖来源待核验；
+- 当前真实计数为 active 9、under_review 4、verified 0、pending 12、unavailable 1，界面明确提示标准治理门禁未完成、不能把标准库描述为“完整”；撤回或摘要异常时清空旧表格；
+- TDD 初始 4 项预期失败；聚焦 75/74/0/1。最终 Node 716/709/0/7、Python 362/0/0/3；标准包、资源信任与独立隐藏 Electron source smoke 通过；
+- 沙箱内两次 source smoke 因 Windows GPU 子进程 `0xC0000135` / `ERR_FAILED` 失败且未计作通过；沙箱外隐藏窗口保持 Renderer sandbox 后取得 PASS，输出 `out/source-smoke/runs/ms64dbwg-b5b0296cb99c4cf4/projects/`；
+- 资源信任为 108 文件 / 2,171,922 字节，manifest `a4d03367e4a3dd3cf7d0ab0173ee4f4ed4325676a10b417939ed283a7b4dc65a`、anchor `9c29b17e4fe4d12959c56437768d84762c546a7c970d51367724df3fea65df75`。
+
 ### 2026-07-29 — 0.1.0-alpha.56（ChatGPT Web 平台能力准入）
 
 > 源码检查点；未联网核对厂商规格，未使用真实账号/密钥/数据库，未迁移、部署、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.54。

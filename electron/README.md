@@ -29,8 +29,9 @@
 | `pdf-preview.js` | 在非持久隔离 session 中禁 JS/导航/网络生成 PDF，并安全写入 `exports/` |
 | `p0-ipc.js` | `plan-fixes`、带 `plan_id` 的批量提交和检查点 IPC 输入验证 |
 | `standards-payload.js` | 标准包 JSON 形状、canonical 字节、Unicode、日期与 URL 的 fail-closed 校验 |
+| `standards-governance.js` | 从已验证 registry 派生冻结、content-free 的审阅/来源核验计数和治理门禁 |
 | `standards-store.js` | 标准包 CAS、高水位、签名/撤回/兼容性验证、事务恢复和精确回滚 |
-| `standards-provider.js` | 内置标准启动、本地签名包预览/安装/回滚；生产信任根缺失时禁用导入 |
+| `standards-provider.js` | 内置标准启动、治理摘要、本地签名包预览/安装/回滚；生产信任根缺失时禁用导入 |
 | `standard-bound-core.js` | 已有项目以只读状态预检发现 pin；核验精确 CAS 后绑定所有业务/变更调用；项目升级仅开放受控迁移源 |
 | `standards-ipc.js` | 本地包安装、全局回滚、项目差异预览与一次确认升级 IPC |
 | `smoke.js` | 在隐藏窗口走 DOCX/EPUB 真 UI闭环、AI 单条发送预览零 transport，并核对版本与打包身份 |
@@ -43,7 +44,7 @@
 
 打包安全另由 `scripts/electron_fuse_policy.js` 固定：必须启用 ASAR 与 embedded integrity、用顶层 `@electron/fuses 2.1.3` 显式设置 Electron 43 全部 9 项，并在 electron-builder 后从真实应用二进制读回。索引 8 已定义为 `WasmTrapHandlers`；未来未知 wire 项仍 fail-closed。alpha.10 已把 Ace 迁移到 `utilityProcess` 并固定 `RunAsNode=false`。详见 `docs/ELECTRON_FUSE_POLICY.md`。
 
-当前源码的 `resource-trust-anchor.json` 绑定应用 loose 文件与目标平台运行锁；精确摘要以 `docs/TEST_REPORT.md` 为准。alpha.56 源码锚点为 108 文件 / 2,171,922 字节，manifest `2b783bc5…1bad3`、anchor `948f1582…f7095`；最新真实 packaged 锚点、ASAR、fuse、资源门禁及隐藏 smoke 仍属于 alpha.54。packaged 门禁继续从真实 ASAR 读取 production `package.json` 与 `oakReleaseIdentity`。
+当前源码的 `resource-trust-anchor.json` 绑定应用 loose 文件与目标平台运行锁；精确摘要以 `docs/TEST_REPORT.md` 为准。alpha.57 源码锚点为 108 文件 / 2,171,922 字节，manifest `a4d03367…dc65a`、anchor `9c29b17e…df75`；最新真实 packaged 锚点、ASAR、fuse、资源门禁及隐藏 smoke 仍属于 alpha.54。packaged 门禁继续从真实 ASAR 读取 production `package.json` 与 `oakReleaseIdentity`。
 
 PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专用 CSP 只允许自包含 HTML 所需的内联样式和 `data:` 图片。加载报告前后核对文件身份，拒绝项目根/`exports`/报告/目标的 symlink、junction/reparse、硬链接和目录身份换入，最后同目录原子写入。
 

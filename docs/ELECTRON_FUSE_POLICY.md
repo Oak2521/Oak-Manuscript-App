@@ -1,6 +1,6 @@
 # ELECTRON_FUSE_POLICY — Electron 打包硬化合同
 
-> 当前源码为 `0.1.0-alpha.56`，最新真实打包二进制证据仍为 `0.1.0-alpha.54`。本文件描述源码配置、打包后强制写入与回读、ASAR 资源/production package 身份、packaged-smoke 哈希证据及受限应用协议合同。Web SDK、迁移、repository、上传检查、私有 worker、Python 处理器、生产组合及平台准入均位于 `web/` 私有子包且不在 Electron `build.files` 中；桌面账号/同步与 compatible AI 边界不变。
+> 当前源码为 `0.1.0-alpha.57`，最新真实打包二进制证据仍为 `0.1.0-alpha.54`。本文件描述源码配置、打包后强制写入与回读、ASAR 资源/production package 身份、packaged-smoke 哈希证据及受限应用协议合同。Web 私有子包和标准治理摘要不改变 fuse 合同；桌面账号/同步与 compatible AI 边界不变。
 
 ## 固定策略
 

@@ -625,3 +625,12 @@ Provider 故障不得进入 Python 检查核心，也不得使已有本地项目
 - profile 只能含容量与布尔能力，不能含端点、密钥或稿件字段；不足项生成稳定 content-free code，生产组合在 store/network 初始化前失败关闭；
 - 即使全部声明满足，`production_evidence_verified` 和 `production_ready` 仍为 false。当前没有联网核对 Netlify 或其他厂商官方限制，也没有真实平台 profile；
 - alpha.56 全量 Node 711 / Python 362 零失败，隐藏 Electron 源码 smoke 和资源信任通过；未联网、迁移、部署、推送或打包。最新 Windows packaged 仍为未签名 alpha.54，商业正式版目标尚未达到。
+
+## 二十七、alpha.57 标准治理状态透明化检查点（2026-07-29）
+
+本节落实第十节“标准内容不完整必须如实披露”，不把界面披露解释为标准内容已经补全：
+
+- 已从经过 release/payload 验证的标准注册表派生 exact、content-free 治理摘要，统计审阅状态、来源类型、来源核验状态和外部来源子集；非法枚举或重复条目失败关闭；
+- 标准页把“规则已启用 / 待复核”与“来源已核验 / 待核验 / 来源未取得”分开显示；当前 13 项中 active 9、under_review 4、verified 0、pending 12、unavailable 1，门禁为 false；
+- 页面明确说明治理门禁未完成，不能把当前标准库描述为“完整”；撤回或摘要异常时清空旧内容。该状态不接触稿件、账号、端点或密钥；
+- alpha.57 全量 Node 716 / Python 362 零失败，标准/资源门禁与独立隐藏 Electron source smoke 通过；标准与规则 payload 未改，未联网、部署、迁移、推送或打包。最新 Windows packaged 仍为未签名 alpha.54，外部来源核验与真实审校签核仍未完成，商业正式版目标尚未达到。

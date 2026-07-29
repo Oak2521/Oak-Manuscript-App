@@ -1,8 +1,27 @@
 # TEST_REPORT — 测试报告
 
-> 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
+> 更新日期：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.56 Web 平台能力准入
+## 最新验证结论：0.1.0-alpha.57 标准治理状态透明化
+
+验证日期：2026-07-29。本轮没有修改标准/规则 payload，没有联网核验外部来源，也未使用真实账号/密钥/数据库，未迁移、部署、推送或重新打包。最新真实 Windows packaged 证据仍属于未签名 alpha.54。
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| TDD 红灯 | **PASS（预期失败已记录）** | 新模块不存在、UI 缺治理元素/文案、provider 缺摘要时共 4 项失败；随后才实现功能 |
+| 治理摘要 | **PASS（3/3）** | bundled 精确计数、门禁正反路径、重复 ID/未知枚举拒绝；摘要及嵌套计数冻结且不含稿件/账号/端点字段 |
+| Provider 与 UI | **PASS** | provider 从已验证 registry 派生摘要；UI 分列审阅和来源状态，用 `textContent`/`replaceChildren` 渲染，撤回/异常清空旧表格 |
+| 当前真实口径 | **未完成且已披露** | 13 项；active 9 / under_review 4；verified 0 / pending 12 / unavailable 1；`governance_gate_satisfied=false` |
+| 聚焦测试 | **PASS** | 75 total / 74 pass / 0 fail / 1 skip；包含治理、provider、IPC、payload、更新 transport、UI、Renderer 安全与 app protocol |
+| 最终 Node 全量 | **PASS** | 716 total / 709 pass / 0 fail / 7 skip，5.880 秒；跳过项不计作通过 |
+| 最终 Python 全量 | **PASS** | 362 total / 0 failures / 0 errors / 3 skipped，136.527 秒 |
+| 标准与资源门禁 | **PASS** | standards manifest `0aff75eb…427b`；资源 108 文件 / 2,171,922 字节，manifest `a4d03367e4a3dd3cf7d0ab0173ee4f4ed4325676a10b417939ed283a7b4dc65a`，anchor `9c29b17e4fe4d12959c56437768d84762c546a7c970d51367724df3fea65df75` |
+| Electron 源码隐藏 smoke | **PASS（独立隐藏窗口）** | 文件系统沙箱内两次因 GPU 子进程 `0xC0000135` / `ERR_FAILED` 失败且不计通过；沙箱外隐藏进程保持 Renderer sandbox 后 PASS，`out/source-smoke/runs/ms64dbwg-b5b0296cb99c4cf4/projects/` |
+| 内容完整性与正式发行 | **未完成** | 0 项来源已核验、4 项待复核、reviewer 仍为角色占位；没有 alpha.57 安装包、签名、公证或生产标准服务证据 |
+
+结论：alpha.57 关闭的是“标准内容缺口没有在产品界面如实可见”的问题，不是标准内容补全。结构/测试通过、规则 active 和来源 verified 是三种不同事实；正式版仍必须取得官方来源证据和具名审校签核，或降级未核验规则。
+
+## 历史验证结论：0.1.0-alpha.56 Web 平台能力准入
 
 验证日期：2026-07-29。本轮未联网核对厂商规格、未使用真实账号/密钥/数据库，未迁移、部署、推送或重新打包。最新真实 Windows packaged 证据仍属于未签名 alpha.54。
 

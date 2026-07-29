@@ -1341,27 +1341,61 @@ async function renderProjectStandardStatus() {
   }
 }
 
+function renderStandardsGovernanceSummary(summary) {
+  const target = $("#standards-governance-text");
+  if (!summary) {
+    target.textContent = "当前标准内容已停止展示，来源治理摘要不可用。";
+    return;
+  }
+  if (summary.schema_version !== "1.0" ||
+      summary.kind !== "oak-standards-governance-summary" ||
+      !summary.status_counts || !summary.source_verification_counts ||
+      !Number.isSafeInteger(summary.total_standards) || summary.total_standards < 1) {
+    throw new Error("标准治理摘要非法");
+  }
+  const status = summary.status_counts;
+  const sources = summary.source_verification_counts;
+  for (const count of [
+    status.active, status.under_review, status.superseded, status.deprecated,
+    sources.verified, sources.pending, sources.unavailable,
+  ]) {
+    if (!Number.isSafeInteger(count) || count < 0) throw new Error("标准治理摘要计数非法");
+  }
+  const counts = `标准 ${summary.total_standards} 项：规则已启用 ${status.active}、待复核 ${status.under_review}、`
+    + `已被替代 ${status.superseded}、已停用 ${status.deprecated}；来源已核验 ${sources.verified}、`
+    + `待核验 ${sources.pending}、来源未取得 ${sources.unavailable}。`;
+  target.textContent = summary.governance_gate_satisfied
+    ? `${counts} 标准治理门禁已满足。`
+    : `${counts} 标准治理门禁未完成，不能将当前标准库描述为“完整”。`;
+}
+
 async function renderStandardsPage() {
   try {
     const r = unwrap(await window.oak.getStandards());
     const tbody = $("#standards-table tbody");
-    tbody.innerHTML = "";
+    tbody.replaceChildren();
     for (const s of r.standards) {
       const tr = document.createElement("tr");
       const typeLabel = { official: "官方标准", oak_interpretation: "湖岸解释", technical_spec: "技术规范" }[s.source_type] || s.source_type;
       const statusLabel = {
-        active: "有效",
+        active: "规则已启用",
         under_review: "待复核",
         superseded: "已被替代",
         deprecated: "已停用",
       }[s.status] || s.status;
-      for (const text of [s.title, typeLabel, s.version, statusLabel, s.scope]) {
+      const sourceVerificationLabel = {
+        verified: "已核验",
+        pending: "待核验",
+        unavailable: "来源未取得",
+      }[s.source_verification_status] || s.source_verification_status;
+      for (const text of [s.title, typeLabel, s.version, statusLabel, sourceVerificationLabel, s.scope]) {
         const td = document.createElement("td");
         td.textContent = text;
         tr.appendChild(td);
       }
       tbody.appendChild(tr);
     }
+    renderStandardsGovernanceSummary(r.governance_summary);
     const standardStatus = r.status || {};
     const active = standardStatus.active;
     $("#standards-active-text").textContent = active
@@ -1388,7 +1422,9 @@ async function renderStandardsPage() {
     $("#app-meta").textContent = `规则包 ${info.rulepack}`;
     await renderProjectStandardStatus();
   } catch (err) {
+    $("#standards-table tbody").replaceChildren();
     $("#standards-active-text").textContent = "标准库不可用（已安全停止，不会回退到未核验规则）。";
+    $("#standards-governance-text").textContent = "标准治理摘要不可用，不能判断当前标准完整性。";
     $("#standards-update-text").textContent = String(err.message || err);
     $("#btn-check-standards").disabled = true;
     $("#btn-install-standards").disabled = true;

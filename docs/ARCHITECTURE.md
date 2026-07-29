@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.56` 源码架构；最新真实 Windows packaged 证据仍为 alpha.54。既有本地标准、账号/同步/权益和三模式 AI 源码链不变。Web 临时作业已有 exact 生产组合、SQL 字节门禁及平台无关能力准入；readiness 故意不声称官方平台限制、真实迁移、OS 禁网或生产零留存已验证。默认账号与权益配置无端点/密钥，仓库无生产私钥；真实账号、支付、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.57` 源码架构；最新真实 Windows packaged 证据仍为 alpha.54。标准页现从已验证 registry 派生审阅/来源核验治理摘要，但标准内容与真实签核未增加。Web 临时作业已有 exact 生产组合、SQL 字节门禁及平台无关能力准入；readiness 故意不声称官方平台限制、真实迁移、OS 禁网或生产零留存已验证。默认账号与权益配置无端点/密钥，仓库无生产私钥；真实账号、支付、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
 
 ## 1. 总体分层
 
@@ -14,7 +14,7 @@ Electron Main
   ├─ appInfo 身份（版本 + 规则包 + app.isPackaged），供源码与打包 smoke 防止错验旧包
   ├─ 打包合同：ASAR integrity + Electron fuses 配置门禁与真实二进制 wire 复核
   ├─ 资源信任：ASAR 内固定锚点 → 应用资源清单/平台锁 → 全量 loose 树复核
-  ├─ StandardsProvider：内置 release 验证 / 本地签名包预览与安装 / 全局回滚
+  ├─ StandardsProvider：内置 release 验证 / content-free 治理摘要 / 本地签名包预览与安装 / 全局回滚
   ├─ StandardsStore：严格 payload / 签名 / CAS / 高水位 / 撤回 / 事务恢复
   ├─ standard-bound-core：项目 release 预检 + 七字段 Python 绑定
   ├─ core-ipc：引用计划 / 检查参数的固定白名单
@@ -246,6 +246,10 @@ alpha.56 的 `deployment-requirements-v1.json` / `deployment-admission.js` 将�
 alpha.39 的 `DesktopAuthProvider` 以受信 `desktop-auth.json` 为唯一端点来源。配置为 `pending_configuration` 时，授权、token、user、Sync API origin、client 与 public key 必须全部为 null，登录返回 `configuration_required` 且不打开页面。配置完整时，主进程生成随机 state/verifier、先将 pending 状态写入独立 `OAKAUTH1` safeStorage 密文，再通过系统浏览器发起 Authorization Code + PKCE S256；Windows second-instance 与 macOS open-url 只接受固定 `oak-manuscript-auth://callback` 的唯一 `code+state`，拒绝 token/额外参数/错配/过期/重放。code exchange 后必须再调用固定 user endpoint 取得 exact account ID；刷新后同样复核账号，错绑清除会话。access/refresh token 和 verifier 不进入 Renderer、项目、报告或日志。
 
 这仍不是正式 OAuth/OIDC 兼容证明：真实服务契约、nonce/ID-token 取舍、刷新/退出/设备撤销和故障恢复必须在获准的隔离预生产环境核对。`LicenseProvider` 的客户端验签和服务端签发/原子设备授权已有源码，但设备自助管理、计费事件、真实迁移和部署尚未实现。默认 Electron session 继续完全离线；Auth/Sync 使用的是只在用户登录或发送动作后才调用的主进程有界通道，不能被 Renderer 提供 URL、token 或任意 payload。
+
+### AD-032 标准成熟度必须“规则启用—审阅状态—来源核验”分层披露（2026-07-29，冻结）
+
+`active` 只说明当前规则调度允许使用该标准条目，不能翻译为来源已核验或内容已完成审校。`StandardsProvider` 只能从已经通过 release/payload 验证的 registry 派生 exact、content-free 治理摘要；门禁要求不存在 `under_review` 且来源状态全部为 `verified`。Renderer 必须把审阅和来源核验分列，用纯文本显示精确计数；门禁未满足、active 被撤回或摘要非法时不得声称标准库“完整”。该门禁只衡量当前机器字段，不替代具名编辑/法律签核或正式发行门禁。
 
 ### AD-024 AI 设置与模型 transport 必须分层（2026-07-28，冻结）
 

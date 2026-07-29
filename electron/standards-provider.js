@@ -19,6 +19,7 @@ const {
   createStandardsPayloadValidator,
   strictJson,
 } = require("./standards-payload");
+const { summarizeStandardsGovernance } = require("./standards-governance");
 
 // This constant lives in the Electron application code (inside app.asar), not
 // beside the mutable extraResource payload. Packaging tests prove it matches
@@ -526,6 +527,7 @@ class StandardsProvider {
     return {
       standards: value.standards,
       registry_version: value.registry_version,
+      governance_summary: summarizeStandardsGovernance(value.standards),
       release: {
         bundle_id: verified.manifest.bundle_id,
         release_sequence: verified.manifest.release_sequence,

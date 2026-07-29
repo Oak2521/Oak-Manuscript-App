@@ -1,6 +1,6 @@
 # tests/ — Node 契约、发布资源与打包验证
 
-`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.56 最终统一结果为 Node **711 total / 704 pass / 0 fail / 7 skip / 4.554 秒**，Python **362 项 / 0 失败 / 0 错误 / 3 跳过 / 114.770 秒**，墙钟 136.8 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
+`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.57 最终统一结果为 Node **716 total / 709 pass / 0 fail / 7 skip / 5.880 秒**，Python **362 项 / 0 失败 / 0 错误 / 3 跳过 / 136.527 秒**，墙钟 147.8 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
 
 本目录覆盖：
 
@@ -14,6 +14,7 @@
 - 标准撤回独立签名角色、canonical list/envelope、时间窗/排序/阈值、追加式防回退、原子故障恢复、active/候选/回滚拒绝、检查途中并发撤回优先、安全前进恢复，以及 CAS/历史报告不变；
 - 标准撤回固定内容无关请求、发布源 payload/envelope 摘要绑定、HTTP/Fetch framing/凭据/媒体/容量/超时门禁、有界桌面 client、并发刷新拒绝，以及真实测试 signed list 到桌面原子应用；
 - release/revocation 同源 exact 配置、main 双客户端原子启用、一次点击撤回优先顺序、失败短路、被撤回内容隐藏和安全前进恢复入口；
+- 标准治理摘要的精确 bundled 计数、正反门禁、输入拒绝、provider 组合，以及 Renderer 分列/纯文本/不夸大完整性的静态契约；
 - ASAR/integrity、顶层 2.1.3 afterPack 全 9 fuse 严格写入/回读、未来未知 fuse 的 alpha/sale fail-closed、实际 Framework 文件身份和构建顺序；
 - ASAR 内资源锚点、108 文件应用 loose 清单、四类平台锁绑定、真实 `app.asar` raw header/精确读取、同路径重建、loose 伪锚点拒绝、启动前验证及 5 个可信根 blocker 的严格关闭条件；
 - Ace 外部验证 IPC 的可信项目来源、Python plan/prepare/finalize 绑定、固定 utilityProcess、注入环境清理、输出/时间上限、受控 loopback Chrome、精确 child/profile 清理及路径换入拒绝；
@@ -40,4 +41,4 @@ Python 的项目 schema/路径 fail-closed、跨进程内核写锁、锁前零�
 
 真实 EpubCheck/Ace 集成测试位于 `python/tests/test_external.py`。Ace 慢测默认跳过，需显式设置 `OAK_TEST_ACE=1` 且本机有受支持的 Chrome；好样本必须通过，缺陷样本必须失败。当前 packaged smoke 强制通过受控链路运行缺陷样本并得到 EpubCheck 5 error / Ace 8 项失败断言；缺失或陈旧 EXE 不得复用。
 
-最新 Web 客户端隐藏 Chromium smoke 仍为 alpha.55 **PASS**；alpha.56 未修改页面。alpha.56 源码 Electron smoke **PASS**，运行根为 `out/source-smoke/runs/ms63m7r7-0e877dfd8c7280ff/projects/`。最新隐藏 packaged smoke 仍为 alpha.54 的 **SMOKE + SYNC-RECOVERY PASS**。哈希不是代码签名，实际系统安装生命周期仍未运行。
+最新 Web 客户端隐藏 Chromium smoke 仍为 alpha.55 **PASS**；alpha.57 未修改页面。alpha.57 源码 Electron smoke 在沙箱外独立隐藏窗口 **PASS**，运行根为 `out/source-smoke/runs/ms64dbwg-b5b0296cb99c4cf4/projects/`；沙箱内两次 GPU 子进程环境失败不计作通过。最新隐藏 packaged smoke 仍为 alpha.54 的 **SMOKE + SYNC-RECOVERY PASS**。哈希不是代码签名，实际系统安装生命周期仍未运行。

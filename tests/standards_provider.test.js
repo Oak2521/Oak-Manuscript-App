@@ -199,6 +199,18 @@ test("provider bootstraps and verifies the digest-anchored bundled release witho
   const listing = await provider.listStandards();
   assert.equal(listing.standards.length, 13);
   assert.equal(listing.release.release_sequence, 2);
+  assert.deepEqual(listing.governance_summary.status_counts, {
+    active: 9,
+    under_review: 4,
+    superseded: 0,
+    deprecated: 0,
+  });
+  assert.deepEqual(listing.governance_summary.source_verification_counts, {
+    verified: 0,
+    pending: 12,
+    unavailable: 1,
+  });
+  assert.equal(listing.governance_summary.governance_gate_satisfied, false);
   const currentManifest = JSON.parse(fs.readFileSync(
     path.join(CONFIG, BUNDLED_STANDARD_RELEASE.manifestRelative),
     "utf8",
