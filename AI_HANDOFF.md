@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-28
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.35`
+> 当前版本：`0.1.0-alpha.36`
 > 当前分支：`chatgpt/commercial-v1`
-> 本地检查点标签：`chatgpt-v0.1.0-alpha.35`（源码、本机隐藏 Electron 与离线 AI 有界 HTTP 底座检查点；最新未签名 Windows 制品仍是 alpha.23）
+> 本地检查点标签：`chatgpt-v0.1.0-alpha.36`（未签名 Windows x64 NSIS/ZIP、packaged 资源/fuse/隐藏 smoke 与发布摘要检查点）
 
 ## 1. 权威入口与工作区
 
@@ -30,7 +30,16 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 2. 当前现场事实
 
-### 已完成：0.1.0-alpha.35 AI 有界 HTTP 底座与适配路由契约
+### 已完成：0.1.0-alpha.36 Windows 可安装内测制品检查点
+
+- APP、Python core、桌面/Web lockfile 统一为 alpha.36；资源信任清单 79 文件 / 2,139,277 字节，manifest SHA-256 `b0e85cd18ab481d5449b7d79c6c7bd6c438678d47cc892731ee7b394f22059ed`，ASAR 锚点 `0e2d523b37cc4acb6268288f8acf7dbacccde2c772f823dbedc0d48ec3b9a8c9`；
+- Windows x64 NSIS 190,013,438 字节 / SHA-256 `fb25a52127d2d4bd2f2e1275236e54a2a9e4d6cce65707938a96364a201ce5cd`；ZIP 233,838,475 字节 / `cbdf1afc46b0d6a52f7d0ec0489096d6824a387c18819c6a93d505414b0757dc`；`SHA256SUMS.txt` 摘要 `c9183c84264ab235bc90a46403b6dca37b99ac41fd54e72735eb629b18231810`；
+- 真实 packaged 资源/ASAR production identity、Python/JRE/EpubCheck/Ace 探针、Electron 43 wire v1 全 9 fuse 与隐藏 packaged smoke 均 PASS；独立隐藏源码 smoke 也 PASS；
+- 初次 `build:win` 已生成并验证应用，但最后证据生成因 release 根混有 alpha.23 制品按设计退出 1；三份旧文件无损移入 `release/archive/0.1.0-alpha.23-residual-before-alpha.36/` 后，当前发布证据生成与复验通过；
+- 安装生命周期 alpha.36 对归档 alpha.12 只读预检 PASS，`authorized=false`、`ready_for_authorized_run=true`；没有启动安装器或改写系统。发行身份仍 `complete=false`、缺 12 项，packaged 资源门禁保留 12 项 sale blocker；
+- 最终 `npm test` 167.7 秒：Node 517 total / 510 pass / 0 fail / 7 skip（3.7388783 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（114.943 秒）。本轮未联网、未调用模型、未使用真实密钥、未部署、未修改官网或仓库外内容。
+
+### 已完成：0.1.0-alpha.35 AI 有界 HTTP 底座与适配路由契约（历史）
 
 - 新增未接入生产的 `BoundedAIHttpClient`：只允许固定 POST JSON；远程仅 HTTPS，本机 HTTP 仅精确 loopback；拒绝 URL 凭据、查询、片段、重定向、Cookie、代理/转发/hop-by-hop 头、自定义 Content-Length/Host、压缩响应与非 JSON；
 - 请求头最多 16 个/8 KiB，请求 JSON 最多 32 KiB、深度/节点有界；响应最多 64 KiB，同时校验唯一 Content-Type/Content-Length、声明长度和实际流长度；超时固定在 100—120,000 ms，默认 60 秒；使用 Node 原生 `http/https` 且 `agent:false`，不读取代理环境或复用连接；
@@ -513,8 +522,8 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 4. 已核实但尚未解决的缺口
 
-- 打包版 Ace：alpha.23 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
-- Windows：alpha.23 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
+- 打包版 Ace：alpha.36 已有真实 packaged utilityProcess/loopback Chrome 功能证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、签名绑定的 smoke 证据和正式人工许可审计；
+- Windows：alpha.36 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：exact 作业 schema、内存参考状态机、同源 HTTPS、GoTrue、Fetch、工作台、Netlify Blobs 内容适配/清扫、Supabase/Postgres 持久任务/幂等迁移、上传结构/主动内容门禁、service-role-only 私有原子领取、身份最小化 worker、固定 Python 共享核心子进程与一次性结果领取已实现；生产环境/真实账号与 Blobs/Postgres E2E、病毒库/平台扫描、容器/OS 禁网与资源隔离、计费、结果同步和官网嵌入尚未实现；
 - 账号/订阅/同步：离线 Provider 状态机、Free/Pro/宽限、SyncRecord v1、逐字段预览、按账户隔离的 OS 加密队列和重启恢复已实现；生产 Supabase、登录凭据存储、签名授权、支付、网络 transport 和网站后台未连接；
@@ -524,7 +533,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ### Windows sale 门禁的当前明确阻断
 
-源码资源门禁现列 17 项（builder 独立全树锁已成立）；真实 alpha.23 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 12 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
+源码资源门禁现列 17 项（builder 独立全树锁已成立）；真实 alpha.36 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 12 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
 
 以下机器码来自当前 `verify_packaged_resources.js` 与实测 sale 输出，不得合并或省略：
 
@@ -545,7 +554,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 不要重新做宽泛规划，按 v2.0 方案继续：
 
-1. 已完成 Windows 安装生命周期编排器与 alpha.23 只读预检；下一步须单独取得系统写入授权后，真实执行 alpha.12 → alpha.23 安装/升级/降级探测/卸载，核对 HKCU 与快捷方式并保留 canonical 证据；若历史安装器确实回退，必须把它记为产品 blocker，不能修改证据口径；
+1. 已完成 Windows 安装生命周期编排器与 alpha.36 对归档 alpha.12 的只读预检；下一步须单独取得系统写入授权后，真实执行 alpha.12 → alpha.36 安装/升级/降级探测/卸载，核对 HKCU 与快捷方式并保留 canonical 证据；若历史安装器确实回退，必须把它记为产品 blocker，不能修改证据口径；
 2. CPython、EpubCheck、Temurin/JRE、Electron 与 builder 的机器来源证据已完成；下一步必须由具名人员完成许可、商标、第三方通知、签名边界与再分发签核，再完成 Windows 代码签名方案并逐项关闭相应 packaged sale blocker；代码不能替代该签署；
 3. Ace 的 provenance/全闭包许可证、自带浏览器、OS 级网络隔离及与制品哈希绑定的不可伪造 smoke 证明仍未完成；任何需扩大 Ace 证明范围的实现先确认验收口径；
 4. 经联网授权核验标准官方来源，配置生产 trust pin、在线包获取和签名撤回通道；任何新规则必须有反例、匿名样本、回归测试和真实审校签核；

@@ -4,6 +4,16 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.36（ChatGPT Windows 可安装内测制品检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.36`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未部署或修改官网；生成的是未签名 Windows x64 内测制品，不是可售卖正式版。
+
+- APP、Python core、桌面/Web lockfile 统一为 alpha.36，重建 79 文件 / 2,139,277 字节资源清单；manifest SHA-256 `b0e85cd18ab481d5449b7d79c6c7bd6c438678d47cc892731ee7b394f22059ed`，ASAR 锚点 `0e2d523b37cc4acb6268288f8acf7dbacccde2c772f823dbedc0d48ec3b9a8c9`；
+- 真实生成 Windows x64 NSIS 190,013,438 字节 / SHA-256 `fb25a52127d2d4bd2f2e1275236e54a2a9e4d6cce65707938a96364a201ce5cd` 与 ZIP 233,838,475 字节 / `cbdf1afc46b0d6a52f7d0ec0489096d6824a387c18819c6a93d505414b0757dc`；发布 manifest、SHA256SUMS、packaged 资源/ASAR、9 fuse 和隐藏 packaged smoke 均复验通过；
+- 初次总构建在最后证据阶段因 release 根残留 alpha.23 制品被 fail-closed 门禁拒绝；旧制品无损移入仓库内归档后，仅重跑证据生成并通过，没有删除历史字节或掩盖失败；
+- 安装生命周期 alpha.36→归档 alpha.12 只读预检通过，`authorized=false`，没有改写注册表、快捷方式或启动安装器；发行身份仍 `complete=false`，12 个缺失字段及 packaged 12 项 sale blocker 保留；
+- 最终 `npm test` 167.7 秒：Node 517 total / 510 pass / 0 fail / 7 skip（3.7388783 秒），Python 362 total / 0 failures / 0 errors / 3 skipped（114.943 秒）；隐藏源码与 packaged Electron smoke 均 PASS。
+
 ### 2026-07-28 — 0.1.0-alpha.35（ChatGPT AI 有界 HTTP 底座检查点）
 
 > 本地标签：`chatgpt-v0.1.0-alpha.35`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未部署、未修改官网或重新打包；最新真实 Windows 制品仍为 alpha.23。

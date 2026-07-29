@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.35` 已实现的桌面隐私边界、三模式 AI/OS 加密凭据/单条问题发送预览/建议人工审阅/未接线有界 HTTP 底座，以及 Web 作业/同源 HTTP/Bearer/GoTrue/Fetch/临时对象存储/持久任务/上传门禁/私有领取、固定 Python 子进程、一次性结果领取和有界双清扫源码契约。现有 alpha.23 Windows 制品未签名，不是可售卖正式版。真实模型适配、数据库迁移、生产病毒扫描、容器/OS 隔离、同步 transport、计费和官网发布仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.36` 已实现的桌面隐私边界、三模式 AI/OS 加密凭据/单条问题发送预览/建议人工审阅/未接线有界 HTTP 底座，以及 Web 作业/同源 HTTP/Bearer/GoTrue/Fetch/临时对象存储/持久任务/上传门禁/私有领取、固定 Python 子进程、一次性结果领取和有界双清扫源码契约。现有 alpha.36 Windows 制品未签名，不是可售卖正式版。真实模型适配、数据库迁移、生产病毒扫描、容器/OS 隔离、同步 transport、计费和官网发布仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -58,9 +58,9 @@
 - OpenAI、Anthropic 和 Google 官方标签绑定固定官方 HTTPS 端点；自定义远程地址只能使用 OpenAI-compatible HTTPS，本机 HTTP 仅限精确 loopback；provider 或地址变化后不得沿用旧凭据；
 - `ai-context` 只读提取所选一条问题；binding 中的项目内 issue/check、working/标准摘要不返回 Renderer，也不进入 request_content。发送内容只允许规则、严重级别、标题、解释、脱敏位置、原文预览、标准引用、状态和用户附加要求；EPUB 内部资源路径被统一替换；
 - 预览计划只在主进程内存中最多保留 8 个、10 分钟、一次使用；上下文或 AI 配置变化、取消、过期或重复确认均在 transport 前拒绝。公开预览完整显示目的地、会发送/不会发送字段和语义请求，不含文件名、路径、项目/账号标识、哈希或凭据；
-- alpha.35 生产模型 transport 为 `null`，确认按钮禁用，不会联网。注入式测试只证明确认后凭据交付与只读响应/审阅接口；凭据永不同步，Web 凭据只限当前会话；失败不得静默回退湖岸 AI。
+- alpha.36 生产模型 transport 仍为 `null`，确认按钮禁用，不会联网。注入式测试只证明确认后凭据交付与只读响应/审阅接口；凭据永不同步，Web 凭据只限当前会话；失败不得静默回退湖岸 AI。
 - 返回建议最多在主进程保留 8 个、30 分钟、一次处理。采纳前重新验证完整问题上下文，只记录问题 `accepted` 状态；模型文本不持久化、不进入报告/同步/项目，也不写 working。放弃或关闭只销毁内存建议，不改变规则问题状态。
-- alpha.35 的 HTTP 客户端只是一条未实例化的主进程网络原语：固定 POST JSON、Node 原生单次连接、远程 HTTPS/本机 loopback，拒绝重定向、URL 凭据/查询、Cookie、代理/转发头、压缩与超限响应。请求 32 KiB、响应 64 KiB、头 16 个/8 KiB、默认超时 60 秒；所有错误使用固定本地文案。
+- alpha.36 沿用未实例化的主进程 HTTP 网络原语：固定 POST JSON、Node 原生单次连接、远程 HTTPS/本机 loopback，拒绝重定向、URL 凭据/查询、Cookie、代理/转发头、压缩与超限响应。请求 32 KiB、响应 64 KiB、头 16 个/8 KiB、默认超时 60 秒；所有错误使用固定本地文案。
 - `AITransportRouter` 只接受已注册适配器，凭据不得进入 URL或由响应精确回显。生产仍 `transport:null`，所以这些合同不会在普通应用中创建 socket；真实供应商接入还必须核对官方协议、证书/代理政策和故障行为。
 
 ### 4.4 Web 临时作业的零留存与同源 HTTP 契约
@@ -117,7 +117,7 @@ CLI/IPC 明确区分：退出码 1 是可消费的业务结果，退出码 2 是
 - Windows CPython 3.13.14 另由 provenance v1 绑定 PSF 官方 ZIP/Sigstore/SPDX、34 文件清单、33 个原字节文件、唯一 `_pth` 精确追加和原样许可证；证据原始 SHA-256 同时进入运行时 manifest 与 ASAR 资源锚点。完整 Sigstore/GPG 与具名许可签署仍待办，机器验证不能替代法律/再分发审阅。
 - Electron 桥和门禁共用固定 Python bootstrap：`-I -S -X utf8`，显式把经路径策略验证的 core 绝对目录插入 `sys.path[0]` 后用 `runpy` 执行；同时清理可注入模块或启动参数的继承环境，并始终以参数数组和 `shell=false` 启动。CPython 探针核对 `sys.implementation`、精确三段版本、`releaselevel=final` 与 `serial=0`，不只匹配宽松版本字符串。
 - 打包配置必须显式开启 ASAR、保持 embedded ASAR integrity，并注册全量 fuse `afterPack`。顶层锁定 `@electron/fuses 2.1.3`，以 `strictlyRequireAllFuses=true` 写入 Electron 43 的全部 9 项；索引 8 `WasmTrapHandlers=true`。写后立即回读，随后再独立读取真实二进制；路径逃逸、不安全父链、链接/硬链接、实际 Framework 文件身份变化、API/索引和状态漂移均拒绝。完整合同见 `ELECTRON_FUSE_POLICY.md`。
-- alpha.23 在 `app.asar` 内固定资源锚点，锚点绑定 78 个 loose 应用文件、发行身份/同步队列/五份 Web schema、目标平台 Python/EpubCheck/JRE/Ace 锁，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 五类来源证据；packaged 门禁另从实际 ASAR production package 读取 exact `oakReleaseIdentity`。读取器解析当前 raw header 并精确读满字节，不依赖路径缓存；打包启动在标准存储和窗口前复核完整资源树。Python 显式 `-B` 禁止探针写入字节码；锚点、身份和清单不读取或记录用户稿件内容。
+- alpha.36 在 `app.asar` 内固定资源锚点，锚点绑定 79 个 loose 应用文件、发行身份/同步队列/五份 Web schema、目标平台 Python/EpubCheck/JRE/Ace 锁，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 五类来源证据；packaged 门禁另从实际 ASAR production package 读取 exact `oakReleaseIdentity`。读取器解析当前 raw header 并精确读满字节，不依赖路径缓存；打包启动在标准存储和窗口前复核完整资源树。Python 显式 `-B` 禁止探针写入字节码；锚点、身份和清单不读取或记录用户稿件内容。
 - Java 与 Ace/Node/Electron 外部工具进程也清理类路径、模块和启动参数注入变量，并以固定参数数组、`shell=false` 启动。
 - 所有锁和清单使用 locale-independent UTF-16 code unit 排序；Ace tracked lock 同时固定 stage manifest 原始字节哈希，JSON 语义等价但字节漂移也拒绝。JRE/Ace 的候选 stage 与受版本控制锁在显式更新时事务提交，失败恢复旧目录和旧锁，避免身份撕裂。
 - Ace 的空/未知 license 声明和空许可证文件直接拒绝。现有许可证文件或生成元数据通知只满足 alpha 可追溯性；全部 236 包仍需正式逐包人工审计。

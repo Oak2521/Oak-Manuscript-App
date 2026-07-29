@@ -2,7 +2,18 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
-## 0.1.0-alpha.35 AI 有界 HTTP 底座验收（2026-07-28）
+## 0.1.0-alpha.36 Windows 可安装内测制品验收（2026-07-28）
+
+- [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.36`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
+- [x] Windows x64 NSIS、ZIP 与 unpacked 应用真实生成；packaged 资源门禁、ASAR production identity、Electron 43 全 9 fuse 和隐藏 smoke 均通过；
+- [x] 发布证据精确绑定当前 NSIS 190,013,438 字节 / SHA-256 `fb25a52127d2d4bd2f2e1275236e54a2a9e4d6cce65707938a96364a201ce5cd` 与 ZIP 233,838,475 字节 / `cbdf1afc46b0d6a52f7d0ec0489096d6824a387c18819c6a93d505414b0757dc`；
+- [x] 资源锁 79 文件 / 2,139,277 字节，manifest SHA-256 `b0e85cd18ab481d5449b7d79c6c7bd6c438678d47cc892731ee7b394f22059ed`，anchor SHA-256 `0e2d523b37cc4acb6268288f8acf7dbacccde2c772f823dbedc0d48ec3b9a8c9`；
+- [x] `npm test` Node 517 / Python 362 全量零失败；独立隐藏源码 smoke 与 packaged smoke 均 PASS；
+- [x] alpha.36 对归档 alpha.12 的安装生命周期只读预检通过，`authorized=false`、`ready_for_authorized_run=true`，没有启动安装器或改写系统；
+- [x] 发行身份保持 `complete=false`，12 个缺失字段及 packaged 12 项 sale blocker 没有被 alpha 门禁错误关闭；
+- [ ] 真实安装/升级/降级探测/卸载、Windows Authenticode、干净机、macOS、Web 部署及可售卖正式版门禁完成。
+
+## 0.1.0-alpha.35 AI 有界 HTTP 底座验收（历史，2026-07-28）
 
 - [x] APP、Python core、桌面/Web lockfile 统一为 `0.1.0-alpha.35`；标准内容仍为 2.0.0、35 条规则、6 个机械 fixer；
 - [x] 独立模块只接受 exact POST JSON；远程仅 HTTPS、本机 HTTP 仅精确 loopback；URL 凭据/查询/片段、重定向、Cookie、代理/转发/hop-by-hop 头和响应压缩均拒绝；

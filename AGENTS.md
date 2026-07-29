@@ -56,4 +56,4 @@ release/     # 发布产物（不入库）
 
 ## 6. 里程碑与当前阶段
 
-当前开发版本为 `0.1.0-alpha.13`。P0、离线标准可信链、Windows builder 独立全树锁、真实 NSIS/ZIP、packaged ASAR/9-fuse/资源门禁、统一账号/Free-Pro/`SyncRecord v1` 离线契约，以及 Ace 受控 `utilityProcess` 链路已经实现并取得打包烟测证据。Electron 43 的 9 项 fuse 已由锁定新版工具显式写入和回读，无未知项。该制品仍未签名且不是可售卖正式版；来源/许可证审计、自带浏览器、OS 级网络隔离、干净机安装验收、生产账号/同步、macOS 和 Web 仍未完成。普通 build/test 永不联网；任何重新下载仍须用户明确批准。具体事实必须以代码、`npm test` 和 `docs/DEVELOPMENT_STATUS.md` 交叉核对。
+当前开发版本为 `0.1.0-alpha.36`。P0、离线标准可信链、Windows builder 独立全树锁、真实 NSIS/ZIP、packaged ASAR/9-fuse/资源门禁、统一账号/Free-Pro/`SyncRecord v1` 离线契约、Ace 受控 `utilityProcess` 链路，以及尚未接入生产的三模式 AI 安全底座已经实现。alpha.36 Windows x64 安装包、ZIP、发布摘要、packaged 资源/fuse 与隐藏 smoke 已复验；制品仍未签名且不是可售卖正式版。来源/许可证人工审计、自带浏览器、OS 级网络隔离、真实安装生命周期、生产账号/同步/AI、macOS 和 Web 部署仍未完成。普通 build/test 永不联网；任何重新下载仍须用户明确批准。具体事实必须以代码、`npm test` 和 `docs/DEVELOPMENT_STATUS.md` 交叉核对。
