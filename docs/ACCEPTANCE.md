@@ -2,6 +2,15 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.54 明确确认后的即时结果同步闭环验收（2026-07-29）
+
+- [x] 同步预览继续零入队、零发送；`transportConfigured` 由主进程 coordinator 实际状态判定，Renderer 不能自报 payload、token、URL 或 transport；
+- [x] `sync_once` / `ask_each_time` 明确确认先进入 OS 加密队列；配置完整时立即发送，只有远端 `created|replayed` 后删除精确本机项；失败保留队列并提供明确重试，未配置时只入队且不声称上传；
+- [x] Renderer 分别显示已同步、失败并安全保留、仅本机排队；登录本身不发送，暂不同步与不再询问不入队；
+- [x] 生产形状本地 E2E 贯通登录、Pro 权益、本地结果、桌面 IPC/coordinator/client、服务端独立校验与 owner 绑定、网站历史 strict parse；内容/路径/账号/token 泄露反向断言通过；
+- [x] 相关 21/21；全量 Node 700/693/0/7、Python 362/0/0/3；资源信任与隐藏 Electron source smoke 最终通过；
+- [ ] 真实 PKCE、正式端点、数据库迁移、RLS、多实例、网站部署与生产账号 E2E 未运行；alpha.54 未打包，最新 Windows 制品仍为未签名 alpha.42。
+
 ## 0.1.0-alpha.53 撤回优先的标准更新与恢复入口验收（2026-07-29）
 
 - [x] desktop config exact 1.1 同时包含 update/revocation：配置态要求同源规范 HTTPS 和两个固定路由；待配置态二者均为 null，禁止半配置；main 只在两个客户端构造成功后同时启用；

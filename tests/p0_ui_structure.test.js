@@ -173,6 +173,7 @@ test("account entries and sync preview expose explicit, non-blocking choices wit
     "btn-refresh-license",
     "sync-preview-dialog",
     "sync-preview-fields",
+    "sync-transport-warning",
     "btn-sync-once",
     "btn-sync-ask-each-time",
     "btn-sync-not-now",
@@ -186,6 +187,9 @@ test("account entries and sync preview expose explicit, non-blocking choices wit
   assert.match(app, /sync-preview-fields[\s\S]*replaceChildren/);
   assert.doesNotMatch(app, /sync-preview[^\n]*innerHTML/);
   assert.match(app, /window\.oak\.syncConfirm\(preview\.record\.idempotency_id, choice\)/);
+  assert.match(app, /delivery\.state === "synced"/);
+  assert.match(app, /delivery\.transportConfigured === true && delivery\.error/);
+  assert.match(app, /记录已保留在本机加密队列/);
   assert.match(app, /window\.oak\.refreshLicense\(\)/);
   const authToggle = app.slice(app.indexOf("async function toggleAccountAuth()"), app.indexOf("function renderAccountStatus()"));
   assert.match(authToggle, /window\.oak\.logout\(\)[\s\S]*await refreshAccountStatus\(\)/,

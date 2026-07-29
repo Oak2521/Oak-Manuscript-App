@@ -20,7 +20,7 @@
 | `encrypted-auth-store.js` / `auth-http-client.js` | safeStorage 域分离加密会话及固定有界 token/user HTTPS 客户端 |
 | `desktop-license-config.js` / `license-http-client.js` | 待配置零网络门禁与显式固定 HTTPS/Bearer 权益请求 |
 | `license-entitlement.js` / `license-store.js` | Ed25519 signed-entitlement 验证、账号/设备/时间绑定、状态派生及 `OAKLIC1` safeStorage 原子缓存 |
-| `account-sync-ipc.js` | 只从可信 Python 来源构造同步预览，缓存负载，并接收 opaque 幂等 ID 与四种固定选择 |
+| `account-sync-ipc.js` | 只从可信 Python 来源构造同步预览，缓存负载，并接收 opaque 幂等 ID 与四种固定选择；同步确认在 coordinator 可用时立即发送，失败返回有界状态并保留队列 |
 | `external-validation-ipc.js` | 只接收受控项目路径，编排 Python plan/prepare/finalize 与固定 Ace helper |
 | `ace-utility-runner.js` | 固定 utilityProcess module/参数/环境、输出上限、超时和输出目录身份复核 |
 | `chrome-controller.js` | 以固定隐藏参数启动精确系统 Chrome，提供随机 loopback DevTools 端点并清理 profile |
@@ -51,7 +51,7 @@ PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专�
 
 `app:info` 返回 `appVersion`、经当前存储重新验证的七字段 `standardIdentity` 和 `packaged=app.isPackaged`。smoke 必须先通过 Renderer 规划并确认引用解析，再读取本次创建的 `project.json` 及其引用报告，核对 Python core 版本、check ID、`citation_resolution`，以及 APP/项目/检查/报告的完整标准身份；条件外部 smoke 还要求 EpubCheck/Ace 确实运行，打包 smoke 强制 `packaged=true`。打包态 Python、JRE 或 Ace stage 失配时必须失败关闭，不得回退用户环境中的同名代码资源；Electron 43.1.0 `win32-x64` 自身仍由受版本控制的全树锁固定：2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `f5c2c915633c1917bc37377f8232bde4259588eb138bc4072a3c7df976e27486`，并绑定官方 ZIP/SHASUMS256/npm checksums provenance。当前 Ace 浏览器运行时仍依赖用户系统 Chrome。
 
-账号与同步 IPC 不接受 Renderer 自带的负载、token、URL 或 transport；主进程通过固定 `sync-source` 命令取值并重建 SyncRecord v1。alpha.39 只在受信账号配置完整且 safeStorage 可用时实例化系统浏览器 PKCE、token/user client 与 Sync coordinator；默认 `pending_configuration` 没有任何网络目标。Renderer 只能查询状态、发起登录或逐项发送/重试，令牌/verifier 永不跨 preload。远端创建或幂等重放后才删除本机队列，失败和账号切换保留记录。详见 `docs/SYNC_RECORD_V1.md`。
+账号与同步 IPC 不接受 Renderer 自带的负载、token、URL 或 transport；主进程通过固定 `sync-source` 命令取值并重建 SyncRecord v1。只在受信账号配置完整且 safeStorage 可用时实例化系统浏览器 PKCE、token/user client 与 Sync coordinator；默认 `pending_configuration` 没有任何网络目标。alpha.54 中，用户明确选择同步后由主进程立即发送同一持久队列项；失败保留并可逐项明确重试，登录/预览/启动不自动发送。令牌/verifier 永不跨 preload；远端创建或幂等重放后才删除本机队列。详见 `docs/SYNC_RECORD_V1.md`。
 
 订阅权益同样不接受 Renderer 自报 claims、token、URL 或公钥。alpha.44 只在受信权益配置完整且 safeStorage 可用时组合 HTTP client/provider；`status()` 只验本机密文，只有已登录用户调用固定 refresh IPC 才请求一次服务。Ed25519 envelope 必须绑定当前账号、stable device ID、issuer/audience 与时间；失败降 Free 且不锁本地项目。默认配置为空；详见 `docs/SIGNED_ENTITLEMENT_V1.md`。
 

@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.48` 源码已实现的桌面隐私边界、SyncRecord 服务端/API/Supabase、PKCE/加密 token-store/同步失败恢复、Ed25519 权益客户端、独立签发、规范化订阅事件和属主设备管理服务、三模式 AI，以及 Web 临时作业、同步历史和订阅/设备客户端源码契约。网站撤销到桌面显式刷新降级已用匿名同状态链验证，审计仍为 content-free。默认账号与权益配置没有网络目标，仓库没有生产私钥；最新 alpha.42 Windows 制品已通过 packaged 安全门禁但仍未签名，不是可售卖正式版。真实账号、支付商 webhook、数据库迁移、API/官网部署和生产隔离仍未实现。
+> 当前权威为商业正式版开发方案 v2.0；v1.2 仅作历史基线。本文件描述 `0.1.0-alpha.54` 源码已实现的桌面隐私边界、SyncRecord 服务端/API/Supabase、PKCE/加密 token-store/确认后即时同步与失败恢复、Ed25519 权益客户端、独立签发、规范化订阅事件和属主设备管理服务、三模式 AI，以及 Web 临时作业、同步历史和订阅/设备客户端源码契约。账号同步与网站撤销到桌面显式刷新降级均已用本地匿名纵向链验证，审计仍为 content-free。默认账号与权益配置没有网络目标，仓库没有生产私钥；最新 alpha.42 Windows 制品已通过 packaged 安全门禁但仍未签名，不是可售卖正式版。真实账号、支付商 webhook、数据库迁移、API/官网部署和生产隔离仍未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -47,7 +47,7 @@
 - 只有已登录状态可生成预览；未登录不询问。预览不入队、不发送；确认只接受缓存负载的 opaque 幂等 ID，以及 `sync_once`、`ask_each_time`、`not_now`、`never_for_project` 四个固定选择；
 - 队列状态在 OS `safeStorage` 加密后写入应用 `userData/sync/queue-v1.enc`；明文 exact schema 只含偏好、按账户项目阻止项和 SyncRecord 队列。落盘使用 canonical JSON、长度封装、同目录独占候选、文件 `fsync`、原子替换、提交后解密复验和 revision CAS；链接、硬链接、路径逃逸、篡改、非 canonical、短读或身份变化均 fail-closed；
 - 队列、幂等 ID 和项目阻止项按账户隔离；内部 `account_id` 不返回 Renderer。未登录查询固定返回空集，取消/重试/删除必须重新取得当前 authenticated 状态；系统加密不可用时不创建同步预览或保存负载，本地稿件功能不受影响；
-- `pending_transport` 仍只表示“已在本机加密等待”。alpha.39 的固定 HTTPS/Bearer client/coordinator 只在受信账号配置完整时实例化，token 必须与队列账号绑定；界面只在用户逐项点击后发送，不后台自动 flush。仓库默认端点为空，因此当前没有账号网络传输或网站写入；
+- `pending_transport` 仍只表示“已在本机加密等待”。固定 HTTPS/Bearer client/coordinator 只在受信账号配置完整时实例化，token 必须与队列账号绑定；alpha.54 把 `sync_once|ask_each_time` 的确认作为本次发送授权，先持久入队再立即发送，远端确认后才删除。失败保留队列且只能由用户明确重试；登录、预览、启动和队列恢复不自动发送。仓库默认端点为空，因此当前没有账号网络传输或网站写入；
 - PKCE verifier、access/refresh token 只进入 `userData/auth/session-v1.enc` 的 `OAKAUTH1` safeStorage 密文；Renderer、项目、报告、同步记录和日志不得接收。正式 OAuth/OIDC、nonce/ID-token、撤销和生产端点仍须真实协议/E2E；不得解除 default session 离线门禁。
 
 ### 4.2.1 签名订阅权益的最小网络与缓存边界
@@ -97,7 +97,7 @@ alpha.47 的网站账号客户端只接收上述公开权益时间窗和设备�
 - `sync-record-service.js` 独立执行 exact key、永久禁止键、ID/时间、计数一致性、记录条数和 64 KiB 上限验证；不能把 Electron 已验证当作服务端信任；
 - `oak_manuscript_sync_records` 只保存 SyncRecord v1 白名单 JSON 及 owner/时间，不保存稿件、正文、标题、片段、路径、文件名、参考文献原文或内容哈希。数据库递归拒绝可疑键，强制 RLS，浏览器角色无表/RPC 权限；
 - service-role repository 只能调用四个固定 RPC，不把密钥写入 URL/Cookie/错误。创建/重放在账户 advisory transaction lock 内原子执行容量限制和幂等判断；列表在一次 RPC 快照返回记录与 total，删除只按可信 owner；
-- 上述服务端部分为 alpha.38 源码、桌面接线为 alpha.39 源码、失败恢复为 alpha.40 源码，证据均是离线 Fake fetch/SQL 静态契约。没有真实迁移、OAuth/OIDC、GoTrue/RLS、多实例、备份、删除、日志和密钥泄露生产证据，也没有网站后台；不得据此宣称云端隐私验收完成。
+- 上述服务端部分为 alpha.38 源码、桌面接线为 alpha.39、失败恢复为 alpha.40；alpha.54 新增的单一 E2E 贯通明确确认、即时发送、服务端 owner 绑定和网站历史 strict parse。证据仍是本地匿名 Fetch/内存 repository/SQL 静态契约；没有真实迁移、OAuth/OIDC、GoTrue/RLS、多实例、备份、删除、日志和密钥泄露生产证据，不得据此宣称云端隐私验收完成。
 
 ## 5. 文件与压缩包安全
 

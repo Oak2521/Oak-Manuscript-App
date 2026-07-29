@@ -2,9 +2,9 @@
 
 > 最近更新：2026-07-29
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.53`
+> 当前版本：`0.1.0-alpha.54`
 > 当前分支：`chatgpt/commercial-v1`
-> 当前源码本地标签：`chatgpt-v0.1.0-alpha.53-standards-recovery-ui`；既有 `chatgpt-v0.1.0-alpha.52-standards-revocation-http-e2e` 为撤回获取纵向链检查点，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据
+> 当前源码本地标签：`chatgpt-v0.1.0-alpha.54-account-sync-flow`；既有 `chatgpt-v0.1.0-alpha.53-standards-recovery-ui` 为撤回优先恢复检查点，`chatgpt-v0.1.0-alpha.42-packaged` 为最新 Windows 打包证据
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,16 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.54 明确确认后的即时结果同步闭环
+
+- 登录仍不等于授权：只有已登录用户导出后才生成逐字段 SyncRecord 预览；预览本身零入队、零请求，Renderer 只提交 opaque 幂等 ID 与四种固定选择，不能提交 payload、token、URL 或 transport；
+- `provider:sync-confirm` 在 `sync_once` / `ask_each_time` 明确确认后先写 OS 加密幂等队列；受信 coordinator 存在时立即发送该项，只有远端 `created|replayed` 后才删除。发送失败返回有界 delivery 状态并保留队列供设置页明确重试；未配置 transport 时只入队且明确未上传；
+- Renderer 根据主进程的 authoritative `transportConfigured` 和 delivery 分别显示“已同步”“失败并安全保留”“仅本机排队”，不再要求配置完整的用户确认后再去设置页执行第二次发送；
+- 新增单一生产形状本地 E2E，贯通 Auth 登录、Pro 权益、本地检查结果、真实账号/同步 IPC、coordinator/client、Fetch handler、服务端独立校验/owner 绑定及网站历史 strict parser；标题、正文片段、文件名、路径、账号和 token 均未进入同步记录或公开审计；
+- 相关 21/21；最终全量 `npm test`：Node 700 total / 693 pass / 0 fail / 7 skip（4.398 秒），Python 362 / 0 failures / 0 errors / 3 skipped（104.874 秒），墙钟 114.1 秒；
+- 资源信任 108 文件 / 2,171,922 字节，manifest `c0c44f26…94b09`、anchor `b0b4dc74…f0107`；隐藏 Electron source smoke 在 Codex 沙箱内两次因 GPU 子进程 DLL 载入失败退出，沙箱外隐藏重跑 PASS，输出 `out/source-smoke/runs/ms611umr-1948430f091121ac/projects/`；
+- 本轮未联网、未使用真实账号/令牌/数据库/网站，未部署、推送或打包。tracked 账号配置仍为 `pending_configuration`，普通 APP 仍不会登录或同步；最新 Windows 制品仍为未签名 alpha.42。
 
 ### 已完成：0.1.0-alpha.53 撤回优先的标准更新与恢复入口
 
@@ -712,9 +722,9 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 5. 下一执行顺序
 
-不要重新做宽泛规划。近期直接闭合“账号 → 权益 → 检查 → 明确同步”主链：
+不要重新做宽泛规划。alpha.54 已闭合“账号 → 权益 → 检查 → 明确同步 → 网站历史”的本地生产形状主链；下一步直接推进生产联调前置条件：
 
-1. alpha.53 已完成 release/revocation 同源 exact 配置和一次用户触发的“先验撤回、后查更新”恢复入口；下一项按用户要求停止细拆内部基础设施版本，集中闭合“登录 → 权益 → 本地检查 → 明确选择同步 → 网站账号历史可见”的单一商业主流程。先用生产形状的本地注入 E2E 核对现有组件和缺口，不把本地证据写成真实生产联调；
+1. alpha.54 已用单一 E2E 证明登录、Pro 权益、本地结果、明确确认、即时发送、服务端 owner 绑定和网站历史解析可组合；继续保持预览零发送、失败保留加密队列和设置页明确重试。该证据只属本地注入，下一步不得重复开发同一链或冒充真实生产联调；
 2. 具体支付商 webhook 验签实现必须等用户授权联网并选定平台后，依据官方协议单独开发；当前规范化事件入口继续只接受上游已经验签的 content-free 快照；
 3. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，才填充 `desktop-auth.json` / `desktop-license.json`，执行真实 PKCE、数据库迁移、RLS、签发刷新、撤销和网站后台 E2E；
 4. OpenAI、Anthropic、Gemini 官方云适配仍必须先核对当前官方协议；不得套用 compatible 形状或凭记忆猜测，但不排在账号/订阅主线之前；

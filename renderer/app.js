@@ -1017,6 +1017,10 @@ const actions = {
     if (!preview || !preview.record || !Array.isArray(preview.choices)) {
       throw new Error("同步预览返回格式非法");
     }
+    state.syncTransportConfigured = preview.transportConfigured === true;
+    $("#sync-transport-warning").textContent = state.syncTransportConfigured
+      ? "确认同步后将立即发送到网站账号后台；若发送失败，记录会保留在本机加密队列，须由你明确重试。"
+      : "当前使用本机系统安全存储加密待发送队列；生产网站 transport 尚未配置，确认后也不会声称已经上传。";
     state.syncPreview = preview;
     renderSyncPreview(preview.record);
     $("#sync-preview-dialog").showModal();
@@ -1033,12 +1037,22 @@ const actions = {
     try {
       const response = unwrap(await window.oak.syncConfirm(preview.record.idempotency_id, choice));
       const result = response.result;
+      const delivery = response.delivery || { state: "not_requested" };
       state.syncPreview = null;
       $("#sync-preview-dialog").close(choice);
       if (result.queued) {
-        $("#sync-offer-status").textContent =
-          "本次负载已写入本机加密待发送队列；生产同步尚未配置，当前没有上传到网站。";
-        toast("已写入本机加密待发送队列；尚未上传到网站。", 5000);
+        if (delivery.state === "synced") {
+          $("#sync-offer-status").textContent = "本次检查结果与元数据已同步到网站账号后台。";
+          toast("已同步到网站账号后台。", 5000);
+        } else if (delivery.transportConfigured === true && delivery.error) {
+          $("#sync-offer-status").textContent =
+            `同步失败，记录已保留在本机加密队列：${delivery.error}。可在设置中明确重试。`;
+          toast("同步失败；记录已安全保留，可在设置中重试。", 6000);
+        } else {
+          $("#sync-offer-status").textContent =
+            "本次负载已写入本机加密待发送队列；生产同步尚未配置，当前没有上传到网站。";
+          toast("已写入本机加密待发送队列；尚未上传到网站。", 5000);
+        }
         await refreshSyncQueue();
       } else if (choice === "never_for_project") {
         $("#sync-offer-status").textContent = "已记录：不再询问此项目；本地项目和导出不受影响。";
@@ -1047,7 +1061,7 @@ const actions = {
         $("#sync-offer-status").textContent = "本次暂不同步；没有发送或入队。";
         toast("本次没有同步");
       }
-      return result;
+      return { result, delivery };
     } finally {
       state.syncConfirming = false;
       setSyncChoiceDisabled(false);

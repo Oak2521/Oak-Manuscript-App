@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-07-29 — 0.1.0-alpha.54（ChatGPT 明确确认后的即时结果同步闭环）
+
+> 未部署源码检查点；本轮未联网、未使用真实账号/令牌/数据库或网站，未推送、未打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。
+
+- 同步预览新增主进程判定的 `transportConfigured`；预览本身继续零入队、零请求，Renderer 不能提交 payload、token、URL 或 transport；
+- 用户明确选择 `sync_once` / `ask_each_time` 后，配置完整时由主进程立即 flush 同一加密队列项；远端 `created|replayed` 后才删除，发送失败则保留队列并返回有界错误，未配置时只入队且明确未上传；
+- Renderer 根据真实 delivery 状态分别显示“已同步”“失败并安全保留”“仅本机排队”，设置页仍保留逐项明确重试；登录本身不触发同步；
+- 新增本地生产形状 E2E，贯通登录、Pro 权益、本地检查结果、显式桌面同步、服务端 owner 绑定及网站历史 strict parse，并反向确认标题、正文片段、文件名、路径、账号和 token 不进入公开负载/审计；
+- 相关 21/21、全量 Node 700/693/0/7、Python 362/0/0/3；资源信任 108 文件 / 2,171,922 字节，manifest `c0c44f26…94b09`、anchor `b0b4dc74…f0107`；隐藏 Electron source smoke 最终 PASS；
+- tracked 账号配置仍为 `pending_configuration`，迁移/API/网站未部署，所以普通 APP 仍不会登录或同步；生产联调、销售门禁和跨端发行仍未完成。
+
 ### 2026-07-29 — 0.1.0-alpha.53（ChatGPT 撤回优先的标准更新与恢复入口）
 
 > 未部署源码检查点；本轮未联网、未配置生产 release/revocation key 或真实发布源，未推送、未打包。最新已验证 Windows NSIS/ZIP 仍为未签名 alpha.42。

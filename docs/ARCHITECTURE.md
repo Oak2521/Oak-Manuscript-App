@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.48` 源码架构与最新 alpha.42 Windows packaged 证据：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权与 OS 加密队列、桌面 PKCE/加密 token-store、账号/设备绑定的 Ed25519 权益客户端、独立签发、规范化订阅事件与属主设备管理服务，以及三模式 AI/OS 加密凭据/单条预览/建议审阅。Web 临时作业保持独立零留存源码边界，网站客户端已能查看/删除同步历史并管理订阅状态与掩码设备；网站撤销到桌面显式刷新降级已由同一匿名状态纵向链证明。默认账号与权益配置无端点/密钥，仓库无生产私钥；alpha.48 源码与 alpha.42 Windows x64 ASAR/fuse/资源/smoke 分别验证。真实账号、支付商 webhook、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.54` 源码架构与最新 alpha.42 Windows packaged 证据：本地标准/项目 pin/升级回滚、默认引用解析、账号/SyncRecord 明确授权、确认后即时发送与 OS 加密失败队列、桌面 PKCE/加密 token-store、账号/设备绑定的 Ed25519 权益客户端、独立签发、规范化订阅事件与属主设备管理服务，以及三模式 AI/OS 加密凭据/单条预览/建议审阅。Web 临时作业保持独立零留存源码边界，网站客户端已能查看/删除同步历史并管理订阅状态与掩码设备；账号同步商业主流程与网站撤销到桌面显式刷新降级均已由本地匿名纵向链证明。默认账号与权益配置无端点/密钥，仓库无生产私钥；alpha.54 源码与 alpha.42 Windows x64 ASAR/fuse/资源/smoke 分别验证。真实账号、支付商 webhook、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
 
 ## 1. 总体分层
 
@@ -131,7 +131,7 @@ Renderer 必须先调用严格只读的 `plan-citation`，展示体例/模式、
 
 Renderer 不能构造同步负载，也不能提供 token、任意 URL 或 transport。主进程只接受受路径门禁保护的项目和固定 `check|export` 事件，调用 Python `sync-source` 取得只读结构来源，再由 `buildSyncRecordV1` 生成并以 exact validator 校验负载。字段权威定义为 `config/schemas/sync-record-v1.schema.json`；标题、正文、解释、位置、预览、文件名、路径、用户名、引用原文和任何内容哈希都没有可用字段，未知字段一律拒绝。
 
-只有已登录状态才可生成预览；预览本身不入队、不发送。界面必须逐字段展示同一份缓存负载，用户随后明确选择 `sync_once`、`ask_each_time`、`not_now` 或 `never_for_project`。确认只提交 opaque `idempotency_id` 和固定选择，过期或替换后的预览拒绝。alpha.21 队列固定为 `pending_transport|canceled`，使用 Electron `safeStorage` 加密并按账户隔离；内部状态以 exact schema/canonical JSON 校验，经同目录独占候选、文件 `fsync`、原子替换、提交后解密复验和 revision CAS 落盘。未登录不读取队列，Renderer 不接收内部账户 ID。alpha.39 只在受信账号配置完整时由 main 实例化 client/coordinator，并只响应当前账号用户逐项点击“发送/确认重试并发送”；不存在登录后自动 flush。默认配置仍为空，所以当前普通 APP 不上传，“已入队”绝不等于“已同步到网站”。
+只有已登录状态才可生成预览；预览本身不入队、不发送。界面必须逐字段展示同一份缓存负载，用户随后明确选择 `sync_once`、`ask_each_time`、`not_now` 或 `never_for_project`。确认只提交 opaque `idempotency_id` 和固定选择，过期或替换后的预览拒绝。alpha.21 队列固定为 `pending_transport|canceled`，使用 Electron `safeStorage` 加密并按账户隔离；内部状态以 exact schema/canonical JSON 校验，经同目录独占候选、文件 `fsync`、原子替换、提交后解密复验和 revision CAS 落盘。未登录不读取队列，Renderer 不接收内部账户 ID。alpha.39 只在受信账号配置完整时由 main 实例化 client/coordinator；alpha.54 把 `sync_once|ask_each_time` 的确认本身作为本次发送授权，先持久入队再立即 flush。只有远端 `created|replayed` 后删除，失败保留并要求设置页明确重试；登录、预览和队列恢复均不自动发送。默认配置仍为空，所以当前普通 APP 不上传，“已入队”绝不等于“已同步到网站”。
 
 ### AD-025 SyncRecord 长期结果必须“可信身份—服务端再验证—事务幂等—属主删除”（2026-07-28，冻结）
 

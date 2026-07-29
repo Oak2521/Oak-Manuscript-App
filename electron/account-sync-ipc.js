@@ -88,11 +88,17 @@ function registerAccountSyncIpc({
       const record = await syncRecordSource(project, event, payload.includeIssues);
       const preview = syncProvider.preview(record, authStatus);
       previews.set(record.idempotency_id, { record, accountId: authStatus.accountId });
-      return ok({ preview });
+      const coordinator = getSyncCoordinator();
+      return ok({
+        preview: {
+          ...preview,
+          transportConfigured: coordinator !== null && typeof coordinator?.flush === "function",
+        },
+      });
     } catch (error) { return fail(error); }
   });
 
-  ipcMain.handle("provider:sync-confirm", (_event, payload = {}) => {
+  ipcMain.handle("provider:sync-confirm", async (_event, payload = {}) => {
     try {
       const id = opaqueId(payload.idempotencyId, "idempotencyId");
       const choice = enumValue(
@@ -109,7 +115,29 @@ function registerAccountSyncIpc({
       }
       const result = syncProvider.confirm(cached.record, choice, authStatus);
       previews.delete(id);
-      return ok({ result });
+      if (!result || result.queued !== true) {
+        return ok({ result, delivery: { state: "not_requested" } });
+      }
+      const coordinator = getSyncCoordinator();
+      if (!coordinator || typeof coordinator.flush !== "function") {
+        return ok({ result, delivery: { state: "queued", transportConfigured: false } });
+      }
+      try {
+        const delivery = await coordinator.flush(result.item.queue_id);
+        return ok({ result, delivery });
+      } catch (deliveryError) {
+        const failure = fail(deliveryError);
+        return ok({
+          result,
+          delivery: {
+            state: "queued",
+            transportConfigured: true,
+            error: failure.error,
+            ...(failure.code ? { code: failure.code } : {}),
+            ...(failure.retryable !== undefined ? { retryable: failure.retryable } : {}),
+          },
+        });
+      }
     } catch (error) { return fail(error); }
   });
 

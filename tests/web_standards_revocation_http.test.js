@@ -88,7 +88,7 @@ function requestBody(overrides = {}) {
   return {
     schema_version: "1.0",
     request_type: "oak_manuscript_standard_revocation_fetch",
-    app_version: "0.1.0-alpha.53",
+    app_version: "0.1.0-alpha.54",
     bundle_id: "oak-standards",
     ...overrides,
   };
@@ -276,7 +276,7 @@ test("the desktop client consumes the production-shaped Fetch handler without ne
     endpoint: `${ORIGIN}${REVOCATION_API_PATH}`,
     fetchImpl: (url, options) => fetchHandler(new Request(url, options)),
   });
-  const result = await client.fetch({ appVersion: "0.1.0-alpha.53", bundleId: "oak-standards" });
+  const result = await client.fetch({ appVersion: "0.1.0-alpha.54", bundleId: "oak-standards" });
   assert.deepEqual(result.envelopeBytes, context.fixture.envelopeBytes);
   assert.equal(context.events.length, 1);
 });
@@ -297,7 +297,7 @@ test("desktop client fixes a content-free request and rejects endpoint or respon
       });
     },
   });
-  await client.fetch({ appVersion: "0.1.0-alpha.53", bundleId: "oak-standards" });
+  await client.fetch({ appVersion: "0.1.0-alpha.54", bundleId: "oak-standards" });
   assert.equal(observed.url, `${ORIGIN}${REVOCATION_API_PATH}`);
   assert.equal(observed.options.method, "POST");
   assert.equal(observed.options.credentials, "omit");
@@ -328,7 +328,7 @@ test("desktop client fixes a content-free request and rejects endpoint or respon
       fetchImpl: async () => response.clone(),
     });
     await assert.rejects(() => drifting.fetch({
-      appVersion: "0.1.0-alpha.53",
+      appVersion: "0.1.0-alpha.54",
       bundleId: "oak-standards",
     }), (error) => error && [
       "STANDARDS_REVOCATION_RESPONSE_INVALID",
@@ -348,7 +348,7 @@ test("desktop client timeout and transport errors are bounded and non-reflective
     }),
   });
   await assert.rejects(
-    () => timeout.fetch({ appVersion: "0.1.0-alpha.53", bundleId: "oak-standards" }),
+    () => timeout.fetch({ appVersion: "0.1.0-alpha.54", bundleId: "oak-standards" }),
     (error) => error?.code === "STANDARDS_REVOCATION_TIMEOUT" && !error.message.includes("private"),
   );
   const unavailable = new StandardsRevocationHttpClient({
@@ -356,7 +356,7 @@ test("desktop client timeout and transport errors are bounded and non-reflective
     fetchImpl: async () => { throw new Error("private upstream"); },
   });
   await assert.rejects(
-    () => unavailable.fetch({ appVersion: "0.1.0-alpha.53", bundleId: "oak-standards" }),
+    () => unavailable.fetch({ appVersion: "0.1.0-alpha.54", bundleId: "oak-standards" }),
     (error) => error?.code === "STANDARDS_REVOCATION_UNAVAILABLE" &&
       !error.message.includes("private"),
   );
@@ -379,7 +379,7 @@ test("a real signed list crosses fake server, desktop verification, and atomic l
   const provider = new StandardsProvider({
     rootDir: tempRoot(t, "standards-revocation-web-e2e-"),
     configDir: path.join(ROOT, "config"),
-    appVersion: "0.1.0-alpha.53",
+    appVersion: "0.1.0-alpha.54",
     bundledRelease: BUNDLED_STANDARD_RELEASE,
     trustStore: fixture.trustStore,
     revocationClient: client,
@@ -402,7 +402,7 @@ test("provider keeps revocation networking disabled unless complete and rejects 
   const offline = new StandardsProvider({
     rootDir: tempRoot(t, "standards-revocation-offline-"),
     configDir: path.join(ROOT, "config"),
-    appVersion: "0.1.0-alpha.53",
+    appVersion: "0.1.0-alpha.54",
     bundledRelease: BUNDLED_STANDARD_RELEASE,
     trustStore: fixture.trustStore,
   });
@@ -420,7 +420,7 @@ test("provider keeps revocation networking disabled unless complete and rejects 
   const provider = new StandardsProvider({
     rootDir: tempRoot(t, "standards-revocation-concurrent-"),
     configDir: path.join(ROOT, "config"),
-    appVersion: "0.1.0-alpha.53",
+    appVersion: "0.1.0-alpha.54",
     bundledRelease: BUNDLED_STANDARD_RELEASE,
     trustStore: fixture.trustStore,
     revocationClient: {

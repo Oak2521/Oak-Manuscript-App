@@ -184,6 +184,7 @@ test("account/sync IPC obtains the record from trusted core source, not renderer
   assert.equal(preview.ok, true);
   assert.deepEqual(sourceArgs, ["C:\\projects\\oak", "export", false]);
   assert.equal(JSON.stringify(preview).includes("manuscriptText"), false);
+  assert.equal(preview.preview.transportConfigured, false);
 
   const confirmed = await handlers.get("provider:sync-confirm")(null, {
     idempotencyId: record.idempotency_id,
@@ -191,7 +192,103 @@ test("account/sync IPC obtains the record from trusted core source, not renderer
     forgedRecord: { title: "must be ignored" },
   });
   assert.equal(confirmed.ok, true);
+  assert.deepEqual(confirmed.delivery, { state: "queued", transportConfigured: false });
   assert.deepEqual(queued, [[record, "sync_once"]]);
+});
+
+test("explicit sync confirmation sends immediately when transport is configured", async () => {
+  const handlers = new Map();
+  const calls = [];
+  const record = {
+    idempotency_id: "sync-v1:0123456789abcdef:check-0001",
+    project_id: "0123456789abcdef",
+  };
+  const authProvider = {
+    status: () => ({ state: "authenticated", loggedIn: true, accountId: "account-1" }),
+    beginLogin: () => ({}), logout: () => ({}),
+  };
+  registerAccountSyncIpc({
+    ipcMain: { handle: (name, fn) => handlers.set(name, fn) },
+    pathPolicy: { looksLikeProject: () => true },
+    authProvider,
+    licenseProvider: { status: () => ({}) },
+    syncProvider: {
+      getPreference: () => "never_asked", setPreference: () => "never_asked",
+      preview: (value) => ({ record: value, choices: ["sync_once"], transportConfigured: false }),
+      confirm: () => ({ queued: true, item: { queue_id: "queue-1" } }),
+      listQueue: () => [], cancel: () => ({}), retry: () => ({}), delete: () => true,
+    },
+    syncRecordSource: async () => record,
+    getSyncCoordinator: () => ({
+      async flush(queueId) {
+        calls.push(queueId);
+        return {
+          state: "synced",
+          outcome: "created",
+          idempotency_id: record.idempotency_id,
+          received_at: "2026-07-29T16:00:00.000Z",
+        };
+      },
+    }),
+  });
+
+  const preview = await handlers.get("provider:sync-preview")(null, {
+    project: "C:\\projects\\oak", event: "export", includeIssues: false,
+  });
+  assert.equal(preview.preview.transportConfigured, true);
+  const confirmed = await handlers.get("provider:sync-confirm")(null, {
+    idempotencyId: record.idempotency_id, choice: "sync_once",
+  });
+  assert.equal(confirmed.ok, true);
+  assert.equal(confirmed.delivery.state, "synced");
+  assert.deepEqual(calls, ["queue-1"]);
+});
+
+test("failed immediate delivery keeps the explicitly authorized queue item", async () => {
+  const handlers = new Map();
+  const record = {
+    idempotency_id: "sync-v1:0123456789abcdef:check-0001",
+    project_id: "0123456789abcdef",
+  };
+  registerAccountSyncIpc({
+    ipcMain: { handle: (name, fn) => handlers.set(name, fn) },
+    pathPolicy: { looksLikeProject: () => true },
+    authProvider: {
+      status: () => ({ state: "authenticated", loggedIn: true, accountId: "account-1" }),
+      beginLogin: () => ({}), logout: () => ({}),
+    },
+    licenseProvider: { status: () => ({}) },
+    syncProvider: {
+      getPreference: () => "never_asked", setPreference: () => "never_asked",
+      preview: (value) => ({ record: value, choices: ["sync_once"] }),
+      confirm: () => ({ queued: true, item: { queue_id: "queue-1" } }),
+      listQueue: () => [{ queue_id: "queue-1", state: "pending_transport" }],
+      cancel: () => ({}), retry: () => ({}), delete: () => true,
+    },
+    syncRecordSource: async () => record,
+    getSyncCoordinator: () => ({
+      async flush() {
+        const error = new Error("结果同步请求超时");
+        error.code = "TRANSPORT_TIMEOUT";
+        error.retryable = true;
+        throw error;
+      },
+    }),
+  });
+  await handlers.get("provider:sync-preview")(null, {
+    project: "C:\\projects\\oak", event: "export", includeIssues: false,
+  });
+  const confirmed = await handlers.get("provider:sync-confirm")(null, {
+    idempotencyId: record.idempotency_id, choice: "sync_once",
+  });
+  assert.equal(confirmed.ok, true);
+  assert.deepEqual(confirmed.delivery, {
+    state: "queued",
+    transportConfigured: true,
+    error: "结果同步请求超时",
+    code: "TRANSPORT_TIMEOUT",
+    retryable: true,
+  });
 });
 
 test("account/sync IPC rejects untrusted paths, choices and stale confirmations", async () => {

@@ -2,7 +2,26 @@
 
 > 最近更新：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.53 撤回优先的标准更新与恢复入口
+## 最新验证结论：0.1.0-alpha.54 明确确认后的即时结果同步闭环
+
+验证日期：2026-07-29。本轮未联网、未使用真实账号/令牌/数据库/网站，tracked desktop auth config 仍为 `pending_configuration`。未迁移、部署、推送或重新打包。
+
+| 项目 | 结果 | 证据与边界 |
+|---|---|---|
+| 预览与授权 | **PASS** | 预览零入队、零发送；主进程返回 authoritative `transportConfigured`；Renderer 只提交 opaque 幂等 ID 与固定选择，不能提交 payload、token、URL 或 transport |
+| 即时发送 | **PASS** | `sync_once|ask_each_time` 明确确认先写 OS 加密队列；配置完整时立即 flush，只有远端 `created|replayed` 后删除；登录、预览、启动和恢复不发送 |
+| 失败恢复/UI | **PASS** | transport 失败返回有界 delivery 错误并保留同一队列项；无 transport 只入队；Renderer 分别显示已同步、失败安全留队、仅本机排队，设置页保留明确重试 |
+| 商业主流程 E2E | **PASS** | 单一测试贯通 Auth 登录、Pro 权益、本地检查结果、真实 sync IPC/coordinator/client、Fetch handler、服务端独立校验/owner 绑定和网站历史 strict parse；全程仅进程内匿名数据 |
+| 隐私反向断言 | **PASS** | 标题、正文片段、文件名、路径不进入 SyncRecord；可信账号只在服务端归属层使用，不回显到网站记录或审计；Bearer token 不进入审计 |
+| 相关专项 | **PASS** | `node --test tests/account_sync_ipc.test.js tests/commercial_account_sync_e2e.test.js tests/p0_ui_structure.test.js tests/desktop_auth_wiring.test.js`：21/21，0 失败 |
+| 全量测试 | **PASS** | 最终 `npm test` 退出码 0；Node 700 total / 693 pass / 0 fail / 7 skip，4.398 秒；Python 362 / 0 failures / 0 errors / 3 skipped，104.874 秒；墙钟 114.1 秒 |
+| 隐藏源码 smoke | **PASS（沙箱外最终证据）** | Codex 沙箱内两次在窗口创建后因 Chromium GPU 子进程 DLL 载入失败 `0xC0000135` 退出；沙箱外以同一隐藏脚本重跑 PASS，Renderer 保持 sandbox、未用 `--no-sandbox`；输出 `out/source-smoke/runs/ms611umr-1948430f091121ac/projects/` |
+| 资源信任 | **PASS（alpha 源码）** | 108 文件 / 2,171,922 字节；manifest `c0c44f2609e4e55347c6aef997e97bfda29fa0a9a47ae9b8837f7e2402e94b09`，anchor `b0b4dc7419b0fa1052ffd3fda2fbc10441fea627b8f403ba83a0ff3410df0107` |
+| 生产与销售门禁 | **未运行/未完成** | 真实 PKCE、正式端点、迁移/RLS、多实例、网站部署与生产账号 E2E 未运行；alpha.54 未打包，最新 Windows 制品仍为未签名 alpha.42；source sale 仍 17 blocker、发行身份缺 12 字段 |
+
+结论：alpha.54 证明现有账号、权益、同步和网站历史组件能按“明确确认后立即发送、失败安全留队”组合为一个本地商业主流程；它不是生产账号、数据库、网站部署或可售卖发行证据。
+
+## 历史验证结论：0.1.0-alpha.53 撤回优先的标准更新与恢复入口
 
 验证日期：2026-07-29。本轮未联网、未注入生产 release/revocation 公钥或私钥；tracked desktop config 仍为 `pending_configuration` 且两个端点均为 null。未接入真实发布源、未部署、推送或重新打包。
 

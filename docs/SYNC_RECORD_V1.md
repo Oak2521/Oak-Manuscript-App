@@ -1,6 +1,6 @@
 # SyncRecord v1 — 结果与元数据同步契约
 
-> 状态：`0.1.0-alpha.44` 已在既有客户端/核心离线契约、逐字段预览、OS 加密队列、独立服务/API/Supabase 和桌面 PKCE/条件 transport 源码之上，增加网站账号后台的列表/刷新/属主删除客户端；既有桌面链随 alpha.42 Windows packaged smoke 复验通过。受信账号配置仍为 `pending_configuration` 且无端点/key；迁移、API 和页面均未部署，所以普通 APP 仍不发同步请求。AI 建议文本、审阅会话和权益缓存均不进入 SyncRecord。本文件不能作为“数据已可同步到网站”的证明。
+> 状态：`0.1.0-alpha.54` 已在逐字段预览、OS 加密队列、独立服务/API/Supabase、桌面 PKCE/条件 transport 和网站历史客户端源码之上，闭合“明确确认后即时发送、失败安全留队”的本地生产形状纵向链；既有桌面链随 alpha.42 Windows packaged smoke 复验通过。受信账号配置仍为 `pending_configuration` 且无端点/key；迁移、API 和页面均未部署，所以普通 APP 仍不发同步请求。AI 建议文本、审阅会话和权益缓存均不进入 SyncRecord。本文件不能作为“生产数据已可同步到网站”的证明。
 
 ## 1. 信任边界
 
@@ -14,7 +14,7 @@
   -> 已登录用户逐字段预览
   -> 四选一明确确认
   -> safeStorage 加密幂等队列
-  -> [仅正式配置时由 main 实例化] SyncTransportCoordinator
+  -> [仅正式配置时由 main 实例化] 确认后立即调用 SyncTransportCoordinator
   -> 固定 HTTPS/Bearer SyncHttpClient
   -> /manuscript/api/v1/sync-records
   -> GoTrue 验证后的可信主体
@@ -58,8 +58,8 @@ Renderer 只能向主进程提交项目句柄、`check | export` 事件、是否
 
 | 用户选择 | 当前记录 | 后续行为 |
 |---|---|---|
-| `sync_once` | 入幂等队列 | 不改变全局询问偏好 |
-| `ask_each_time` | 入幂等队列 | 偏好设为以后仍询问 |
+| `sync_once` | 先入幂等队列；有 transport 时立即发送 | 不改变全局询问偏好；失败留队 |
+| `ask_each_time` | 先入幂等队列；有 transport 时立即发送 | 偏好设为以后仍询问；失败留队 |
 | `not_now` | 不入队 | 保持现有偏好 |
 | `never_for_project` | 不入队 | 当前账号持久记录不再询问该项目 |
 
@@ -67,7 +67,7 @@ Renderer 只能向主进程提交项目句柄、`check | export` 事件、是否
 
 本机持久状态的机器契约为 `config/schemas/sync-queue-store-v1.schema.json`。Electron `safeStorage` 提供 OS 绑定加密；磁盘文件为 `OAKSYNC1 + uint32 长度 + 密文`。明文必须是 exact/canonical JSON，写入采用同目录独占候选、文件 `fsync`、原子替换、提交后解密复验和 revision compare-and-swap。链接、硬链接、目录逃逸、大小超限、篡改、非 canonical、短读、读取期间身份变化或并发旧 revision 均拒绝。系统加密不可用或队列损坏时，同步预览和保存 fail-closed，本地检查、修复与导出继续可用。
 
-alpha.39 在 alpha.38 的 `SyncHttpClient` / `SyncTransportCoordinator` 上接入 `DesktopAuthProvider`：受信配置完整时，token provider 返回 access token 及账号 exact 绑定；同一队列项只允许一个在途请求，远端创建或幂等重放后才删除精确本地项，失败/账号切换/本地提交失败则保留。Renderer 只有逐项“发送/确认重试并发送”，没有后台调度。仓库配置仍为 `pending_configuration`，所以当前 APP 关闭重开只恢复本机状态，不会上传。
+alpha.39 在 alpha.38 的 `SyncHttpClient` / `SyncTransportCoordinator` 上接入 `DesktopAuthProvider`：受信配置完整时，token provider 返回 access token 及账号 exact 绑定；同一队列项只允许一个在途请求，远端创建或幂等重放后才删除精确本地项，失败/账号切换/本地提交失败则保留。alpha.54 让明确的 `sync_once|ask_each_time` 确认在持久入队后立即调用 coordinator；发送成功直接显示网站已同步，失败显示安全留队并保留设置页逐项“确认重试并发送”。登录、预览、启动或队列恢复不触发发送，也没有后台调度。仓库配置仍为 `pending_configuration`，所以当前 APP 关闭重开只恢复本机状态，不会上传。
 
 ## 5. 账号、加密会话与权益边界
 

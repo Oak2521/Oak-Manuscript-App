@@ -2,16 +2,16 @@
 
 > 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
-## Provider 一览（当前 alpha.53 源码）
+## Provider 一览（当前 alpha.54 源码）
 
-alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store、主进程条件 transport 和逐项显式发送 UI；alpha.44—alpha.48 完成签名权益、网站账号设备客户端与匿名撤销传播链；alpha.49—alpha.50 完成用户触发的标准更新桌面 transport、公开服务端契约与真实测试签名本地纵向链；alpha.51 增加独立角色签名、追加式标准撤回本地状态机；alpha.52 增加未部署的撤回 service/HTTP/Fetch/桌面客户端与原子应用 E2E；alpha.53 增加同源 exact 双端点配置和“先验撤回、后查更新”的 main/IPC/UI 恢复入口。受信账号、权益与标准联网配置仍为 `pending_configuration` 且端点/key/公钥为空。数据库迁移、更新/撤回发布源、API 与客户端均未部署，因此普通 APP 仍不登录、刷新订阅、同步或在线检查标准。商业仓库没有真实 service-role key、OAuth 配置、权益/标准私钥或 AI key。
+alpha.38 新增 SyncRecord 长期结果的独立服务/API/Supabase/runtime；alpha.39 增加桌面系统浏览器 PKCE、OS 加密 token-store 和主进程条件 transport；alpha.44—alpha.48 完成签名权益、网站账号设备客户端与匿名撤销传播链；alpha.49—alpha.53 完成标准更新/撤回及安全恢复入口；alpha.54 增加明确确认后的即时发送、失败安全留队和桌面—服务端 owner—网站历史的单一生产形状本地 E2E。受信账号、权益与标准联网配置仍为 `pending_configuration` 且端点/key/公钥为空。数据库迁移、更新/撤回发布源、API 与客户端均未部署，因此普通 APP 仍不登录、刷新订阅、同步或在线检查标准。商业仓库没有真实 service-role key、OAuth 配置、权益/标准私钥或 AI key。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
 | `AuthProvider` | 系统浏览器 Authorization Code + PKCE S256/state、固定 Windows/macOS 深链、safeStorage token-store、刷新身份复核已完成离线源码/注入测试；默认配置为空时返回 `configuration_required`，不打开页面、不联网 | 在获准预生产环境核对正式 OAuth/OIDC、nonce/ID-token 取舍、真实刷新/退出/撤销、邮箱与 Google OAuth |
 | `LicenseProvider` | alpha.44—alpha.47 已实现桌面权益、签发、订阅/设备服务和网站客户端；alpha.48 已完成匿名撤销传播纵向链；默认配置为空，仓库无生产私钥 | 选择支付商并实现原始 webhook 验签适配、私钥托管/轮换，执行迁移、部署客户端并填充生产配置完成真实 E2E；价格未拍板 |
 | `EvaluationProvider` | 用户点击后返回固定湖岸 HTTPS 评估页 URL，由主进程白名单校验并交给系统浏览器打开；APP 不在该 Provider 中生成或上传摘要 | 用户确认后提交脱敏摘要（§8.3–§8.4） |
-| `SyncProvider` | 可信 Python 来源 → exact 校验 → 完整预览 → 四选一确认 → 按账户 OS 加密队列；服务/API/Supabase、桌面 client/coordinator 和网站列表/属主删除 client 已有源码；默认无端点，迁移/服务/页面未部署 | 填充受信正式配置，完成预生产迁移、真实 E2E 与官网账号后台部署 |
+| `SyncProvider` | 可信 Python 来源 → exact 校验 → 完整预览 → 四选一确认 → 按账户 OS 加密队列；前两种同步确认在 transport 可用时立即发送，失败留队供明确重试；服务/API/Supabase、桌面 client/coordinator 和网站列表/属主删除 client 已有源码，并有单一本地 E2E；默认无端点，迁移/服务/页面未部署 | 填充受信正式配置，完成预生产迁移、真实 E2E 与官网账号后台部署 |
 | `StandardsProvider` | 离线可信链、本地导入/回滚、项目固定/显式升级、用户点击 HTTPS client、服务端固定路由、独立角色撤回，以及撤回优先的 main/IPC/UI 恢复入口已实现；默认两个端点/trust pin 为空 | 建立生产发布/撤回源、密钥治理、正式配置、调度、告警、限流/监控并完成真实网络联调；绝不上传稿件 |
 | `UpdateProvider` | 尚未实现或导出 | 签名应用更新 |
 | `FeedbackProvider` | 尚未实现或导出 | 用户主动发送不含正文的规则反馈 |
