@@ -190,7 +190,7 @@
     if (!currentJobId) return;
     nodes.download.disabled = true;
     try {
-      var response = await api(API_BASE + "/" + encodeURIComponent(currentJobId) + "/result", { method: "GET" });
+      var response = await api(API_BASE + "/" + encodeURIComponent(currentJobId) + "/result", { method: "POST" });
       var blob = await response.blob();
       var url = URL.createObjectURL(blob);
       var link = document.createElement("a");
@@ -198,6 +198,10 @@
       link.download = "oak-manuscript-result";
       link.click();
       window.setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+      currentJobId = null;
+      nodes.download.hidden = true;
+      setControls(true);
+      setStatus("结果已领取；服务器临时副本已在返回前删除。如本机保存失败，需要重新检查稿件。");
       nodes.syncPanel.hidden = false;
     } catch (error) {
       setStatus(error.message);

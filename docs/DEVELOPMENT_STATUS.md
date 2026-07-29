@@ -4,12 +4,12 @@
 
 ## 当前版本与基线
 
-- 当前版本：`0.1.0-alpha.29`
+- 当前版本：`0.1.0-alpha.30`
 - 当前分支：`chatgpt/commercial-v1`
-- 本地检查点标签：`chatgpt-v0.1.0-alpha.29`；本轮为源码/本机隔离子进程/离线仿真检查点，最新未签名 Windows x64 NSIS/ZIP 与真实 packaged 证据仍属于 alpha.23
+- 本地检查点标签：`chatgpt-v0.1.0-alpha.30`；本轮为源码/本机隔离子进程/离线仿真检查点，最新未签名 Windows x64 NSIS/ZIP 与真实 packaged 证据仍属于 alpha.23
 - 商业版权威方案：`docs/湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`
 - 只读 Claude 基线：0.0.1，提交 `16736147ed734a3be3535d43152719cf4b97a07e`，标签 `claude-0.0.1-baseline`
-- 当前内置标准为 `oak-standards 2.0.0` / `oak-rules 2.0.0`（release sequence 2）：35 条规则、6 个白名单机械 fixer；alpha.5 新增默认引用解析政策，alpha.6—alpha.29 未改变标准内容或自动修复白名单。
+- 当前内置标准为 `oak-standards 2.0.0` / `oak-rules 2.0.0`（release sequence 2）：35 条规则、6 个白名单机械 fixer；alpha.5 新增默认引用解析政策，alpha.6—alpha.30 未改变标准内容或自动修复白名单。
 
 ## 商业正式版路线状态
 
@@ -19,7 +19,7 @@
 | P0：事务批量修复 | **完成（正常异常模型）** | working / issues / project 失败回滚；已有 5 个检查点时恢复被裁剪目录 |
 | P0：检查点列表、撤销与恢复 | **完成（代码与测试）** | 完整状态快照；恢复前安全点；损坏项 UI 禁用；恢复失败项目树不变 |
 | P0：默认引用体例与确认 | **完成（代码、迁移与 UI）** | 本地结构信号解析；证据不足退回 `structure_only`；`plan-citation` 只读并要求 `citation_plan_id` 确认；项目/报告记录原因、置信度与解析器版本 |
-| P0：Node + Python 统一测试 | **完成（最新统一回归通过）** | alpha.29 最终计数见下方“最新测试基线”；0 失败 |
+| P0：Node + Python 统一测试 | **完成（最新统一回归通过）** | alpha.30 最终计数见下方“最新测试基线”；0 失败 |
 | P0：真实桌面 UI 冒烟 | **完成（alpha.23 source + packaged 双启动 PASS）** | 保持 Electron sandbox，在外层隐藏进程完成 DOCX + EPUB 全闭环、EpubCheck/Ace、加密队列写入及第二进程恢复；原稿哈希不变 |
 | P0：文档与测试基线纠错 | **完成** | 权威改为 v2.0；纠正“185 + Ace = 186”错误 |
 | Windows alpha 运行资源 | **完成（源码资源门禁）** | Python/JRE/EpubCheck/Ace 均有全量哈希/锁；Python 与 EpubCheck 双向探针实际执行并通过 |
@@ -40,14 +40,14 @@
 | 标准包本地验证、升级与回滚 | **完成（代码与测试）** | 内置 2.0.0；canonical manifest、签名/CAS/高水位/回滚、项目七字段 pin、差异确认、升级后强制重检均已实现；旧 release 缺失时 fail-closed；生产 trust pin 与联网传输未实现 |
 | 标准与规则补全 | **治理结构完成，内容补全未完成** | 13 标准/35 规则/6 fixer 映射一致；外部来源核验 0 项，4 项仍 under_review，真实审校签核与多类标准深度不足 |
 | 湖岸统一账号 / Free+Pro / 结果同步 | **GoTrue 验证边界、Web 账号入口与加密本地队列完成，生产联调未开始** | 官网 Supabase Bearer 流程已只读核对；有界 GoTrue `/auth/v1/user` 验证、exact token→principal、PKCE 状态、Free/Pro、SyncRecord、四选一预览和 safeStorage 队列已实现；无生产部署/凭据/支付、网络同步 transport 或网站后台 |
-| Web 服务端统一处理 | **上传门禁、私有领取与本机共享核心纵向闭环完成，生产未部署** | 状态机、HTTPS/Origin、GoTrue、Fetch、工作台、Netlify Blobs、Postgres RLS/RPC/CAS/墓碑、`SKIP LOCKED` 私有领取、结构/主动内容前置检查、身份最小化 worker 与固定 Python 核心已实现；真实迁移/容器 E2E、OS 禁网、病毒库/平台扫描、计费、短时下载、结果同步与官网部署待实现 |
+| Web 服务端统一处理 | **上传门禁、私有处理与一次性结果领取纵向闭环完成，生产未部署** | 状态机、HTTPS/Origin、GoTrue、Fetch、工作台、Netlify Blobs、Postgres RLS/RPC/CAS/墓碑、`SKIP LOCKED` 私有领取、结构/主动内容前置检查、身份最小化 worker、固定 Python 核心及返回前清理的一次性领取已实现；真实迁移/容器 E2E、OS 禁网、病毒库/平台扫描、计费、双清扫、结果同步与官网部署待实现 |
 | 可售卖正式版发布 | **未达到** | 缺跨端产物、生产账号/支付、条款、签名、公证、内测和网站联调 |
 
 ## 最新测试基线
 
-- 最终统一 `npm test`：**PASS，退出码 0，墙钟 110.8 秒**；Node 464/457/0/7（3.610 秒），Python 357/0 failures/0 errors/3 skipped（102.511 秒）。跳过项不计作通过。
+- 最终统一 `npm test`：**PASS，退出码 0，墙钟 117.2 秒**；Node 467/460/0/7（3.690 秒），Python 357/0 failures/0 errors/3 skipped（108.679 秒）。跳过项不计作通过。全部 Web 定向 97/97，Python Web 专项 6/6。
 - 发行身份专项纳入 Node 全量：当前仓库身份结构有效但 `complete=false`，12 个 Windows 完备性字段显式缺失；源码 `build.appId`、生产 `oakReleaseIdentity`、重复键、字段/顺序/schema/canonical 字节、占位文本、非官方 URL 和 package 漂移均 fail-closed。
-- ASAR/资源信任专项已纳入 Node 全量：packaged 身份从真实 `app.asar/package.json` 读取；raw header、精确短读循环、同路径重建、loose 源码伪造、ASAR 内身份漂移、源码清单/锚点、四类运行资源和启动顺序均通过。`verify:resource-trust` PASS，79 文件 / 2,136,309 字节，应用清单 SHA-256 `f269c2547a40bd703a7ab0905ae7ed1fa309eb1c9ad48711618390535cab2d3d`，锚点 SHA-256 `44e4510cbe8ad54ba9a9ce36af3939307e033344eaea8653572589a64e532c38`。
+- ASAR/资源信任专项已纳入 Node 全量：packaged 身份从真实 `app.asar/package.json` 读取；raw header、精确短读循环、同路径重建、loose 源码伪造、ASAR 内身份漂移、源码清单/锚点、四类运行资源和启动顺序均通过。`verify:resource-trust` PASS，79 文件 / 2,136,323 字节，应用清单 SHA-256 `dda21d484ef81eeb2bbadebcd6a83a63720687254dc22dede4b60afcab73b49c`，锚点 SHA-256 `b1006ddae7d759d5060461b29d14b0c8a827e0474d3ad89c8314e00cb82cabef`。
 - CPython provenance 专项已纳入 Node 全量：tracked evidence、exact schema/canonical 字节、官方制品摘要、Sigstore leaf、SPDX、34/33/1 推导、证据/运行时清单绑定、真实 `python.exe` 漂移和原子更新故障均通过；证据保持 `machine_status=verified`、`human_review_status=pending`。
 - EpubCheck provenance 专项已纳入 Node 全量：官方 ZIP/服务端 digest、本地 49/49 原字节文件、exact schema/canonical 字节、证据/分发/JRE/资源锚点绑定、自批准与漂移拒绝均通过；证据保持 `machine_status=verified`、`human_review_status=pending`、`license_signal_consistent=false`。
 - Temurin/JRE provenance 专项已纳入 Node 全量：官方 ZIP/API/digest/checksum/build metadata、490/490 JDK 文件树、本机源 JDK、固定 jlink、207 文件 runtime、94 份许可材料、证据/锁/ASAR 绑定、自批准和漂移拒绝均通过；GPG 状态保持 `not_verified_no_openpgp_tool`，人工状态保持 pending。
@@ -79,7 +79,7 @@
 ## 本轮关键实现
 
 - `release_identity.js` 默认只读，使用 exact/canonical 契约验证发行身份并交叉检查 `package.json`；待定字段不会自填，正式 sale 在 `RELEASE_PUBLISHER_METADATA_PENDING` 上失败；
-- `windows_install_acceptance.js` 默认只读并绑定 `package.json` 当前版本；alpha.29 无制品，当前不会通过预检。最近一次成功证据为 alpha.23 对归档 alpha.12；实际系统变更仍必须同时提供 `--run --allow-system-mutation`；
+- `windows_install_acceptance.js` 默认只读并绑定 `package.json` 当前版本；alpha.30 无制品，当前不会通过预检。最近一次成功证据为 alpha.23 对归档 alpha.12；实际系统变更仍必须同时提供 `--run --allow-system-mutation`；
 - 授权运行固定九阶段，并把安装目录、测试 userData、temp 与 canonical JSON 证据全部限制在 `out/install-acceptance/`；系统集成探针只读取并验证 HKCU InstallLocation/DisplayVersion、Desktop 与 Start Menu 快捷方式；失败时尽力运行精确卸载清理并仍记录 FAIL；
 - 新增 Windows 安装证据 v1 JSON Schema、运行时 exact validator 与 canonical 文件复验。历史 alpha.12 是否能覆盖当前版本仍须真实探测，当前不宣称具备降级保护；
 - smoke 模式在 ready 前禁用硬件加速，普通启动不变；受限 Codex 令牌的 sandbox 子进程故障通过同版对照定位，最终证据保持 Electron sandbox 并在外层隐藏进程取得；
@@ -142,7 +142,7 @@
 - Electron smoke 分别断言 Electron `appVersion`、Python 核心实际 manifest/report 的 `app_version`，以及 APP/项目/检查/导出报告的七字段标准身份；打包版模式还必须证明 `app.isPackaged`；
 - 当前 packaged 资源门禁的 12 项 sale blocker 仍机器可读保留；其中发行身份 blocker 明确绑定待确认字段，fuse 未知项已为 0，不允许用该进展掩盖其余正式售卖责任。
 - 新增 `web/job-contract.js` 内存参考状态机和三份 exact schema：可信主体与创建请求分离，单任务同意/时效、幂等、并发、大小/MIME 和 UUID 碰撞在接收内容前门禁；公开状态不含主体或稿件元数据；
-- Web 任务完成先删输入再开放短期结果；取消、用户删除和 TTL 清扫删除输入/输出并传递 `deleteAt`。删除部分失败进入 `deletion_pending`，准确报告保留状态且不生成成功回执；终态幂等墓碑拒绝同键重建；
+- Web 任务完成先删输入再开放短期结果；结果只能通过同源已认证 POST 一次性领取，服务在返回字节前删除 input/output 并提交终态墓碑。并发或二次领取失败；读取/删除失败不返回字节并保持 `deletion_pending/downloaded`。取消、用户删除和 TTL 清扫同样删除输入/输出并传递 `deleteAt`；终态幂等墓碑拒绝同键重建；
 - Web 参考实现已有标准 Fetch 边界、GoTrue 验证器、未部署工作台、Netlify Blobs 内容适配器、Supabase/Postgres 持久任务/幂等迁移、上传结构/主动内容门禁、service-role-only 私有领取、身份最小化 worker 和固定 Python 共享核心子进程；内存状态机只保留为参考/测试。SQL 尚未在真实 Supabase 执行，结构门禁不是病毒库，本机进程隔离也不是生产容器/OS 禁网证明；计费未实现，Blobs metadata 不是平台原生 TTL，必须调度双清扫器。
 
 上一阶段保留的批量修复实现：
@@ -165,7 +165,7 @@
 3. 在有权人员确认法定销售主体、正式 URL、版权、平台签名主体和具名复核后补全发行身份；未确认前保持 `null` / `pending`；
 4. 在干净 Windows 环境完成安装、升级、卸载和无系统 Python/Node 验证；该步骤写仓库外，执行前另获授权；
 5. 逐项关闭 12 个 packaged sale blocker 并完成 Authenticode；alpha 产物不得表述为可售卖正式版；
-6. 在现有本机加密同步队列、Web 作业/Blobs、持久数据库、上传结构门禁及私有 worker 源码上继续生产账号/同步、平台恶意软件扫描、容器/OS 禁网与资源隔离、短时下载、真实零留存、macOS 与官网嵌入；真实 Supabase 迁移与 E2E 需另行环境授权。
+6. 在现有本机加密同步队列、Web 作业/Blobs、持久数据库、上传结构门禁、私有 worker 及一次性领取源码上继续任务/对象双清扫、生产账号/同步、平台恶意软件扫描、容器/OS 禁网与资源隔离、真实零留存、macOS 与官网嵌入；真实 Supabase 迁移与 E2E 需另行环境授权。
 
 如构建需要联网下载、安装新依赖、签名或发布，先取得用户授权。
 
@@ -180,11 +180,12 @@
 - 标准治理 schema、完整身份和本地升级链已实现，但没有任何外部来源完成核验，4 项外部标准仍在审阅，reviewer 仅为角色占位，GB/T、APA、Chicago、EPUB、TXT/Markdown、纸质出版和可访问性覆盖仍不够，不能宣传为“标准库完整”；
 - 标准包生产 trust pin、联网检查/下载和签名撤回分发尚未实现；当前本地签名包导入按设计禁用；
 - Windows 开发机无法替代真实 macOS 构建、签名、公证和实机 smoke；
-- 本机加密同步队列、Web 作业状态机、同源 HTTP handler、GoTrue verifier、Fetch 适配器、未部署工作台、Netlify Blobs 内容适配/清扫、Postgres 持久任务、上传结构/主动内容门禁、私有原子领取和固定 Python 子进程共享核心已实现；真实迁移/容器配置、OS 禁网、平台恶意软件扫描、订阅、网络同步 transport、真实零留存与官网发布仍涉及生产系统，网站保持只读；
+- 本机加密同步队列、Web 作业状态机、同源 HTTP handler、GoTrue verifier、Fetch 适配器、未部署工作台、Netlify Blobs 内容适配/清扫、Postgres 持久任务、上传结构/主动内容门禁、私有原子领取、固定 Python 子进程共享核心和一次性领取已实现；真实迁移/容器配置、OS 禁网、平台恶意软件扫描、计划双清扫、订阅、网络同步 transport、真实零留存与官网发布仍涉及生产系统，网站保持只读；
 - “接入用户自己的 AI”的六项设计决定已经用户确认，属于正式版目标；当前 v2.0 主文尚未补入该修订，代码也未实现，不能写成已交付或排除在产品范围外。
 
 ## 历史里程碑
 
+- 2026-07-28：推进到 `0.1.0-alpha.30`；结果领取改为同源已认证 POST，第一个领取者 CAS 独占，删除对象与提交终态墓碑后才返回；并发/二次领取失败，删除失败不返回字节并可重试；Web 97/97、Node 467、Python 357 全量零失败；未部署、未连接真实平台或证明三路零留存。
 - 2026-07-28：推进到 `0.1.0-alpha.29`；新增上传前固定 Python 结构/主动内容门禁，拒绝危险 ZIP、宏/ActiveX/嵌入/DDE 与脚本 EPUB，失败零字节入库且不暴露身份；Web 94/94、Node 464、Python 357 全量零失败；未使用病毒库、未部署、未做生产容器/OS 隔离或真实平台 E2E。
 - 2026-07-28：推进到 `0.1.0-alpha.28`；新增 service-role-only `SKIP LOCKED` 原子领取、完整租约窗、身份最小化私有 worker、固定 Python 子进程和共享核心 `web-check`；本机真实 TXT 烟测输入哈希不变且 scratch 零残留；Web 91/91、Node 462、Python 352 全量零失败；未执行真实迁移、容器/OS 禁网验证、部署或打包。
 - 2026-07-28：推进到 `0.1.0-alpha.27`；新增 Supabase/Postgres RLS/RPC 迁移、固定 service-role repository、revision CAS、跨实例上传预留、exact lease/过期接管、终态墓碑与持久服务；Web 85/85、Node 455、Python 351 全量零失败；未执行真实迁移、连接生产服务、部署或打包。

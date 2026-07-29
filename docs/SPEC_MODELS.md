@@ -198,7 +198,7 @@
 
 未登录状态不询问、不发送；登录不等于授权。Renderer 不可构造负载；主进程从 Python `sync-source` 取得只读来源并构造 exact-schema 记录。发送前必须逐字段展示同一份缓存负载并由用户选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。alpha.21 起使用按账户隔离的 OS 加密 `pending_transport` 队列并支持重启恢复，但没有网络上传；入队不等于同步成功。Web 端用户主动发起的临时稿件处理属于独立作业协议，不得混入结果同步 schema 或长期账号历史。
 
-## 9. Web 临时作业模型（alpha.29 契约、上传门禁、持久状态与私有 worker 边界）
+## 9. Web 临时作业模型（alpha.30 契约、上传门禁、持久状态、私有 worker 与一次性领取边界）
 
 五份公开机器可读 schema 分别定义创建请求、公开状态、删除回执、HTTP 错误和无内容安全审计：`web-job-create-v1`、`web-job-status-v1`、`web-job-deletion-v1`、`web-http-error-v1`、`web-http-audit-v1`；两份 Web 私有 schema 定义数据库内部任务记录与创建/重放结果。参考内存状态机位于 `web/job-contract.js`，生产形状的持久服务、私有领取编排和固定共享核心进程分别位于 `web/persistent-job-service.js`、`web/private-lease-worker.js`、`web/python-core-process-processor.js`。HTTP handler 与 Supabase/GoTrue/Fetch/客户端边界分别位于对应模块。`web/netlify-ephemeral-storage.js` 只持久化 input/output 内容对象及 exact 生命周期 metadata；`web/supabase/001_web_job_state.sql` 只持久化主体归属、最小文档枚举、任务状态、预留/租约、非内容指纹和幂等墓碑，两者不得混存。
 
@@ -210,6 +210,6 @@
 
 主体不属于请求模型，由可信会话层另行传入 `{kind, subject_id}`。公开状态只含任务 ID、状态、创建/到期/删除期限、输入是否仍保留和结果是否可用。删除回执只在输入、输出均已删除后成立；删除失败状态为 `deletion_pending`，没有成功回执。
 
-上传 Buffer 与结果 Buffer 不进入上述 JSON 模型、观察事件或长期同步记录，只交给带 `deleteAt` 的临时存储适配器。handler 的公开路由仅为创建、状态、上传、下载、取消和删除；worker 状态转换没有公开 HTTP 路由。状态变更要求 HTTPS 与同源 Origin/Fetch Metadata；Bearer 必须经服务端 verifier 且不开放 CORS，Cookie 模式附加 CSRF。上传要求唯一 Content-Length，并在读入前完成大小/MIME/并发预留。HTTP 审计只允许请求 ID、时间、方法、路由模板、状态与错误码。
+上传 Buffer 与结果 Buffer 不进入上述 JSON 模型、观察事件或长期同步记录，只交给带 `deleteAt` 的临时存储适配器。handler 的公开动作仅为创建、状态、上传、一次性结果领取、取消和删除；worker 状态转换没有公开 HTTP 路由。状态变更要求 HTTPS 与同源 Origin/Fetch Metadata；Bearer 必须经服务端 verifier且不开放 CORS，Cookie 模式附加 CSRF。结果领取使用 POST；第一个领取者以 `deletion_pending/downloaded` 独占，删除对象与终态墓碑后才返回，GET、并发和二次领取不得消费或返回结果。上传要求唯一 Content-Length，并在读入前完成大小/MIME/并发预留。HTTP 审计只允许请求 ID、时间、方法、路由模板、状态与错误码。
 
-状态机、handler、Bearer/GoTrue/Fetch、Netlify Blobs 适配器、Supabase/Postgres 持久源码、service-role-only 原子领取和本机固定 Python 子进程都不是已部署生产服务。`web-inspect` 在 `putInput()` 前验证格式、危险 ZIP 结构和宏/脚本等主动内容；检查请求不含账号、任务或租约，失败固定为 `UNSAFE_DOCUMENT` 且零字节入库。processor 同样只接收最小文档枚举与 Buffer，完成仍绑定不可复制服务内句柄的 exact lease/revision/expiry。真实数据库迁移与 RLS/多实例验证、病毒库/平台扫描、生产容器/OS 禁网和资源隔离、短时下载及零留存审计仍待实现。
+状态机、handler、Bearer/GoTrue/Fetch、Netlify Blobs 适配器、Supabase/Postgres 持久源码、service-role-only 原子领取、本机固定 Python 子进程和一次性领取都不是已部署生产服务。`web-inspect` 在 `putInput()` 前验证格式、危险 ZIP 结构和宏/脚本等主动内容；检查请求不含账号、任务或租约，失败固定为 `UNSAFE_DOCUMENT` 且零字节入库。processor 同样只接收最小文档枚举与 Buffer，完成仍绑定不可复制服务内句柄的 exact lease/revision/expiry。真实数据库迁移与 RLS/多实例验证、病毒库/平台扫描、生产容器/OS 禁网和资源隔离、任务/对象双清扫及零留存审计仍待实现。

@@ -95,7 +95,7 @@ test("Web page preserves login/register, default citation, consent, cancel, down
   for (const required of [
     'id="login-link"', 'href="/register/"', 'id="manuscript-file"',
     '<option value="default">默认', 'id="processing-consent"', 'id="cancel-job"',
-    'id="download-result"', 'id="sync-panel"', "同步功能尚未启用",
+    'id="download-result"', 'id="sync-panel"', "同步功能尚未启用", "结果只能领取一次",
   ]) assert.equal(HTML.includes(required), true, required);
   assert.equal(HTML.includes("登录本身不等于同意同步"), true);
   assert.equal(HTML.includes("文件名不会写入任务元数据"), true);
@@ -111,4 +111,6 @@ test("Web client uses safe text rendering and no browser persistence or analytic
   assert.equal(JS.includes("textContent"), true);
   assert.equal(JS.includes('credentials: "omit"'), true);
   assert.equal(JS.includes('headers.set("Authorization", "Bearer " + token)'), true);
+  assert.match(JS, /\/result", \{ method: "POST" \}/);
+  assert.equal(JS.includes('setStatus("结果已领取；服务器临时副本已在返回前删除。'), true);
 });

@@ -10,7 +10,7 @@
     "config/tool-manifests/app-resources-v1.json"
   ],
   "file_count": 79,
-  "total_bytes": 2136309,
+  "total_bytes": 2136323,
   "files": [
     {
       "path": "config/app-config.json",
@@ -119,8 +119,8 @@
     },
     {
       "path": "config/schemas/web-job-deletion-v1.schema.json",
-      "size_bytes": 905,
-      "sha256": "c71a408976591ae3a4322b441a12812c6d9c0501ce1ec68b93a670b3eddef381"
+      "size_bytes": 919,
+      "sha256": "4507e51c0668cae4b3fb4092c3c69bd13466b7eac50ca1b44c4a49205edf581e"
     },
     {
       "path": "config/schemas/web-job-status-v1.schema.json",
@@ -175,7 +175,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 115,
-      "sha256": "756318846b82c7caf1c21787d61357cbdd2f074a91ebe3b4a208a4fb7b3d3fa2"
+      "sha256": "74d449a0911b9f01a34dac164940dc1ef924a37f7d80a5e0c82f9be8623e397a"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

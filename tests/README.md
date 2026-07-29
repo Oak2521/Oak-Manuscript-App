@@ -1,6 +1,6 @@
 # tests/ — Node 契约、发布资源与打包验证
 
-`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.29 最终统一结果为 Node **464 total / 457 pass / 0 fail / 7 skip / 3.610 秒**，Python **357 项 / 0 失败 / 0 错误 / 3 跳过 / 102.511 秒**，墙钟 110.8 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
+`npm run test:node` 运行本目录全部 `*.test.js`；`npm test` 依次运行 Node 与 `python/tests/` 全套测试。alpha.30 最终统一结果为 Node **467 total / 460 pass / 0 fail / 7 skip / 3.690 秒**，Python **357 项 / 0 失败 / 0 错误 / 3 跳过 / 108.679 秒**，墙钟 117.2 秒；跳过项不计作通过。准确环境证据以 `docs/TEST_REPORT.md` 为准。
 
 本目录覆盖：
 
@@ -9,7 +9,7 @@
 - Auth 登录/退出/过期/撤销状态、Free/Pro/宽限/过期权益、SyncRecord/持久状态 exact schema、反内容泄露、可信来源 IPC、四选一授权、safeStorage 加密、账户隔离、revision/原子故障、重启恢复、幂等队列与安全 UI 渲染；
 - Electron 默认 session 离线 switches/网络请求拦截、Renderer CSP、源码 smoke 的 `out/source-smoke/` 路径边界；
 - ASAR/integrity、顶层 2.1.3 afterPack 全 9 fuse 严格写入/回读、未来未知 fuse 的 alpha/sale fail-closed、实际 Framework 文件身份和构建顺序；
-- ASAR 内资源锚点、78 文件应用 loose 清单、四类平台锁绑定、真实 `app.asar` raw header/精确读取、同路径重建、loose 伪锚点拒绝、启动前验证及 5 个可信根 blocker 的严格关闭条件；
+- ASAR 内资源锚点、79 文件应用 loose 清单、四类平台锁绑定、真实 `app.asar` raw header/精确读取、同路径重建、loose 伪锚点拒绝、启动前验证及 5 个可信根 blocker 的严格关闭条件；
 - Ace 外部验证 IPC 的可信项目来源、Python plan/prepare/finalize 绑定、固定 utilityProcess、注入环境清理、输出/时间上限、受控 loopback Chrome、精确 child/profile 清理及路径换入拒绝；
 - PDF 非持久隔离 session、禁 JavaScript/导航/网络、报告身份快照、项目/`exports` 父链校验、链接/硬链接/目录换入拒绝和原子 writer；
 - CLI 退出码 1 业务结果、退出码 2 错误，以及 `code/message/retryable/details` 结构化错误的 IPC 透传；
@@ -19,8 +19,8 @@
 - Windows builder 受控下载器固定官方 URL/HTTPS 主机/文件名/SHA-256，要求显式联网开关并覆盖零授权零写入、重定向/容量/哈希、事务提交/碰撞回滚及仓库路径边界；安全导入器继续拒绝 UNC、未知归档、路径穿越、链接/reparse、备用流、加密条目、名称冲突和解压膨胀，只有显式 `--update-lock` 才可建立/更新独立 tracked lock；三份真实归档、工具树和 tracked lock 已按用户授权建立并复验，注入响应与测试夹具仍不能冒充发布资产；
 - Windows 发布证据只接受 package/lock 当前版本的精确 NSIS/ZIP；覆盖 PE/ZIP 结构、旧制品/版本漂移、稳定文件身份、SHA256SUMS 与 canonical manifest 交叉绑定、两文件提交回滚、clear 全预检，以及真实缺制品 fail-closed；
 - 发行商身份门禁覆盖当前显式待定状态、完整 Windows/macOS 身份、源码 `build.appId`、ASAR production `oakReleaseIdentity`、重复键、unknown/reordered 字段、固定 schema/canonical 字节、占位文本、官方 URL、package 漂移和只读 CLI；
-- Windows 安装生命周期验收默认只读并精确绑定源码当前版本；专项测试覆盖 alpha.23/alpha.12 成功夹具、SemVer、NSIS x86 启动器与 x64 主程序、两开关授权门、零授权零启动/零输出、九阶段状态机、HKCU/快捷方式探针、持久化 sentinel、降级成功时 fail-closed 与 canonical 证据篡改。alpha.29 未打包，当前真实预检不会借用旧制品；
-- Web 作业、HTTP、Supabase、GoTrue、Fetch、客户端、Netlify 内容存储、持久任务、上传检查与私有 worker 测试位于十个 `web_*.test.js`：94 项；Python 门禁另有 5 项，覆盖 UTF-8/NUL、格式伪装、危险 ZIP、宏/ActiveX/嵌入/DDE、脚本 EPUB、固定子进程、身份最小化、拒绝零入库和预留释放。database/network/store 仍为注入仿真或静态检查，结构门禁不冒充病毒库、生产迁移、容器/OS 禁网、部署或零留存测试；
+- Windows 安装生命周期验收默认只读并精确绑定源码当前版本；专项测试覆盖 alpha.23/alpha.12 成功夹具、SemVer、NSIS x86 启动器与 x64 主程序、两开关授权门、零授权零启动/零输出、九阶段状态机、HKCU/快捷方式探针、持久化 sentinel、降级成功时 fail-closed 与 canonical 证据篡改。alpha.30 未打包，当前真实预检不会借用旧制品；
+- Web 作业、HTTP、Supabase、GoTrue、Fetch、客户端、Netlify 内容存储、持久任务、上传检查与私有 worker 测试位于十个 `web_*.test.js`：97 项；新增覆盖结果 POST/GET 分流、CAS 单赢家、二次领取、返回前删除、删除失败零字节响应及 UI 一次性提示。Python Web 专项 6 项覆盖共享核心 one-shot、UTF-8/NUL、格式伪装、危险 ZIP、宏/ActiveX/嵌入/DDE、脚本 EPUB、固定子进程、身份最小化、拒绝零入库和预留释放。database/network/store 仍为注入仿真或静态检查，结构门禁与一次性领取不冒充病毒库、生产迁移、容器/OS 禁网、部署或零留存测试；
 - 许可证字段/文件为空的拒绝路径，以及“有许可证文件仍不能替代全部 236 包人工审计”的 sale blocker 契约；
 - 资源门禁两阶段顺序：静态全量检查有任一错误时不执行 Python/Java，静态全绿后才运行探针；非原生 host/arch fail-closed，纯静态必须显式 `--no-runtime-probe`；
 - Electron 桥与资源探针共享 `-I -B -S -X utf8` bootstrap、显式受控 core 目录及隔离环境；`-B` 在 `-I` 忽略环境变量时仍禁止污染受信资源；

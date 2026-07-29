@@ -204,6 +204,13 @@ async function readBoundedBody(request, maximum, expectedLength = null) {
   return Buffer.concat(chunks, total);
 }
 
+async function requireEmptyBody(request) {
+  if (singleHeader(request, "content-type") !== undefined) fail("INVALID_HEADERS");
+  const length = declaredLength(request);
+  if (length !== null && length !== 0) fail("INVALID_HEADERS");
+  await readBoundedBody(request, 0, length);
+}
+
 function parseRoute(requestUrl) {
   if (typeof requestUrl !== "string" || !requestUrl.startsWith("/") || requestUrl.startsWith("//")) {
     fail("NOT_FOUND");
@@ -352,7 +359,7 @@ function createWebJobHttpHandler({
       }
 
       if (route.kind === "job" && method === "GET") {
-        if (declaredLength(request) !== null) fail("INVALID_HEADERS");
+        await requireEmptyBody(request);
         const result = await service.getJob(session.principal, route.jobId);
         status = 200;
         sendJson(response, status, result);
@@ -387,8 +394,10 @@ function createWebJobHttpHandler({
         }
       }
 
-      if (route.kind === "result" && method === "GET") {
-        if (declaredLength(request) !== null) fail("INVALID_HEADERS");
+      // Result retrieval consumes and purges the server-side artifact. Keep it
+      // on a state-changing method so Origin and cookie-CSRF gates always run.
+      if (route.kind === "result" && method === "POST") {
+        await requireEmptyBody(request);
         const result = await service.downloadResultWithMetadata(session.principal, route.jobId);
         status = 200;
         sendBytes(response, result);
@@ -396,7 +405,7 @@ function createWebJobHttpHandler({
       }
 
       if (route.kind === "job" && method === "DELETE") {
-        if (declaredLength(request) !== null) fail("INVALID_HEADERS");
+        await requireEmptyBody(request);
         const result = await service.deleteJob(session.principal, route.jobId);
         status = 200;
         sendJson(response, status, result);
@@ -404,7 +413,7 @@ function createWebJobHttpHandler({
       }
 
       if (route.kind === "cancel" && method === "POST") {
-        if (declaredLength(request) !== null) fail("INVALID_HEADERS");
+        await requireEmptyBody(request);
         const result = await service.cancelJob(session.principal, route.jobId);
         status = 200;
         sendJson(response, status, result);

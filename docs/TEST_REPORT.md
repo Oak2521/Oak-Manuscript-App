@@ -2,7 +2,25 @@
 
 > 最近更新：2026-07-28。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.29 Web 上传结构与主动内容前置门禁
+## 最新验证结论：0.1.0-alpha.30 Web 一次性结果领取
+
+验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网，没有使用真实密钥、执行 Supabase 迁移、连接 Netlify Blobs、修改官网、部署容器、启动 Electron/安装器或生成 alpha.30 安装包。
+
+| 验证 | 结果 | 证据 |
+|---|---|---|
+| 一次性领取核心/持久/HTTP/UI 定向 | **PASS** | 57/57：结果 POST、GET 不消费、Cookie CSRF、CAS 独占、并发单赢家、二次领取失败、删除失败零字节返回、跨重启删除待办和成功后 UI 状态；Netlify 适配另含于全部 Web 97/97 |
+| 全部 Web 定向 | **PASS** | 97/97，含 client、Fetch、GoTrue、HTTP、内存参考状态机、Netlify 内容适配、Postgres repository、持久服务、上传检查器与私有 worker |
+| Python Web 专项 | **PASS** | 6/6：共享核心 one-shot 检查、结构检查 exact 无内容响应及危险文本/ZIP/DOCX/EPUB 反向场景；显式设置仓库内 `PYTHONPATH` 后运行 |
+| `npm test` | **PASS** | 退出码 0，墙钟 117.2 秒；Node 467 total / 460 pass / 0 fail / 7 skip（3.690 秒）；Python 357 total / 0 failures / 0 errors / 3 skipped（108.679 秒） |
+| 资源信任锁更新/复验 | **PASS** | 79 文件 / 2,136,323 字节；manifest SHA-256 `dda21d484ef81eeb2bbadebcd6a83a63720687254dc22dede4b60afcab73b49c`；anchor SHA-256 `b1006ddae7d759d5060461b29d14b0c8a827e0474d3ad89c8314e00cb82cabef` |
+| 发行身份只读复验 | **PASS（阻断状态正确）** | `complete=false`，12 个 Windows 完备性字段仍缺失；没有把占位值伪装成正式发行身份 |
+| alpha.30 Windows build / smoke / 安装生命周期 | **未运行** | Web 私有源码不进入 Electron `build.files`；不得沿用 alpha.23 证据声称 alpha.30 制品通过 |
+
+测试过程中第一次全量回归准确暴露 1 个旧 Netlify 集成断言仍期待“下载后输出保留”；更新为一次性领取契约后回归零失败。最终空正文兼容修正后，一次统一重跑在 Node 467 项全绿、Python 尚运行时被外层 180 秒上限终止；提高外层上限后同一 `npm test` 在 117.2 秒完整通过。另一次 Python 专项命令因未设置仓库 `PYTHONPATH` 产生 2 个导入错误；按项目测试环境重跑为 6/6。通过结果不掩盖这些命令/环境事件。
+
+证据边界：当前证明本机内存/FakeRepository/FakeStore 下只有一个领取者能得到结果，并且服务逻辑在返回前要求对象删除与终态墓碑成功。它没有证明网络响应真正送达用户磁盘；服务器完成清理后若传输或本机保存失败，结果不能重放。真实 Supabase/Blobs/GoTrue、平台双清扫、备份/复制生命周期和三路零留存仍未验收。最新可复验 Windows 制品仍为 alpha.23。
+
+## 历史验证结论：0.1.0-alpha.29 Web 上传结构与主动内容前置门禁
 
 验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网，没有使用真实密钥、执行 Supabase 迁移、连接 Netlify Blobs、修改官网、部署容器、启动 Electron/安装器或生成 alpha.29 安装包。
 

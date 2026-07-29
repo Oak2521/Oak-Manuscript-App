@@ -4,6 +4,16 @@
 
 ## [未发布]
 
+### 2026-07-28 — 0.1.0-alpha.30（ChatGPT Web 一次性结果领取检查点）
+
+> 本地标签：`chatgpt-v0.1.0-alpha.30`。本轮未联网、未部署、未修改官网、未执行真实 Supabase/Netlify E2E，也未重新打包。最新真实 Windows 制品仍为 alpha.23。
+
+- 结果领取由可重放的 GET 改为受同源/CSRF 保护的已认证 `POST /manuscript/api/v1/jobs/:job_id/result`；GET 明确返回 405 且不消费结果；
+- 第一个领取者以 revision CAS 把 `result_ready` 原子转为 `deletion_pending/downloaded`，随后读取结果、删除 input/output 并提交 content-free 终态墓碑；只有全部清理成功后才向客户端返回字节；
+- 并发领取严格只有一个成功者，二次领取失败；读取或删除失败不返回结果并保留可跨重启重试的删除待办，删除原因 schema、repository 与 SQL 约束统一增加 `downloaded`；
+- Web 工作台显示一次性领取及失败重跑后果；成功后关闭旧任务并恢复新任务控件。该策略不使用可泄露的签名 URL；若服务器删除后响应传输或本机保存失败，结果不可重放；
+- 全部 Web 97/97；最终 `npm test` 117.2 秒：Node 467 total / 460 pass / 0 fail / 7 skip（3.690 秒），Python 357 total / 0 failures / 0 errors / 3 skipped（108.679 秒）；资源清单 79 文件 / 2,136,323 字节，manifest SHA-256 `dda21d484ef81eeb2bbadebcd6a83a63720687254dc22dede4b60afcab73b49c`，锚点 SHA-256 `b1006ddae7d759d5060461b29d14b0c8a827e0474d3ad89c8314e00cb82cabef`。
+
 ### 2026-07-28 — 0.1.0-alpha.29（ChatGPT Web 上传结构与主动内容前置门禁）
 
 > 本轮未联网、未部署、未修改官网、未执行真实 Supabase/Netlify E2E，也未重新打包。最新真实 Windows 制品仍为 alpha.23。

@@ -23,9 +23,9 @@ npm audit --prefix web --omit=dev
 - 持久数据库只保存主体归属、最小文档枚举、状态、预留/租约、非内容请求指纹和终态幂等墓碑，不保存稿件字节；
 - 任务结果不会自动生成或发送 SyncRecord，长期账号记录仍须走独立的显式同步流程。
 
-alpha.23—alpha.29 固定：
+alpha.23—alpha.30 固定：
 
-- API 前缀 `/manuscript/api/v1/jobs`，提供创建、状态、输入上传、结果下载、取消和删除路由；不暴露 worker 开始/完成路由；
+- API 前缀 `/manuscript/api/v1/jobs`，提供创建、状态、输入上传、一次性结果领取、取消和删除动作；不暴露 worker 开始/完成路由；结果领取只接受状态变更 POST，GET 不消费；
 - 只接受 HTTPS。部署在受信反向代理后时，必须由适配器用不可伪造的代理信息实现 `isSecureRequest`，不能直接信任客户端 `X-Forwarded-Proto`；
 - 状态变更要求精确同源 `Origin` 和合法 `Sec-Fetch-Site`（如存在）。trusted session 显式为 Bearer 或 Cookie；Cookie 模式强制 CSRF，Bearer 模式依赖显式 Authorization、服务端 token 验证和无 CORS；
 - Supabase 适配器拒绝缺失、短、带空白/逗号、重复或合并的 Authorization；注入 verifier 只能返回 exact `{subject_id}`，适配器输出不含 token、角色、邮箱或完整 user；
@@ -38,11 +38,12 @@ alpha.23—alpha.29 固定：
 - `PersistentWebJobService` 将上传预留、私有原子领取、结果完成、删除待办和 TTL 扫描接到 repository；CAS 丢失清理孤立输入，删除失败保持可跨重启恢复的 `deletion_pending`；`PrivateLeaseWorker` 不把账号、任务 ID 或租约交给 processor，完成仍精确绑定服务内 lease/revision/expiry；
 - `PythonCoreProcessProcessor` 以固定绝对路径、参数数组、隔离环境、时间/输出/结果上限和受控 scratch 调用共享 Python `web-check`；本机真实 TXT 烟测已通过，但这不是容器或 OS 网络沙箱证据；
 - 同一固定进程边界在 `putInput()` 前调用只读 `web-inspect`，拒绝非 UTF-8/NUL 文本、危险 ZIP 结构、宏/ActiveX/嵌入/DDE 与脚本 EPUB；失败固定为 `UNSAFE_DOCUMENT`、清除预留且零字节入库。它不是病毒库或文件信誉扫描；
+- 第一个已认证同源 `POST /:job_id/result` 在读取前把任务独占转为 `deletion_pending/downloaded`；持久实现使用 revision CAS。input/output 删除与 content-free 终态墓碑成功后才返回字节；并发/二次领取失败，读取或清理失败不返回字节并只允许重试删除。15 分钟 TTL 不意味着可重复下载；传输或本机保存失败后必须重新检查；
 - 上传必须有唯一 `Content-Length`，拒绝 `Transfer-Encoding`、文件名、`Content-Disposition` 和内容摘要头；大小/MIME/并发预留在读取稿件字节前完成；
 - HTTP 错误与安全审计分别受 `web-http-error-v1`、`web-http-audit-v1` exact schema 约束。审计不记录主体、任务 ID、URL、请求头或稿件元数据；
 - handler 不设置 CORS，响应固定 `no-store` / `nosniff` / CSP / `no-referrer`。错误文案固定且不反射异常、路径、账号或稿件内容。
 
-生产实现仍须补齐：在隔离环境执行/复核 Supabase 迁移并完成 GoTrue/Postgres/Blobs 真实 E2E、平台恶意软件扫描、容器/OS 禁网与资源隔离、限额与计费、短时下载凭证、计划双清扫/告警/故障演练、结果同步和网站联调。
+生产实现仍须补齐：在隔离环境执行/复核 Supabase 迁移并完成 GoTrue/Postgres/Blobs 真实 E2E、平台恶意软件扫描、容器/OS 禁网与资源隔离、限额与计费、计划双清扫/告警/故障演练、结果同步和网站联调。当前一次性领取不生成额外签名 URL/token，但仍须在真实平台验证删除、传输中断与三路零留存。
 
 ## 参考调用顺序
 

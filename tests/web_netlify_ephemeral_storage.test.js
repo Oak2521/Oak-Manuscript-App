@@ -226,9 +226,11 @@ test("WebJobService completes and purges through the Netlify adapter", async () 
   assert.equal(ready.result_available, true);
   assert.deepEqual(await service.downloadResult(ACCOUNT, created.job_id), Buffer.from("result"));
   assert.equal(store.entries.has(`oak-manuscript/jobs/v1/${JOB_ID}/input`), false);
-  assert.equal(store.entries.has(`oak-manuscript/jobs/v1/${JOB_ID}/output`), true);
-  const receipt = await service.deleteJob(ACCOUNT, created.job_id);
-  assert.equal(receipt.output_deleted, true);
+  assert.equal(store.entries.has(`oak-manuscript/jobs/v1/${JOB_ID}/output`), false);
+  await assert.rejects(
+    service.downloadResult(ACCOUNT, created.job_id),
+    (error) => error && error.code === "JOB_NOT_FOUND",
+  );
   assert.equal(store.entries.size, 0);
 });
 

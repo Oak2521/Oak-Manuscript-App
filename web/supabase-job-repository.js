@@ -30,7 +30,9 @@ const RESULT_MEDIA_TYPES = new Set([
   "text/markdown",
   "text/plain",
 ]);
-const DELETION_REASONS = new Set(["canceled", "expired", "user_deleted", "processing_failed"]);
+const DELETION_REASONS = new Set([
+  "canceled", "expired", "user_deleted", "processing_failed", "downloaded",
+]);
 const RECORD_KEYS = Object.freeze([
   "schema_version", "record_type", "job_id", "owner_key", "state", "created_at",
   "updated_at", "expires_at", "input_retained", "result_available", "result_media_type",

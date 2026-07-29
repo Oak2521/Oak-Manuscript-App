@@ -239,7 +239,7 @@ test("direct upload compatibility keeps non-Buffer input on INVALID_UPLOAD", asy
   assert.equal(service.getJob(ACCOUNT, created.job_id).state, "awaiting_upload");
 });
 
-test("completion deletes input before exposing a short-lived result", async () => {
+test("first authenticated download consumes the short-lived result and terminalizes the job", async () => {
   const { service, storage, audit } = harness();
   const created = await service.createJob(ACCOUNT, request());
   await service.acceptUpload(ACCOUNT, created.job_id, {
@@ -255,14 +255,53 @@ test("completion deletes input before exposing a short-lived result", async () =
   assert.deepEqual(await service.downloadResult(ACCOUNT, created.job_id), Buffer.from("result"));
   assert.deepEqual(storage.inspect(created.job_id), {
     input_present: false,
-    output_present: true,
+    output_present: false,
     input_delete_at: null,
-    output_delete_at: created.expires_at,
-    output_media_type: "application/json",
+    output_delete_at: null,
+    output_media_type: null,
   });
+  await assert.rejects(service.downloadResult(ACCOUNT, created.job_id), expectCode("JOB_NOT_FOUND"));
   assert.deepEqual(audit.map((event) => event.event_type), [
     "job_created", "upload_stored", "processing_started", "input_deleted", "result_ready",
+    "deletion_completed",
   ]);
+});
+
+test("download never returns bytes until output deletion succeeds", async () => {
+  class DownloadDeleteFailure extends MemoryEphemeralStorage {
+    constructor() {
+      super();
+      this.failOnce = true;
+    }
+    async deleteOutput(jobId) {
+      if (this.failOnce) {
+        this.failOnce = false;
+        throw new Error("injected download cleanup failure");
+      }
+      return super.deleteOutput(jobId);
+    }
+  }
+  const storage = new DownloadDeleteFailure();
+  const { service } = harness({ storage });
+  const created = await service.createJob(ACCOUNT, request());
+  await service.acceptUpload(ACCOUNT, created.job_id, {
+    bytes: Buffer.from("secret"), media_type: "text/plain",
+  });
+  service.beginProcessing(ACCOUNT, created.job_id);
+  await service.completeJob(ACCOUNT, created.job_id, {
+    bytes: Buffer.from("result"), media_type: "application/json",
+  });
+
+  await assert.rejects(
+    service.downloadResult(ACCOUNT, created.job_id),
+    expectCode("ZERO_RETENTION_DELETE_FAILED"),
+  );
+  const pending = service.getJob(ACCOUNT, created.job_id);
+  assert.equal(pending.state, "deletion_pending");
+  assert.equal(pending.result_available, true);
+  const receipt = await service.retryDeletion(ACCOUNT, created.job_id);
+  assert.equal(receipt.reason, "downloaded");
+  assert.equal(validateDeletionReceipt(receipt), true);
 });
 
 test("cancel and explicit delete purge both content classes and return exact receipts", async () => {

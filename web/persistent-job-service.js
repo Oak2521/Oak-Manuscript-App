@@ -675,9 +675,29 @@ class PersistentWebJobService {
         !RESULT_MEDIA_TYPES.has(record.result_media_type)) {
       fail("RESULT_NOT_AVAILABLE", "任务结果不可下载");
     }
-    const bytes = await this.storage.readOutput(record.job_id);
-    if (!Buffer.isBuffer(bytes)) fail("RESULT_NOT_AVAILABLE", "任务结果已不存在");
-    return Object.freeze({ bytes, media_type: record.result_media_type });
+    const mediaType = record.result_media_type;
+    const reserved = await this._cas(record, this._next(record, {
+      state: "deletion_pending",
+      pending_deletion_reason: "downloaded",
+      upload_reservation_id: null,
+      upload_reservation_expires_at: null,
+      lease_id: null,
+      lease_expires_at: null,
+    }));
+    if (!reserved) fail("RESULT_NOT_AVAILABLE", "任务结果已被领取或不可下载");
+    let bytes;
+    try {
+      bytes = await this.storage.readOutput(reserved.job_id);
+    } catch {
+      this._audit("deletion_pending", reserved, "download_read_failed");
+      fail("RESULT_NOT_AVAILABLE", "任务结果读取失败并等待删除");
+    }
+    if (!Buffer.isBuffer(bytes)) {
+      this._audit("deletion_pending", reserved, "download_result_missing");
+      fail("RESULT_NOT_AVAILABLE", "任务结果已不存在并等待删除");
+    }
+    await this._purgeRecord(reserved, "downloaded");
+    return Object.freeze({ bytes, media_type: mediaType });
   }
 
   async downloadResult(principalInput, jobId) {

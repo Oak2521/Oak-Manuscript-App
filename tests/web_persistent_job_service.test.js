@@ -291,6 +291,65 @@ test("persistent upload reservation, processing lease, and result survive servic
   assert.equal(ready.state, "result_ready");
   assert.deepEqual(await second.downloadResult(OWNER, created.job_id), Buffer.from("result"));
   assert.equal(storage.inspect(created.job_id).input_present, false);
+  assert.equal(storage.inspect(created.job_id).output_present, false);
+  await assert.rejects(second.downloadResult(OWNER, created.job_id), expectCode("JOB_NOT_FOUND"));
+  assert.equal(repository.jobs.size, 0);
+});
+
+test("concurrent persistent downloads have exactly one winner and consume the result", async () => {
+  const { service, repository, storage } = serviceHarness();
+  const created = await service.createJob(OWNER, createRequest());
+  await service.acceptUpload(OWNER, created.job_id, {
+    bytes: Buffer.from("secret"), media_type: "text/plain",
+  });
+  const lease = await service.beginProcessing(OWNER, created.job_id);
+  await service.completeJob(OWNER, created.job_id, lease, {
+    bytes: Buffer.from("result"), media_type: "application/json",
+  });
+  const outcomes = await Promise.allSettled([
+    service.downloadResult(OWNER, created.job_id),
+    service.downloadResult(OWNER, created.job_id),
+  ]);
+  assert.equal(outcomes.filter((entry) => entry.status === "fulfilled").length, 1);
+  assert.equal(outcomes.filter((entry) => entry.status === "rejected").length, 1);
+  assert.equal(storage.inspect(created.job_id).output_present, false);
+  assert.equal(repository.jobs.size, 0);
+});
+
+test("persistent download returns no bytes when pre-response purge fails", async () => {
+  class DownloadDeleteFailure extends MemoryEphemeralStorage {
+    constructor() {
+      super();
+      this.failOnce = true;
+    }
+    async deleteOutput(jobId) {
+      if (this.failOnce) {
+        this.failOnce = false;
+        throw new Error("output delete failed");
+      }
+      return super.deleteOutput(jobId);
+    }
+  }
+  const repository = new FakePersistentRepository();
+  const storage = new DownloadDeleteFailure();
+  const { service } = serviceHarness({ repository, storage });
+  const created = await service.createJob(OWNER, createRequest());
+  await service.acceptUpload(OWNER, created.job_id, {
+    bytes: Buffer.from("secret"), media_type: "text/plain",
+  });
+  const lease = await service.beginProcessing(OWNER, created.job_id);
+  await service.completeJob(OWNER, created.job_id, lease, {
+    bytes: Buffer.from("result"), media_type: "application/json",
+  });
+
+  await assert.rejects(
+    service.downloadResult(OWNER, created.job_id),
+    expectCode("ZERO_RETENTION_DELETE_FAILED"),
+  );
+  assert.equal((await service.getJob(OWNER, created.job_id)).state, "deletion_pending");
+  const receipt = await service.retryDeletion(OWNER, created.job_id);
+  assert.equal(receipt.reason, "downloaded");
+  assert.equal(repository.jobs.size, 0);
 });
 
 test("private queue atomically claims work without exposing account or job identity to the processor", async () => {

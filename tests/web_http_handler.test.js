@@ -460,7 +460,7 @@ test("a live upload reservation prevents a second receiver from accepting the sa
   assert.equal(context.service.releaseUploadReservation(ACCOUNT, status.job_id, reservation), true);
 });
 
-test("complete HTTP lifecycle preserves media type and purges both content classes on delete", async () => {
+test("complete HTTP lifecycle returns the result once and purges before the response", async () => {
   const context = harness();
   const status = await createViaHttp(context);
   let result = await invoke(context.handler, {
@@ -476,10 +476,30 @@ test("complete HTTP lifecycle preserves media type and purges both content class
     media_type: "text/plain",
   });
 
+  // A read-looking GET must not be able to trigger the destructive operation.
   result = await invoke(context.handler, {
     method: "GET",
     url: `${API_BASE_PATH}/${status.job_id}/result`,
     headers: { "Sec-Fetch-Site": "same-origin" },
+  });
+  assert.equal(result.response.statusCode, 405);
+  assert.equal(result.response.json().error.code, "METHOD_NOT_ALLOWED");
+  assert.equal(context.storage.inspect(status.job_id).output_present, true);
+
+  result = await invoke(context.handler, {
+    method: "POST",
+    url: `${API_BASE_PATH}/${status.job_id}/result`,
+    headers: stateHeaders({ "Content-Length": 0 }),
+    body: Buffer.from("smuggled", "utf8"),
+  });
+  assert.equal(result.response.statusCode, 413);
+  assert.equal(result.response.json().error.code, "REQUEST_TOO_LARGE");
+  assert.equal(context.storage.inspect(status.job_id).output_present, true);
+
+  result = await invoke(context.handler, {
+    method: "POST",
+    url: `${API_BASE_PATH}/${status.job_id}/result`,
+    headers: stateHeaders({ "Content-Length": 0 }),
   });
   assert.equal(result.response.statusCode, 200);
   assert.equal(result.response.headers["content-type"], "text/plain");
@@ -488,13 +508,12 @@ test("complete HTTP lifecycle preserves media type and purges both content class
   assert.equal(result.response.body.toString("utf8"), "result");
 
   result = await invoke(context.handler, {
-    method: "DELETE",
-    url: `${API_BASE_PATH}/${status.job_id}`,
-    headers: stateHeaders(),
+    method: "POST",
+    url: `${API_BASE_PATH}/${status.job_id}/result`,
+    headers: stateHeaders({ "Content-Length": 0 }),
   });
-  assert.equal(result.response.statusCode, 200);
-  assert.equal(result.response.json().input_deleted, true);
-  assert.equal(result.response.json().output_deleted, true);
+  assert.equal(result.response.statusCode, 404);
+  assert.equal(result.response.json().error.code, "JOB_NOT_FOUND");
   assert.deepEqual(context.storage.inspect(status.job_id), {
     input_present: false,
     output_present: false,

@@ -77,7 +77,7 @@ create table if not exists public.oak_manuscript_web_jobs (
   constraint oak_web_job_delete_reason_ck check (
     (state = 'deletion_pending') = (pending_deletion_reason is not null) and
     (pending_deletion_reason is null or pending_deletion_reason in (
-      'canceled','expired','user_deleted','processing_failed'
+      'canceled','expired','user_deleted','processing_failed','downloaded'
     ))
   ),
   constraint oak_web_job_reservation_pair_ck check (

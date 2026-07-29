@@ -62,7 +62,7 @@
     },
     "pending_deletion_reason": {
       "type": ["string", "null"],
-      "enum": [null, "canceled", "expired", "user_deleted", "processing_failed"]
+      "enum": [null, "canceled", "expired", "user_deleted", "processing_failed", "downloaded"]
     },
     "request_fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "request_canonical": { "type": "string", "minLength": 2, "maxLength": 8192 },

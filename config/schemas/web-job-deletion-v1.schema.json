@@ -15,7 +15,7 @@
       "type": "string",
       "pattern": "^webjob-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
     },
-    "reason": { "enum": ["canceled", "expired", "user_deleted", "processing_failed"] },
+    "reason": { "enum": ["canceled", "expired", "user_deleted", "processing_failed", "downloaded"] },
     "deleted_at": { "type": "string", "format": "date-time" },
     "input_deleted": { "const": true },
     "output_deleted": { "const": true }

@@ -55,7 +55,9 @@ const RECEIPT_KEYS = Object.freeze([
   "schema_version", "receipt_type", "job_id", "reason", "deleted_at",
   "input_deleted", "output_deleted",
 ]);
-const DELETION_REASONS = new Set(["canceled", "expired", "user_deleted", "processing_failed"]);
+const DELETION_REASONS = new Set([
+  "canceled", "expired", "user_deleted", "processing_failed", "downloaded",
+]);
 const ACTIVE_STATES = new Set(JOB_STATES);
 const DEFAULT_TTL_MS = 15 * 60 * 1000;
 const DEFAULT_MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
@@ -578,9 +580,22 @@ class WebJobService {
         !RESULT_MEDIA_TYPES.has(record.result_media_type)) {
       fail("RESULT_NOT_AVAILABLE", "任务结果不可下载");
     }
-    const bytes = await this.storage.readOutput(record.job_id);
-    if (!Buffer.isBuffer(bytes)) fail("RESULT_NOT_AVAILABLE", "任务结果已不存在");
-    return { bytes, media_type: record.result_media_type };
+    const mediaType = record.result_media_type;
+    record.state = "deletion_pending";
+    record.pending_deletion_reason = "downloaded";
+    let bytes;
+    try {
+      bytes = await this.storage.readOutput(record.job_id);
+    } catch {
+      this._audit("deletion_pending", record, "download_read_failed");
+      fail("RESULT_NOT_AVAILABLE", "任务结果读取失败并等待删除");
+    }
+    if (!Buffer.isBuffer(bytes)) {
+      this._audit("deletion_pending", record, "download_result_missing");
+      fail("RESULT_NOT_AVAILABLE", "任务结果已不存在并等待删除");
+    }
+    await this._purge(record, "downloaded");
+    return { bytes, media_type: mediaType };
   }
 
   async _purge(record, reason) {
