@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript/device-authorization-v1.schema.json",
+  "title": "Oak Manuscript server device authorization v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "result_type", "outcome", "authorization"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "result_type": { "const": "oak_manuscript_device_authorization" },
+    "outcome": { "enum": ["authorized", "no_entitlement", "device_limit"] },
+    "authorization": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["account_id", "entitlement_id", "device_id", "device_state", "issued_at", "not_before", "valid_until", "grace_until"],
+          "properties": {
+            "account_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+            "entitlement_id": { "type": "string", "pattern": "^ent-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" },
+            "device_id": { "type": "string", "pattern": "^device-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" },
+            "device_state": { "enum": ["active", "revoked"] },
+            "issued_at": { "type": "string", "format": "date-time" },
+            "not_before": { "type": "string", "format": "date-time" },
+            "valid_until": { "type": "string", "format": "date-time" },
+            "grace_until": { "type": "string", "format": "date-time" }
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "outcome": { "const": "authorized" } }, "required": ["outcome"] },
+      "then": { "properties": { "authorization": { "type": "object" } } },
+      "else": { "properties": { "authorization": { "type": "null" } } }
+    }
+  ]
+}

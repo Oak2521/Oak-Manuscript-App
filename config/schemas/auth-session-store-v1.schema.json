@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript/auth-session-store-v1.schema.json",
+  "title": "Oak Manuscript encrypted desktop auth session v1",
+  "description": "Main-process state encrypted by Electron safeStorage. Tokens and PKCE verifier never enter Renderer or project files.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "store_type", "revision", "session", "pending"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "store_type": { "const": "oak_manuscript_auth_session" },
+    "revision": { "type": "integer", "minimum": 0 },
+    "session": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["account_id", "access_token", "refresh_token", "token_type", "issued_at", "expires_at", "refresh_expires_at"],
+          "properties": {
+            "account_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+            "access_token": { "type": "string", "minLength": 32, "maxLength": 8192 },
+            "refresh_token": { "type": "string", "minLength": 32, "maxLength": 8192 },
+            "token_type": { "const": "bearer" },
+            "issued_at": { "type": "string", "format": "date-time" },
+            "expires_at": { "type": "string", "format": "date-time" },
+            "refresh_expires_at": { "type": ["string", "null"], "format": "date-time" }
+          }
+        }
+      ]
+    },
+    "pending": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "code_verifier", "redirect_uri", "created_at", "expires_at"],
+          "properties": {
+            "state": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43,128}$" },
+            "code_verifier": { "type": "string", "pattern": "^[A-Za-z0-9._~-]{43,128}$" },
+            "redirect_uri": { "const": "oak-manuscript-auth://callback" },
+            "created_at": { "type": "string", "format": "date-time" },
+            "expires_at": { "type": "string", "format": "date-time" }
+          }
+        }
+      ]
+    }
+  }
+}

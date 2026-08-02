@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "lock_type": "oak-jre-runtime",
+  "target": {
+    "platform": "win32",
+    "arch": "x64"
+  },
+  "runtime": {
+    "distribution": "Temurin",
+    "vendor": "Eclipse Adoptium",
+    "implementor_version": "Temurin-21.0.11+10",
+    "java_version": "21.0.11",
+    "java_runtime_version": "21.0.11+10-LTS",
+    "feature_version": 21
+  },
+  "source_jdk": {
+    "release_sha256": "2516514aee90db38115b36c5e50668aeb953a4a301bc78711055834d701f6a06",
+    "java_sha256": "5e0fab9f07952ceb6e71eb9fd33e1ed69959904ca00cf70869b7baf516a98016",
+    "jdeps_sha256": "63ca1e4f79d6620411515b4b0775672b86403ae61bfd9ad2a8c01f08cd5daa6b",
+    "jlink_sha256": "307da0e802a15aa1f9ebc93eb2f662da355bb02d1c4f22a737ca20e00ac3a07e",
+    "tree_file_count": 490,
+    "tree_total_bytes": 343822457,
+    "tree_sha256": "613c12718b72625393d84c35b4f09886e7e67addcb401a0b1949902eb05d8932"
+  },
+  "epubcheck_distribution_manifest_sha256": "8a791de9231702dceb236c4dbf6fd5499f0ff99f506238f0f5bf13429b2c5c26",
+  "formal_source_provenance_audit_required": true,
+  "provenance_evidence": {
+    "path": "config/provenance/temurin-21.0.11+10-win32-x64.json",
+    "sha256": "dbbf5e4799d88820b7c4475e178e45a7624fbf104b7b5fdc4f78d6650c39d676",
+    "machine_status": "verified",
+    "human_review_status": "pending"
+  },
+  "runtime_manifest_sha256": "d0622d252094e387879713ef2497c917eec431e3d15287a826e7ccc6b8ce218d"
+}

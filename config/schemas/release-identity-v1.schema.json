@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript/release-identity-v1.schema.json",
+  "title": "Oak Manuscript release publisher identity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "identity_id",
+    "product_name",
+    "app_id",
+    "publisher_brand",
+    "official_website",
+    "legal_seller_name",
+    "support_url",
+    "privacy_policy_url",
+    "terms_url",
+    "copyright_notice",
+    "signing",
+    "human_review"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "identity_id": {
+      "const": "oak-manuscript-release-identity"
+    },
+    "product_name": {
+      "const": "湖岸稿件 Oak Manuscript"
+    },
+    "app_id": {
+      "const": "com.oakbylake.manuscript"
+    },
+    "publisher_brand": {
+      "const": "湖岸橡树"
+    },
+    "official_website": {
+      "const": "https://oakbylake.com/"
+    },
+    "legal_seller_name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "support_url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "privacy_policy_url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "terms_url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "copyright_notice": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "signing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "windows_certificate_subject",
+        "apple_team_id"
+      ],
+      "properties": {
+        "windows_certificate_subject": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "apple_team_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "human_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reviewed_by",
+        "reviewed_at"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "pending",
+            "verified"
+          ]
+        },
+        "reviewed_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reviewed_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

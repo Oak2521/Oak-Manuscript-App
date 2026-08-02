@@ -1,33 +1,150 @@
 {
   "name": "oak-manuscript",
   "productName": "湖岸稿件 Oak Manuscript",
-  "version": "0.0.1",
+  "version": "0.1.0-alpha.58",
   "private": true,
+  "license": "Apache-2.0",
   "description": "本地优先的稿件检查与修订桌面应用（Electron 壳 + Python 零依赖检查核心）",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Oak2521/Oak-Manuscript-App.git"
+  },
+  "homepage": "https://oakbylake.com/",
+  "bugs": {
+    "url": "https://github.com/Oak2521/Oak-Manuscript-App/issues"
+  },
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
-    "smoke": "electron . --smoke",
-    "test": "python scripts/run_tests.py",
-    "dist": "electron-builder --win zip"
+    "smoke": "node scripts/run_source_smoke.js",
+    "smoke:web-client": "node scripts/run_web_client_smoke.js",
+    "test": "npm run test:node && npm run test:python",
+    "test:node": "node --test \"tests/*.test.js\"",
+    "test:python": "python scripts/run_tests.py",
+    "standards:write-bundled": "node scripts/standard_assets.js --write",
+    "verify:standards": "node scripts/standard_assets.js",
+    "verify:electron-runtime": "node scripts/electron_runtime_manifest.js",
+    "verify:provenance:python:win": "node scripts/runtime_provenance.js",
+    "verify:provenance:epubcheck": "node scripts/epubcheck_provenance.js",
+    "verify:provenance:jre:win": "node scripts/jre_provenance.js",
+    "verify:provenance:electron:win": "node scripts/electron_provenance.js",
+    "verify:provenance:builder:win": "node scripts/builder_provenance.js",
+    "verify:resource-trust": "node scripts/resource_trust_manifest.js",
+    "verify:web:migrations": "node scripts/verify_web_migration_bundle.js",
+    "verify:release-identity": "node scripts/release_identity.js --platform win32",
+    "download:builder:win": "node scripts/download_windows_builder_archives.js --allow-network",
+    "stage:ace": "node scripts/stage_ace.js",
+    "stage:jre:win": "node scripts/stage_epubcheck_jre.js",
+    "verify:resources:win": "node scripts/verify_packaged_resources.js --platform win32 --arch x64 --release-tier auto",
+    "verify:resources:mac": "npm run verify:resources:mac:static",
+    "verify:resources:mac:static": "node scripts/verify_packaged_resources.js --platform darwin --release-tier auto --no-runtime-probe",
+    "verify:resources:mac:x64": "node scripts/verify_packaged_resources.js --platform darwin --arch x64 --release-tier auto",
+    "verify:resources:mac:arm64": "node scripts/verify_packaged_resources.js --platform darwin --arch arm64 --release-tier auto",
+    "verify:packaged:mac:x64": "node scripts/verify_packaged_resources.js --platform darwin --arch x64 --release-tier auto --packaged --root \"release/mac/湖岸稿件 Oak Manuscript.app/Contents/Resources\"",
+    "verify:packaged:mac:arm64": "node scripts/verify_packaged_resources.js --platform darwin --arch arm64 --release-tier auto --packaged --root \"release/mac-arm64/湖岸稿件 Oak Manuscript.app/Contents/Resources\"",
+    "verify:packaged:win": "node scripts/verify_packaged_resources.js --platform win32 --arch x64 --release-tier auto --packaged --root release/win-unpacked/resources",
+    "verify:fuses:config": "node scripts/electron_fuse_policy.js --release-tier auto",
+    "verify:packaged:fuses:win": "node scripts/electron_fuse_policy.js --binary \"release/win-unpacked/湖岸稿件 Oak Manuscript.exe\" --release-tier auto",
+    "verify:packaged:fuses:mac:x64": "node scripts/electron_fuse_policy.js --binary \"release/mac/湖岸稿件 Oak Manuscript.app/Contents/MacOS/湖岸稿件 Oak Manuscript\" --release-tier auto",
+    "verify:packaged:fuses:mac:arm64": "node scripts/electron_fuse_policy.js --binary \"release/mac-arm64/湖岸稿件 Oak Manuscript.app/Contents/MacOS/湖岸稿件 Oak Manuscript\" --release-tier auto",
+    "smoke:packaged:win": "node scripts/run_packaged_smoke.js",
+    "verify:packaged:smoke-evidence:win": "node scripts/packaged_smoke_evidence.js --verify-live --platform win32 --arch x64",
+    "release:evidence:clear:win": "node scripts/release_artifact_manifest.js --clear --platform win32 --arch x64",
+    "release:evidence:win": "node scripts/release_artifact_manifest.js --generate --platform win32 --arch x64",
+    "release:evidence:verify:win": "node scripts/release_artifact_manifest.js --verify --platform win32 --arch x64",
+    "verify:install-lifecycle:win": "node scripts/windows_install_acceptance.js",
+    "build:win": "npm run release:evidence:clear:win && npm run stage:jre:win && npm run stage:ace && npm run verify:resource-trust && npm run verify:resources:win && npm run verify:fuses:config && node scripts/run_electron_builder.js --win --x64 && npm run verify:packaged:fuses:win && npm run verify:packaged:win && npm run smoke:packaged:win && npm run verify:packaged:smoke-evidence:win && npm run release:evidence:win",
+    "build:mac:x64": "npm run stage:ace && npm run verify:resource-trust && npm run verify:resources:mac:x64 && npm run verify:fuses:config && node scripts/run_electron_builder.js --mac --x64 && npm run verify:packaged:fuses:mac:x64 && npm run verify:packaged:mac:x64",
+    "build:mac:arm64": "npm run stage:ace && npm run verify:resource-trust && npm run verify:resources:mac:arm64 && npm run verify:fuses:config && node scripts/run_electron_builder.js --mac --arm64 && npm run verify:packaged:fuses:mac:arm64 && npm run verify:packaged:mac:arm64",
+    "build:mac": "node scripts/run_native_mac_build.js",
+    "dist": "npm run build:win"
   },
   "devDependencies": {
-    "@daisy/ace": "^1.4.6",
+    "@daisy/ace-cli": "^1.4.6",
+    "@electron/fuses": "2.1.3",
     "electron": "^43.1.0",
     "electron-builder": "^26.15.3"
   },
   "build": {
     "appId": "com.oakbylake.manuscript",
     "productName": "湖岸稿件 Oak Manuscript",
+    "extraMetadata": {
+      "oakReleaseIdentity": {
+        "schema_version": "1.0",
+        "app_id": "com.oakbylake.manuscript",
+        "copyright_notice": null
+      }
+    },
     "directories": { "output": "release" },
-    "files": ["electron/**/*", "renderer/**/*", "package.json"],
+    "beforePack": "scripts/before_pack.js",
+    "afterPack": "scripts/after_pack.js",
+    "asar": true,
+    "disableAsarIntegrity": false,
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true,
+      "loadBrowserProcessSpecificV8Snapshot": false,
+      "grantFileProtocolExtraPrivileges": false,
+      "resetAdHocDarwinSignature": false
+    },
+    "files": ["electron/**/*", "renderer/**/*", "package.json", "LICENSE"],
+    "protocols": [
+      {
+        "name": "Oak Manuscript Auth Callback",
+        "schemes": ["oak-manuscript-auth"]
+      }
+    ],
     "extraResources": [
       { "from": "python/oak_manuscript_core", "to": "python/oak_manuscript_core", "filter": ["**/*.py"] },
-      { "from": "python-runtime", "to": "python-runtime" },
       { "from": "config", "to": "config" },
       { "from": "samples", "to": "samples" },
-      { "from": "tools", "to": "tools" }
+      { "from": "tools/epubcheck-5.3.0", "to": "tools/epubcheck-5.3.0" }
     ],
-    "win": { "target": ["zip"], "icon": "electron/icon.ico" }
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "zip", "arch": ["x64"] }
+      ],
+      "icon": "electron/icon.ico",
+      "artifactName": "Oak-Manuscript-${version}-Windows-${arch}.${ext}",
+      "extraResources": [
+        { "from": "python-runtime", "to": "python-runtime" },
+        { "from": "tools/jre-win32-x64", "to": "tools/jre" },
+        { "from": "tools/ace", "to": "tools/ace" },
+        { "from": "tools/ace/node_modules", "to": "tools/ace/node_modules" },
+        { "from": "tools/ace/node_modules/resolve/test/resolver/symlinked/_/symlink_target/.gitkeep", "to": "tools/ace/node_modules/resolve/test/resolver/symlinked/_/symlink_target/.gitkeep" }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "湖岸稿件 Oak Manuscript",
+      "uninstallDisplayName": "湖岸稿件 Oak Manuscript",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "warningsAsErrors": true
+    },
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x64"] }
+      ],
+      "category": "public.app-category.productivity",
+      "artifactName": "Oak-Manuscript-${version}-macOS-${arch}.${ext}",
+      "extraResources": [
+        { "from": "python-runtime-macos-${arch}", "to": "python-runtime" },
+        { "from": "tools/jre-darwin-${arch}", "to": "tools/jre" },
+        { "from": "tools/ace", "to": "tools/ace" },
+        { "from": "tools/ace/node_modules", "to": "tools/ace/node_modules" },
+        { "from": "tools/ace/node_modules/resolve/test/resolver/symlinked/_/symlink_target/.gitkeep", "to": "tools/ace/node_modules/resolve/test/resolver/symlinked/_/symlink_target/.gitkeep" }
+      ]
+    }
   }
 }

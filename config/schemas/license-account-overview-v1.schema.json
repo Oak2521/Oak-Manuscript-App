@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript/license-account-overview-v1.schema.json",
+  "title": "Oak Manuscript public license account overview v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "account_type", "entitlement", "devices", "truncated"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "account_type": { "const": "oak_manuscript_license_account" },
+    "entitlement": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/entitlement" }] },
+    "devices": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/device" } },
+    "truncated": { "type": "boolean" }
+  },
+  "$defs": {
+    "time": { "type": "string", "format": "date-time", "pattern": "Z$" },
+    "entitlement": {
+      "type": "object", "additionalProperties": false,
+      "required": ["entitlement_state", "not_before", "valid_until", "grace_until"],
+      "properties": {
+        "entitlement_state": { "enum": ["active", "revoked"] },
+        "not_before": { "$ref": "#/$defs/time" },
+        "valid_until": { "$ref": "#/$defs/time" },
+        "grace_until": { "$ref": "#/$defs/time" }
+      }
+    },
+    "device": {
+      "type": "object", "additionalProperties": false,
+      "required": ["device_id", "device_state", "first_seen_at", "last_seen_at", "revoked_at"],
+      "properties": {
+        "device_id": { "type": "string", "pattern": "^device-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" },
+        "device_state": { "enum": ["active", "revoked"] },
+        "first_seen_at": { "$ref": "#/$defs/time" },
+        "last_seen_at": { "$ref": "#/$defs/time" },
+        "revoked_at": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/time" }] }
+      }
+    }
+  }
+}

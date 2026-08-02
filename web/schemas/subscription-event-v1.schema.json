@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript/subscription-event-v1.schema.json",
+  "title": "Oak Manuscript normalized subscription snapshot event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "event_type", "provider_event_id", "account_id", "entitlement_id", "reason", "entitlement_state", "occurred_at", "issued_at", "not_before", "valid_until", "grace_until"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "event_type": { "const": "oak_manuscript_subscription_snapshot" },
+    "provider_event_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{7,191}$" },
+    "account_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+    "entitlement_id": { "type": "string", "pattern": "^ent-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" },
+    "reason": { "enum": ["purchase", "renewal", "cancellation", "refund", "chargeback", "manual"] },
+    "entitlement_state": { "enum": ["active", "revoked"] },
+    "occurred_at": { "$ref": "#/$defs/time" },
+    "issued_at": { "$ref": "#/$defs/time" },
+    "not_before": { "$ref": "#/$defs/time" },
+    "valid_until": { "$ref": "#/$defs/time" },
+    "grace_until": { "$ref": "#/$defs/time" }
+  },
+  "$defs": {
+    "time": { "type": "string", "format": "date-time", "pattern": "Z$" }
+  }
+}

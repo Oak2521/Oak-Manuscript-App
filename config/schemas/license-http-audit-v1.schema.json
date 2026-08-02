@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript/license-http-audit-v1.schema.json",
+  "title": "Oak Manuscript entitlement HTTP audit event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "event_type", "request_id", "occurred_at", "method", "route", "http_status", "error_code"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "event_type": { "const": "license_http_request_completed" },
+    "request_id": { "type": "string", "format": "uuid" },
+    "occurred_at": { "type": "string", "format": "date-time" },
+    "method": { "type": "string", "pattern": "^[A-Z]{1,16}$" },
+    "route": { "enum": ["/manuscript/api/v1/entitlement", "unmatched"] },
+    "http_status": { "type": "integer", "minimum": 100, "maximum": 599 },
+    "error_code": {
+      "anyOf": [
+        { "type": "null" },
+        { "$ref": "license-http-error-v1.schema.json#/$defs/errorCode" }
+      ]
+    }
+  }
+}

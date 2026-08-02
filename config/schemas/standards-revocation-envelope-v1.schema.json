@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/standards-revocation-envelope-v1.schema.json",
+  "title": "Oak Manuscript signed standards revocation envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "kind", "payload_b64", "signatures"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "kind": { "const": "oak-standards-revocation-envelope" },
+    "payload_b64": {
+      "type": "string",
+      "minLength": 4,
+      "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+    },
+    "signatures": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["keyid", "alg", "sig_b64"],
+        "properties": {
+          "keyid": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "alg": { "const": "ed25519" },
+          "sig_b64": {
+            "type": "string",
+            "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+          }
+        }
+      }
+    }
+  }
+}

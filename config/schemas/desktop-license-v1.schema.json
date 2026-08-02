@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript/desktop-license-v1.schema.json",
+  "title": "Oak Manuscript desktop license configuration v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "config_type", "status", "entitlement_endpoint", "issuer", "audience", "trusted_keys"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "config_type": { "const": "oak_manuscript_desktop_license" },
+    "status": { "enum": ["pending_configuration", "configured"] },
+    "entitlement_endpoint": { "type": ["string", "null"] },
+    "issuer": { "type": ["string", "null"] },
+    "audience": { "const": "oak-manuscript-desktop" },
+    "trusted_keys": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key_id", "algorithm", "public_key_jwk"],
+        "properties": {
+          "key_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{7,63}$" },
+          "algorithm": { "const": "Ed25519" },
+          "public_key_jwk": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kty", "crv", "x"],
+            "properties": {
+              "kty": { "const": "OKP" },
+              "crv": { "const": "Ed25519" },
+              "x": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

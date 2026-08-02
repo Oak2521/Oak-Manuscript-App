@@ -152,31 +152,48 @@ def missing_year(doc: DocxDocument, ctx: dict) -> list[dict]:
     return findings
 
 
-# APA 括注：（Surname, 2020）/（Surname & Other, 2019）/（Surname et al., 2018），
-# 含年份后缀 2020a。多引文并列（分号分隔）与叙述式引用留待后续版本。
-_APA_CITE = re.compile(
-    r"\(\s*([A-Z][A-Za-z\-']+)"
-    r"(?:\s*(?:&|and)\s*[A-Z][A-Za-z\-']+)?"
-    r"(?:\s+et al\.)?"
-    r"\s*,\s*(\d{4})[a-z]?\s*\)"
+# v2 通用作者—年份括注：
+# - APA：      (Smith, 2020)
+# - Chicago：  (Smith 2020)
+# - 中文作者： （王小明，2020）/（王小明 2020）
+# 只核对首位作者与年份；多引文并列及叙述式引用仍不在本规则范围内。
+# 该模式与 citation signal extractor 1.0.0 保持相同的结构边界。
+_AUTHOR = r"(?:[A-Z][A-Za-z'\u2019-]{0,79}|[\u3400-\u9fff]{2,8})"
+_AUTHOR_YEAR_CITE = re.compile(
+    rf"[\(\uff08]\s*({_AUTHOR})"
+    rf"(?:\s*(?:&|and|与|和)\s*{_AUTHOR})?"
+    r"(?:\s+et\s+al\.|\s*等)?"
+    r"\s*(?:[,\uff0c]\s*|\s+)"
+    r"((?:19|20)\d{2})[a-z]?\s*[\)\uff09]",
+    re.I,
 )
+
+
+def _entry_has_author_year(body: str, author: str, year: str) -> bool:
+    if year not in body:
+        return False
+    if any("\u3400" <= character <= "\u9fff" for character in author):
+        return author in body
+    author_pattern = re.compile(
+        rf"(?<![A-Za-z]){re.escape(author)}(?![A-Za-z])",
+        re.I,
+    )
+    return author_pattern.search(body) is not None
 
 
 @rule("REF-APA-001")
 def apa_citation_without_entry(doc: DocxDocument, ctx: dict) -> list[dict]:
-    """（M2）文内 APA 括注 → References 条目的单向基础核对。"""
+    """文内作者—年份括注 → 参考文献条目的单向结构核对。"""
     pos = _section_pos(doc)
     if pos is None:
         return []
     entries = _entries(doc, pos)
     findings = []
     for para in doc.paragraphs[:pos]:
-        for m in _APA_CITE.finditer(para.text):
-            surname, year = m.group(1), m.group(2)
-            pattern = re.compile(rf"\b{re.escape(surname)}\b")
-            matched = any(
-                pattern.search(body) and year in body for _p, _num, body in entries
-            )
+        for m in _AUTHOR_YEAR_CITE.finditer(para.text):
+            author, year = m.group(1), m.group(2)
+            matched = any(_entry_has_author_year(body, author, year)
+                          for _p, _num, body in entries)
             if not matched:
                 findings.append(
                     finding(paragraph=para.index,

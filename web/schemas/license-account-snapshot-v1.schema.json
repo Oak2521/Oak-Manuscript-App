@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript/license-account-snapshot-v1.schema.json",
+  "title": "Oak Manuscript internal license account snapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "result_type", "account_id", "entitlement", "devices", "total_devices"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "result_type": { "const": "oak_manuscript_license_account_snapshot" },
+    "account_id": { "$ref": "#/$defs/account" },
+    "entitlement": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/entitlement" }] },
+    "devices": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/device" } },
+    "total_devices": { "type": "integer", "minimum": 0, "maximum": 20 }
+  },
+  "$defs": {
+    "account": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+    "time": { "type": "string", "format": "date-time", "pattern": "Z$" },
+    "entitlement": {
+      "type": "object", "additionalProperties": false,
+      "required": ["account_id", "entitlement_id", "entitlement_state", "not_before", "valid_until", "grace_until", "revision"],
+      "properties": {
+        "account_id": { "$ref": "#/$defs/account" },
+        "entitlement_id": { "type": "string", "pattern": "^ent-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" },
+        "entitlement_state": { "enum": ["active", "revoked"] },
+        "not_before": { "$ref": "#/$defs/time" },
+        "valid_until": { "$ref": "#/$defs/time" },
+        "grace_until": { "$ref": "#/$defs/time" },
+        "revision": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "device": {
+      "type": "object", "additionalProperties": false,
+      "required": ["account_id", "device_id", "device_state", "first_seen_at", "last_seen_at", "revoked_at"],
+      "properties": {
+        "account_id": { "$ref": "#/$defs/account" },
+        "device_id": { "type": "string", "pattern": "^device-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$" },
+        "device_state": { "enum": ["active", "revoked"] },
+        "first_seen_at": { "$ref": "#/$defs/time" },
+        "last_seen_at": { "$ref": "#/$defs/time" },
+        "revoked_at": { "anyOf": [{ "type": "null" }, { "$ref": "#/$defs/time" }] }
+      }
+    }
+  }
+}

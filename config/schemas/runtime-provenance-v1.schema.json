@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/runtime-provenance-v1.schema.json",
+  "title": "Oak Manuscript runtime provenance evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "evidence_type", "subject", "official_release", "derivation", "redistribution", "verification", "official_files"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "evidence_type": { "const": "oak-runtime-provenance" },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["distribution", "version", "target", "runtime_root", "runtime_manifest"],
+      "properties": {
+        "distribution": { "const": "CPython" },
+        "version": { "const": "3.13.14" },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["platform", "arch"],
+          "properties": { "platform": { "const": "win32" }, "arch": { "const": "x64" } }
+        },
+        "runtime_root": { "const": "python-runtime" },
+        "runtime_manifest": { "const": "config/tool-manifests/python-runtime-win32-x64.json" }
+      }
+    },
+    "official_release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["publisher", "release_page_url", "artifact", "sigstore", "spdx", "gpg"],
+      "properties": {
+        "publisher": { "const": "Python Software Foundation" },
+        "release_page_url": { "const": "https://www.python.org/downloads/release/python-31314/" },
+        "artifact": { "$ref": "#/$defs/artifact" },
+        "sigstore": { "$ref": "#/$defs/sigstore" },
+        "spdx": { "$ref": "#/$defs/spdx" },
+        "gpg": { "$ref": "#/$defs/gpg" }
+      }
+    },
+    "derivation": { "$ref": "#/$defs/derivation" },
+    "redistribution": { "$ref": "#/$defs/redistribution" },
+    "verification": { "$ref": "#/$defs/verification" },
+    "official_files": {
+      "type": "array",
+      "minItems": 34,
+      "maxItems": 34,
+      "items": { "$ref": "#/$defs/file" }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "size_bytes", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "size_bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "filename", "size_bytes", "sha256"],
+      "properties": {
+        "url": { "const": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-embed-amd64.zip" },
+        "filename": { "const": "python-3.13.14-embed-amd64.zip" },
+        "size_bytes": { "const": 10964839 },
+        "sha256": { "const": "90b4e5b9898b72d744650524bff92377c367f44bd5fbd09e3148656c080ad907" }
+      }
+    },
+    "sigstore": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "bundle_sha256", "media_type", "artifact_digest_matches", "leaf_signature_verified", "certificate_issuer", "certificate_identity", "certificate_valid_from", "certificate_valid_to", "transparency_log_kind", "transparency_log_entry_index", "transparency_log_proof_index", "transparency_log_index_consistent", "full_sigstore_trust_chain_verified"],
+      "properties": {
+        "url": { "const": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-embed-amd64.zip.sigstore" },
+        "bundle_sha256": { "$ref": "#/$defs/sha256" },
+        "media_type": { "const": "application/vnd.dev.sigstore.bundle.v0.3+json" },
+        "artifact_digest_matches": { "const": true },
+        "leaf_signature_verified": { "const": true },
+        "certificate_issuer": { "type": "string", "minLength": 1 },
+        "certificate_identity": { "const": "email:thomas@python.org" },
+        "certificate_valid_from": { "type": "string", "format": "date-time" },
+        "certificate_valid_to": { "type": "string", "format": "date-time" },
+        "transparency_log_kind": { "const": "hashedrekord" },
+        "transparency_log_entry_index": { "type": "string", "pattern": "^[0-9]+$" },
+        "transparency_log_proof_index": { "type": "string", "pattern": "^[0-9]+$" },
+        "transparency_log_index_consistent": { "const": false },
+        "full_sigstore_trust_chain_verified": { "const": false }
+      }
+    },
+    "spdx": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "document_sha256", "format", "document_name", "artifact_digest_matches", "supplier", "license_concluded"],
+      "properties": {
+        "url": { "const": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-embed-amd64.zip.spdx.json" },
+        "document_sha256": { "$ref": "#/$defs/sha256" },
+        "format": { "const": "SPDX-2.3" },
+        "document_name": { "const": "CPython SBOM" },
+        "artifact_digest_matches": { "const": true },
+        "supplier": { "const": "Organization: Python Software Foundation" },
+        "license_concluded": { "const": "PSF-2.0" }
+      }
+    },
+    "gpg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "signature_sha256", "verification_status"],
+      "properties": {
+        "url": { "const": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-embed-amd64.zip.asc" },
+        "signature_sha256": { "$ref": "#/$defs/sha256" },
+        "verification_status": { "const": "downloaded_not_cryptographically_verified" }
+      }
+    },
+    "derivation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["official_file_count", "local_file_count", "byte_identical_file_count", "controlled_modifications"],
+      "properties": {
+        "official_file_count": { "const": 34 },
+        "local_file_count": { "const": 34 },
+        "byte_identical_file_count": { "const": 33 },
+        "controlled_modifications": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": { "$ref": "#/$defs/modification" }
+        }
+      }
+    },
+    "modification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "operation", "official_size_bytes", "official_sha256", "local_size_bytes", "local_sha256", "appended_utf8", "purpose"],
+      "properties": {
+        "path": { "const": "python313._pth" },
+        "operation": { "const": "append_exact_bytes" },
+        "official_size_bytes": { "type": "integer", "minimum": 1 },
+        "official_sha256": { "$ref": "#/$defs/sha256" },
+        "local_size_bytes": { "type": "integer", "minimum": 1 },
+        "local_sha256": { "$ref": "#/$defs/sha256" },
+        "appended_utf8": { "const": "..\\python\r\n" },
+        "purpose": { "type": "string", "minLength": 1 }
+      }
+    },
+    "redistribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["license_id", "license_path", "official_license_sha256", "local_license_sha256", "license_preserved", "modification_disclosed"],
+      "properties": {
+        "license_id": { "const": "PSF-2.0" },
+        "license_path": { "const": "LICENSE.txt" },
+        "official_license_sha256": { "$ref": "#/$defs/sha256" },
+        "local_license_sha256": { "$ref": "#/$defs/sha256" },
+        "license_preserved": { "const": true },
+        "modification_disclosed": { "const": true }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["machine_status", "human_review_status", "observed_at", "limitations"],
+      "properties": {
+        "machine_status": { "const": "verified" },
+        "human_review_status": { "const": "pending" },
+        "observed_at": { "type": "string", "format": "date" },
+        "limitations": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

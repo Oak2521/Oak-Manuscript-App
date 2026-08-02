@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'">
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
   <title>湖岸稿件 Oak Manuscript</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -33,7 +33,7 @@
         <strong>您的稿件默认只在本机处理。</strong>
         <p>检查、订正、报告与导出全部在本地完成；不上传稿件，不要求注册；原稿以只读副本保存并全程 SHA-256 校验，绝不被修改。</p>
       </div>
-      <p>支持格式：<code>.docx</code>（论文 / 书稿全部检查）、<code>.md</code>、<code>.txt</code>、<code>.epub</code>。自动修复仅限白名单内的机械问题，逐项经您确认。</p>
+      <p>支持格式：<code>.docx</code>（论文 / 书稿全部检查）、<code>.md</code>、<code>.txt</code>、<code>.epub</code>。自动修复仅限白名单内的机械问题；APP 会先集中列出全部修改，再由您一次确认整批执行。</p>
       <div class="actions">
         <button id="btn-own-file" class="primary">检查自己的稿件</button>
         <button id="btn-sample">使用匿名样本体验</button>
@@ -69,7 +69,7 @@
       </div>
       <div class="form-row"><label>目标引用格式</label>
         <select id="citation-select">
-          <option value="default" selected>默认（推荐，由 APP 按类型与语言自动选定）</option>
+          <option value="default" selected>默认（推荐，由 APP 按稿件类型、语言与引用结构自动解析）</option>
           <option value="gbt7714-2025">GB/T 7714—2025</option>
           <option value="apa-7">APA 7</option>
           <option value="chicago-18-nb">Chicago 18 注释—书目</option>
@@ -88,7 +88,7 @@
       <div class="form-row"><label>其他</label>
         <label class="check"><input type="checkbox" id="epub-preview-check"> 导出时生成基础 EPUB 预览</label>
       </div>
-      <p class="muted" id="citation-hint">选择「默认」时，检查开始前会明确显示本次采用的体例，并写入项目与报告。</p>
+      <p class="muted" id="citation-hint">选择「默认」时，APP 会根据稿件类型、主要语言与引用结构生成确定性计划；检查开始前会明确显示本次采用的体例或受限模式。</p>
       <div class="actions"><button id="btn-start-check" class="primary">开始检查</button></div>
     </section>
 
@@ -106,9 +106,26 @@
           <h1 id="issues-title">检查结果</h1>
           <div id="status-level" class="status-badge"></div>
           <div id="citation-note" class="muted"></div>
+          <dl id="citation-result-card" class="citation-resolution-card hidden" aria-label="本次引用体例解析结果">
+            <div><dt>最终体例 / 模式</dt><dd id="citation-result-style"></dd></div>
+            <div><dt>选择理由</dt><dd id="citation-result-reason"></dd></div>
+            <div><dt>置信度</dt><dd id="citation-result-confidence"></dd></div>
+            <div><dt>解析器版本</dt><dd id="citation-result-version"></dd></div>
+          </dl>
+          <section id="format-coverage-card" class="callout format-coverage-card hidden" aria-label="本次文本格式检查覆盖范围">
+            <h3>文本格式检查覆盖</h3>
+            <p id="format-coverage-summary"></p>
+            <dl>
+              <div><dt>实际运行规则</dt><dd id="format-coverage-rules"></dd></div>
+              <div><dt>自动修复</dt><dd id="format-coverage-autofix"></dd></div>
+              <div><dt>保守排除</dt><dd id="format-coverage-excluded"></dd></div>
+              <div><dt>本次不检查</dt><dd id="format-coverage-not-checked"></dd></div>
+            </dl>
+          </section>
         </div>
         <div class="issues-toolbar">
-          <button id="btn-autofix" class="primary">自动修复（仅白名单）</button>
+          <button id="btn-autofix" class="primary">预览批量自动修复</button>
+          <button id="btn-checkpoints">撤销与检查点</button>
           <button id="btn-recheck">重新检查</button>
           <button id="btn-external">外部验证（EPUB）</button>
           <button id="btn-to-export">导出…</button>
@@ -143,6 +160,11 @@
       </div>
       <ul id="export-files"></ul>
       <div id="verify-result" class="muted"></div>
+      <div class="callout sync-offer-card">
+        <h3>湖岸账号结果同步</h3>
+        <p id="sync-offer-status">未登录时不询问、不发送。登录不等于同意同步；每次发送前都会展示全部字段。</p>
+        <button id="btn-login-export" class="ghost">注册 / 登录湖岸账号</button>
+      </div>
       <div class="soft-cta">
         <h3>想进一步判断稿件是否适合出版？</h3>
         <p>湖岸橡树可在您主动提交后，结合稿件类型、篇幅和本次检查摘要提供出版评估。APP 不会自动上传您的稿件。</p>
@@ -156,15 +178,71 @@
     <!-- 7 标准与设置 -->
     <section class="page" id="page-standards">
       <h1>标准资源与设置</h1>
+      <h3>标准包版本与升级</h3>
+      <div class="callout standard-release-card">
+        <p id="standards-active-text">正在核验本地标准包…</p>
+        <p id="standards-governance-text" class="muted" aria-live="polite">正在统计标准来源与复核状态…</p>
+        <p id="standards-update-text" class="muted"></p>
+        <div class="actions compact-actions">
+          <button id="btn-check-standards">检查在线更新</button>
+          <button id="btn-install-standards">导入湖岸签名更新包…</button>
+          <button id="btn-rollback-standards">切换到上一稳定版本</button>
+        </div>
+        <p class="muted">本版本不会后台联网。只有您主动点击检查，且正式撤回/更新地址与签名公钥均已配置时，APP 才会先获取并验证撤回清单，再发送当前 APP/标准版本信息检查更新；不发送稿件、项目路径或账号信息。也可手动选择本地签名包。安装后仅新建项目自动采用新版本，已有项目不会静默改变，必须先查看完整差异并另行确认。</p>
+        <div class="project-standard-panel">
+          <p id="project-standard-text" class="muted">打开项目后，可在这里比较该项目固定的规则包与当前默认版本。</p>
+          <button id="btn-project-standard-change" disabled>查看差异并采用当前默认版本</button>
+        </div>
+      </div>
+      <h3>AI 与模型</h3>
+      <div class="callout ai-settings-card">
+        <p id="ai-status-text">正在读取 AI 设置…</p>
+        <fieldset class="ai-mode-grid">
+          <legend>使用方式</legend>
+          <label><input type="radio" name="ai-mode" value="off" checked> 不使用 AI</label>
+          <label><input type="radio" name="ai-mode" value="oak"> 湖岸 AI</label>
+          <label><input type="radio" name="ai-mode" value="byo"> 我的 AI（Pro）</label>
+        </fieldset>
+        <div id="ai-byo-fields" class="ai-byo-fields hidden">
+          <label for="ai-provider-select">供应商 / 接口</label>
+          <select id="ai-provider-select">
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic</option>
+            <option value="google">Google Gemini</option>
+            <option value="openai_compatible">OpenAI-compatible 自定义接口（已接入）</option>
+            <option value="ollama">Ollama（已接入）</option>
+            <option value="lm_studio">LM Studio（已接入）</option>
+          </select>
+          <label for="ai-model-input">模型标识</label>
+          <input id="ai-model-input" type="text" maxlength="128" spellcheck="false" autocomplete="off" placeholder="例如 gpt-5-mini 或 qwen3:8b">
+          <label for="ai-base-url-input">服务地址</label>
+          <input id="ai-base-url-input" type="url" maxlength="2048" spellcheck="false" autocomplete="off" placeholder="官方供应商可留空；自定义远程地址必须为 HTTPS">
+          <label for="ai-credential-input">API Key / 凭据</label>
+          <input id="ai-credential-input" type="password" maxlength="4096" autocomplete="new-password" aria-describedby="ai-credential-help" placeholder="留空则保留当前同一供应商凭据">
+          <p id="ai-credential-help" class="muted">凭据只交给 Electron 主进程，并使用 Windows DPAPI 或 macOS Keychain 加密；不会进入项目、报告、日志、同步记录或配置导出。远程 HTTP 被拒绝，仅本机回环地址可使用 HTTP。</p>
+        </div>
+        <div class="actions compact-actions">
+          <button id="btn-save-ai-settings">保存 AI 设置</button>
+          <button id="btn-clear-ai-credential" class="ghost" disabled>清除已保存凭据</button>
+        </div>
+        <p class="muted">AI 永远只是建议层：不能改变确定性检查结论，不能静默写回稿件，也不会在失败时自动切换到湖岸 AI。OpenAI-compatible 自定义接口、Ollama 和 LM Studio 已接入；保存设置不会联网，只有逐条预览并确认后才发送。</p>
+      </div>
       <h3>订正参考标准</h3>
       <table id="standards-table"><thead>
-        <tr><th>标准</th><th>类型</th><th>版本</th><th>适用范围</th></tr>
+        <tr><th>标准</th><th>类型</th><th>版本</th><th>审阅状态</th><th>来源核验</th><th>适用范围</th></tr>
       </thead><tbody></tbody></table>
       <h3>账号与同步</h3>
       <div class="callout">
-        <p id="auth-status-text">湖岸账号即将开放。登录永不强制：未登录时全部核心功能完整可用。</p>
-        <p>检查记录同步：<strong>默认关闭</strong>。开放后需您逐级明确授权，稿件文件级同步每次单独确认。</p>
-        <button id="btn-login2" class="ghost">注册 / 登录湖岸账号</button>
+        <p id="auth-status-text">正在读取湖岸账号状态…</p>
+        <p id="license-status-text">正在读取 Free / Pro 权益状态…</p>
+        <p>登录不等于同意同步。检查结果与必要元数据同步<strong>默认关闭</strong>，每次发送前逐字段预览；稿件、正文、标题、摘要、文件名、路径和哈希永不进入账号同步。</p>
+        <div class="actions compact-actions">
+          <button id="btn-login2" class="ghost">注册 / 登录湖岸账号</button>
+          <button id="btn-refresh-license" class="ghost" disabled>刷新订阅权益</button>
+        </div>
+        <p class="muted">“刷新订阅权益”是明确联网操作；查看本机状态、打开项目和运行检查不会查询订阅服务。</p>
+        <p id="sync-queue-status" class="muted">正在检查本机加密待发送队列…</p>
+        <div id="sync-queue-list" class="sync-queue-list" aria-live="polite"></div>
       </div>
       <h3>隐私</h3>
       <p class="muted">默认网络关闭、默认分析关闭；诊断信息不含正文、标题、文件名和路径。详见随附 PRIVACY_AND_SECURITY 文档。</p>
@@ -172,7 +250,165 @@
     </section>
   </main>
 
+  <dialog id="citation-resolution-dialog" class="modal citation-resolution-modal" aria-labelledby="citation-resolution-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="citation-resolution-title">确认本次引用体例</h2>
+        <p class="muted">APP 已在本机完成确定性解析。确认后才会运行检查；取消不会写入任何检查结果。</p>
+      </div>
+    </div>
+    <dl class="citation-resolution-grid" aria-live="polite">
+      <div><dt>最终体例 / 模式</dt><dd id="citation-resolution-style"></dd></div>
+      <div><dt>选择理由</dt><dd id="citation-resolution-reason"></dd></div>
+      <div><dt>置信度</dt><dd id="citation-resolution-confidence"></dd></div>
+      <div><dt>解析器版本</dt><dd id="citation-resolution-version"></dd></div>
+    </dl>
+    <p id="citation-resolution-low-confidence" class="citation-resolution-warning hidden">
+      当前证据置信度较低，本次仅做结构与一致性检查，不强行套用具体引用体例。
+    </p>
+    <div class="citation-resolution-choice">
+      <label for="citation-resolution-select">用户选择</label>
+      <select id="citation-resolution-select">
+        <option value="default">默认（由 APP 自动解析）</option>
+        <option value="gbt7714-2025">GB/T 7714—2025</option>
+        <option value="apa-7">APA 7</option>
+        <option value="chicago-18-nb">Chicago 18 注释—书目</option>
+        <option value="chicago-18-ad">Chicago 18 作者—日期</option>
+        <option value="none">暂不检查引用格式</option>
+      </select>
+      <p class="muted">修改选择后，APP 会重新生成解析计划；不会沿用上一次计划。</p>
+    </div>
+    <div class="modal-actions">
+      <button id="btn-cancel-citation-resolution">取消（不运行检查）</button>
+      <button id="btn-confirm-citation-resolution" class="primary">确认并开始检查</button>
+    </div>
+  </dialog>
+
+  <dialog id="fix-plan-dialog" class="modal" aria-labelledby="fix-plan-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="fix-plan-title">确认批量自动修复</h2>
+        <p class="muted">以下是本批次将对工作稿执行的全部白名单机械修改。取消不会写入任何内容，原稿始终不变。</p>
+      </div>
+    </div>
+    <div id="fix-plan-count" class="callout" aria-live="polite"></div>
+    <div class="batch-columns" aria-hidden="true">
+      <span>项目</span><span>修改前</span><span>修改后</span>
+    </div>
+    <ol id="fix-plan-items" class="batch-list"></ol>
+    <div class="modal-actions">
+      <button id="btn-cancel-fix-plan">取消（不写入）</button>
+      <button id="btn-confirm-fix-plan" class="primary">确认批量修复 0 项</button>
+    </div>
+  </dialog>
+
+  <dialog id="checkpoint-dialog" class="modal checkpoint-modal" aria-labelledby="checkpoint-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="checkpoint-title">撤销与检查点</h2>
+        <p class="muted">恢复只替换项目中的工作稿和对应问题记录，不会修改原稿。恢复完成后 APP 会重新检查。</p>
+      </div>
+    </div>
+    <div id="checkpoint-list" class="checkpoint-list" role="radiogroup" aria-label="可恢复的检查点"></div>
+    <div class="modal-actions checkpoint-actions">
+      <button id="btn-close-checkpoints">关闭</button>
+      <button id="btn-undo-last-fix">撤销上一次批量修复</button>
+      <button id="btn-restore-checkpoint" class="primary" disabled>恢复选定检查点</button>
+    </div>
+  </dialog>
+
+  <dialog id="rulepack-upgrade-dialog" class="modal rulepack-upgrade-modal" aria-labelledby="rulepack-upgrade-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="rulepack-upgrade-title">切换当前项目的检查标准</h2>
+        <p class="muted">下面完整列出这次规则、标准和默认引用映射的差异。确认后会先创建检查点，再切换项目固定版本；原稿和工作稿内容不会被修改。</p>
+      </div>
+    </div>
+    <div id="rulepack-upgrade-summary" class="callout" aria-live="polite"></div>
+    <section class="upgrade-diff-section">
+      <h3>版本说明</h3>
+      <ul id="rulepack-upgrade-release" class="upgrade-diff-list"></ul>
+    </section>
+    <section class="upgrade-diff-section">
+      <h3>规则差异</h3>
+      <ul id="rulepack-upgrade-rules" class="upgrade-diff-list"></ul>
+    </section>
+    <section class="upgrade-diff-section">
+      <h3>标准条目差异</h3>
+      <ul id="rulepack-upgrade-standards" class="upgrade-diff-list"></ul>
+    </section>
+    <section class="upgrade-diff-section">
+      <h3>默认引用体例映射</h3>
+      <div id="rulepack-upgrade-citation" class="upgrade-mapping-diff"></div>
+    </section>
+    <div class="modal-actions">
+      <button id="btn-cancel-rulepack-upgrade">取消（不改变项目）</button>
+      <button id="btn-confirm-rulepack-upgrade" class="primary">确认切换并重新检查</button>
+    </div>
+  </dialog>
+
+  <dialog id="sync-preview-dialog" class="modal sync-preview-modal" aria-labelledby="sync-preview-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="sync-preview-title">确认结果与元数据同步</h2>
+        <p class="muted">下面逐字段列出本次完整负载。这里只包含检查结果与必要元数据；不含稿件、正文、标题、摘要、文件名、路径和哈希。</p>
+      </div>
+    </div>
+    <div id="sync-transport-warning" class="callout sync-transport-warning">
+      当前使用本机系统安全存储加密待发送队列；生产网站 transport 尚未配置，确认后也不会声称已经上传。
+    </div>
+    <ol id="sync-preview-fields" class="sync-preview-fields" aria-live="polite"></ol>
+    <div class="modal-actions sync-choice-actions">
+      <button id="btn-sync-not-now">暂不同步</button>
+      <button id="btn-sync-never-project">不再询问此项目</button>
+      <button id="btn-sync-ask-each-time">同步本次，以后仍询问</button>
+      <button id="btn-sync-once" class="primary">仅同步本次</button>
+    </div>
+  </dialog>
+
+  <dialog id="ai-request-dialog" class="modal ai-request-modal" aria-labelledby="ai-request-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="ai-request-title">确认发送给 AI 的内容</h2>
+        <p class="muted">下面是本次单条建议的完整内容预览。生成预览本身不联网；只有点击一次确认发送，主进程才可把同一份内容交给已配置的模型 transport。</p>
+      </div>
+    </div>
+    <dl class="ai-destination-grid">
+      <div><dt>模式</dt><dd id="ai-plan-mode"></dd></div>
+      <div><dt>供应商</dt><dd id="ai-plan-provider"></dd></div>
+      <div><dt>模型</dt><dd id="ai-plan-model"></dd></div>
+      <div><dt>地址</dt><dd id="ai-plan-base-url"></dd></div>
+      <div><dt>预览有效期</dt><dd id="ai-plan-expires"></dd></div>
+    </dl>
+    <div id="ai-plan-transport" class="callout" aria-live="polite"></div>
+    <section class="ai-disclosure-section">
+      <h3>会发送</h3>
+      <ul id="ai-plan-sends"></ul>
+      <h3>不会发送</h3>
+      <ul id="ai-plan-does-not-send"></ul>
+    </section>
+    <section class="ai-request-section">
+      <h3>完整请求内容</h3>
+      <pre id="ai-plan-request-json" tabindex="0"></pre>
+    </section>
+    <section id="ai-suggestion-result" class="ai-suggestion-result hidden" aria-live="polite">
+      <h3>AI 建议（只读，不会写回稿件）</h3>
+      <pre id="ai-suggestion-text" tabindex="0"></pre>
+      <p id="ai-suggestion-review-status" class="muted"></p>
+      <div class="ai-review-actions">
+        <button id="btn-reject-ai-suggestion" disabled>放弃这条建议</button>
+        <button id="btn-accept-ai-suggestion" class="primary" disabled>采纳为人工处理参考</button>
+      </div>
+    </section>
+    <div class="modal-actions">
+      <button id="btn-cancel-ai-request">关闭（不发送）</button>
+      <button id="btn-confirm-ai-request" class="primary">确认发送一次</button>
+    </div>
+  </dialog>
+
   <div id="toast" class="hidden"></div>
+  <script src="p0-ui-model.js"></script>
+  <script src="format-coverage-model.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

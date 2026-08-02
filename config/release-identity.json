@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "identity_id": "oak-manuscript-release-identity",
+  "product_name": "湖岸稿件 Oak Manuscript",
+  "app_id": "com.oakbylake.manuscript",
+  "publisher_brand": "湖岸橡树",
+  "official_website": "https://oakbylake.com/",
+  "legal_seller_name": null,
+  "support_url": null,
+  "privacy_policy_url": null,
+  "terms_url": null,
+  "copyright_notice": null,
+  "signing": {
+    "windows_certificate_subject": null,
+    "apple_team_id": null
+  },
+  "human_review": {
+    "status": "pending",
+    "reviewed_by": null,
+    "reviewed_at": null
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.1",
+  "config_type": "oak_manuscript_standards_update",
+  "status": "pending_configuration",
+  "update_endpoint": null,
+  "revocation_endpoint": null
+}

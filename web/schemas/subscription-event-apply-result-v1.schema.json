@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript/subscription-event-apply-result-v1.schema.json",
+  "title": "Oak Manuscript subscription event database result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "result_type", "outcome", "account_id", "provider_id", "provider_event_id", "event_fingerprint", "entitlement_revision"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "result_type": { "const": "oak_manuscript_subscription_event_apply" },
+    "outcome": { "enum": ["applied", "replayed", "stale", "conflict"] },
+    "account_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+    "provider_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+    "provider_event_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{7,191}$" },
+    "event_fingerprint": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "entitlement_revision": { "type": ["integer", "null"], "minimum": 1 }
+  }
+}

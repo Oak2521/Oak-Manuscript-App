@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0",
+  "config_type": "oak_manuscript_desktop_license",
+  "status": "pending_configuration",
+  "entitlement_endpoint": null,
+  "issuer": null,
+  "audience": "oak-manuscript-desktop",
+  "trusted_keys": []
+}

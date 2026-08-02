@@ -14,7 +14,7 @@ from oak_manuscript_core.readers.epub_reader import read_epub
 from oak_manuscript_core.rulepack import load_rulepack
 
 REPO = Path(__file__).resolve().parents[2]
-PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-1.0.0.json")
+PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-2.1.0.json")
 SAMPLES = REPO / "samples"
 
 EBOOK_SETTINGS = {
@@ -28,6 +28,11 @@ ALL_M3_RULES = {
     "EPUB-MIME-001", "EPUB-OPF-001", "EPUB-NAV-001",
     "EPUB-LANG-001", "EPUB-IMG-001", "EPUB-LINK-001",
 }
+
+
+def run_confirmed_fixes(project: Project):
+    plan = ops.plan_fixes(project, PACK)
+    return ops.run_fixes(project, PACK, plan_id=plan["plan_id"])
 
 
 def rmtree_force(path: Path) -> None:
@@ -48,8 +53,9 @@ class EngineM3SamplesTest(unittest.TestCase):
             [i["rule_id"] for i in result.issues], [],
             f"EPUB 绿色基线误报：{[(i['rule_id'], i['preview']) for i in result.issues]}",
         )
-        self.assertEqual(result.resolved["citation_style_resolved"], "none")
-        self.assertEqual(result.resolved["citation_resolved_by"], "default_mapping")
+        self.assertIsNone(result.resolved["citation_style_resolved"])
+        self.assertEqual(result.resolved["citation_resolved_by"], "default_resolver")
+        self.assertEqual(result.resolved["citation_resolution"]["mode"], "structure_only")
 
     def test_epub_needs_review_triggers_all_six_rules(self):
         book = read_epub(SAMPLES / "epub_needs_review.epub")
@@ -88,7 +94,7 @@ class EpubOpsFlowTest(unittest.TestCase):
         self.assertEqual({i["rule_id"] for i in outcome.issues}, ALL_M3_RULES)
         self.assertGreater(record["issue_counts"]["error"], 0)  # MIME/OPF/NAV 为 error
 
-        _fix_record, counts = ops.run_fixes(self.proj, PACK)
+        _fix_record, counts = run_confirmed_fixes(self.proj)
         self.assertEqual(counts.get("FIX-EPUB-MIME-001"), 1)
         self.assertEqual(counts.get("FIX-EPUB-LANG-001"), 1)
         self.assertEqual(len(self.proj.data["checkpoints"]), 1)

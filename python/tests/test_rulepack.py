@@ -3,11 +3,13 @@
 import unittest
 from pathlib import Path
 
+from oak_manuscript_core.errors import OakError
 from oak_manuscript_core.rulepack import (
     detect_language,
     load_rulepack,
     load_standards,
     resolve_citation_style,
+    validate_rulepack_identity,
 )
 
 REPO = Path(__file__).resolve().parents[2]
@@ -43,6 +45,19 @@ class RulepackLoadTest(unittest.TestCase):
                     rule["confidence"], "high", f"{rule['rule_id']} 进白名单但置信度非 high"
                 )
                 self.assertIsNotNone(rule["fix_id"])
+
+    def test_project_pin_sequence_is_cross_runtime_safe_integer(self):
+        identity = {
+            "name": "oak-rules",
+            "version": "1.0.0",
+            "pinned": True,
+            "sha256": "a" * 64,
+            "bundle_id": "oak-standards",
+            "release_sequence": 9_007_199_254_740_992,
+            "manifest_sha256": "b" * 64,
+        }
+        with self.assertRaisesRegex(OakError, "安全整数"):
+            validate_rulepack_identity(identity)
 
 
 class LanguageDetectTest(unittest.TestCase):

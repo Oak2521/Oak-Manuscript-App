@@ -7,18 +7,20 @@
 
 | 文件 | 用途 | 预期 |
 |---|---|---|
-| `paper_good.docx` | 论文绿色基线 | **0 条问题**；状态「基本具备编辑评估条件」；语言识别 zh；默认体例 → gbt7714-2025 |
-| `paper_needs_review.docx` | 论文缺陷样本 | 触发下表全部规则；修复白名单 4 条可自动修复且幂等 |
+| `paper_good.docx` | 论文绿色基线 | **0 条问题**；2.0.0 默认解析为 gbt7714-2025 / high / `numeric_reference_structure` |
+| `paper_needs_review.docx` | 论文缺陷样本 | 2.0.0 默认因 `conflicting_structures` 退回 `structure_only`，首检 18 个 issue、16 种规则；4 条白名单类型可自动修复且幂等 |
 | `paper_missing_parts.docx` | 结构缺失 | 仅触发 PAPER-STRUCT-001 / 002 / 003 / 004 |
-| `book_good.docx` | 书稿绿色基线（M2） | **0 条问题**；默认体例 → chicago-18-nb；目录一致、注释与书目齐备 |
+| `book_good.docx` | 书稿绿色基线（M2） | **0 条问题**；2.0.0 信号未达阈值，默认退回 `structure_only` / `insufficient_evidence`；1.0.0 legacy 回归仍映射 chicago-18-nb |
 | `book_no_structure.docx` | 书稿缺陷一（M2） | 仅触发 {BOOK-STRUCT-001, BOOK-PAGE-001}（2 分页符 + 1 分节符 = 3 处，达聚合阈值） |
 | `book_toc_mismatch.docx` | 书稿缺陷二（M2） | 仅触发 {BOOK-STRUCT-002}（目录「第二章 转折」vs 标题「第二章 转机」） |
-| `paper_apa_citations.md` | APA + MD 缺陷（M2） | 仅触发 {MD-STRUCT-001, REF-APA-001}；语言 en；默认体例 → apa-7；(Jones, 2021) 无条目 |
-| `epub_good.epub` | 电子书绿色基线（M3） | **0 条问题**；默认体例 → none（不检查引用） |
-| `epub_needs_review.epub` | 电子书缺陷样本（M3） | 触发全部 6 条 EPUB 规则（mimetype 压缩 / 缺 dc:title / 无 nav / 章缺 lang / 图缺 alt / 断链 ×2）；MIME 与 LANG 可修复 |
-| `paper_sample.md` / `paper_sample.txt` | 输入冒烟 | 干净输入；txt 无适用规则，检查空跑为 0 问题 |
+| `paper_apa_citations.md` | APA + MD 缺陷（M2） | 触发 {MD-STRUCT-001, REF-APA-001}；2.0.0 默认解析为 apa-7 / medium / `author_year_structure`；(Jones, 2021) 无条目 |
+| `epub_good.epub` | 电子书绿色基线（M3 + 外部工具好样本） | **0 条核心问题**；EPUB 目前只能部分提取引用信号，2.0.0 默认退回 `structure_only` / `extractor_coverage_insufficient`；固定 EpubCheck/Ace 真实结果均为 `passed` |
+| `epub_needs_review.epub` | 电子书缺陷样本（M3 + 外部工具坏样本） | 同样退回 `structure_only`；触发全部 6 条 EPUB 规则（其中断链×2）；MIME 与 LANG 可修复；固定 EpubCheck/Ace 真实结果均为 `failed` |
+| `paper_sample.md` / `paper_sample.txt` | 输入冒烟 | 干净输入；txt 无适用规则，检查空跑为 0 问题；短文本默认解析因语言证据不足返回 `structure_only` |
 
 ## paper_needs_review.docx 种入缺陷 ↔ 规则对照
+
+下表是样本内全部可检缺陷。在 2.0.0 默认解析的 `structure_only` 模式下，最后三条 GB/T 专属规则不会调度；显式选择 GB/T 或 1.0.0 legacy 回归时才会触发。
 
 | 规则 | 种入位置（构造时注释一致） |
 |---|---|
@@ -48,3 +50,17 @@
 - 「3.11」等版本号 / 小数不算中文语境半角标点（两侧非中文）；
 - GB/T 条目内「. 」「: 」后带空格的半角著录符号不触发 PUNCT-MIX-001；
 - 含图片 / 分节符的段落不算空段（生成器暂未覆盖，实现时以单测覆盖）。
+
+## 外部验证契约
+
+`epub_good.epub` 和 `epub_needs_review.epub` 同时是资源门禁的好/坏矩阵，不只是核心规则样本：
+
+- EpubCheck 5.3.0：好样本退出 0 且 fatal/error 为 0；缺陷样本退出 1 且存在 error；
+- Ace 1.4.6：好样本生成 `earl:outcome=pass`；缺陷样本生成 `earl:outcome=fail`；
+- 工具没有运行、报告非法或退出码不符合契约时必须记录 `not_run`，不能把它算作上述通过/失败证据。
+
+上述 Ace 证据只在受版本控制的 `ace-1.4.6` full lock 与实际 stage 完全一致、且 Python 运行路径重新核对 236 包闭包/补丁/全部文件后成立。EpubCheck 的好/坏矩阵同样只能由目标 platform/arch 的原生 JRE 探针产生；`--no-runtime-probe` 静态检查不能替代该证据。
+
+好样本中的额外无障碍元数据是构造基线的一部分，目的是让真正的 Ace 好样本成立；它不代表应用已经完成对所有 EPUB Accessibility 1.1 要求的内建检查。重新生成样本后必须同时重跑核心、EpubCheck 和显式启用的 Ace 测试，不能只比较内部六条 M3 规则。
+
+桌面 smoke 使用这些样本创建真实项目，并读取 `project.json` 及其引用的检查报告，核对 Python core 版本、check ID，以及 APP/项目/检查/报告的规则包名称、版本、固定标志、规则包 SHA-256、bundle ID、release sequence 与 manifest SHA-256；因此样本流程通过不能只由 Renderer 返回值证明。

@@ -27,11 +27,14 @@ def multiple_spaces(doc: DocxDocument, ctx: dict) -> list[dict]:
 def tabs_in_body(doc: DocxDocument, ctx: dict) -> list[dict]:
     findings = []
     for para in doc.paragraphs:
-        if para.tab_count > 0:
-            pos = para.text.find("\t")
+        # fixer 会替换全文中的每一个 TAB，因此必须逐个生成 finding；否则一个段落
+        # 含多个 TAB 时，集中预览只展示一项却会实际修改多处。
+        for match in re.finditer("\t", para.text):
+            pos = match.start()
+            marked = para.text[:pos] + "【⇥】" + para.text[pos + 1:]
             findings.append(
                 finding(paragraph=para.index,
-                        preview=make_preview(para.text, max(pos, 0), max(pos, 0) + 1))
+                        preview=make_preview(marked, pos, pos + len("【⇥】")))
             )
     return findings
 

@@ -14,8 +14,13 @@ from oak_manuscript_core.rulepack import load_rulepack
 from oak_manuscript_core.util import sha256_file
 
 REPO = Path(__file__).resolve().parents[2]
-PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-1.0.0.json")
+PACK = load_rulepack(REPO / "config" / "rule-packs" / "oak-rules-2.1.0.json")
 SAMPLES = REPO / "samples"
+
+
+def run_confirmed_fixes(project: Project):
+    plan = ops.plan_fixes(project, PACK)
+    return ops.run_fixes(project, PACK, plan_id=plan["plan_id"])
 
 
 class OpsFlowTest(unittest.TestCase):
@@ -36,14 +41,15 @@ class OpsFlowTest(unittest.TestCase):
         self.assertGreater(len(issues), 0)
         s = self.proj.data["settings"]
         self.assertEqual(s["language_detected"], "zh")
-        self.assertEqual(s["citation_style_resolved"], "gbt7714-2025")
-        self.assertEqual(s["citation_resolved_by"], "default_mapping")
-        self.assertEqual(self.proj.data["rulepack"]["version"], "1.0.0")
+        self.assertIsNone(s["citation_style_resolved"])
+        self.assertEqual(s["citation_resolved_by"], "default_resolver")
+        self.assertEqual(s["citation_resolution"]["mode"], "structure_only")
+        self.assertEqual(self.proj.data["rulepack"]["version"], "2.1.0")
         self.assertEqual(record["issue_counts"]["error"], 1)  # REF-002
 
     def test_fix_creates_checkpoint_marks_resolved_and_is_idempotent(self):
         ops.run_check(self.proj, PACK)
-        record, counts = ops.run_fixes(self.proj, PACK)
+        record, counts = run_confirmed_fixes(self.proj)
         self.assertGreater(sum(counts.values()), 0)
         self.assertEqual(len(self.proj.data["checkpoints"]), 1)
         self.assertEqual(self.proj.data["checkpoints"][0]["reason"], "before_fix")
@@ -54,7 +60,7 @@ class OpsFlowTest(unittest.TestCase):
         # 原稿不可变
         self.assertEqual(sha256_file(self.proj.source_path), self.proj.source_sha256)
         # 再次修复：无可修复问题
-        _record2, counts2 = ops.run_fixes(self.proj, PACK)
+        _record2, counts2 = run_confirmed_fixes(self.proj)
         self.assertEqual(sum(counts2.values()), 0)
 
     def test_recheck_removes_fixed_issues_and_keeps_rejected_status(self):
@@ -62,7 +68,7 @@ class OpsFlowTest(unittest.TestCase):
         issues = ops.load_issues(self.proj)
         target = next(i for i in issues if i["rule_id"] == "PUNCT-MIX-001")
         ops.set_issue_status(self.proj, target["issue_id"], "rejected")
-        ops.run_fixes(self.proj, PACK)
+        run_confirmed_fixes(self.proj)
         record, outcome = ops.run_check(self.proj, PACK, kind="recheck")
         self.assertEqual(record["check_id"], "check-0002")
         rules_now = {i["rule_id"] for i in outcome.issues}
@@ -89,7 +95,7 @@ class OpsFlowTest(unittest.TestCase):
 
     def test_export_writes_revised_docx_and_three_reports(self):
         ops.run_check(self.proj, PACK)
-        ops.run_fixes(self.proj, PACK)
+        run_confirmed_fixes(self.proj)
         ops.run_check(self.proj, PACK, kind="recheck")
         written = ops.export_project(self.proj, PACK)
         names = {p.name for p in written}
@@ -102,6 +108,27 @@ class OpsFlowTest(unittest.TestCase):
         revised = next(p for p in written if p.name.startswith("revised_"))
         self.assertEqual(revised.read_bytes(), self.proj.working_path.read_bytes())
         self.assertEqual(sha256_file(self.proj.source_path), self.proj.source_sha256)
+        project_identity = self.proj.data["rulepack"]
+        check_identity = self.proj.data["checks"][-1]["rulepack"]
+        check_result = json.loads(
+            (
+                self.proj.root
+                / self.proj.data["checks"][-1]["result_file"]
+            ).read_text(encoding="utf-8")
+        )
+        exported_report = json.loads(
+            (self.proj.root / "exports" / "report.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            set(project_identity),
+            {
+                "name", "version", "pinned", "sha256", "bundle_id",
+                "release_sequence", "manifest_sha256",
+            },
+        )
+        self.assertEqual(check_identity, project_identity)
+        self.assertEqual(check_result["rulepack"], project_identity)
+        self.assertEqual(exported_report["rulepack"], project_identity)
 
     def test_export_requires_prior_check(self):
         with self.assertRaises(OakError):
@@ -114,7 +141,7 @@ class ReportRenderTest(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
         self.proj = Project.create(SAMPLES / "paper_needs_review.docx", self.tmp / "proj")
         ops.run_check(self.proj, PACK)
-        ops.run_fixes(self.proj, PACK)
+        run_confirmed_fixes(self.proj)
         ops.run_check(self.proj, PACK, kind="recheck")
         self.report = ops.build_report_data(self.proj, PACK)
 
@@ -126,9 +153,9 @@ class ReportRenderTest(unittest.TestCase):
             "建议处理",
             "已自动订正",
             "外部验证",
-            "oak-rules 1.0.0",
-            "gbt7714-2025",
-            "由默认规则",
+            "oak-rules 2.1.0",
+            "仅引用结构与一致性检查",
+            "默认（default）",
             "不评价学术质量",
             "湖岸橡树出版评估",
             "未运行",

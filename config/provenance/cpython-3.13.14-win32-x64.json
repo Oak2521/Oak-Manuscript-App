@@ -1,0 +1,262 @@
+{
+  "schema_version": 1,
+  "evidence_type": "oak-runtime-provenance",
+  "subject": {
+    "distribution": "CPython",
+    "version": "3.13.14",
+    "target": {
+      "platform": "win32",
+      "arch": "x64"
+    },
+    "runtime_root": "python-runtime",
+    "runtime_manifest": "config/tool-manifests/python-runtime-win32-x64.json"
+  },
+  "official_release": {
+    "publisher": "Python Software Foundation",
+    "release_page_url": "https://www.python.org/downloads/release/python-31314/",
+    "artifact": {
+      "url": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-embed-amd64.zip",
+      "filename": "python-3.13.14-embed-amd64.zip",
+      "size_bytes": 10964839,
+      "sha256": "90b4e5b9898b72d744650524bff92377c367f44bd5fbd09e3148656c080ad907"
+    },
+    "sigstore": {
+      "url": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-embed-amd64.zip.sigstore",
+      "bundle_sha256": "ec9e3f2bb3d21f80d17c43b3fbc93aed0abc98e10912e8dbd744c41c3d797597",
+      "media_type": "application/vnd.dev.sigstore.bundle.v0.3+json",
+      "artifact_digest_matches": true,
+      "leaf_signature_verified": true,
+      "certificate_issuer": "O=sigstore.dev, CN=sigstore-intermediate",
+      "certificate_identity": "email:thomas@python.org",
+      "certificate_valid_from": "2026-06-10T16:04:20.000Z",
+      "certificate_valid_to": "2026-06-10T16:14:20.000Z",
+      "transparency_log_kind": "hashedrekord",
+      "transparency_log_entry_index": "1780928370",
+      "transparency_log_proof_index": "1659024108",
+      "transparency_log_index_consistent": false,
+      "full_sigstore_trust_chain_verified": false
+    },
+    "spdx": {
+      "url": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-embed-amd64.zip.spdx.json",
+      "document_sha256": "ff85d80144dffbd3a3498a4bce568f6ab3fec614842eafda2b562f4c4e9bd247",
+      "format": "SPDX-2.3",
+      "document_name": "CPython SBOM",
+      "artifact_digest_matches": true,
+      "supplier": "Organization: Python Software Foundation",
+      "license_concluded": "PSF-2.0"
+    },
+    "gpg": {
+      "url": "https://www.python.org/ftp/python/3.13.14/python-3.13.14-embed-amd64.zip.asc",
+      "signature_sha256": "d353820d165a4e8612f788cdc151114440d7960ebd82b10a41784fe82b9c4687",
+      "verification_status": "downloaded_not_cryptographically_verified"
+    }
+  },
+  "derivation": {
+    "official_file_count": 34,
+    "local_file_count": 34,
+    "byte_identical_file_count": 33,
+    "controlled_modifications": [
+      {
+        "path": "python313._pth",
+        "operation": "append_exact_bytes",
+        "official_size_bytes": 80,
+        "official_sha256": "35ddf94682ff9aa713a8d63557242ad00f3f28fdd39337f02c3bda4c0f791577",
+        "local_size_bytes": 91,
+        "local_sha256": "2efdbbdf241cbac96a77d6fcebeac4a23e56578004da5f7e97883d9480f18712",
+        "appended_utf8": "..\\python\r\n",
+        "purpose": "Expose the packaged Oak Manuscript Python core while preserving isolated mode and keeping site disabled."
+      }
+    ]
+  },
+  "redistribution": {
+    "license_id": "PSF-2.0",
+    "license_path": "LICENSE.txt",
+    "official_license_sha256": "62bec384df47b0328307db41455ff6ea2559e5546b394ac69148561b21703120",
+    "local_license_sha256": "62bec384df47b0328307db41455ff6ea2559e5546b394ac69148561b21703120",
+    "license_preserved": true,
+    "modification_disclosed": true
+  },
+  "verification": {
+    "machine_status": "verified",
+    "human_review_status": "pending",
+    "observed_at": "2026-07-28",
+    "limitations": [
+      "The Sigstore leaf signature and embedded artifact digest were verified, but the complete Fulcio/Rekor trust chain was not independently replayed.",
+      "The official Sigstore bundle's tlog entry logIndex differs from its inclusion-proof logIndex; both values are preserved and the inconsistency requires human review.",
+      "The detached GPG signature was downloaded but not cryptographically verified.",
+      "Legal redistribution obligations still require named human sign-off before sale."
+    ]
+  },
+  "official_files": [
+    {
+      "path": "LICENSE.txt",
+      "size_bytes": 33861,
+      "sha256": "62bec384df47b0328307db41455ff6ea2559e5546b394ac69148561b21703120"
+    },
+    {
+      "path": "_asyncio.pyd",
+      "size_bytes": 72928,
+      "sha256": "2d13fa4b5ef94464bb94e2ec613eceb5bbad70c8e7e05f0e8ef25f6078397cdc"
+    },
+    {
+      "path": "_bz2.pyd",
+      "size_bytes": 86752,
+      "sha256": "76a33e2baa3880aa46290cc7d5810b3155c5e2f5a1cc7d3f7b751f6434144ada"
+    },
+    {
+      "path": "_ctypes.pyd",
+      "size_bytes": 134368,
+      "sha256": "75687620596877b0dde462e74ae12140d695b3c78df3c6c099d55717768dde42"
+    },
+    {
+      "path": "_decimal.pyd",
+      "size_bytes": 286432,
+      "sha256": "906964c01d04b360c316a2bb86d03d9ca9864e039baa01fa866815e6dce4a9b1"
+    },
+    {
+      "path": "_elementtree.pyd",
+      "size_bytes": 135904,
+      "sha256": "98474a51706eaff41ec303e0ae3b91605fbf9112daad837007793e53f482f1c9"
+    },
+    {
+      "path": "_hashlib.pyd",
+      "size_bytes": 69344,
+      "sha256": "5eb4a2aa9e28b49cb2a4f6ecee21f3c2b629b43a0709bad1d7e6204bac74eac2"
+    },
+    {
+      "path": "_lzma.pyd",
+      "size_bytes": 159456,
+      "sha256": "f221ed5f1c2789aa357f3c2dc4cd22af134b4b91acb3fb78f9fa5f7f9a7b62e4"
+    },
+    {
+      "path": "_multiprocessing.pyd",
+      "size_bytes": 38112,
+      "sha256": "c04d2822d62f675df86d748ee552918e6ef2de5659ad2ce91dda5e10ecf35fc7"
+    },
+    {
+      "path": "_overlapped.pyd",
+      "size_bytes": 57568,
+      "sha256": "579438a55311bf39b32145b8dec7846bd6830dfa461345236a37cc0c833a4a51"
+    },
+    {
+      "path": "_queue.pyd",
+      "size_bytes": 35552,
+      "sha256": "6d77d15d668cb5ddff53cff1479dffc97db5858451d4b98f6e60a23cfb529e01"
+    },
+    {
+      "path": "_socket.pyd",
+      "size_bytes": 86752,
+      "sha256": "ba944001aa6b53350f8c64e93643742abf1a08dd07c7dbbc13996e7d4d8a9efa"
+    },
+    {
+      "path": "_sqlite3.pyd",
+      "size_bytes": 131296,
+      "sha256": "ff76e7c20008fa59e8cd9c6bb8ec47f689a2cc2dc0c9b8ad9e19572b37b9d7db"
+    },
+    {
+      "path": "_ssl.pyd",
+      "size_bytes": 181984,
+      "sha256": "1cf939510359f5aa3c5f51a0ad994d9b819f5603dd100872cd30a1e25cd83f05"
+    },
+    {
+      "path": "_uuid.pyd",
+      "size_bytes": 27872,
+      "sha256": "e196b2a878b8a57976e9ab5d7610e35a85e2fe3043fd3952934a54b415bd2854"
+    },
+    {
+      "path": "_wmi.pyd",
+      "size_bytes": 39648,
+      "sha256": "ca38a50c27413a5acfd14b30b0433fcf80a64ad0020e41aceeb3666f8439aba4"
+    },
+    {
+      "path": "_zoneinfo.pyd",
+      "size_bytes": 50912,
+      "sha256": "ce3d9885aa50aed7e21a5ef90393d2bcad0f155999419fe9397a190180e39a0f"
+    },
+    {
+      "path": "libcrypto-3.dll",
+      "size_bytes": 5238520,
+      "sha256": "09499e186cf0e434ffa17ad153aa9a66d6048c54a2c03b823e2a06c49d9affe4"
+    },
+    {
+      "path": "libffi-8.dll",
+      "size_bytes": 39696,
+      "sha256": "eff52743773eb550fcc6ce3efc37c85724502233b6b002a35496d828bd7b280a"
+    },
+    {
+      "path": "libssl-3.dll",
+      "size_bytes": 794872,
+      "sha256": "28c395290279fa4f4f54a57b85cd66d853895f925fefb8f6fdebc0d8b1cdd07c"
+    },
+    {
+      "path": "pyexpat.pyd",
+      "size_bytes": 221920,
+      "sha256": "1037b8bfb0cd313119b09b4ee76ff85dffa49ba9a334f36013b8b871ad29d0e8"
+    },
+    {
+      "path": "python.cat",
+      "size_bytes": 574658,
+      "sha256": "35f8624335b905870dabb441253bca9cc0a1f2d3b944ec8d12fb59d8ff1ba47f"
+    },
+    {
+      "path": "python.exe",
+      "size_bytes": 105696,
+      "sha256": "ef8f51028ac5329641985112f8efb1c2d4c47c86b8011ddf7e6fae21e2b4e5a1"
+    },
+    {
+      "path": "python3.dll",
+      "size_bytes": 72416,
+      "sha256": "16f109e8411bc08341497c87704b7cf0d22a2678f1e3a7dca416ea7bff995469"
+    },
+    {
+      "path": "python313._pth",
+      "size_bytes": 80,
+      "sha256": "35ddf94682ff9aa713a8d63557242ad00f3f28fdd39337f02c3bda4c0f791577"
+    },
+    {
+      "path": "python313.dll",
+      "size_bytes": 6132448,
+      "sha256": "3a7a6170ea840bf2a2a76d05b687b946fcdc8d0cfedfe159012b38f1e8959a7c"
+    },
+    {
+      "path": "python313.zip",
+      "size_bytes": 3814607,
+      "sha256": "080084107afc68721db190b71c2c344a348509687083629b5728f587ef3f8939"
+    },
+    {
+      "path": "pythonw.exe",
+      "size_bytes": 104160,
+      "sha256": "95225ed035643523e8c586c11981e276541dce4949eb35cf8cf5741c824249d4"
+    },
+    {
+      "path": "select.pyd",
+      "size_bytes": 32992,
+      "sha256": "a208997eb871b5c7785eb9bcc6a22ba8c43262255b59a3394fbe9912f38b4692"
+    },
+    {
+      "path": "sqlite3.dll",
+      "size_bytes": 1584864,
+      "sha256": "4b37aa9be1f66e27096da257d46fa680b74e47179f5d2137af82aeca9466d2ef"
+    },
+    {
+      "path": "unicodedata.pyd",
+      "size_bytes": 712928,
+      "sha256": "7f8d28574732959cdb1188127fe3494c3618b602eede69c0a71846f0b5cc8a15"
+    },
+    {
+      "path": "vcruntime140.dll",
+      "size_bytes": 120400,
+      "sha256": "052ad6a20d375957e82aa6a3c441ea548d89be0981516ca7eb306e063d5027f4"
+    },
+    {
+      "path": "vcruntime140_1.dll",
+      "size_bytes": 49776,
+      "sha256": "6a99bc0128e0c7d6cbbf615fcc26909565e17d4ca3451b97f8987f9c6acbc6c8"
+    },
+    {
+      "path": "winsound.pyd",
+      "size_bytes": 31968,
+      "sha256": "fa7d312f38852a3b7ba02e628e0d196a4cfd7b1743f48f8643cfb578294649c4"
+    }
+  ]
+}

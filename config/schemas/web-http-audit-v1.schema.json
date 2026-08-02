@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript-web-http-audit-v1.schema.json",
+  "title": "Oak Manuscript Web HTTP Security Event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "event_type", "request_id", "occurred_at", "method", "route",
+    "http_status", "error_code"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "event_type": { "const": "web_http_request_completed" },
+    "request_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "occurred_at": { "type": "string", "format": "date-time" },
+    "method": { "type": "string", "pattern": "^[A-Z]{1,16}$" },
+    "route": {
+      "enum": [
+        "/manuscript/api/v1/jobs",
+        "/manuscript/api/v1/jobs/:job_id",
+        "/manuscript/api/v1/jobs/:job_id/input",
+        "/manuscript/api/v1/jobs/:job_id/result",
+        "/manuscript/api/v1/jobs/:job_id/cancel",
+        "unmatched"
+      ]
+    },
+    "http_status": { "type": "integer", "minimum": 100, "maximum": 599 },
+    "error_code": {
+      "type": ["string", "null"],
+      "enum": [
+        null, "AUTH_REQUIRED", "BODY_LENGTH_MISMATCH", "CONSENT_REQUIRED", "CONSENT_STALE",
+        "CROSS_SITE_REQUEST", "CSRF_REQUIRED", "FORBIDDEN_METADATA",
+        "GLOBAL_CONCURRENCY_LIMIT", "IDEMPOTENCY_CONFLICT", "IDEMPOTENCY_TERMINAL",
+        "INSECURE_TRANSPORT", "INTERNAL_ERROR", "INVALID_HEADERS", "INVALID_JSON",
+        "INVALID_REQUEST", "INVALID_RESULT", "INVALID_TRANSITION", "INVALID_UPLOAD",
+        "JOB_EXPIRED", "JOB_ID_COLLISION", "JOB_NOT_FOUND", "LENGTH_REQUIRED",
+        "METHOD_NOT_ALLOWED", "NOT_FOUND", "OWNER_CONCURRENCY_LIMIT", "REQUEST_TOO_LARGE",
+        "RESULT_NOT_AVAILABLE", "TRANSFER_ENCODING_NOT_ALLOWED", "UNSAFE_DOCUMENT", "UNSUPPORTED_MEDIA_TYPE",
+        "UPLOAD_MEDIA_TYPE_MISMATCH", "UPLOAD_SIZE_MISMATCH", "ZERO_RETENTION_DELETE_FAILED"
+      ]
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/standards-update-http-error-v1.schema.json",
+  "title": "Oak Manuscript standards update HTTP error v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "error", "request_id"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "enum": [
+            "BODY_LENGTH_MISMATCH",
+            "CLIENT_STATE_CONFLICT",
+            "CREDENTIALS_NOT_ALLOWED",
+            "INSECURE_TRANSPORT",
+            "INVALID_HEADERS",
+            "INVALID_JSON",
+            "INVALID_REQUEST",
+            "LENGTH_REQUIRED",
+            "METHOD_NOT_ALLOWED",
+            "NOT_FOUND",
+            "REQUEST_TOO_LARGE",
+            "SERVICE_UNAVAILABLE",
+            "TRANSFER_ENCODING_NOT_ALLOWED",
+            "UNSUPPORTED_MEDIA_TYPE"
+          ]
+        },
+        "message": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "request_id": { "type": "string", "format": "uuid" }
+  }
+}

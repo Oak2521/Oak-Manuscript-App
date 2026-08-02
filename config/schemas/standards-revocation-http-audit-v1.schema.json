@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/standards-revocation-http-audit-v1.schema.json",
+  "title": "Oak Manuscript standards revocation HTTP audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "event_type",
+    "request_id",
+    "occurred_at",
+    "method",
+    "route",
+    "http_status",
+    "error_code"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "event_type": { "const": "standards_revocation_http_request_completed" },
+    "request_id": { "type": "string", "format": "uuid" },
+    "occurred_at": { "type": "string", "format": "date-time" },
+    "method": { "type": "string", "pattern": "^[A-Z]{1,16}$" },
+    "route": { "enum": ["/manuscript/standards/v1/revocations", "unmatched"] },
+    "http_status": { "type": "integer", "minimum": 100, "maximum": 599 },
+    "error_code": {
+      "anyOf": [
+        { "type": "null" },
+        {
+          "enum": [
+            "BODY_LENGTH_MISMATCH",
+            "CREDENTIALS_NOT_ALLOWED",
+            "INSECURE_TRANSPORT",
+            "INVALID_HEADERS",
+            "INVALID_JSON",
+            "INVALID_REQUEST",
+            "LENGTH_REQUIRED",
+            "METHOD_NOT_ALLOWED",
+            "NOT_FOUND",
+            "REQUEST_TOO_LARGE",
+            "SERVICE_UNAVAILABLE",
+            "TRANSFER_ENCODING_NOT_ALLOWED",
+            "UNSUPPORTED_MEDIA_TYPE"
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -26,9 +26,10 @@ def make_preview(text: str, start: int | None = None, end: int | None = None) ->
     return snippet[:PREVIEW_MAX]
 
 
-def finding(*, paragraph: int | None = None, note_id: int | None = None,
+def finding(*, paragraph: int | None = None, line: int | None = None,
+            note_id: int | None = None,
             part: str = "document", preview: str = "",
             resource: str | None = None) -> dict:
     """resource：EPUB 等包格式的包内资源路径（M3 起，可选）。"""
-    return {"part": part, "paragraph": paragraph, "note_id": note_id,
+    return {"part": part, "paragraph": paragraph, "line": line, "note_id": note_id,
             "resource": resource, "preview": preview}

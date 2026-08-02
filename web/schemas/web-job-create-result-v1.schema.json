@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://www.oakbylake.com/schemas/oak-manuscript/web-job-create-result-v1.schema.json",
+  "title": "Oak Manuscript Web Job Create Result v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "result_type", "outcome", "record"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "result_type": { "const": "oak_manuscript_web_job_create_result" },
+    "outcome": {
+      "enum": [
+        "created",
+        "replayed",
+        "conflict",
+        "terminal",
+        "job_id_collision",
+        "owner_limit",
+        "global_limit"
+      ]
+    },
+    "record": {
+      "oneOf": [
+        { "$ref": "web-job-internal-v1.schema.json" },
+        { "type": "null" }
+      ]
+    }
+  }
+}

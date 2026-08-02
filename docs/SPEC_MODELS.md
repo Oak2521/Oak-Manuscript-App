@@ -1,6 +1,6 @@
-# SPEC_MODELS — 问题 / 规则 / 标准模型（v1.0，冻结）
+# SPEC_MODELS — 问题 / 规则 / 标准模型
 
-> 冻结日期：2026-07-11（阶段 0）。依据方案 §6.3、§9.1 第三层、§10.3。机器可读定义以 `config/` 下 JSON 为准，本文件为语义规范。
+> 问题与规则模型仍为 v1.0；标准注册表为治理 schema 2.0。alpha.58 发布规则包 2.1.0，并为 TXT/Markdown 增加可选行位置与 content-free `format_coverage`；旧报告可缺失这些字段。机器可读定义以 `config/` 下 JSON 和核心严格校验器为准，本文件为语义规范。
 
 ## 1. 问题模型（Issue，方案 §6.3）
 
@@ -12,7 +12,7 @@
   "severity": "error | warning | suggestion",
   "title": "连续空格",
   "explanation": "为什么需要处理（来自规则包，面向作者的语言）",
-  "location": { "part": "document | footnotes | endnotes | package", "paragraph": 23, "note_id": null, "resource": null },
+  "location": { "part": "document | footnotes | endnotes | package", "paragraph": 23, "line": null, "note_id": null, "resource": null },
   "preview": "截断脱敏的短上下文，≤ 60 字符",
   "standard_refs": ["OAK-DOCX-STYLE-001"],
   "auto_fixable": true,
@@ -29,6 +29,7 @@
 - **status 流转**：`open` →（用户接受修复并已应用）`resolved`；→（用户明确拒绝）`rejected`；`accepted` 为用户已接受但尚未应用的中间态。复检时：已 `resolved` 的问题若再次检出，生成**新 issue**（不复活旧的）。
 - **issue_id 确定性**：同一输入 + 同一规则包版本，两次检查产生的问题集合与顺序完全一致（引擎按 part → resource → paragraph → rule_id 排序）。
 - **location 兼容性附注（2026-07-11，M3）**：为 EPUB 增加可选字段 `resource`（包内资源路径）与 part 取值 `package`（包级问题）。属向后兼容的增量扩展，v1.0 消费方可安全忽略。
+- **location 行号附注（2026-07-29，alpha.58）**：TXT/Markdown 问题可增加 1 起算的 `line`；DOCX/EPUB 和旧报告可缺失或为 null。
 - **preview 脱敏**：只含问题附近截断文本；脱敏摘要与日志中**不得**出现 preview。
 
 ## 2. 稿件状态级别（结果页概览，方案 §5.3，冻结的透明条件）
@@ -71,36 +72,59 @@
 - 引擎按 `applies_to` × 项目设置决定启用；未实现里程碑的规则组在报告「本版本未启用的检查」中如实列出。
 - 自动修复白名单 = 规则包中 `auto_fixable: true` 且 `confidence: "high"` 的规则。扩充白名单必须同时提供：规则定义、不应修复的反例样本、幂等测试（方案 §24）。
 
-## 4. 标准模型（Standard，`config/standards.json` 条目，方案 §10.3）
+## 4. 标准模型（Standard schema 2.0，`config/standards.json`）
 
 ```json
 {
   "standard_id": "GBT-7714-2025",
   "title": "信息与文献 参考文献著录规则（GB/T 7714—2025）",
   "source_type": "official | oak_interpretation | technical_spec",
-  "official_source_url": "https://…（官方来源，可为空）",
+  "official_source_url": "",
   "oak_resource_slug": "citation/gbt-7714-2025",
   "version": "2025",
   "updated_at": "2026-07-11",
   "scope": "适用范围一句话",
-  "summary": "APP 内简明解释（分层呈现：官方标准 ≠ 湖岸解释 ≠ 工具规则）"
+  "summary": "APP 内简明解释，不得含 TODO/占位文案",
+  "status": "active | superseded | under_review | deprecated",
+  "publisher": "发布者或待核验责任说明",
+  "reviewed_by": ["审核者或明确的待指定角色"],
+  "copyright_use": "metadata_only | short_excerpt | open_license",
+  "supersedes": [],
+  "superseded_by": null,
+  "rule_ids": ["REF-002", "REF-GBT-001"],
+  "source_verified_at": null,
+  "source_verification_status": "verified | pending | unavailable",
+  "change_history": [
+    { "changed_at": "2026-07-27", "change_type": "schema_migration", "summary": "变更说明" }
+  ]
 }
 ```
 
 - `oak_resource_slug` 是网站资源页的稳定标识；网站目录调整用重定向兼容，规则包不因此升级；
-- 每条 Issue 的 `standard_refs` 必须指向本注册表中存在的 `standard_id`（引擎启动时校验）。
+- 每条 Issue 的 `standard_refs` 必须指向本注册表中存在的 `standard_id`；每项标准反向列出 `rule_ids`，两侧须完全一致；
+- `verified` 必须有真实核验日期；空外部 URL 只允许非湖岸解释项同时为 `under_review + unavailable`；`superseded` 必须指向替代项；
+- schema 字段完整不代表内容已审校。当前 13 项中外部来源核验为 0，reviewed_by 仍含角色占位，不能用结构通过替代事实审核。
+- `standards:list` 的 `governance_summary` 只汇总总数、四类审阅状态、三类来源、三类来源核验状态、外部来源子计数和门禁布尔值；它不复制标题、URL、reviewer 或规则内容。门禁满足不等于具名审校或正式发行完成。
 
-## 5. 「默认」引用体例映射（v1.0.0，随规则包发布，方案 §6.2）
+## 5. 引用体例请求与默认解析（v2.0.0，方案 §6.2）
 
-| 稿件类型 | 语言（解析后） | 自动选定体例 |
-|---|---|---|
-| paper | zh / mixed | gbt7714-2025 |
-| paper | en | apa-7 |
-| print_book | 任意 | chicago-18-nb |
-| ebook | 任意 | none（用户可显式开启） |
+用户请求枚举固定为：`default | gbt7714-2025 | apa-7 | chicago-18-nb | chicago-18-ad | none`。显式体例直接产生 `style_specific + user`；`none` 产生 `disabled + user`。只有 `default` 进入解析器。
 
-**语言自动识别（确定性算法，冻结）**：统计正文 CJK 字符数 `c` 与 ASCII 字母数 `a`。`c ≥ 4a` → zh；`a ≥ 4c` → en；否则 mixed。若 `c + a < 200`（文本过短，置信度不足）→ 按 mixed 处理。
-解析结果与映射版本写入 `project.json` 与全部报告（「本次按 ×× 体例检查，由默认规则 v1.0.0 选定」）。
+**语言信号**：统计正文 CJK 字符数 `c` 与 ASCII 字母数 `a`。`c ≥ 4a` → zh；`a ≥ 4c` → en；否则 mixed。`c + a < 200` 时标记语言证据不足，不再像 1.0.0 那样把 mixed 直接映射为具体体例。
+
+**结构信号家族**：
+
+- numeric：编号引用的唯一号码、编号条目和两者覆盖率；
+- author_year：作者—年份引用、能匹配条目的引用/条目数和覆盖率；
+- notes_bibliography：注释引用、非空注释、匹配数和覆盖率。
+
+强证据要求主/伴信号各至少 3 个且覆盖率至少 80%；中等证据各至少 2 个且覆盖率至少 50%。只有唯一家族达标、与稿件类型/语言相容，且 `style_capability_rules` 中至少一条规则对当前格式/类型/语言/体例启用时，才返回具体体例。中等对应 `confidence=medium`，强对应 `high`。
+
+以下情况返回 `structure_only`，`resolved_style=null`：格式提取只部分可用、语言证据不足、多个参考文献节、多信号家族冲突、证据不足或信号与 profile 不匹配。此模式只运行在规则包中明确允许的引用结构/一致性规则，不得把具体格式结论写入报告。无引用信号的 ebook 可返回 `disabled + default_resolver`。
+
+`citation_resolution` schema 的顶层字段严格为：`schema_version`、`requested_style`、`mode`、`resolved_style`、`resolved_by`、`resolver`、`reason_code`、`reason`、`confidence`、`evidence`、`coverage`。`resolved_by` 只允许 `user | default_resolver | legacy_mapping`；`resolver` 记录 ID/version/policy version/signal extractor version；`coverage` 记录实际调度的 rule IDs。`evidence` 只允许数量、百分比和枚举，禁止原文、姓名、文件名、路径和内容哈希。
+
+1.0.0 旧规则包的类型/语言映射仅作 `legacy_mapping` 兼容路径；新项目和升级后的默认检查使用 2.0.0 解析器。
 
 ## 6. 检查结果文件（reports/check-NNNN.json）
 
@@ -110,10 +134,37 @@
   "check_id": "check-0001",
   "kind": "check | recheck",
   "started_at": "…", "finished_at": "…",
-  "app_version": "0.0.1",
-  "rulepack": { "name": "oak-rules", "version": "1.0.0" },
+  "app_version": "0.1.0-alpha.5",
+  "rulepack": {
+    "name": "oak-rules",
+    "version": "2.1.0",
+    "pinned": true,
+    "sha256": "规则包原始字节 SHA-256",
+    "bundle_id": "oak-standards",
+    "release_sequence": 3,
+    "manifest_sha256": "canonical manifest SHA-256"
+  },
   "settings_snapshot": { "…": "创建检查时 project.settings 的完整快照" },
-  "citation_note": "本次按 gbt7714-2025 体例检查（由默认规则 v1.0.0 选定）",
+  "citation_resolution": {
+    "schema_version": "1.0",
+    "requested_style": "default",
+    "mode": "structure_only",
+    "resolved_style": null,
+    "resolved_by": "default_resolver",
+    "resolver": { "id": "oak-citation-structure-resolver", "version": "1.0.0", "policy_version": "2.0.0", "signal_extractor_version": "1.0.0" },
+    "reason_code": "conflicting_structures",
+    "reason": "检测到多个达到中等阈值的引用结构家族，无法可靠选择单一体例。",
+    "confidence": "low",
+    "evidence": { "…": "仅数量、百分比和枚举" },
+    "coverage": { "signal_availability": "full", "rule_ids": ["实际调度的引用结构规则"] }
+  },
+  "citation_note": "本次仅执行引用结构与一致性检查（未选定具体体例）",
+  "format_coverage": {
+    "schema_version": "1.0",
+    "format": "md",
+    "enabled_rule_ids": ["TEXT-BLANK-001", "TEXT-EMPTY-001", "TEXT-SPACE-001", "TEXT-TAB-001"],
+    "excluded_contexts": ["fenced_code", "inline_code", "table", "hard_break", "layout_sensitive"]
+  },
   "issues": [ "Issue 对象数组，见第 1 节" ],
   "skipped_rule_groups": [ { "milestone": "M2", "reason": "本版本未实现" } ],
   "external_tools": { "epubcheck": "not_run", "ace": "not_run" },
@@ -121,12 +172,54 @@
 }
 ```
 
-## 7. 同步负载 schema（v1.0，冻结占位，方案 §8.5）
+检查结果一致性约束：每份报告的 `check_id` 必须对应自己的项目 `checks[]` 记录。alpha.3 新记录含完整七字段 `checks[].rulepack`，报告必须与其完全一致；alpha.2 及更早的旧记录没有该字段，只允许报告保存精确 `{name, version}`，并由 `version` 对齐 `checks[].rulepack_version`，这种 legacy 证据不能冒充七字段身份。规则包升级后，历史检查和历史报告保留旧身份是正常现象；只有最新的当前检查/报告必须与项目现行 pin 一致，后续修复、外部验证和导出据此放行。`project.json.app_version` 记录项目创建版本，报告 `app_version` 记录本次检查所用核心版本，二者在旧项目升级后不要求永久相等。源码/打包 smoke 使用当次新建项目，会读取真实项目、最新检查与导出报告核对 APP/项目/检查/报告四方身份；不能仅凭 Renderer 或 `app:info` 自报。
 
-三级分级；第一版 SyncProvider 不联网，schema 冻结仅为保证阶段 4 后接不改格式：
+`format_coverage` 仅对 TXT/Markdown 出现，只允许固定格式枚举、已启用规则 ID 和固定排除上下文；不得包含命中行、正文、预览、路径或文件名。旧报告可缺失该字段。
 
-- **一级 summary**：project_display_name（用户可改）、manuscript_type、language、字数区间、checked_at、rulepack_version、citation_style_resolved、issue_counts、处理状态计数；
-- **二级 report**：一级 + 完整 Issue 数组（preview 保持截断脱敏）；
-- **三级 file**：稿件文件本体，**每次单独明确确认**，负载记录 filename、size、purpose。
+## 7. 外部验证状态模型（当前 0.1.0-alpha.5；语义自 alpha.3 保持不变）
 
-任何级别不含本地路径。未登录状态：不生成、不询问、不发送。
+`external_tools` 的每个工具状态只允许 `not_run | passed | failed`，且必须以**本次进程**生成、结构合法的报告为依据：
+
+| 工具 | `passed` | `failed` | `not_run` |
+|---|---|---|---|
+| EpubCheck 5.3.0 | 退出码 0，报告版本正确且 fatal/error 均为 0 | 退出码 1，报告版本正确且 fatal+error > 0 | 工具/可信清单缺失、超时、报告非法、版本不符，或退出码与报告计数不一致 |
+| Ace 1.4.6 | 退出码 0，安全的本次报告 `earl:outcome=pass` | 退出码 0，安全的本次报告 `earl:outcome=fail` | 工具/Chrome/helper/可信清单缺失、超时、报告非法，或任何非零退出码 |
+
+`failed` 表示验证工具成功运行并发现稿件问题，不是运行错误。外部工具的详情可包含工具版本和数量统计，但不得含稿件正文、标题、文件名、本地路径或问题预览。报告渲染器不得把 `not_run` 翻译为“通过”。
+
+固定样本作为状态契约：`epub_good.epub` 在 EpubCheck/Ace 均为 `passed`；`epub_needs_review.epub` 在两者均为 `failed`。资源门禁还会用 JRE 对这两个样本执行好/坏矩阵，只有结果与固定退出码、版本和计数一致才算探针成功。
+
+运行前可信性约束：Ace 只有在 stage manifest、受版本控制的 full lock、236 包闭包、补丁与全部文件一致时才可执行，Python 运行路径须独立复核；EpubCheck/JRE 同理先通过分发与平台锁。非原生 platform/arch 不能产生运行状态；显式 `--no-runtime-probe` 的纯静态门禁结果也不得写入 `external_tools` 作为 `passed` 或 `failed`。
+
+## 8. 同步负载 schema（SyncRecord v1，alpha.39 桌面条件接线已实现）
+
+商业方案只允许同步检查结果与必要元数据。旧 v1 占位中的 `project_display_name`、Issue `preview` 和 `file` 级上传全部废止，不得为兼容旧文档而实现。
+
+机器可读客户端权威为 `config/schemas/sync-record-v1.schema.json`，完整语义与信任边界见 `SYNC_RECORD_V1.md`。alpha.38 的服务端以独立代码重建同一语义验证，不信任客户端结论；HTTP 错误/审计另由 `sync-http-error-v1`、`sync-http-audit-v1` 约束。允许字段：
+
+- 随机项目 ID、run ID、幂等 ID；
+- 文件格式、稿件类型、检查配置、语言类别和长度区间；
+- 请求体例、最终解析体例、规则包版本、APP 版本、平台和创建时间；
+- 按严重程度、维度和处理状态汇总的数量；
+- 可选的结构化问题记录仅含 `rule_id`、严重程度、维度、处理状态和是否可修复，不含位置文本或预览；
+- 外部验证状态、导出状态、同步 schema 版本和明确授权时间。
+
+禁止字段：稿件、正文、标题、摘要、关键词、任何短预览或片段、原稿/修订稿、文件名、本地路径、用户名或设备目录、参考文献/脚注/图片原文、文件或正文哈希及其他内容指纹。
+
+未登录状态不询问、不发送；登录不等于授权。Renderer 不可构造负载；主进程从 Python `sync-source` 取得只读来源并构造 exact-schema 记录。发送前必须逐字段展示同一份缓存负载并由用户选择仅本次同步、以后仍询问、暂不同步或不再询问此项目。alpha.21 起使用按账户隔离的 OS 加密队列；alpha.38 增加服务/client/coordinator；alpha.39 增加 PKCE/token-store、条件 main 接线与逐项显式发送。默认受信端点仍为空，真实迁移和部署不存在，普通 APP 不上传，入队不等于同步成功。Web 临时稿件处理属于独立作业协议，不得混入结果同步 schema 或长期账号历史。
+
+## 9. Web 临时作业模型（alpha.30 契约、上传门禁、持久状态、私有 worker 与一次性领取边界）
+
+五份公开机器可读 schema 分别定义创建请求、公开状态、删除回执、HTTP 错误和无内容安全审计：`web-job-create-v1`、`web-job-status-v1`、`web-job-deletion-v1`、`web-http-error-v1`、`web-http-audit-v1`；两份 Web 私有 schema 定义数据库内部任务记录与创建/重放结果。另两份 Sync HTTP schema 只定义固定错误与 content-free 审计，不改变 SyncRecord v1 本体。参考内存状态机位于 `web/job-contract.js`，生产形状的持久服务、私有领取编排和固定共享核心进程分别位于 `web/persistent-job-service.js`、`web/private-lease-worker.js`、`web/python-core-process-processor.js`。HTTP handler 与 Supabase/GoTrue/Fetch/客户端边界分别位于对应模块。`web/netlify-ephemeral-storage.js` 只持久化 input/output 内容对象及 exact 生命周期 metadata；`web/supabase/001_web_job_state.sql` 只持久化主体归属、最小文档枚举、任务状态、预留/租约、非内容指纹和幂等墓碑，两者不得混存。
+
+创建请求 exact 字段：
+
+- `schema_version` / `request_type` / `idempotency_key`；
+- `consent`：只允许 `granted=true`、`scope=single_job_processing`、隐私版本与同意时间；
+- `document`：只允许格式、稿件类型、检查配置、引用体例和字节数。
+
+主体不属于请求模型，由可信会话层另行传入 `{kind, subject_id}`。公开状态只含任务 ID、状态、创建/到期/删除期限、输入是否仍保留和结果是否可用。删除回执只在输入、输出均已删除后成立；删除失败状态为 `deletion_pending`，没有成功回执。
+
+上传 Buffer 与结果 Buffer 不进入上述 JSON 模型、观察事件或长期同步记录，只交给带 `deleteAt` 的临时存储适配器。handler 的公开动作仅为创建、状态、上传、一次性结果领取、取消和删除；worker 状态转换没有公开 HTTP 路由。状态变更要求 HTTPS 与同源 Origin/Fetch Metadata；Bearer 必须经服务端 verifier且不开放 CORS，Cookie 模式附加 CSRF。结果领取使用 POST；第一个领取者以 `deletion_pending/downloaded` 独占，删除对象与终态墓碑后才返回，GET、并发和二次领取不得消费或返回结果。上传要求唯一 Content-Length，并在读入前完成大小/MIME/并发预留。HTTP 审计只允许请求 ID、时间、方法、路由模板、状态与错误码。
+
+状态机、handler、Bearer/GoTrue/Fetch、Netlify Blobs 适配器、Supabase/Postgres 持久源码、service-role-only 原子领取、本机固定 Python 子进程和一次性领取都不是已部署生产服务。`web-inspect` 在 `putInput()` 前验证格式、危险 ZIP 结构和宏/脚本等主动内容；检查请求不含账号、任务或租约，失败固定为 `UNSAFE_DOCUMENT` 且零字节入库。processor 同样只接收最小文档枚举与 Buffer，完成仍绑定不可复制服务内句柄的 exact lease/revision/expiry。真实数据库迁移与 RLS/多实例验证、病毒库/平台扫描、生产容器/OS 禁网和资源隔离、任务/对象双清扫及零留存审计仍待实现。

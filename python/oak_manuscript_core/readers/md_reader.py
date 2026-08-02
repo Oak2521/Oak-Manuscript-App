@@ -13,7 +13,7 @@ import re
 from pathlib import Path
 
 from ..errors import OakError
-from ..model import Document, Paragraph
+from ..model import Document, Paragraph, TextLine
 
 _ATX = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
 _FENCE = re.compile(r"^(```|~~~)")
@@ -35,7 +35,7 @@ def _read_text(path: Path) -> str:
 
 
 def _parse(text: str, *, parse_headings: bool) -> Document:
-    doc = Document()
+    doc = Document(source_lines=_classify_source_lines(text, markdown=parse_headings))
     index = 0
     block: list[str] = []
     in_fence = False
@@ -88,3 +88,104 @@ def _parse(text: str, *, parse_headings: bool) -> Document:
 def parse_plain_blocks(text: str) -> Document:
     """纯文本模式：只做空行分段（供 txt_reader 复用）。"""
     return _parse(text, parse_headings=False)
+
+
+def _inline_code_ranges(line: str) -> tuple[tuple[int, int], ...]:
+    """保守识别反引号代码跨度；未闭合时保护到行尾以避免误报。"""
+    ranges: list[tuple[int, int]] = []
+    cursor = 0
+    while cursor < len(line):
+        start = line.find("`", cursor)
+        if start < 0:
+            break
+        width = 1
+        while start + width < len(line) and line[start + width] == "`":
+            width += 1
+        marker = "`" * width
+        end = line.find(marker, start + width)
+        if end < 0:
+            ranges.append((start, len(line)))
+            break
+        ranges.append((start, end + width))
+        cursor = end + width
+    return tuple(ranges)
+
+
+def _looks_like_table(line: str) -> bool:
+    """宁可少报也不在疑似 Markdown 表格中报告空白问题。"""
+    stripped = line.strip()
+    if not stripped or "|" not in stripped:
+        return False
+    unescaped = sum(
+        1 for index, char in enumerate(stripped)
+        if char == "|" and (index == 0 or stripped[index - 1] != "\\")
+    )
+    return stripped.startswith("|") or stripped.endswith("|") or unescaped >= 2
+
+
+def _short_layout_block(lines: list[TextLine]) -> bool:
+    if len(lines) < 3:
+        return False
+    texts = [line.text.strip() for line in lines]
+    if any(not text or len(text) > 40 or text.startswith("#") for text in texts):
+        return False
+    terminal = re.compile(r"[。！？.!?；;：:]$")
+    return sum(1 for text in texts if not terminal.search(text)) >= 2
+
+
+def _classify_source_lines(text: str, *, markdown: bool) -> list[TextLine]:
+    """生成供提示型规则使用的原始行视图，不改变既有段落解析。"""
+    raw_lines = text.splitlines()
+    classified: list[TextLine] = []
+    in_fence = False
+    for number, line in enumerate(raw_lines, start=1):
+        stripped = line.strip()
+        protected: str | None = None
+        fence = markdown and bool(_FENCE.match(stripped))
+        if fence:
+            protected = "fenced_code"
+            in_fence = not in_fence
+        elif markdown and in_fence:
+            protected = "fenced_code"
+        elif markdown and _looks_like_table(line):
+            protected = "table"
+
+        trailing = len(line) - len(line.rstrip(" "))
+        classified.append(TextLine(
+            number=number,
+            text=line,
+            protected_context=protected,
+            layout_sensitive=bool(line) and line[0] in {" ", "\t", "　"},
+            inline_code_ranges=_inline_code_ranges(line) if markdown and protected is None else (),
+            hard_break_start=(len(line) - trailing if markdown and trailing >= 2 else None),
+        ))
+
+    # 连续三行以上的短行块可能是诗歌、题词或刻意保留的行式。这里仅
+    # 扩大豁免，不据此宣称识别了体裁；误判只会少报，不会改写内容。
+    start = 0
+    while start < len(classified):
+        while start < len(classified) and (
+            not classified[start].text.strip()
+            or classified[start].protected_context is not None
+        ):
+            start += 1
+        end = start
+        while end < len(classified) and (
+            classified[end].text.strip()
+            and classified[end].protected_context is None
+        ):
+            end += 1
+        block = classified[start:end]
+        if block and (_short_layout_block(block) or any(line.layout_sensitive for line in block)):
+            for index in range(start, end):
+                line = classified[index]
+                classified[index] = TextLine(
+                    number=line.number,
+                    text=line.text,
+                    protected_context=line.protected_context,
+                    layout_sensitive=True,
+                    inline_code_ranges=line.inline_code_ranges,
+                    hard_break_start=line.hard_break_start,
+                )
+        start = max(end, start + 1)
+    return classified

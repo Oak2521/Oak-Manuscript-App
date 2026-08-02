@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self' https://*.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
+  <title>湖岸稿件 Oak Manuscript</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">湖岸稿件 <span>Oak Manuscript</span></a>
+    <nav aria-label="账号">
+      <span id="account-state">正在检查登录状态…</span>
+      <a id="login-link" href="/login/?next=%2Fmanuscript%2Fapp%2F">登录</a>
+      <a id="register-link" href="/register/">注册</a>
+      <a id="account-link" href="/account/" hidden>我的账户</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="page-title">
+      <p class="eyebrow">本地优先产品的 Web 工作台</p>
+      <h1 id="page-title">检查稿件，不替你改写</h1>
+      <p>上传只用于当前检查任务。长期保存结果必须另行查看字段并明确选择；登录本身不等于同意同步。</p>
+      <p class="development-notice">开发状态：界面与服务契约已建立，尚未部署生产处理、订阅或结果同步。</p>
+    </section>
+
+    <section class="workspace" aria-labelledby="job-title">
+      <div class="section-heading">
+        <div>
+          <p class="step">01</p>
+          <h2 id="job-title">新建检查任务</h2>
+        </div>
+        <p id="login-required" class="notice">请先使用湖岸橡树官网账号登录。桌面端基础本地功能不要求登录。</p>
+      </div>
+
+      <form id="job-form">
+        <label class="file-picker">
+          <span>选择稿件</span>
+          <input id="manuscript-file" name="manuscript" type="file" accept=".docx,.epub,.md,.txt" required disabled>
+          <small>DOCX、EPUB、Markdown 或 TXT，最大 50 MB。文件名不会写入任务元数据。</small>
+        </label>
+
+        <div class="field-grid">
+          <label>稿件类型
+            <select id="manuscript-type" disabled>
+              <option value="paper">论文</option>
+              <option value="print_book">纸质出版物</option>
+              <option value="ebook">电子书</option>
+            </select>
+          </label>
+          <label>检查范围
+            <select id="check-config" disabled>
+              <option value="full">完整检查</option>
+              <option value="quick">快速检查</option>
+            </select>
+          </label>
+          <label>引用体例
+            <select id="citation-style" disabled>
+              <option value="default">默认（由检查类型和本地结构自动选择）</option>
+              <option value="gbt7714-2025">GB/T 7714—2025</option>
+              <option value="apa-7">APA 7</option>
+              <option value="chicago-18-nb">Chicago 18 注释—书目</option>
+              <option value="chicago-18-ad">Chicago 18 作者—日期</option>
+              <option value="none">不检查引用体例</option>
+            </select>
+          </label>
+        </div>
+
+        <label class="consent-row">
+          <input id="processing-consent" type="checkbox" disabled>
+          <span>我同意仅为本次检查临时上传和处理该稿件；这不代表同意长期保存或结果同步。</span>
+        </label>
+
+        <div class="actions">
+          <button id="submit-job" type="submit" disabled>开始检查</button>
+          <button id="cancel-job" class="secondary" type="button" hidden>取消任务并删除临时内容</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="progress-panel" class="progress-panel" aria-labelledby="progress-title" hidden>
+      <p class="step">02</p>
+      <h2 id="progress-title">任务进度</h2>
+      <p id="job-status" role="status" aria-live="polite"></p>
+      <button id="download-result" type="button" hidden>下载检查结果</button>
+      <p class="privacy-note">结果只能领取一次；服务器会先删除临时副本再返回文件。若本机保存失败，需要重新检查。</p>
+    </section>
+
+    <section id="sync-panel" class="sync-panel" aria-labelledby="sync-title" hidden>
+      <p class="step">03</p>
+      <h2 id="sync-title">是否同步到账号后台？</h2>
+      <p>生产同步尚未接通。正式启用时，这里必须先列出全部结果字段，再提供“仅同步本次、以后仍询问、暂不同步、不再询问此项目”。稿件正文、文件名、路径、片段和内容哈希不得同步。</p>
+      <button type="button" disabled>同步功能尚未启用</button>
+    </section>
+
+    <section id="sync-history-panel" class="sync-history-panel" aria-labelledby="sync-history-title" hidden>
+      <div class="section-heading">
+        <div>
+          <p class="step">账号后台</p>
+          <h2 id="sync-history-title">已同步的检查记录</h2>
+        </div>
+        <button id="refresh-sync-history" class="secondary" type="button">刷新记录</button>
+      </div>
+      <p>这里只显示你明确同步的结构化结果；不会显示稿件正文、标题、文件名、路径、引用原文或内容哈希。</p>
+      <p id="sync-history-status" class="notice" role="status" aria-live="polite"></p>
+      <div id="sync-history-list" class="sync-history-list"></div>
+    </section>
+
+    <section id="license-account-panel" class="license-account-panel" aria-labelledby="license-account-title" hidden>
+      <div class="section-heading">
+        <div>
+          <p class="step">账号后台</p>
+          <h2 id="license-account-title">订阅与设备</h2>
+        </div>
+        <button id="refresh-license-account" class="secondary" type="button">刷新状态</button>
+      </div>
+      <p>这里只显示订阅有效期和登记设备，不读取或显示稿件、项目、文件名、路径、内容哈希或 AI 设置。</p>
+      <p class="privacy-note">撤销设备必须逐台确认。撤销不会删除该设备上的本地项目或导出；设备之后刷新权益时不再获得 Pro 权限。</p>
+      <p id="license-account-status" class="notice" role="status" aria-live="polite"></p>
+      <div id="license-device-list" class="license-device-list"></div>
+    </section>
+  </main>
+
+  <footer>
+    <span>隐私政策与使用条款将在正式上线前发布</span>
+    <span>© Oak by Lake</span>
+  </footer>
+
+  <script defer src="/assets/js/vendor/supabase.js"></script>
+  <script defer src="/assets/js/config.js"></script>
+  <script defer src="/assets/js/auth.js"></script>
+  <script defer src="./client-contract.js"></script>
+  <script defer src="./license-account-controller.js"></script>
+  <script defer src="./app.js"></script>
+</body>
+</html>

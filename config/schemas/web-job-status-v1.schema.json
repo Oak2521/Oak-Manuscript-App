@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript-web-job-status-v1.schema.json",
+  "title": "Oak Manuscript Web Job Public Status v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "record_type", "job_id", "state", "created_at", "expires_at",
+    "input_retained", "result_available", "deletion_due_at"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "record_type": { "const": "oak_manuscript_web_job_status" },
+    "job_id": {
+      "type": "string",
+      "pattern": "^webjob-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "state": {
+      "enum": ["awaiting_upload", "queued", "processing", "result_ready", "deletion_pending"]
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "input_retained": { "type": "boolean" },
+    "result_available": { "type": "boolean" },
+    "deletion_due_at": { "type": "string", "format": "date-time" }
+  }
+}

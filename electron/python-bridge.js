@@ -3,25 +3,67 @@
 "use strict";
 
 const { spawn } = require("child_process");
+const path = require("node:path");
 const pathPolicy = require("./path-policy");
+const {
+  createIsolatedPythonEnvironment,
+  pythonCoreInvocation,
+} = require("./python-invocation");
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
+let trustedStandardsStoreRoot = null;
+
+function configureStandardsStoreRoot(root) {
+  if (typeof root !== "string" || !path.isAbsolute(root) || root.includes("\0")) {
+    throw new Error("标准库根目录必须是无 NUL 的绝对路径");
+  }
+  const resolved = path.resolve(root);
+  if (trustedStandardsStoreRoot !== null && trustedStandardsStoreRoot !== resolved) {
+    throw new Error("标准库根目录已固定，不能在进程内切换");
+  }
+  trustedStandardsStoreRoot = resolved;
+  return trustedStandardsStoreRoot;
+}
+
+function createPythonEnvironment(
+  source = process.env,
+  {
+    packaged = pathPolicy.appIsPackaged(),
+    standardsStoreRoot = trustedStandardsStoreRoot,
+    expectedStandardIdentity = null,
+  } = {},
+) {
+  return createIsolatedPythonEnvironment(source, {
+    packaged,
+    standardsStoreRoot,
+    expectedStandardIdentity,
+  });
+}
 
 /**
  * 运行核心子命令。返回 { code, json, stderr }。
  * stdout 必须是单个 JSON 文档（核心的 AD-002 契约）；解析失败视为运行错误。
  */
-function runCore(args, timeoutMs = DEFAULT_TIMEOUT_MS) {
+function runCore(
+  args,
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+  { expectedStandardIdentity = null } = {},
+) {
   return new Promise((resolve, reject) => {
     if (!Array.isArray(args) || args.some((a) => typeof a !== "string")) {
       reject(new Error("非法的核心调用参数"));
       return;
     }
-    const child = spawn(pathPolicy.pythonExecutable(), ["-m", "oak_manuscript_core", ...args], {
-      cwd: pathPolicy.pythonDir(),
+    const invocation = pythonCoreInvocation({
+      executable: pathPolicy.pythonExecutable(),
+      coreDir: pathPolicy.pythonDir(),
+      args,
+    });
+    const child = spawn(invocation.command, invocation.args, {
+      cwd: invocation.cwd,
       shell: false,
       windowsHide: true,
-      env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+      env: createPythonEnvironment(process.env, { expectedStandardIdentity }),
     });
     let stdout = "";
     let stderr = "";
@@ -55,4 +97,29 @@ function runCore(args, timeoutMs = DEFAULT_TIMEOUT_MS) {
   });
 }
 
-module.exports = { runCore };
+// P0 高层桥方法：调用者只能选择固定命令与固定参数槽，不能注入任意 CLI 参数。
+function planFixes(projectPath) {
+  return runCore(["plan-fixes", "--project", projectPath]);
+}
+
+function applyFixPlan(projectPath, planId) {
+  return runCore(["fix", "--project", projectPath, "--plan-id", planId]);
+}
+
+function listCheckpoints(projectPath) {
+  return runCore(["list-checkpoints", "--project", projectPath]);
+}
+
+function restoreCheckpoint(projectPath, checkpointId) {
+  return runCore(["restore-checkpoint", "--project", projectPath, "--checkpoint-id", checkpointId]);
+}
+
+module.exports = {
+  configureStandardsStoreRoot,
+  createPythonEnvironment,
+  runCore,
+  planFixes,
+  applyFixPlan,
+  listCheckpoints,
+  restoreCheckpoint,
+};

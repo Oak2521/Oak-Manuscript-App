@@ -43,6 +43,17 @@ class WhitespaceRulesTest(unittest.TestCase):
         findings = run_rule("DOCX-SPACE-002", doc)
         self.assertEqual(len(findings), 1)
 
+    def test_space_002_finds_every_tab_in_same_paragraph(self):
+        doc = doc_from(DocxBuilder().p_runs([
+            ("t", "甲"), ("tab",), ("t", "乙"),
+            ("tab",), ("t", "丙"), ("tab",), ("t", "丁"),
+        ]))
+        findings = run_rule("DOCX-SPACE-002", doc)
+        self.assertEqual(len(findings), 3)
+        self.assertEqual([finding["paragraph"] for finding in findings], [1, 1, 1])
+        self.assertTrue(all(finding["preview"].count("【⇥】") == 1 for finding in findings))
+        self.assertEqual(len({finding["preview"] for finding in findings}), 3)
+
     def test_space_003_flags_leading_halfwidth_and_fullwidth(self):
         doc = doc_from(DocxBuilder().p("  半角开头。").p("　全角开头。").p("正常段。"))
         findings = run_rule("DOCX-SPACE-003", doc)

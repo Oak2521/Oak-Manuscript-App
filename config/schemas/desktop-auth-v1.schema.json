@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript/desktop-auth-v1.schema.json",
+  "title": "Oak Manuscript desktop auth configuration v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "config_type", "status", "authorization_endpoint", "token_endpoint", "user_endpoint", "client_id", "public_api_key", "api_origin", "redirect_uri", "scopes"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "config_type": { "const": "oak_manuscript_desktop_auth" },
+    "status": { "enum": ["pending_configuration", "configured"] },
+    "authorization_endpoint": { "type": ["string", "null"] },
+    "token_endpoint": { "type": ["string", "null"] },
+    "user_endpoint": { "type": ["string", "null"] },
+    "client_id": { "type": ["string", "null"] },
+    "public_api_key": { "type": ["string", "null"] },
+    "api_origin": { "type": ["string", "null"] },
+    "redirect_uri": { "const": "oak-manuscript-auth://callback" },
+    "scopes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9:_-]{0,31}$" }
+    }
+  }
+}

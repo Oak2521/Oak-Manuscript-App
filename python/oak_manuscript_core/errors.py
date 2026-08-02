@@ -7,3 +7,42 @@ class OakError(Exception):
     def __init__(self, message: str) -> None:
         super().__init__(message)
         self.message = message
+
+
+class StructuredOakError(OakError):
+    """需要同时返回稳定机器码与人类提示的安全错误。"""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str,
+        retryable: bool = False,
+        details: dict | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.code = code
+        self.retryable = retryable
+        self.details = details or {}
+
+    def as_payload(self) -> dict:
+        return {
+            "ok": False,
+            "error": {
+                "code": self.code,
+                "message": self.message,
+                "retryable": self.retryable,
+                "details": self.details,
+            },
+        }
+
+
+class ProjectValidationError(StructuredOakError):
+    """项目清单或路径边界不可信；任何业务读写都必须停止。"""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(
+            message,
+            code="PROJECT_VALIDATION_FAILED",
+            retryable=False,
+        )

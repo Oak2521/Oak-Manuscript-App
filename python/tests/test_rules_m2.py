@@ -137,6 +137,38 @@ class ApaCitationTest(unittest.TestCase):
                             language="en", citation_style="apa-7")
         self.assertEqual(findings, [])
 
+    def test_chicago_author_date_without_comma_is_checked(self):
+        content = (
+            "# Sample Book\n\n"
+            "One source is present (Smith 2020); another is missing (Jones 2021).\n\n"
+            "## Bibliography\n\n"
+            "Smith, Jane. 2020. Constructed Work. Example Press.\n"
+        )
+        findings = run_rule(
+            "REF-APA-001",
+            md_doc(content),
+            language="en",
+            citation_style="chicago-18-ad",
+        )
+        self.assertEqual(len(findings), 1)
+        self.assertIn("Jones 2021", findings[0]["preview"])
+
+    def test_chinese_author_year_fullwidth_and_no_comma_are_checked(self):
+        content = (
+            "# 构造样稿\n\n"
+            "已有条目（王小明，2020），缺少条目（李小华 2021）。\n\n"
+            "## 参考文献\n\n"
+            "王小明. 2020. 构造研究. 示例出版社.\n"
+        )
+        findings = run_rule(
+            "REF-APA-001",
+            md_doc(content),
+            language="zh",
+            citation_style="chicago-18-ad",
+        )
+        self.assertEqual(len(findings), 1)
+        self.assertIn("李小华 2021", findings[0]["preview"])
+
 
 class ChicagoConsistencyTest(unittest.TestCase):
     def test_notes_without_bibliography_flagged(self):
@@ -176,6 +208,40 @@ class ChicagoConsistencyTest(unittest.TestCase):
 
     def test_neither_present_ok(self):
         b = DocxBuilder().p("书名").p("第一章", style="Heading1").p("正文。")
+        self.assertEqual(run_rule("REF-CHI-001", doc_from(b)), [])
+
+    def test_unreferenced_nonempty_note_definition_does_not_count_as_note(self):
+        b = (
+            DocxBuilder()
+            .p("书名")
+            .p("第一章", style="Heading1")
+            .p("正文没有注释引用。")
+            .footnote(1, "未被正文引用的残留注释定义。")
+        )
+        self.assertEqual(run_rule("REF-CHI-001", doc_from(b)), [])
+
+    def test_bibliography_with_only_unreferenced_note_definition_is_flagged(self):
+        b = (
+            DocxBuilder()
+            .p("书名")
+            .p("第一章", style="Heading1")
+            .p("正文没有注释引用。")
+            .p("参考文献", style="Heading1")
+            .p("某条目。")
+            .footnote(1, "未被正文引用的残留注释定义。")
+        )
+        findings = run_rule("REF-CHI-001", doc_from(b))
+        self.assertEqual(len(findings), 1)
+        self.assertIn("实际引用且非空", findings[0]["preview"])
+
+    def test_referenced_empty_note_does_not_count_as_note(self):
+        b = (
+            DocxBuilder()
+            .p("书名")
+            .p("第一章", style="Heading1")
+            .p_runs([("t", "正文引用空注释"), ("fnref", 1), ("t", "。")])
+            .footnote(1, "")
+        )
         self.assertEqual(run_rule("REF-CHI-001", doc_from(b)), [])
 
 

@@ -1,0 +1,576 @@
+{
+  "schema_version": "1.0",
+  "lock_type": "oak-app-loose-resources",
+  "roots": [
+    "python/oak_manuscript_core",
+    "config",
+    "samples"
+  ],
+  "excluded_paths": [
+    "config/tool-manifests/app-resources-v1.json"
+  ],
+  "file_count": 112,
+  "total_bytes": 2220055,
+  "files": [
+    {
+      "path": "config/app-config.json",
+      "size_bytes": 615,
+      "sha256": "c7cb100af998081f8caf67bc17039caa48c460482fad4077f94ece6aed132e2c"
+    },
+    {
+      "path": "config/desktop-auth.json",
+      "size_bytes": 368,
+      "sha256": "c78fa7593103170ee03729960c46d9e403ecc1e479cee4a00699d451a9ce5d5d"
+    },
+    {
+      "path": "config/desktop-license.json",
+      "size_bytes": 230,
+      "sha256": "957384c22ea95599ff87f9483019f3ce5ce4323560ac644abf253ea02ff512d0"
+    },
+    {
+      "path": "config/desktop-standards-update.json",
+      "size_bytes": 177,
+      "sha256": "7bb751e239f87bbb53c97de3da0ea534433778f6aa21cfb07b4bad15a0fb2975"
+    },
+    {
+      "path": "config/provenance/cpython-3.13.14-win32-x64.json",
+      "size_bytes": 9265,
+      "sha256": "b198a727a0c12640a8a020758bcfc5dc41e01e577a25576795b1d081e3513176"
+    },
+    {
+      "path": "config/provenance/electron-43.1.0-win32-x64.json",
+      "size_bytes": 15271,
+      "sha256": "5f850b7ad7a5971e3ccf4ecce505ed2793530952081a68afe3c648c1862c5075"
+    },
+    {
+      "path": "config/provenance/electron-builder-win32-x64.json",
+      "size_bytes": 5611,
+      "sha256": "c16518397eb1d02cfe1beaf70eda5eaab6c6177c03af33f9b071e7f1ec22fbb5"
+    },
+    {
+      "path": "config/provenance/epubcheck-5.3.0.json",
+      "size_bytes": 10498,
+      "sha256": "2f5191140fd119bb288a71becf8ca3ddf077d17bc71aea12b179c502075735b0"
+    },
+    {
+      "path": "config/provenance/temurin-21.0.11+10-win32-x64.json",
+      "size_bytes": 88469,
+      "sha256": "dbbf5e4799d88820b7c4475e178e45a7624fbf104b7b5fdc4f78d6650c39d676"
+    },
+    {
+      "path": "config/release-identity.json",
+      "size_bytes": 573,
+      "sha256": "df7ec021def708136597f48ddb8fe8f2f58a832f1310331010290eaff3a1b38e"
+    },
+    {
+      "path": "config/rule-capabilities.json",
+      "size_bytes": 3230,
+      "sha256": "5225cfe28f2855b374df1b10dc23ec6d42fec5548655082b25d606615f093ef7"
+    },
+    {
+      "path": "config/rule-packs/oak-rules-1.0.0.json",
+      "size_bytes": 23844,
+      "sha256": "7ac5a5bdb126e9f5148a040ce42a634b1a95295c27d7a72c774db54bf7129542"
+    },
+    {
+      "path": "config/rule-packs/oak-rules-2.0.0.json",
+      "size_bytes": 25005,
+      "sha256": "098b382e33c06ccddf154940fbbd51db384d8025cf235ed7f7e10e83d34897a4"
+    },
+    {
+      "path": "config/rule-packs/oak-rules-2.1.0.json",
+      "size_bytes": 28135,
+      "sha256": "e7f0a01463edd8713973f5973c673d6940fab334b498fcc2b1fbeebddf52e1e2"
+    },
+    {
+      "path": "config/schemas/auth-session-store-v1.schema.json",
+      "size_bytes": 2242,
+      "sha256": "7910d55bcbe706095a7f5c7fdf57eb689e57ee8bed9010078124b37f9ab70c38"
+    },
+    {
+      "path": "config/schemas/builder-provenance-v1.schema.json",
+      "size_bytes": 5810,
+      "sha256": "86a437598760b2b189b0a9eee09ce293d61b335e3614a08776309df2767bf48b"
+    },
+    {
+      "path": "config/schemas/desktop-auth-v1.schema.json",
+      "size_bytes": 1225,
+      "sha256": "1326f797246a6da1881a6c1d7c458ddf65ef3e4e17e69ee843272abea200d219"
+    },
+    {
+      "path": "config/schemas/desktop-license-v1.schema.json",
+      "size_bytes": 1505,
+      "sha256": "06f9531def60cb5728e5ec74c03f3f9d4225600c0b574a4ebc4f2c935d845aff"
+    },
+    {
+      "path": "config/schemas/desktop-standards-update-v1.1.schema.json",
+      "size_bytes": 1465,
+      "sha256": "6f0cbb7f929749db544362481cc48cec1147d1afe3c350f71aecc353d74a3274"
+    },
+    {
+      "path": "config/schemas/desktop-standards-update-v1.schema.json",
+      "size_bytes": 1065,
+      "sha256": "2ddb617a5bd0d0a09e6fcbc34008f7061f9dfee31ed6bc9c8ecd454523f20288"
+    },
+    {
+      "path": "config/schemas/electron-provenance-v1.schema.json",
+      "size_bytes": 6053,
+      "sha256": "8faf04bfd72ed7a1602af43a22b11ded30680c6bdad1bf1866792b36ca44263d"
+    },
+    {
+      "path": "config/schemas/entitlement-request-v1.schema.json",
+      "size_bytes": 593,
+      "sha256": "44dac6fa11ba9bdde101e7f72925a47c40c07312ad6919a8f9304e61f475db41"
+    },
+    {
+      "path": "config/schemas/epubcheck-provenance-v1.schema.json",
+      "size_bytes": 4626,
+      "sha256": "4435c2e90d3e49c170b859ca95328f7c574ea5d8a11c7cf14d1f4ad206ab7f71"
+    },
+    {
+      "path": "config/schemas/jre-provenance-v1.schema.json",
+      "size_bytes": 7856,
+      "sha256": "f4221688bf7126f95b4c452ad9e763b9492f3c445e5aa82f0f6b2a81ff6af8bb"
+    },
+    {
+      "path": "config/schemas/license-account-http-audit-v1.schema.json",
+      "size_bytes": 1066,
+      "sha256": "504c3416cea656a3d61df291772dc2a6a01dd0ab9ddc93bc458c20542ef7e8c2"
+    },
+    {
+      "path": "config/schemas/license-account-http-error-v1.schema.json",
+      "size_bytes": 1091,
+      "sha256": "794900c12125dc4cb62458359378010f07492fe582cb5f36702646fb74913d76"
+    },
+    {
+      "path": "config/schemas/license-account-overview-v1.schema.json",
+      "size_bytes": 1812,
+      "sha256": "cf870acf1665faf2151333d067d2d0a342c32facbdabebd8ef4ed560c47c0fe9"
+    },
+    {
+      "path": "config/schemas/license-cache-v1.schema.json",
+      "size_bytes": 808,
+      "sha256": "ab6ba1a21b1744f3e17d8477fdfba0e9f25dbb98df67c8b2b90ec41288427d0f"
+    },
+    {
+      "path": "config/schemas/license-device-revoke-result-v1.schema.json",
+      "size_bytes": 1083,
+      "sha256": "5f65a4a48912a2bfcc6536e5c1dc55420d2ab368308afcd7b08e618310116afe"
+    },
+    {
+      "path": "config/schemas/license-device-revoke-v1.schema.json",
+      "size_bytes": 425,
+      "sha256": "82c67d374337aecf835aa31b838dc40b8a309b5fab99812bdc056f877feb4923"
+    },
+    {
+      "path": "config/schemas/license-http-audit-v1.schema.json",
+      "size_bytes": 1010,
+      "sha256": "1e5169da6bde4252b505a5e8f7b955eb696ffc1a616f1d116ab49d3b62284d81"
+    },
+    {
+      "path": "config/schemas/license-http-error-v1.schema.json",
+      "size_bytes": 1112,
+      "sha256": "788c6d50324471bbd6fb2bed79807e3d5fe1ebe96fb1b9d800945dcaabc0fb5d"
+    },
+    {
+      "path": "config/schemas/release-identity-v1.schema.json",
+      "size_bytes": 2396,
+      "sha256": "adbe8151e239d102e71830e7272ff7af77425e6eaf481a0d6c22ef3aeb9e4054"
+    },
+    {
+      "path": "config/schemas/runtime-provenance-v1.schema.json",
+      "size_bytes": 8048,
+      "sha256": "ec62294c37342aae9eeac4354a9d8f836775595f386d92cec8cbdd0aa37c1db9"
+    },
+    {
+      "path": "config/schemas/signed-entitlement-v1.schema.json",
+      "size_bytes": 1821,
+      "sha256": "e936e2ab462d96502639eddd0594deea13528ddca646e35425b8a93885a37fc7"
+    },
+    {
+      "path": "config/schemas/standards-revocation-envelope-v1.schema.json",
+      "size_bytes": 1160,
+      "sha256": "e5c671bbdc8e99a72e8ab9dea8c277d97f54eacb4b3a9b47862c3a167c39bbc5"
+    },
+    {
+      "path": "config/schemas/standards-revocation-http-audit-v1.schema.json",
+      "size_bytes": 1484,
+      "sha256": "f2a929bf0173007aa373e33a5394c47748ec2bd14c580123e8fb7d7dc46ffc87"
+    },
+    {
+      "path": "config/schemas/standards-revocation-http-error-v1.schema.json",
+      "size_bytes": 1175,
+      "sha256": "688c97319e955b794e0f057777dd23b529baf03c2fc4bc138c2d9e2662c04588"
+    },
+    {
+      "path": "config/schemas/standards-revocation-list-v1.schema.json",
+      "size_bytes": 939,
+      "sha256": "351beb2596e3ac1f338b9c0b11cf3015ad3326bd5e19dfa1b50b15c2d23aed44"
+    },
+    {
+      "path": "config/schemas/standards-revocation-request-v1.schema.json",
+      "size_bytes": 673,
+      "sha256": "339f3dd3f1a7a2c107be8e4c0fb3e28e5a8cf53f22f56d005e58675ec56bef1c"
+    },
+    {
+      "path": "config/schemas/standards-trust-v1.1.schema.json",
+      "size_bytes": 1707,
+      "sha256": "aa131467dea42f54cc1c7dc049a181d9dc4b36fe9db0c97b64276787f9501aa2"
+    },
+    {
+      "path": "config/schemas/standards-update-http-audit-v1.schema.json",
+      "size_bytes": 1503,
+      "sha256": "d971d394ee548db01c23dfc9a7618f6b9e9f096bf5dafec2fffe494316871f1e"
+    },
+    {
+      "path": "config/schemas/standards-update-http-error-v1.schema.json",
+      "size_bytes": 1204,
+      "sha256": "648b2314d42b5763879d380f070e3018c2a8959c94ac2bedd7814e51f47e287c"
+    },
+    {
+      "path": "config/schemas/standards-update-request-v1.schema.json",
+      "size_bytes": 889,
+      "sha256": "2949aaf137ead77c65b3017b2f9e59d1821b74085673587b8d66e4a55acc4be7"
+    },
+    {
+      "path": "config/schemas/sync-http-audit-v1.schema.json",
+      "size_bytes": 1557,
+      "sha256": "eee009a7e72d616753f55e32030cd79fd695d6439ca2056005e547016b752fc9"
+    },
+    {
+      "path": "config/schemas/sync-http-error-v1.schema.json",
+      "size_bytes": 1256,
+      "sha256": "658b6060187817eee91583626565e15b75f857d99369a419d26c83590dd399b3"
+    },
+    {
+      "path": "config/schemas/sync-queue-store-v1.schema.json",
+      "size_bytes": 2453,
+      "sha256": "d8b223b63b61e7655d11933e318937dc89cc3b9821d66d783a91391aff18df61"
+    },
+    {
+      "path": "config/schemas/sync-record-v1.schema.json",
+      "size_bytes": 5375,
+      "sha256": "5f25c22be8d42b8d9201104945b816608f2818818d2985647290d4b51d9487e7"
+    },
+    {
+      "path": "config/schemas/web-http-audit-v1.schema.json",
+      "size_bytes": 2032,
+      "sha256": "1df684a39abb675b54e9b83fc6f574e77275fb0fdc3dac1ad49f6a7cdf76f51b"
+    },
+    {
+      "path": "config/schemas/web-http-error-v1.schema.json",
+      "size_bytes": 1619,
+      "sha256": "98ca02c21a998956069f8dd75efafef528500ef26d39a7777d41b0f0bb4fdb36"
+    },
+    {
+      "path": "config/schemas/web-job-create-v1.schema.json",
+      "size_bytes": 1775,
+      "sha256": "ed8d95008a7035b1e9efbd66a33b450e9fa796406c7612b49ab1eb985e0c557a"
+    },
+    {
+      "path": "config/schemas/web-job-deletion-v1.schema.json",
+      "size_bytes": 919,
+      "sha256": "4507e51c0668cae4b3fb4092c3c69bd13466b7eac50ca1b44c4a49205edf581e"
+    },
+    {
+      "path": "config/schemas/web-job-status-v1.schema.json",
+      "size_bytes": 1101,
+      "sha256": "e58560a5c7301a4fb0a665e14efad12ac1e5210e68efcfe933422bb6f63fb78c"
+    },
+    {
+      "path": "config/schemas/windows-install-acceptance-v1.schema.json",
+      "size_bytes": 6928,
+      "sha256": "1359f626efc787d12b6c1178eb2c819b382971d90f7c2c56f21f23b19e4090ca"
+    },
+    {
+      "path": "config/standard-packs/oak-standards-2.0.0.manifest.json",
+      "size_bytes": 1195,
+      "sha256": "0aff75eb181a62869147e9af27330c717bc808bdd23865197534fc9868568427"
+    },
+    {
+      "path": "config/standard-packs/oak-standards-2.1.0.manifest.json",
+      "size_bytes": 1211,
+      "sha256": "88a60da2f55c6de13853e0af56389f56a591c5702e44de1a7943d31afbff0187"
+    },
+    {
+      "path": "config/standards.json",
+      "size_bytes": 16498,
+      "sha256": "ae9bfdbfbd97ba260a65b745620da4e2c8dbb4c85134ec485c74506256521681"
+    },
+    {
+      "path": "config/tool-manifests/ace-1.4.6.json",
+      "size_bytes": 1305034,
+      "sha256": "02269aaffa50d5d3aaa98036717a3a364e70c3c4e4074a71770ab28b908e92fe"
+    },
+    {
+      "path": "config/tool-manifests/electron-43.1.0-win32-x64.json",
+      "size_bytes": 13125,
+      "sha256": "f5c2c915633c1917bc37377f8232bde4259588eb138bc4072a3c7df976e27486"
+    },
+    {
+      "path": "config/tool-manifests/electron-builder-win32-x64.json",
+      "size_bytes": 69600,
+      "sha256": "ccb2701bf121fd093c7d0fccf78db8725b516f4a06b67bd17fcb309b458dcc1a"
+    },
+    {
+      "path": "config/tool-manifests/epubcheck-5.3.0.json",
+      "size_bytes": 9248,
+      "sha256": "8a791de9231702dceb236c4dbf6fd5499f0ff99f506238f0f5bf13429b2c5c26"
+    },
+    {
+      "path": "config/tool-manifests/jre-win32-x64.json",
+      "size_bytes": 1400,
+      "sha256": "ac9faa5ae9ea02dd16f3d06eb0670f8ccb5e94ff55c44ef6b09131e58a612228"
+    },
+    {
+      "path": "config/tool-manifests/python-runtime-win32-x64.json",
+      "size_bytes": 6095,
+      "sha256": "7bb23b6516ea2f0d87684845a1df27818d465d28a666284bb76f80737851b565"
+    },
+    {
+      "path": "python/oak_manuscript_core/__init__.py",
+      "size_bytes": 115,
+      "sha256": "eefee9ef5e19ab014f1ed7861bd5c17db0f34d891ac3905da69938b0828141ca"
+    },
+    {
+      "path": "python/oak_manuscript_core/__main__.py",
+      "size_bytes": 20473,
+      "sha256": "d62baa1373cd8da03875ed3f15ab8588bd32f6d62946da538ad06646f83f575f"
+    },
+    {
+      "path": "python/oak_manuscript_core/citation.py",
+      "size_bytes": 36864,
+      "sha256": "f2d022bccbe8968e8886268e8f443dc98fe156bc19844c2c5e0c0534656f3f92"
+    },
+    {
+      "path": "python/oak_manuscript_core/engine.py",
+      "size_bytes": 7252,
+      "sha256": "267c14737ba0fd8960fd6c162f3bbf617b900389da541c378137a2fadff992fe"
+    },
+    {
+      "path": "python/oak_manuscript_core/epub_writer.py",
+      "size_bytes": 3937,
+      "sha256": "81b7b5becac113646c278c66311710bff1ad74f8383ba2d6f414c8fa1e082c39"
+    },
+    {
+      "path": "python/oak_manuscript_core/errors.py",
+      "size_bytes": 1390,
+      "sha256": "571c19be1007e7ed2847c1cafd5499b3a56b253b1bc337acc520da72ef3e8f60"
+    },
+    {
+      "path": "python/oak_manuscript_core/external.py",
+      "size_bytes": 40766,
+      "sha256": "a18f44e90bc46eb59041aeb2420eb8e999f7d56ae7f1e9516dc66af30b7e1fcf"
+    },
+    {
+      "path": "python/oak_manuscript_core/fix_plans.py",
+      "size_bytes": 5810,
+      "sha256": "3b3f09892f6784e80d905be7b17051da1355d4b4895005d4e2b0d6d1f0edb359"
+    },
+    {
+      "path": "python/oak_manuscript_core/fixes.py",
+      "size_bytes": 9194,
+      "sha256": "003c40bf71ac56be2d3cbe2dd9e748cd6f34daa4e965c08e80b3417bf1e00dd7"
+    },
+    {
+      "path": "python/oak_manuscript_core/format_coverage.py",
+      "size_bytes": 3057,
+      "sha256": "27c06f90eceb19bf3b709f148f21ce2ba0402a5c452601b29219a4523a096cd5"
+    },
+    {
+      "path": "python/oak_manuscript_core/model.py",
+      "size_bytes": 2201,
+      "sha256": "a31077cf25076501f2616cd8feb4343ff9ffe4f5b9d4028006968843d4a22bb0"
+    },
+    {
+      "path": "python/oak_manuscript_core/ops.py",
+      "size_bytes": 54029,
+      "sha256": "4de0461fb18c364ade2b2840d846c51dd376a0ccce97ff017fcfedb2bb1bcc01"
+    },
+    {
+      "path": "python/oak_manuscript_core/project.py",
+      "size_bytes": 74832,
+      "sha256": "543b02e96941efb348c8cbca0e3a4413e159ad2dc121cee5f95b9094fe8f5b08"
+    },
+    {
+      "path": "python/oak_manuscript_core/project_lock.py",
+      "size_bytes": 15320,
+      "sha256": "21d2ff2f171add871500732cf9750c225ebfd7149492b79f68919bfae5278bb8"
+    },
+    {
+      "path": "python/oak_manuscript_core/readers/__init__.py",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "python/oak_manuscript_core/readers/docx_reader.py",
+      "size_bytes": 5180,
+      "sha256": "18712f1011cfac72a54d901c80652b2dbc1660f2ce2d504884f2fd451828491e"
+    },
+    {
+      "path": "python/oak_manuscript_core/readers/epub_reader.py",
+      "size_bytes": 6048,
+      "sha256": "80a98366febcc25cb26398f9b3ce991b3693c1ff259ec60ccd193afd0551a098"
+    },
+    {
+      "path": "python/oak_manuscript_core/readers/md_reader.py",
+      "size_bytes": 6898,
+      "sha256": "8363282a7c9096e2562f0abaa5a7186666eea3af236ddfbb864f062deb89daa8"
+    },
+    {
+      "path": "python/oak_manuscript_core/readers/txt_reader.py",
+      "size_bytes": 355,
+      "sha256": "634a6c75b5e7861dc70b47ff04f6c9a37918351e8bda9f930cf2f6ac158c17d4"
+    },
+    {
+      "path": "python/oak_manuscript_core/reports.py",
+      "size_bytes": 14172,
+      "sha256": "a07bb83d1252fb511b08bdc068586b11c5fefd3b97f13f161328275901c52a3c"
+    },
+    {
+      "path": "python/oak_manuscript_core/rulepack.py",
+      "size_bytes": 33659,
+      "sha256": "124832e0b258eb42090be3e13b35114d32f739ea8be68e25cd7eb6009908e674"
+    },
+    {
+      "path": "python/oak_manuscript_core/rulepack_upgrade.py",
+      "size_bytes": 25416,
+      "sha256": "d243ea226c0496d1533a941919f2abb6a36ff24048ec0f18c0e560a3869164c9"
+    },
+    {
+      "path": "python/oak_manuscript_core/rules/__init__.py",
+      "size_bytes": 772,
+      "sha256": "c76ec0dd73bc697e3f5fef9bcbf28df077d1ffc322c4db1bedf63d5a17023f40"
+    },
+    {
+      "path": "python/oak_manuscript_core/rules/book.py",
+      "size_bytes": 3836,
+      "sha256": "85cd175e150caceb860982c124500f6cf14e5dc2598b3c0021b6bbdfee295870"
+    },
+    {
+      "path": "python/oak_manuscript_core/rules/common.py",
+      "size_bytes": 1351,
+      "sha256": "cac2af65458cec9057b4a9113058ab2b95df8764ee9394f0c609ccfd4623cf37"
+    },
+    {
+      "path": "python/oak_manuscript_core/rules/epub.py",
+      "size_bytes": 3921,
+      "sha256": "142b7e6e6d9549445471c74d9fdaaaae5e33faf528a23b0dbf66662a2f4da849"
+    },
+    {
+      "path": "python/oak_manuscript_core/rules/headings.py",
+      "size_bytes": 1910,
+      "sha256": "680c17dee3540317368d3a3c3a0a10b99e8d9cae092e9bc8ab027307d03db0c0"
+    },
+    {
+      "path": "python/oak_manuscript_core/rules/notes.py",
+      "size_bytes": 1365,
+      "sha256": "5eca4414e1e2a568dda04e641d301428a820e13e557f8c36f3f96cde536ff0a9"
+    },
+    {
+      "path": "python/oak_manuscript_core/rules/punctuation.py",
+      "size_bytes": 1774,
+      "sha256": "fc2964953df6e1b85ca04ce0a2e04ab0456b100151486f6d4cc1d42161b189e0"
+    },
+    {
+      "path": "python/oak_manuscript_core/rules/references.py",
+      "size_bytes": 7275,
+      "sha256": "78747a318805f1cb00eb4d89c26437e85bc11c5d0f007fa0573235aac167e169"
+    },
+    {
+      "path": "python/oak_manuscript_core/rules/structure.py",
+      "size_bytes": 2354,
+      "sha256": "ab091473566dd7d04c5625b1454cedfbd18ad66a6c408af3e4e29da86ba7f123"
+    },
+    {
+      "path": "python/oak_manuscript_core/rules/text_hygiene.py",
+      "size_bytes": 3383,
+      "sha256": "8fdf9e1d59d184c2711984c89ebb818efb2ba6b338fdbecf4adf59c6ea56db10"
+    },
+    {
+      "path": "python/oak_manuscript_core/rules/whitespace.py",
+      "size_bytes": 2387,
+      "sha256": "f5ce38451b8f7497869d36aa21527a0f71729c7ecf9703c6256b8718416ed247"
+    },
+    {
+      "path": "python/oak_manuscript_core/safety.py",
+      "size_bytes": 3104,
+      "sha256": "25d7fe1d67ce2e11d1823df8d0d90ae1adc2e1c1eccb9369699d9c9c68214732"
+    },
+    {
+      "path": "python/oak_manuscript_core/standards_store.py",
+      "size_bytes": 60008,
+      "sha256": "08ecac85848a87b6ca9aebd16d1d59e9f858f94243c035c818cb8cd8611f1fb1"
+    },
+    {
+      "path": "python/oak_manuscript_core/util.py",
+      "size_bytes": 914,
+      "sha256": "5d11ea5e12f6e9f17a8cfc124315d9981e8d25505759b2a6821a15ed4ba9b1f2"
+    },
+    {
+      "path": "python/oak_manuscript_core/web_inspection.py",
+      "size_bytes": 8950,
+      "sha256": "c3b91716ced206b7b7b952f99185b5339f48a6e78242397aacf66254c3d45f8b"
+    },
+    {
+      "path": "samples/README.md",
+      "size_bytes": 5395,
+      "sha256": "fdce952e33f02ac4851254e9fa78e31d387c5fcf85b2d34f58af16ed3ebb3d3a"
+    },
+    {
+      "path": "samples/book_good.docx",
+      "size_bytes": 2644,
+      "sha256": "7370c31cb9d1b1c3e43e55433878566ffb043a069aded07fc4f17cc025aab928"
+    },
+    {
+      "path": "samples/book_no_structure.docx",
+      "size_bytes": 2296,
+      "sha256": "e3b9bb80cb61a3141f06ec0a554c61c89908fa87754c14e1548e9558251cadf9"
+    },
+    {
+      "path": "samples/book_toc_mismatch.docx",
+      "size_bytes": 2476,
+      "sha256": "dfb06e20f5e239f5e8c910f0a9411d1e4313a8891778641e1a37b4d46c2cab5a"
+    },
+    {
+      "path": "samples/epub_good.epub",
+      "size_bytes": 2220,
+      "sha256": "6d347d4d99810da19ef1f6d52650e5399f12ca8db3ae860ac2609fd8b4db0c3b"
+    },
+    {
+      "path": "samples/epub_needs_review.epub",
+      "size_bytes": 1609,
+      "sha256": "050fa9ac5ed2c3fa80a2af4c24a5675767349eab1764fe6991202ed1651e3225"
+    },
+    {
+      "path": "samples/paper_apa_citations.md",
+      "size_bytes": 797,
+      "sha256": "f6b7aeefaaa3d46e0030ee9e278890dfbbfe78f843725836b413cc3701d6beeb"
+    },
+    {
+      "path": "samples/paper_good.docx",
+      "size_bytes": 2989,
+      "sha256": "be8156b3032fd18eb6bcc7347da47c77c309a1018ddf52ea54baf2e3fff6597d"
+    },
+    {
+      "path": "samples/paper_missing_parts.docx",
+      "size_bytes": 2386,
+      "sha256": "39068de24e3a6aa336a87e22c9db1dec238b8ca6a9e894fa53b229aceeb3f832"
+    },
+    {
+      "path": "samples/paper_needs_review.docx",
+      "size_bytes": 3104,
+      "sha256": "a53dfacc5354ca921d5531fd67312443cc5791ab55670cb308cec5e056edd5bf"
+    },
+    {
+      "path": "samples/paper_sample.md",
+      "size_bytes": 186,
+      "sha256": "ead6df6d2993ace4ec1114ed9b369edb3b0f52a0621b63140b62e382efe498e4"
+    },
+    {
+      "path": "samples/paper_sample.txt",
+      "size_bytes": 123,
+      "sha256": "190c6c3919cbb08492f8a4d59e9cd273f180d9b2cffab4f1f4a0d954d406b671"
+    }
+  ]
+}

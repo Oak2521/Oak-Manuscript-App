@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import re
+import os
+import stat
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -10,6 +12,18 @@ from pathlib import Path, PurePosixPath
 from .errors import OakError
 
 _DRIVE_RE = re.compile(r"^[A-Za-z]:")
+
+
+def is_link_or_reparse(path: Path) -> bool:
+    """不跟随路径，识别 POSIX 符号链接和 Windows junction/reparse point。"""
+    try:
+        info = os.lstat(path)
+    except OSError:
+        return False
+    reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+    return stat.S_ISLNK(info.st_mode) or bool(
+        getattr(info, "st_file_attributes", 0) & reparse_flag
+    )
 
 
 @dataclass

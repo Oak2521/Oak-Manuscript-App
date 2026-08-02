@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript-web-job-create-v1.schema.json",
+  "title": "Oak Manuscript Web Job Create Request v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "request_type", "idempotency_key", "consent", "document"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "request_type": { "const": "oak_manuscript_web_job" },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 16,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$"
+    },
+    "consent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["granted", "scope", "privacy_version", "granted_at"],
+      "properties": {
+        "granted": { "const": true },
+        "scope": { "const": "single_job_processing" },
+        "privacy_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[0-9A-Za-z][0-9A-Za-z._-]{0,63}$"
+        },
+        "granted_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "manuscript_type", "check_config", "citation_style", "size_bytes"],
+      "properties": {
+        "format": { "enum": ["docx", "md", "txt", "epub"] },
+        "manuscript_type": { "enum": ["paper", "print_book", "ebook"] },
+        "check_config": { "enum": ["quick", "full"] },
+        "citation_style": {
+          "enum": ["default", "gbt7714-2025", "apa-7", "chicago-18-nb", "chicago-18-ad", "none"]
+        },
+        "size_bytes": { "type": "integer", "minimum": 1, "maximum": 52428800 }
+      }
+    }
+  }
+}

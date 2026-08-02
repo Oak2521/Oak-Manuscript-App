@@ -1,4 +1,4 @@
-"""CLI 端到端测试：以真实子进程走完 create→check→fix→recheck→export→verify 闭环。
+"""CLI 端到端测试：走完 create→check→plan-fixes→fix→recheck→export→verify。
 
 这是 M1 里程碑完成标准的直接验证（方案阶段 1：不用桌面 UI 也能用匿名样本
 通过创建、检查、修复、复检、导出和验证流程）。
@@ -61,29 +61,87 @@ class CliClosedLoopTest(unittest.TestCase):
         self.assertEqual(code, 0, err)
         self.assertTrue(out["ok"])
         source_sha = out["source_sha256"]
+        pinned_identity = out["rulepack"]
+        self.assertEqual(
+            set(pinned_identity),
+            {
+                "name", "version", "pinned", "sha256", "bundle_id",
+                "release_sequence", "manifest_sha256",
+            },
+        )
+        self.assertTrue(pinned_identity["pinned"])
+        self.assertEqual(len(pinned_identity["sha256"]), 64)
+        self.assertEqual(len(pinned_identity["manifest_sha256"]), 64)
 
-        # 2. check：存在 error（REF-002）→ 退出码 1
-        code, out, err = run_cli("check", "--project", str(self.pdir))
+        # 2. 引用体例确认计划严格只读，再用 exact plan 运行 check。
+        code, citation_plan, err = run_cli(
+            "plan-citation", "--project", str(self.pdir), "--citation", "default"
+        )
+        self.assertEqual(code, 0, err)
+        self.assertEqual(citation_plan["kind"], "citation-resolution-plan")
+        self.assertEqual(citation_plan["resolution"]["mode"], "structure_only")
+        self.assertEqual(
+            json.loads((self.pdir / "project.json").read_text(encoding="utf-8"))["checks"],
+            [],
+        )
+
+        # 3. check：存在 error（REF-002）→ 退出码 1
+        code, out, err = run_cli(
+            "check", "--project", str(self.pdir),
+            "--citation", "default",
+            "--citation-plan-id", citation_plan["plan_id"],
+        )
         self.assertEqual(code, 1, err)
         self.assertEqual(out["check_id"], "check-0001")
+        self.assertEqual(out["rulepack"], pinned_identity)
         self.assertEqual(out["status_level"], "尚未具备提交条件")
         self.assertGreater(out["issue_counts"]["warning"], 0)
-        self.assertIn("gbt7714-2025", out["citation_note"])
+        self.assertIn("仅执行引用结构与一致性检查", out["citation_note"])
+        self.assertEqual(out["citation_resolution"], citation_plan["resolution"])
+        project_doc = json.loads((self.pdir / "project.json").read_text(encoding="utf-8"))
+        self.assertEqual(project_doc["rulepack"], pinned_identity)
+        self.assertEqual(project_doc["checks"][-1]["rulepack"], pinned_identity)
 
-        # 3. fix
-        code, out, err = run_cli("fix", "--project", str(self.pdir))
+        # 3b. 同步来源只读、白名单化；不含稿件身份、路径、预览或哈希。
+        code, sync_source, err = run_cli(
+            "sync-source", "--project", str(self.pdir), "--event", "check"
+        )
+        self.assertEqual(code, 0, err)
+        self.assertEqual(sync_source["projectId"], project_doc["project_id"])
+        self.assertEqual(sync_source["runId"], "check-0001")
+        self.assertEqual(sync_source["authorizedAt"], None)
+        self.assertGreater(len(sync_source["issues"]), 0)
+        sync_text = json.dumps(sync_source, ensure_ascii=False)
+        self.assertNotIn("paper_needs_review", sync_text)
+        self.assertNotIn(str(self.pdir), sync_text)
+        self.assertNotIn(source_sha, sync_text)
+        self.assertNotIn("preview", sync_text)
+        self.assertNotIn("location", sync_text)
+
+        # 4. 集中预览：只读，返回绑定当前状态的 plan_id
+        code, plan, err = run_cli("plan-fixes", "--project", str(self.pdir))
+        self.assertEqual(code, 0, err)
+        self.assertGreater(plan["candidate_count"], 0)
+        self.assertEqual(plan["candidate_count"], len(plan["items"]))
+
+        # 5. 一次确认整批执行
+        code, out, err = run_cli(
+            "fix", "--project", str(self.pdir), "--plan-id", plan["plan_id"]
+        )
         self.assertEqual(code, 0, err)
         self.assertGreater(out["applied_count"], 0)
         self.assertTrue(out["checkpoint_id"])
+        self.assertEqual(out["plan_id"], plan["plan_id"])
 
-        # 4. recheck：白名单问题消失，error 仍在 → 退出码 1
+        # 6. recheck：白名单问题消失，error 仍在 → 退出码 1
         code, out, err = run_cli("recheck", "--project", str(self.pdir))
         self.assertEqual(code, 1, err)
+        self.assertEqual(out["rulepack"], pinned_identity)
         rules = {i["rule_id"] for i in out["issues"]}
         self.assertNotIn("DOCX-SPACE-001", rules)
         self.assertIn("REF-002", rules)
 
-        # 5. export
+        # 7. export
         code, out, err = run_cli("export", "--project", str(self.pdir))
         self.assertEqual(code, 0, err)
         # 修订稿 + 三种报告 + 脱敏评估摘要
@@ -92,7 +150,7 @@ class CliClosedLoopTest(unittest.TestCase):
         for f in out["files"]:
             self.assertTrue(Path(f).is_file())
 
-        # 6. verify：原稿不可变 → 退出码 0
+        # 8. verify：原稿不可变 → 退出码 0
         code, out, err = run_cli("verify", "--project", str(self.pdir))
         self.assertEqual(code, 0, err)
         self.assertTrue(out["ok"])
@@ -105,6 +163,14 @@ class CliClosedLoopTest(unittest.TestCase):
         code, _out, err = run_cli("create", "--input", str(bad), "--project", str(self.pdir))
         self.assertEqual(code, 2)
         self.assertIn(".docx", err)
+
+    def test_fix_requires_confirmed_plan_id(self):
+        run_cli("create", "--input", str(SAMPLE), "--project", str(self.pdir))
+        run_cli("check", "--project", str(self.pdir))
+        code, out, err = run_cli("fix", "--project", str(self.pdir))
+        self.assertEqual(code, 2)
+        self.assertIsNone(out)
+        self.assertIn("--plan-id", err)
 
     def test_verify_detects_tampering_with_exit_2(self):
         run_cli("create", "--input", str(SAMPLE), "--project", str(self.pdir))
