@@ -33,10 +33,16 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 ### 已完成：GitHub 开发分支推送与仓库公开（2026-08-02）
 
 - GitHub 仓库为 `https://github.com/Oak2521/Oak-Manuscript-App`，可见性已由 private 改为 public；GitHub 插件复核 `visibility=public`，当前账号 `Oak2521` 具有 admin/push 权限；
-- 本地 `chatgpt/commercial-v1` 已推送为同名远程分支，远程 head 为 `98bbf5f18a9415625bda118d5bbb7c19a66bf507`；相对 `main` 的 `16736147ed734a3be3535d43152719cf4b97a07e` 领先 63 个提交；
-- 草稿 PR #2 已创建：`https://github.com/Oak2521/Oak-Manuscript-App/pull/2`，目标为 `main`，GitHub 复核为 open、draft、mergeable；本次没有合并 PR，因此默认分支仍是 Claude 0.0.1 基线；
+- 本地 `chatgpt/commercial-v1` 已推送为同名远程集成分支；PR #2（`https://github.com/Oak2521/Oak-Manuscript-App/pull/2`）是 alpha.58 及随后 OSS 基础变更进入 `main` 的权威集成记录。2026-08-02 首次推送时远程 head 为 `98bbf5f18a9415625bda118d5bbb7c19a66bf507`、`main` 为 `16736147ed734a3be3535d43152719cf4b97a07e`、PR 状态为 open/draft/mergeable；这些提交号和状态只表示该历史检查点，当前状态必须在 GitHub 复核；
 - 公开前工作区干净，`git diff --check`、`git fsck --no-dangling` 与高置信度凭据模式/敏感文件名扫描通过；命中项仅为测试用虚假密钥哨兵。安装包、运行时、工具和真实稿件仍受 `.gitignore` 排除；
-- 本次只改变 GitHub 分发状态并同步文档，没有修改产品代码或创建 GitHub Release。文档同步后统一 `npm test` 通过：Node 719 total / 712 pass / 0 fail / 7 skip，Python 368 total / 0 failures / 0 errors / 3 skipped。仓库公开不等于 PR 已合并、安装包已发布或产品已达到 production-ready。
+- 首次公开同步只改变 GitHub 分发状态并同步文档，没有修改产品代码或创建 GitHub Release；当时统一 `npm test` 通过：Node 719 total / 712 pass / 0 fail / 7 skip，Python 368 total / 0 failures / 0 errors / 3 skipped。仓库公开或源码合并均不等于安装包已发布或产品已达到 production-ready。
+
+### 已完成：开源协作基础（2026-08-02）
+
+- 仓库采用 Apache License 2.0；根目录新增标准全文 `LICENSE`，`package.json` / `package-lock.json` 使用 SPDX 标识 `Apache-2.0`，并补充官方仓库、问题反馈和官网元数据；
+- README 顶部新增面向国际审阅者的英文概览，明确产品问题、隐私/源稿不变/集中批量确认/AI 只读建议边界、当前 alpha 能力及 production-ready 缺口；中文说明与完整历史证据继续保留；
+- 新增 `CONTRIBUTING.md`，固定匿名样本、离线默认、规则证据、机械修复白名单、测试和四份状态文档同步要求；新增 `SECURITY.md`，公开私密漏洞报告入口、alpha 支持边界和重点威胁面；
+- 这些是源码许可与社区治理基础，不改变 Windows 未签名、macOS 未验证、生产账号/支付/部署未完成以及不可售卖的判断，也没有创建 GitHub Release。
 
 ### 已完成：0.1.0-alpha.58 TXT/Markdown 保守卫生检查与 Windows packaged 检查点
 

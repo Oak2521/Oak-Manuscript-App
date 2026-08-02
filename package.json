@@ -3,7 +3,16 @@
   "productName": "湖岸稿件 Oak Manuscript",
   "version": "0.1.0-alpha.58",
   "private": true,
+  "license": "Apache-2.0",
   "description": "本地优先的稿件检查与修订桌面应用（Electron 壳 + Python 零依赖检查核心）",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Oak2521/Oak-Manuscript-App.git"
+  },
+  "homepage": "https://oakbylake.com/",
+  "bugs": {
+    "url": "https://github.com/Oak2521/Oak-Manuscript-App/issues"
+  },
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
@@ -82,7 +91,7 @@
       "grantFileProtocolExtraPrivileges": false,
       "resetAdHocDarwinSignature": false
     },
-    "files": ["electron/**/*", "renderer/**/*", "package.json"],
+    "files": ["electron/**/*", "renderer/**/*", "package.json", "LICENSE"],
     "protocols": [
       {
         "name": "Oak Manuscript Auth Callback",

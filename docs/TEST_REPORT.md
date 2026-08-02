@@ -2,6 +2,23 @@
 
 > 更新日期：2026-08-02。只记录真实执行结果；未运行项不得写成通过。
 
+## 开源许可与协作基础验证（2026-08-02，PR #2 合并前）
+
+本轮新增许可证、英文项目概览、贡献指南、安全政策和 npm 项目元数据；没有修改检查行为、重新打包或创建 GitHub Release。
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| Apache-2.0 全文 | **PASS** | 从 `https://www.apache.org/licenses/LICENSE-2.0.txt` 读取官方文本；忽略服务器额外开头空行与 CRLF/LF 后逐字一致，规范化 SHA-256 `43070e2d4e532684de521b885f385d0841030efa2b1a20bafb76133a5e1379c1` |
+| npm / 发行身份元数据 | **PASS（身份仍不完整）** | `package.json` / lockfile 使用 `Apache-2.0`；仓库、issues 和官网字段解析通过；`npm run verify:release-identity` 为 `ok=true`、`complete=false`，仍有原 11 项法定主体/链接/签名/人工签核缺口，没有新增 `homepage` 阻断 |
+| 英文 README / 贡献与安全文档 | **PASS（人工结构复核）** | 英文概览明确能力与未完成边界；`CONTRIBUTING.md` 固定隐私、测试和规则要求；`SECURITY.md` 指向仓库私密漏洞报告入口 |
+| GitHub 私密漏洞报告 | **PASS** | 官方仓库 API 复核 `private_vulnerability_reporting=true`；没有改变仓库访问权限 |
+| 差异格式 | **PASS** | `git diff --check` 通过；换行提示来自 Windows checkout 策略，不是空白错误 |
+| 统一回归 | **PASS** | `npm test`：Node 719 total / 712 pass / 0 fail / 7 skip（5.272 秒）；Python 368 total / 0 failures / 0 errors / 3 skipped（110.746 秒） |
+| 打包许可文件跟进回归 | **PASS** | 将根 `LICENSE` 加入 Electron `build.files` 后重跑 `npm run test:node`：719 total / 712 pass / 0 fail / 7 skip（5.010 秒）；本轮未重新打包，故不声称既有 alpha.58 制品已经包含该文件 |
+| 产品发行 | **未发布** | 没有重建、签名、上传安装包或创建 GitHub Release；production-ready 判定不变 |
+
+结论：源码仓库已经具备可辨认的 Apache-2.0 许可、英文入口、贡献路径和可用的私密安全报告渠道；这些结果只证明 OSS 协作基础和现有回归，不证明制品许可审计、生产部署或可售卖正式版完成。
+
 ## GitHub 推送与公开状态核验（2026-08-02）
 
 本轮只验证并改变源码分发状态，没有修改产品代码或重新打包。GitHub 插件确认登录账户为 `Oak2521`，目标仓库具有 admin/push 权限；文档同步后重新运行统一测试。

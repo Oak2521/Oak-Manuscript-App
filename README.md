@@ -1,5 +1,36 @@
 # 湖岸稿件（Oak Manuscript）
 
+[English overview](#english-overview) · [简体中文](#中文说明)
+
+## English overview
+
+Oak Manuscript is an open-source, privacy-first manuscript quality-assurance and revision-preparation platform for authors and publishers. It combines a deterministic Python checking core with an Electron desktop application and evolving Web service boundaries. The product targets Windows, macOS, and the Web while keeping manuscript processing local by default.
+
+The project is built around several non-negotiable properties:
+
+- source manuscripts are never overwritten and are protected by SHA-256 invariance checks;
+- automatic changes are limited to an explicit mechanical-fix allowlist;
+- every batch fix is shown as one centralized, complete preview before the user confirms it once;
+- standards, rule versions, decisions, checkpoints, and exports remain traceable;
+- registration is not required for local checking, and network features require explicit user action;
+- AI output is advisory only and cannot silently rewrite a manuscript.
+
+The current `0.1.0-alpha.58` source includes DOCX/TXT/Markdown checks, citation-style inference with a safe default, checkpointed repair workflows, signed standards-package verification and rollback controls, account/entitlement/result-sync contracts, three AI modes (Oak-hosted, local, and user-supplied OpenAI-compatible providers), and Web job isolation/retention contracts. A real unsigned Windows internal-test build has been packaged and exercised. macOS signing/notarization, production account and payment infrastructure, production standards services, public Web deployment, and a sellable signed release remain incomplete.
+
+Oak Manuscript deliberately separates five claims that are often blurred together: implemented, tested, packaged, deployed, and production-ready. Passing repository tests does not claim that production infrastructure or a commercial release exists. Current evidence and blockers are recorded in [`docs/DEVELOPMENT_STATUS.md`](docs/DEVELOPMENT_STATUS.md) and [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md).
+
+Development requires Node.js 22.12+ and Python 3.11+:
+
+```bash
+npm install
+npm test
+npm start
+```
+
+Contributions are welcome. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), report vulnerabilities through [`SECURITY.md`](SECURITY.md), and review the project boundaries in [`AGENTS.md`](AGENTS.md). The repository is licensed under the [Apache License 2.0](LICENSE).
+
+## 中文说明
+
 本地优先的稿件检查与修订产品。当前源码与最新真实 Windows 打包版本均为 `0.1.0-alpha.58`；Windows 制品未签名，只是可验证内测检查点，不是可售卖正式版。已有 Electron 桌面端、Python 检查核心、离线标准包验证/项目固定/显式升级/回滚链路、受控标准在线更新/撤回链、三模式 AI、统一账号/权益/同步和网站账号后台源码。Web 临时稿件处理仍与长期结果同步分流；alpha.58 为 TXT/Markdown 增加保守空白卫生提示、行号和格式覆盖矩阵，并保持代码、表格、强制换行与排版敏感块豁免。账号、权益和标准联网配置均为 `pending_configuration`，仓库不含生产私钥、真实端点或生产公钥；真实发布源、部署、监控和后台调度尚未实现。商业正式版目标为 Windows、macOS 与 Web。
 
 **当前桌面核心承诺**：稿件默认只在本机处理；永不原地修改原稿（SHA-256 全程校验）；不强制注册；报告与导出不设营销门槛。
@@ -68,6 +99,9 @@ npm run verify:web:migrations
 | `docs/ARCHITECTURE.md` | 架构与关键技术决策 |
 | `docs/ACCEPTANCE.md` | 验收标准 |
 | `docs/TEST_REPORT.md` | 测试报告 |
+| `CONTRIBUTING.md` | 贡献流程、测试要求与规则提交边界 |
+| `SECURITY.md` | 私密漏洞报告入口、支持范围与重点威胁面 |
+| `LICENSE` | Apache License 2.0 开源许可证 |
 | `docs/audits/OLLAMA_0.32.5_QWEN3_4B_COMPATIBILITY.md` | 真实 Ollama 窄范围兼容验收、失败记录与证据边界 |
 | `docs/PRIVACY_AND_SECURITY.md` | 隐私与安全基线 |
 | `docs/ELECTRON_FUSE_POLICY.md` | ASAR、Electron fuse 与打包后二进制验证合同 |

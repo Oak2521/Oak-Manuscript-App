@@ -4,10 +4,18 @@
 
 ## [未发布]
 
+### 2026-08-02 — 开源许可与社区协作基础
+
+- 采用 Apache License 2.0，新增标准全文 `LICENSE`，并在 npm 元数据中加入 `Apache-2.0`、GitHub 仓库、问题反馈和湖岸官网字段；
+- README 顶部新增英文项目概览，面向国际审阅者说明本地优先、源稿不可变、集中批量确认、标准可追溯、三种 AI 模式及当前 production-ready 缺口；
+- 新增 `CONTRIBUTING.md`，约束匿名样本、离线默认、规则证据、机械修复白名单、全量测试与状态文档同步；
+- 新增 `SECURITY.md`，提供 GitHub 私密漏洞报告入口、alpha 支持边界和项目重点威胁面；
+- 以上只建立源码许可与公开协作基础，不创建 GitHub Release，不改变未签名 Windows 内测、macOS/生产未完成和不可售卖判断。
+
 ### 2026-08-02 — GitHub 开发分支公开同步
 
-- 将 `chatgpt/commercial-v1` 推送到 `Oak2521/Oak-Manuscript-App`，远程 head 为 `98bbf5f18a9415625bda118d5bbb7c19a66bf507`，相对 `main` 领先 63 个提交；
-- 创建面向 `main` 的草稿 PR #2；PR 当前 open、draft、mergeable，尚未合并；
+- 将 `chatgpt/commercial-v1` 推送到 `Oak2521/Oak-Manuscript-App`；首次推送时远程 head 为 `98bbf5f18a9415625bda118d5bbb7c19a66bf507`，相对当时的 `main` 领先 63 个提交；
+- 创建面向 `main` 的 PR #2；首次复核时为 open、draft、mergeable。PR #2 后续作为 alpha.58 与 OSS 基础的权威集成记录，实时状态以 GitHub 为准；
 - 将仓库可见性由 private 改为 public，并通过 GitHub 插件复核；普通 Git 推送未包含 `.gitignore` 排除的安装包、运行时、工具或真实稿件；
 - 公开前完成工作区、Git 对象、快进祖先关系及高置信度敏感信息扫描；文档同步后统一 `npm test` 通过（Node 719/712/0/7，Python 368/0/0/3）。本次没有修改产品代码、上传安装包或创建 GitHub Release，production-ready 状态不变。
 
