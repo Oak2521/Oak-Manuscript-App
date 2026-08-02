@@ -10,6 +10,7 @@
 - README 顶部新增英文项目概览，面向国际审阅者说明本地优先、源稿不可变、集中批量确认、标准可追溯、三种 AI 模式及当前 production-ready 缺口；
 - 新增 `CONTRIBUTING.md`，约束匿名样本、离线默认、规则证据、机械修复白名单、全量测试与状态文档同步；
 - 新增 `SECURITY.md`，提供 GitHub 私密漏洞报告入口、alpha 支持边界和项目重点威胁面；
+- PR #2 已使用 merge commit 合并到公开默认分支 `main`，合并提交为 `d4505e93da297ebedf45096a74a04e3f4e21ea95`；远端没有提交状态 checks，本地全量回归是当前测试证据；
 - 以上只建立源码许可与公开协作基础，不创建 GitHub Release，不改变未签名 Windows 内测、macOS/生产未完成和不可售卖判断。
 
 ### 2026-08-02 — GitHub 开发分支公开同步

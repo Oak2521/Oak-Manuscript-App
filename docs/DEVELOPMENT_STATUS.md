@@ -5,10 +5,10 @@
 ## 当前版本与基线
 
 - 当前版本：`0.1.0-alpha.58`
-- 当前分支：`chatgpt/commercial-v1`
+- 当前分支：`main`
 - 当前源码/Windows packaged 标签：`chatgpt-v0.1.0-alpha.58-text-hygiene`；最新真实 Windows 打包内容为未签名 alpha.58
-- GitHub：`Oak2521/Oak-Manuscript-App` 已于 2026-08-02 设为 public；`chatgpt/commercial-v1` 是集成分支，PR #2 是 alpha.58 与 OSS 基础进入 `main` 的权威集成记录。首次推送时的 head/main/PR 状态只属于历史检查点，当前状态必须在 GitHub 复核
-- 开源协作基础：Apache-2.0 `LICENSE`、英文 README 概览、`CONTRIBUTING.md`、`SECURITY.md` 和 npm 仓库/官网元数据已补齐；未创建 GitHub Release，公开与合并状态均不改变 production-ready 判定
+- GitHub：`Oak2521/Oak-Manuscript-App` 为 public；PR #2 已将 alpha.58 与 OSS 基础合并到默认分支 `main`，merge commit 为 `d4505e93da297ebedf45096a74a04e3f4e21ea95`。远端未配置提交状态 checks，合并证据是 GitHub mergeable 判定与本地全量测试，不冒充远端 CI
+- 开源协作基础：Apache-2.0 `LICENSE`、英文 README 概览、`CONTRIBUTING.md`、`SECURITY.md` 和 npm 仓库/官网元数据已补齐并在远端 `main` 复核；未创建 GitHub Release，公开与合并状态均不改变 production-ready 判定
 - 商业版权威方案：`docs/湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`
 - 只读 Claude 基线：0.0.1，提交 `16736147ed734a3be3535d43152719cf4b97a07e`，标签 `claude-0.0.1-baseline`
 - 当前内置标准为 `oak-standards 2.1.0` / `oak-rules 2.1.0`（release sequence 3）：39 条规则、6 个白名单机械 fixer；alpha.58 新增 4 条不可自动修复的 TXT/Markdown 保守空白卫生提示。

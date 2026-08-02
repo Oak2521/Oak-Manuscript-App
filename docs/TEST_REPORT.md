@@ -2,6 +2,20 @@
 
 > 更新日期：2026-08-02。只记录真实执行结果；未运行项不得写成通过。
 
+## PR #2 合并与远端默认分支复核（2026-08-02）
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| PR 最终 head | **PASS** | `chatgpt/commercial-v1` 为 `1d48a8168caf9a43321de22dce147140aecd7d6c`，与本地已测试提交一致 |
+| 评审/可合并状态 | **PASS** | GitHub 插件将 PR #2 从 draft 转为 ready，并返回 `mergeable=true` |
+| 远端 CI 状态 | **未配置** | GitHub combined status 返回 `statuses=[]`；没有把空 checks 冒充 CI 通过 |
+| 合并 | **PASS** | 使用 merge commit 保留 65 个开发提交；GitHub 返回 `merged=true`，合并提交 `d4505e93da297ebedf45096a74a04e3f4e21ea95` |
+| 默认分支内容 | **PASS** | GitHub 插件从默认 `main` 读到 Apache-2.0 `LICENSE` 与 README 英文概览；仓库仍为 `visibility=public`、`default_branch=main` |
+| 本地同步 | **PASS** | 本地 `main` 以 fast-forward 同步到同一合并提交，没有重写历史 |
+| 产品发行 | **未发布** | 合并只更新源码默认分支；没有 GitHub Release、安装包上传、签名、部署或 production-ready 证据 |
+
+结论：项目的 alpha.58 开发历史和 OSS 基础已真实进入公开仓库默认分支；这关闭“代码只在草稿开发分支”的问题，但不关闭正式发行与生产门禁。
+
 ## 开源许可与协作基础验证（2026-08-02，PR #2 合并前）
 
 本轮新增许可证、英文项目概览、贡献指南、安全政策和 npm 项目元数据；没有修改检查行为、重新打包或创建 GitHub Release。

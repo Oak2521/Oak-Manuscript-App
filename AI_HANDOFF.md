@@ -3,7 +3,7 @@
 > 更新日期：2026-08-02
 > 当前开发方：ChatGPT Codex
 > 当前版本：`0.1.0-alpha.58`
-> 当前分支：`chatgpt/commercial-v1`
+> 当前分支：`main`
 > 当前源码/Windows packaged 标签：`chatgpt-v0.1.0-alpha.58-text-hygiene`；最新真实 Windows 打包内容为未签名 alpha.58
 
 ## 1. 权威入口与工作区
@@ -34,6 +34,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 - GitHub 仓库为 `https://github.com/Oak2521/Oak-Manuscript-App`，可见性已由 private 改为 public；GitHub 插件复核 `visibility=public`，当前账号 `Oak2521` 具有 admin/push 权限；
 - 本地 `chatgpt/commercial-v1` 已推送为同名远程集成分支；PR #2（`https://github.com/Oak2521/Oak-Manuscript-App/pull/2`）是 alpha.58 及随后 OSS 基础变更进入 `main` 的权威集成记录。2026-08-02 首次推送时远程 head 为 `98bbf5f18a9415625bda118d5bbb7c19a66bf507`、`main` 为 `16736147ed734a3be3535d43152719cf4b97a07e`、PR 状态为 open/draft/mergeable；这些提交号和状态只表示该历史检查点，当前状态必须在 GitHub 复核；
+- 2026-08-02 在 OSS 基础提交 `1d48a8168caf9a43321de22dce147140aecd7d6c` 推送后，PR #2 已转为 ready、复核为 mergeable 并使用 merge commit 方式合并；GitHub 返回 `merged=true`，`main` 合并提交为 `d4505e93da297ebedf45096a74a04e3f4e21ea95`。远端没有提交状态 checks（返回空列表），因此只记录本地测试证据，不把“无 checks”写成 CI 通过；
 - 公开前工作区干净，`git diff --check`、`git fsck --no-dangling` 与高置信度凭据模式/敏感文件名扫描通过；命中项仅为测试用虚假密钥哨兵。安装包、运行时、工具和真实稿件仍受 `.gitignore` 排除；
 - 首次公开同步只改变 GitHub 分发状态并同步文档，没有修改产品代码或创建 GitHub Release；当时统一 `npm test` 通过：Node 719 total / 712 pass / 0 fail / 7 skip，Python 368 total / 0 failures / 0 errors / 3 skipped。仓库公开或源码合并均不等于安装包已发布或产品已达到 production-ready。
 
