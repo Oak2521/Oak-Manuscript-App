@@ -1,6 +1,6 @@
 # AI_HANDOFF — 湖岸稿件（Oak Manuscript）项目交接说明
 
-> 更新日期：2026-07-29
+> 更新日期：2026-08-02
 > 当前开发方：ChatGPT Codex
 > 当前版本：`0.1.0-alpha.58`
 > 当前分支：`chatgpt/commercial-v1`
@@ -29,6 +29,14 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：GitHub 开发分支推送与仓库公开（2026-08-02）
+
+- GitHub 仓库为 `https://github.com/Oak2521/Oak-Manuscript-App`，可见性已由 private 改为 public；GitHub 插件复核 `visibility=public`，当前账号 `Oak2521` 具有 admin/push 权限；
+- 本地 `chatgpt/commercial-v1` 已推送为同名远程分支，远程 head 为 `98bbf5f18a9415625bda118d5bbb7c19a66bf507`；相对 `main` 的 `16736147ed734a3be3535d43152719cf4b97a07e` 领先 63 个提交；
+- 草稿 PR #2 已创建：`https://github.com/Oak2521/Oak-Manuscript-App/pull/2`，目标为 `main`，GitHub 复核为 open、draft、mergeable；本次没有合并 PR，因此默认分支仍是 Claude 0.0.1 基线；
+- 公开前工作区干净，`git diff --check`、`git fsck --no-dangling` 与高置信度凭据模式/敏感文件名扫描通过；命中项仅为测试用虚假密钥哨兵。安装包、运行时、工具和真实稿件仍受 `.gitignore` 排除；
+- 本次只改变 GitHub 分发状态并同步文档，没有修改产品代码或创建 GitHub Release。文档同步后统一 `npm test` 通过：Node 719 total / 712 pass / 0 fail / 7 skip，Python 368 total / 0 failures / 0 errors / 3 skipped。仓库公开不等于 PR 已合并、安装包已发布或产品已达到 production-ready。
 
 ### 已完成：0.1.0-alpha.58 TXT/Markdown 保守卫生检查与 Windows packaged 检查点
 

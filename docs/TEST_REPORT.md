@@ -1,6 +1,22 @@
 # TEST_REPORT — 测试报告
 
-> 更新日期：2026-07-29。只记录真实执行结果；未运行项不得写成通过。
+> 更新日期：2026-08-02。只记录真实执行结果；未运行项不得写成通过。
+
+## GitHub 推送与公开状态核验（2026-08-02）
+
+本轮只验证并改变源码分发状态，没有修改产品代码或重新打包。GitHub 插件确认登录账户为 `Oak2521`，目标仓库具有 admin/push 权限；文档同步后重新运行统一测试。
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| 推送前 Git 状态 | **PASS** | 工作区干净；`git diff --check` 与 `git fsck --no-dangling` 通过；线上 `main` 是本地 head 的祖先 |
+| 公开前敏感信息检查 | **PASS（高置信度模式扫描）** | 未跟踪 `.env`、私钥、证书或 credentials 文件；密钥/URL 凭据模式命中仅位于测试中的明确虚假哨兵。该扫描不是第三方完整秘密审计 |
+| 开发分支推送 | **PASS** | `chatgpt/commercial-v1` 已推送；远程 head `98bbf5f18a9415625bda118d5bbb7c19a66bf507`，相对 `main` 包含 63 个提交 |
+| 草稿 PR | **PASS** | PR #2 为 open、draft、mergeable，base `main` / head `chatgpt/commercial-v1`；尚未合并 |
+| 仓库可见性 | **PASS** | GitHub 插件在变更后复核 `Oak2521/Oak-Manuscript-App` 为 `visibility=public` |
+| 统一回归 | **PASS** | `npm test`：Node 719 total / 712 pass / 0 fail / 7 skip；Python 368 total / 0 failures / 0 errors / 3 skipped |
+| 产品发行 | **未发布** | 没有创建 GitHub Release、上传安装包或改变 Windows 未签名、macOS/生产未就绪事实 |
+
+结论：源码开发分支已经公开可见并进入草稿 PR，但默认分支尚未更新，公开仓库也不是正式产品发布证据。
 
 ## 最新验证结论：0.1.0-alpha.58 TXT/Markdown 保守卫生检查与 Windows packaged 检查点
 

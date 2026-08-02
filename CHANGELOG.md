@@ -4,6 +4,13 @@
 
 ## [未发布]
 
+### 2026-08-02 — GitHub 开发分支公开同步
+
+- 将 `chatgpt/commercial-v1` 推送到 `Oak2521/Oak-Manuscript-App`，远程 head 为 `98bbf5f18a9415625bda118d5bbb7c19a66bf507`，相对 `main` 领先 63 个提交；
+- 创建面向 `main` 的草稿 PR #2；PR 当前 open、draft、mergeable，尚未合并；
+- 将仓库可见性由 private 改为 public，并通过 GitHub 插件复核；普通 Git 推送未包含 `.gitignore` 排除的安装包、运行时、工具或真实稿件；
+- 公开前完成工作区、Git 对象、快进祖先关系及高置信度敏感信息扫描；文档同步后统一 `npm test` 通过（Node 719/712/0/7，Python 368/0/0/3）。本次没有修改产品代码、上传安装包或创建 GitHub Release，production-ready 状态不变。
+
 ### 2026-07-29 — 0.1.0-alpha.58（ChatGPT TXT/Markdown 保守卫生检查）
 
 > 已离线生成并复验 Windows NSIS/ZIP/unpacked；未联网、部署、推送或执行真实安装。Windows 制品未签名，macOS 资源仍缺失，不是可售卖正式版。
