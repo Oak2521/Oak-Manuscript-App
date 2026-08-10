@@ -27,6 +27,7 @@
   理由：离线可运行、确定性、免除依赖安装授权、降低供应链风险。DOCX 解析用 stdlib 实现，不引入 python-docx。
   引入任何第三方依赖（含 pip、npm 运行时依赖）须先取得用户授权。
 - 测试：Python 侧用 stdlib `unittest`，Node 侧用内置 `node:test`；统一测试入口为 `npm test`（依次运行 Node 与 Python）。分项排障可用 `npm run test:node`、`npm run test:python`。
+- Git checkout：所有受 Git 识别的文本必须以 LF 写入工作树；字节锁、canonical JSON/SQL 与资源信任不得依赖开发者的 `core.autocrlf` 配置。
 
 ## 4. 开发纪律（商业方案冻结原则 + 本仓库约定）
 
@@ -56,4 +57,4 @@ release/     # 发布产物（不入库）
 
 ## 6. 里程碑与当前阶段
 
-当前开发版本为 `0.1.0-alpha.58`。P0、离线标准可信链、标准来源/复核治理摘要、受控标准在线升级/撤回链、统一账号/SyncRecord、签名权益、订阅/设备服务、三类 compatible 只读 AI 建议，以及用户确认后即时同步的本地生产形状链已经实现；Web 临时作业已有 exact 生产组合、迁移字节门禁及平台无关部署准入契约。准入 profile 只能证明声明能力满足，不能证明官方限制或真实环境，readiness 仍固定生产未就绪。账号、权益与标准联网配置仍为 `pending_configuration`；真实迁移、OS 禁网、零留存、生产密钥、支付商 webhook、发布源、API/网站部署和官方云 AI 均未完成或未验证。最新真实 Windows 制品为未签名 alpha.58；macOS、真实安装生命周期、代码签名、公证、来源/许可人工签署和 OS 级隔离仍是门禁。普通 build/test 永不联网；任何重新下载仍须用户明确批准。
+当前开发版本为 `0.1.0-alpha.59`。alpha.59 固定全仓库文本 LF checkout，消除 Windows `core.autocrlf=true` 对 canonical JSON/SQL、迁移清单和资源信任锁的字节漂移；P0、离线标准可信链、标准来源/复核治理摘要、受控标准在线升级/撤回链、统一账号/SyncRecord、签名权益、订阅/设备服务、三类 compatible 只读 AI 建议，以及用户确认后即时同步的本地生产形状链已经实现。Web 临时作业已有 exact 生产组合、迁移字节门禁及平台无关部署准入契约。准入 profile 只能证明声明能力满足，不能证明官方限制或真实环境，readiness 仍固定生产未就绪。账号、权益与标准联网配置仍为 `pending_configuration`；真实迁移、OS 禁网、零留存、生产密钥、支付商 webhook、发布源、API/网站部署和官方云 AI 均未完成或未验证。最新真实 Windows 制品仍为未签名 alpha.58；macOS、真实安装生命周期、代码签名、公证、来源/许可人工签署和 OS 级隔离仍是门禁。普通 build/test 永不联网；任何重新下载仍须用户明确批准。

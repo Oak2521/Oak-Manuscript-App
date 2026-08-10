@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-08-10 — 0.1.0-alpha.59（ChatGPT Windows LF checkout 可复现性）
+
+> 源码检查点；未联网、部署、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.58。
+
+- `.gitattributes` 将所有 Git 识别文本固定为 `eol=lf`，不再让 Windows `core.autocrlf=true` 改写 canonical JSON/SQL、迁移清单和资源信任输入；
+- 新增 checkout 回归测试，覆盖全局属性以及发行身份、资源锁、CPython provenance、Web 迁移 manifest/SQL 等严格字节输入；
+- 先复现 Node 719 total / 683 pass / 29 fail / 7 skip，以及 release identity、resource trust、Web migration 三项字节门禁失败；统一 LF 后这些门禁恢复通过；
+- 应用 loose 资源锁按 LF 字节重建为 112 文件 / 2,217,733 字节，manifest `7e25e075…b496`、anchor `0d055104…9def`；标准包 2.1.0 内容与兼容下限不变；
+- 最终 `npm test`：Node 720/713/0/7、Python 368/0/0/3；沙箱内 Electron smoke 因 GPU 子进程 `0xC0000135` 失败且不计通过，沙箱外独立隐藏窗口重跑 PASS；
+- 发行身份仍为 `complete=false`；未生成 alpha.59 Windows/macOS 制品，也未关闭签名、真实安装、许可人工签核、生产账号/支付/Web 部署门禁。
+
 ### 2026-08-02 — 开源许可与社区协作基础
 
 - 采用 Apache License 2.0，新增标准全文 `LICENSE`，并在 npm 元数据中加入 `Apache-2.0`、GitHub 仓库、问题反馈和湖岸官网字段；

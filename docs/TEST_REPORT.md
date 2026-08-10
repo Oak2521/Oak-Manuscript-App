@@ -1,6 +1,26 @@
 # TEST_REPORT — 测试报告
 
-> 更新日期：2026-08-02。只记录真实执行结果；未运行项不得写成通过。
+> 更新日期：2026-08-10。只记录真实执行结果；未运行项不得写成通过。
+
+## 最新验证结论：0.1.0-alpha.59 Windows LF checkout 可复现性
+
+验证日期：2026-08-10。本轮未联网、未下载依赖、未部署、未推送、未运行真实安装器，也未重新打包。最新真实 Windows 制品仍为未签名 alpha.58。
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| 现场复现 | **FAIL（已修复）** | 系统 Git `core.autocrlf=true`；修复前 448 个 tracked 文件中 417 个工作树字节为 CRLF。首次 Node 回归 719 total / 683 pass / 29 fail / 7 skip；`verify:web:migrations`、`verify:release-identity`、`verify:resource-trust` 均因严格 UTF-8/LF 字节漂移失败 |
+| TDD 红灯 | **PASS（预期失败已记录）** | 新增 checkout 测试后先在 `.gitattributes` 自身 CRLF 和缺少全局 `eol=lf` 规则处失败，再修改属性策略 |
+| Git checkout 策略 | **PASS** | `.gitattributes` 使用 `* text=auto eol=lf`；机械刷新 415 个已有 CRLF tracked 文本后，`git ls-files --eol` 中 `w/crlf` / `w/mixed` 为 0；最终 Git 只保留真实语义变更 |
+| 严格字节回归 | **PASS** | 覆盖 CPython provenance、发行身份与 schema、应用资源锁、Web migration manifest/SQL；迁移清单 SHA-256 保持 `0989697d…14b7`，四份 SQL 摘要均与 manifest 一致 |
+| 资源信任 | **PASS** | LF canonical 源码树为 112 文件 / 2,217,733 字节；manifest `7e25e075e1628d6187c6350beba3e708c91ab95fa4b68f2bbcbb4110c057b496`；anchor `0d05510411f08e454c7f2a91465380f4c78e5efcc8967de9d0b5c85935e89def` |
+| Node 全量 | **PASS** | 720 total / 713 pass / 0 fail / 7 skip，6.152 秒；首次升版因 Ollama 当前应用版本断言仍固定 alpha.58 而 1 fail，更新为 alpha.59 后全量通过 |
+| Python 全量 | **PASS** | 368 total / 0 failures / 0 errors / 3 skipped，125.882 秒 |
+| 源码 Electron smoke | **PASS（沙箱外独立隐藏窗口）** | 沙箱内在建窗后因 GPU 子进程 `0xC0000135` 退出，不计通过；沙箱外保持 Renderer sandbox 的隐藏进程 PASS，输出 `out/source-smoke/runs/msnun23q-6a8adc6cd3313ff6/projects/` |
+| 关键源码门禁 | **PASS** | Electron runtime、Windows builder/Electron/EpubCheck/JRE/CPython provenance、resource trust、Windows 源码资源、fuse 配置、Web migrations、standards 全部通过 |
+| 发行身份 | **结构通过，仍不完整** | `ok=true`、`complete=false`；法定销售主体、支持/隐私/条款 URL、版权、Windows 证书主体、具名人工复核及 package author/copyright 共 11 个字段仍缺失 |
+| 打包 / 发布 | **未执行** | 没有 alpha.59 NSIS/ZIP/unpacked、packaged smoke、签名、真实安装或 macOS 证据；alpha.58 制品摘要保持历史记录，不移植为 alpha.59 结论 |
+
+结论：alpha.59 关闭的是 Windows checkout 破坏 canonical 受信字节的可复现性缺口。源码、测试和关键门禁已验证；打包、部署和 production-ready 状态没有因此前进。
 
 ## PR #2 合并与远端默认分支复核（2026-08-02）
 
@@ -33,7 +53,7 @@
 
 结论：源码仓库已经具备可辨认的 Apache-2.0 许可、英文入口、贡献路径和可用的私密安全报告渠道；这些结果只证明 OSS 协作基础和现有回归，不证明制品许可审计、生产部署或可售卖正式版完成。
 
-## GitHub 推送与公开状态核验（2026-08-02）
+## GitHub 推送与公开状态核验（2026-08-02，PR #2 合并前历史）
 
 本轮只验证并改变源码分发状态，没有修改产品代码或重新打包。GitHub 插件确认登录账户为 `Oak2521`，目标仓库具有 admin/push 权限；文档同步后重新运行统一测试。
 
@@ -47,9 +67,9 @@
 | 统一回归 | **PASS** | `npm test`：Node 719 total / 712 pass / 0 fail / 7 skip；Python 368 total / 0 failures / 0 errors / 3 skipped |
 | 产品发行 | **未发布** | 没有创建 GitHub Release、上传安装包或改变 Windows 未签名、macOS/生产未就绪事实 |
 
-结论：源码开发分支已经公开可见并进入草稿 PR，但默认分支尚未更新，公开仓库也不是正式产品发布证据。
+结论：当时源码开发分支已公开可见并进入草稿 PR，但默认分支尚未更新；随后合并结果见上节。公开仓库本身不是正式产品发布证据。
 
-## 最新验证结论：0.1.0-alpha.58 TXT/Markdown 保守卫生检查与 Windows packaged 检查点
+## 历史验证结论：0.1.0-alpha.58 TXT/Markdown 保守卫生检查与 Windows packaged 检查点
 
 验证日期：2026-07-29。本轮未联网、未使用真实账号/密钥/数据库、未部署或推送。Windows 制品未签名；未执行真实安装生命周期。macOS 静态门禁按事实失败。
 

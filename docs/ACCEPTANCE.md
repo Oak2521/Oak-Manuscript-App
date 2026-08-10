@@ -2,6 +2,15 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.59 Windows LF checkout 可复现性验收（2026-08-10）
+
+- [x] `.gitattributes` 对所有 Git 识别文本强制 `eol=lf`，不依赖宿主 `core.autocrlf`；属性文件自身为 LF；
+- [x] 回归测试覆盖发行身份、资源锁、CPython provenance、Web 迁移 manifest/SQL 等严格字节输入，并在修复前按预期失败；
+- [x] 工作树不再含 `w/crlf` 或 `w/mixed` 的 tracked 文本；Web 迁移、发行身份、资源信任、标准、Electron/runtime/provenance/fuse 和 Windows 源码资源门禁通过；
+- [x] LF 资源锁重建为 112 文件 / 2,217,733 字节，manifest `7e25e075…b496`、anchor `0d055104…9def`；
+- [x] Node 720/713/0/7、Python 368/0/0/3；沙箱外独立隐藏 Electron 源码 smoke PASS；
+- [ ] alpha.59 Windows/macOS 制品、代码签名、真实安装生命周期及生产联网验收完成；最新真实 Windows packaged 仍为未签名 alpha.58。
+
 ## 0.1.0-alpha.58 TXT/Markdown 保守卫生检查验收（2026-07-29）
 
 - [x] 空文件、普通文本连续空格、行内制表符和连续空行有 4 条确定性提示；全部不可自动修复，批量修复白名单仍为 6 条；

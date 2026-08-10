@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.58` 源码架构；最新真实 Windows packaged 证据为未签名 alpha.58。标准页从已验证 registry 派生审阅/来源核验治理摘要，当前为 14 项标准、39 条规则、6 个机械 fixer，但外部来源 verified 仍为 0。Web 临时作业已有 exact 生产组合、SQL 字节门禁及平台无关能力准入；readiness 故意不声称官方平台限制、真实迁移、OS 禁网或生产零留存已验证。默认账号与权益配置无端点/密钥，仓库无生产私钥；真实账号、支付、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.59` 源码架构；最新真实 Windows packaged 证据仍为未签名 alpha.58。alpha.59 将 Git checkout 的所有文本固定为 LF，使 canonical JSON/SQL、迁移清单和资源信任不依赖宿主 `core.autocrlf`。标准页从已验证 registry 派生审阅/来源核验治理摘要，当前为 14 项标准、39 条规则、6 个机械 fixer，但外部来源 verified 仍为 0。Web 临时作业已有 exact 生产组合、SQL 字节门禁及平台无关能力准入；readiness 故意不声称官方平台限制、真实迁移、OS 禁网或生产零留存已验证。默认账号与权益配置无端点/密钥，仓库无生产私钥；真实账号、支付、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
 
 ## 1. 总体分层
 

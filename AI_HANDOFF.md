@@ -1,10 +1,10 @@
 # AI_HANDOFF — 湖岸稿件（Oak Manuscript）项目交接说明
 
-> 更新日期：2026-08-02
+> 更新日期：2026-08-10
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.58`
+> 当前版本：`0.1.0-alpha.59`
 > 当前分支：`main`
-> 当前源码/Windows packaged 标签：`chatgpt-v0.1.0-alpha.58-text-hygiene`；最新真实 Windows 打包内容为未签名 alpha.58
+> 当前源码标签：`chatgpt-v0.1.0-alpha.59-lf-checkout`；最新真实 Windows packaged 标签仍为 `chatgpt-v0.1.0-alpha.58-text-hygiene`，打包内容未签名
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,15 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.59 Windows LF checkout 可复现性（源码检查点，2026-08-10）
+
+- 现场复现系统 Git `core.autocrlf=true` 将 448 个 tracked 文件中的 417 个工作树字节转为 CRLF；首次 Node 回归为 719 total / 683 pass / 29 fail / 7 skip，发行身份、资源信任和 Web migration 三项严格 UTF-8/LF 门禁失败；
+- TDD 新增 checkout 字节测试，先在 `.gitattributes` 自身 CRLF 与缺少全局 `eol=lf` 处失败；随后将策略固定为 `* text=auto eol=lf`，机械刷新 415 个已有 CRLF 文本，最终 `w/crlf` / `w/mixed` 为 0；
+- 应用/Web/Python 源码升为 alpha.59，标准包 2.1.0 payload、release sequence 3 与 `min_app=alpha.58` 保持不变；资源锁按 LF 源码树重建为 112 文件 / 2,217,733 字节，manifest `7e25e075…b496`、anchor `0d055104…9def`；
+- 最终 `npm test`：Node 720/713/0/7，Python 368/0 failures/0 errors/3 skipped；Electron runtime、五类 provenance、resource trust、Windows 源码资源、fuse、Web migrations、standards 与 release identity 结构门禁通过；
+- 沙箱内源码 smoke 因 GPU 子进程 `0xC0000135` 失败且不计通过；沙箱外独立隐藏窗口保持 Renderer sandbox 后 PASS，输出 `out/source-smoke/runs/msnun23q-6a8adc6cd3313ff6/projects/`；
+- 本轮未联网、下载、部署、推送、运行安装器或重新打包。alpha.59 是源码检查点；最新真实 Windows 制品仍为未签名 alpha.58，发行身份仍 `complete=false`，不是可售卖正式版。
 
 ### 已完成：GitHub 开发分支推送与仓库公开（2026-08-02）
 
@@ -752,18 +761,18 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 ## 4. 已核实但尚未解决的缺口
 
 - 打包版 Ace：alpha.37 已有真实 packaged utilityProcess/loopback Chrome 功能证据，并由发布清单消费 EXE、输出树与双进程结果的 canonical 哈希证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、代码签名/可信见证和正式人工许可审计；
-- Windows：alpha.54 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke、schema v2 发布证据，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
+- Windows：alpha.58 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke、schema v2 发布证据，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；alpha.59 未重新打包。仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
 - Web：临时作业链保持；alpha.38 另实现 SyncRecord 独立服务验证、同源 API、GoTrue/runtime、Supabase repository/002 迁移源码。生产环境/真实账号与 Blobs/Postgres E2E、病毒库/平台扫描、容器/OS 禁网与资源隔离、计费和官网嵌入仍未实现；
 - 账号/订阅/同步：离线 Provider/Free+Pro、逐字段确认、OS 加密队列和重启恢复、桌面 PKCE/加密 token-store/条件 main 接线、SyncRecord 服务链、签名权益、规范化订阅事件、属主设备管理服务及网站订阅/掩码设备客户端源码已实现；默认账号/权益配置仍为空，生产私钥不存在，真实 PKCE/刷新、支付商 webhook 验签适配、Supabase 迁移/部署和网站后台未连接；
 - AI：Ollama 0.32.5 + qwen3:4b 与 LM Studio llmster 0.0.20+1 + 同一 Qwen3 4B GGUF 已分别通过一个匿名连续空格问题的窄范围验收；其他版本/模型/硬件、多模型语义、多规则/真实稿件质量、官方云、远程 TLS 与湖岸 AI 仍未验收；
-- 标准库：治理结构、引用解析政策和 alpha.57 用户可见治理摘要已完成，13 项标准、35 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（12 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
+- 标准库：治理结构、引用解析政策、alpha.57 用户可见治理摘要与 alpha.58 TXT/Markdown 保守覆盖已完成，14 项标准、39 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（13 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
 - 标准升级：本地验证、签名包导入/回滚、项目固定/显式升级、用户触发桌面客户端、服务端 fixed HTTP/Fetch 契约、本地真实签名 E2E，以及独立角色签名撤回的本地拒绝/恢复、固定获取纵向链和 alpha.53 main/IPC/UI 恢复入口已编码；默认地址与生产 trust pin 为空，生产发布/撤回源、调度、密钥治理、真实网络联调和后台自动检查未实现；
 - 正式发布仍缺隐私/条款最终文本、证书、生产密钥、人工内测、macOS 硬件和网站联调。
 
 ### Windows sale 门禁的当前明确阻断
 
-源码资源门禁现列 17 项（builder 独立全树锁已成立）；真实 alpha.54 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 12 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
+源码资源门禁现列 17 项（builder 独立全树锁已成立）；最新真实 alpha.58 packaged ASAR 再关闭 EpubCheck/JRE/Python/APP/Ace 五个 loose 可信根项，因此 packaged 资源门禁保留以下 12 项。Electron 9 项 fuse 已全部识别和固定，独立验证器不再产生兼容性 blocker。
 
 以下机器码来自当前 `verify_packaged_resources.js` 与实测 sale 输出，不得合并或省略：
 
@@ -782,7 +791,7 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 5. 下一执行顺序
 
-不要重新做宽泛规划。alpha.58 已完成 TXT/Markdown 保守卫生检查和同版 Windows packaged 证据，但仍不是可售卖正式版；下一步直接推进生产联调前置条件：
+不要重新做宽泛规划。alpha.59 已关闭 Windows LF checkout 可复现性缺口，但没有重新打包，仍不是可售卖正式版；下一步直接推进生产联调前置条件：
 
 1. 取得联网只读授权后，只使用候选平台官方当前文档核对 50 MiB 请求、100 MiB 响应、240 秒执行、子进程、调度、存储与隔离能力，形成具来源 profile；不接受测试 profile 作为平台选择证据；
 2. 具体支付商 webhook 验签实现必须等用户授权联网并选定平台后，依据官方协议单独开发；当前规范化事件入口继续只接受上游已经验签的 content-free 快照；

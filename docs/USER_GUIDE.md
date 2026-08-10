@@ -2,9 +2,9 @@
 
 ## 桌面应用（推荐）
 
-当前开发源码与最新已打包 Windows x64 NSIS/ZIP 均为 `0.1.0-alpha.58`；制品未签名，不是可售卖正式版。alpha.58 增加 TXT/Markdown 保守空白卫生检查和格式覆盖矩阵；默认账号与权益配置仍为空，仓库没有生产私钥，普通启动和构建不会触发账号/权益联网或下载。
+当前开发源码为 `0.1.0-alpha.59`，最新已打包 Windows x64 NSIS/ZIP 仍为 `0.1.0-alpha.58`；制品未签名，不是可售卖正式版。alpha.58 增加 TXT/Markdown 保守空白卫生检查和格式覆盖矩阵，alpha.59 修复 Windows Git checkout 的 canonical 字节漂移；默认账号与权益配置仍为空，仓库没有生产私钥，普通启动和构建不会触发账号/权益联网或下载。
 
-**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.58 结果为 Node 719/712/0/7、Python 368/0 failures/0 errors/3 skipped；隐藏 Electron 源码、Web 客户端和 Windows packaged smoke 均通过。
+**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.59 结果为 Node 720/713/0/7、Python 368/0 failures/0 errors/3 skipped；独立隐藏 Electron 源码 smoke 通过。Web 客户端和 Windows packaged smoke 的最新真实证据仍属于此前版本，alpha.59 未重新打包。
 
 **Web 状态**：客户端保留湖岸账号登录/注册、“默认”引用体例、单任务处理同意和完整临时作业流程；账号后台源码提供同步历史与订阅/设备管理。服务端已有组合与迁移门禁。alpha.56 要求候选部署平台显式满足 50 MiB 请求、100 MiB 响应、240 秒处理及隔离/存储/数据库/调度能力；当前没有任何经官方核对的真实平台 profile。API/计划任务/页面未部署，本地测试不等于平台零留存、订阅或线上可用。
 
@@ -178,7 +178,7 @@ npm run verify:release-identity
 npm run release:evidence:verify:win
 ```
 
-验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest；不会扫描其他版本替代当前制品。alpha.54 的 NSIS、ZIP、SHA 文件、packaged-smoke evidence 与 schema v2 canonical manifest 已通过交叉验证；旧 alpha.42 残留曾让生成步骤按设计拒绝，不能复用或混入当前版本证据。
+验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest；不会扫描其他版本替代当前制品。alpha.58 的 NSIS、ZIP、SHA 文件、packaged-smoke evidence 与 schema v2 canonical manifest 已通过交叉验证；alpha.59 尚未打包，旧制品不能复用或混入当前版本证据。
 
 安装生命周期验收器默认只读、不启动安装器，并要求当前源码版本存在精确制品。alpha.54 对归档 alpha.12 的只读预检已经通过：
 
