@@ -2,7 +2,32 @@
 
 > 更新日期：2026-08-10。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.60 官方平台准入与 Supabase 新密钥兼容
+## 最新验证结论：0.1.0-alpha.61 Web 对象存储直传/直取
+
+验证日期：2026-08-10。经用户授权读取 Supabase/AWS 官方资料、下载精确 Web 生产依赖并查询 npm 漏洞库；没有使用生产账号/密钥、执行真实迁移、连接对象存储、部署、推送、运行安装器或重新打包。最新真实 Windows 制品仍为未签名 alpha.58。
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| direct transfer contract | **PASS** | credential 固定 schema/type/job/transfer/method/部署期 exact Supabase Storage origin pin/exact headers/MIME/size/expiry/完成路径/`single_issue`；仓库 pin 默认留空并关闭稿件控件，外域、另一 Supabase 项目、Bearer/Cookie/api-key header、超过 300 秒及 extra field 均拒绝 |
+| v2 HTTP 控制面 | **PASS** | `/manuscript/api/v2/jobs` 只暴露创建/状态/取消/删除和 input/result transfer 签发/完成；直传模式的旧 input/result 字节路由不可用；完成 JSON 只含 transfer ID |
+| Supabase S3 storage | **PASS** | PUT 固定随机 staging + `If-None-Match:*`；真实 AWS SDK 离线探针确认 content type、no-store、条件创建与全部 metadata 均被 SigV4 签名且 metadata 不进入 URL 查询串，120 秒签名与返回 expiry 对齐；完成以 HEAD 复核大小/MIME/no-store/metadata/ETag，source-ETag CopyObject 到 internal input 并确认 staging 删除；GET 只签 internal output |
+| 单次 result claim | **PASS** | repository revision CAS 先进入 `result_transfer` 再签发；第二请求、错误 transfer 或 extra metadata 均拒绝；完成后清理 output 并终态化，签发失败回滚 claim |
+| 私有 worker 检查 | **PASS（本地/注入）** | 直传 input 只有在私有 worker 读取后才送固定 `web-inspect`；公开函数不读取稿件字节。没有 OS 禁网、容器、病毒库或真实对象存储证据 |
+| staging/input/output 清扫 | **PASS（单元）** | prefix 分页、有界计数、到期/坏 metadata 删除和 delete-confirm 已覆盖；测试发现并修复正式 input 键不含 transfer ID 时的误判。未运行真实 scheduler/告警/备份生命周期 |
+| 005 migration bundle | **PASS（来源字节）** | 5 文件 canonical manifest 摘要 `6ede70b047a47d1abc53114f08843a185efbcf606b50ae1cd0a4d566bd8efa75`；005 摘要 `b1baf8fa01759340cb079a78f1c23b45217e3bf2756c91a2e11d56d1e6259b34`；未在 PostgreSQL/Supabase 执行 |
+| v2 deployment admission/runtime | **PASS（源码声明门禁）** | requirements 摘要 `84fa903a7fd5397549ef7628671e31bb552bed92be93893707d160184e304690`；runtime exact 配置 S3/GoTrue/repository/worker/sweeper，并固定 `data_plane=direct_object`、`production_ready=false` |
+| Web dependency audit | **PASS（2026-08-10 registry 快照）** | `@aws-sdk/client-s3` 与 `@aws-sdk/s3-request-presigner` 精确 `3.1107.0`；移除 `@netlify/blobs`；授权联网 `npm audit --prefix web --omit=dev` 为 0 漏洞 |
+| Node 全量 | **PASS** | 744 total / 737 pass / 0 fail / 7 skip，7.109 秒；跳过项不计作通过 |
+| Python 全量 | **PASS** | 368 total / 0 failures / 0 errors / 3 skipped，111.050 秒 |
+| 统一入口 | **PASS** | `npm test` 依次完成 Node 与 Python，墙钟 123.4 秒 |
+| 资源信任 | **PASS** | 112 文件 / 2,217,733 字节；manifest `de6471b0752411a9d06a5b859bf5726859e0e73965199b09b76a20d26b2c0115`；anchor `6165a4301a2c10de7b39fe25edad53edfc0b23c53fe2e236004dd63de646bd51` |
+| Electron source smoke | **PASS（独立隐藏进程）** | 沙箱内运行因 Chromium GPU 子进程缺失以 `0xC0000135` 退出，不计通过；沙箱外独立隐藏进程保持 Renderer sandbox 并返回 `SMOKE-RESULT: PASS`；输出 `out/source-smoke/runs/mso27a8x-665bbb0e3713f795/projects/` |
+| Web client smoke | **PASS（独立隐藏 Chromium）** | desktop + 390px、登录后账号/设备、撤销确认、空 storage pin 下六个稿件控件禁用及配置提示均通过；外部网络请求 0、完整设备 ID 不可见。首次运行因匿名夹具权益在 2026-08-08 已过期而不再显示有效，修正测试日期后通过；这不证明真实账号/API/直传网络 |
+| packaged / deployment | **未执行** | alpha.61 未生成 NSIS/ZIP/unpacked 或运行 packaged smoke；没有真实 bucket/CORS/迁移/worker/官网 E2E，不能声称 Web 已上线或生产零留存 |
+
+结论：alpha.61 解决了 alpha.60 已证伪的“公开 Function 缓冲大文件”拓扑，形成可测试的短凭证直传/直取源码闭环。预签名 URL 是在有效期内可重放的 bearer credential，应用的 `single_issue` 只限制控制面签发/claim，不把底层 PUT/GET 魔法化为真正一次性传输；真实 CORS、对象一致性、断传/重放、到期清扫和备份删除必须在隔离预生产环境证明。当前仍非已部署网页版，也非可售卖正式版。
+
+## 历史验证结论：0.1.0-alpha.60 官方平台准入与 Supabase 新密钥兼容
 
 验证日期：2026-08-10。本轮经用户授权联网读取 Netlify、Supabase 与 PostgreSQL 官方当前资料；没有使用生产账号/密钥、执行数据库迁移、部署、推送、运行安装器或重新打包。最新真实 Windows 制品仍为未签名 alpha.58。
 

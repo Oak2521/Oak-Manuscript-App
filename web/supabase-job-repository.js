@@ -25,7 +25,8 @@ const OWNER_KEY_PATTERN = /^(?:account|anonymous):[A-Za-z0-9][A-Za-z0-9._:-]{7,1
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$/;
 const FINGERPRINT_PATTERN = /^[0-9a-f]{64}$/;
 const JOB_STATES = new Set([
-  "awaiting_upload", "queued", "processing", "result_ready", "deletion_pending",
+  "awaiting_upload", "upload_finalizing", "queued", "processing", "result_ready",
+  "result_transfer", "deletion_pending",
 ]);
 const RESULT_MEDIA_TYPES = new Set([
   "application/json",
@@ -203,10 +204,13 @@ function validateInternalRecord(value) {
   }
   const statePayloadValid = value.state === "deletion_pending" ||
     (value.state === "awaiting_upload" && !value.input_retained && !value.result_available) ||
+    (value.state === "upload_finalizing" && !value.input_retained && !value.result_available) ||
     (value.state === "queued" && value.input_retained && !value.result_available) ||
     (value.state === "processing" && value.input_retained && !value.result_available) ||
-    (value.state === "result_ready" && !value.input_retained && value.result_available);
-  if (!statePayloadValid || (value.upload_reservation_id !== null && value.state !== "awaiting_upload") ||
+    (value.state === "result_ready" && !value.input_retained && value.result_available) ||
+    (value.state === "result_transfer" && !value.input_retained && value.result_available);
+  const reservationState = new Set(["awaiting_upload", "upload_finalizing", "result_transfer"]);
+  if (!statePayloadValid || (value.upload_reservation_id !== null && !reservationState.has(value.state)) ||
       ((value.lease_id !== null) !== (value.state === "processing"))) {
     throw new TypeError("内部任务记录状态载荷非法");
   }

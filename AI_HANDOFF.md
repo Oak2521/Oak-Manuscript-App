@@ -2,9 +2,9 @@
 
 > 更新日期：2026-08-10
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.60`
+> 当前版本：`0.1.0-alpha.61`
 > 当前分支：`main`
-> 当前源码标签：`chatgpt-v0.1.0-alpha.60-platform-admission`；最新真实 Windows packaged 标签仍为 `chatgpt-v0.1.0-alpha.58-text-hygiene`，打包内容未签名
+> 当前源码标签：`chatgpt-v0.1.0-alpha.61-direct-object-transfer`；最新真实 Windows packaged 标签仍为 `chatgpt-v0.1.0-alpha.58-text-hygiene`，打包内容未签名
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,16 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.61 Web 对象存储直传/直取源码闭环（源码检查点，2026-08-10）
+
+- 公开稿件 API 升为 `/manuscript/api/v2/jobs`：公开函数只处理创建、状态、授权和 content-free 完成通知；浏览器以 30—300 秒 Supabase S3 SigV4 凭证直接 PUT/GET 私有桶，旧 `/input` 与 `/result` 缓冲字节路由在直传模式不可用；
+- 上传凭证只能签发一次，固定 exact Supabase Storage origin、媒体类型、大小、`If-None-Match:*`、`private, no-store` 和随机 staging key；真实 AWS SDK 离线探针确认这些上传头与全部 `x-amz-meta-*` 均进入 `X-Amz-SignedHeaders`，metadata 不进入查询字符串，签名秒数与返回 expiry 对齐。浏览器还要求部署期独立 `<meta name="oak-manuscript-storage-origin">` 精确 pin；仓库默认留空并关闭稿件处理，另一 Supabase 项目 URL 也拒绝。完成通知只含 opaque transfer ID。服务端 HEAD 复核大小/类型/metadata/ETag，再以 source-ETag 条件复制到内部 input 并确认删除 staging；
+- 结果领取先以 revision CAS 独占转入 `result_transfer`，再签发短 GET。浏览器校验实际字节数后提交一次 content-free 完成通知，服务端才删除 output 并写终态墓碑；凭证不可重发。传输完成通知失败时，客户端保存已取得字节并明确依赖到期清扫，不伪造已删除结论；
+- `005_direct_object_transfer.sql` 增加 `upload_finalizing` / `result_transfer` 和到期清理，canonical migration bundle 已锁定 5 份 SQL，摘要 `6ede70b047a47d1abc53114f08843a185efbcf606b50ae1cd0a4d566bd8efa75`；生产数据库尚未执行；
+- `web-job-runtime.js` 已从 Netlify Blobs 缓冲组合切换为 Supabase S3 直传组合；`deployment-requirements-v2.json` / `deployment-admission-v2.js` 把 64 KiB 控制面、100 MiB 对象、短期预签名、精确 CORS、source-ETag copy、私有 worker/OS 禁网/调度/告警等列为 fail-closed 条件，声明通过仍固定 `production_ready=false`；
+- S3 清扫按前缀分页并复核 metadata；专项测试发现并修复正式 input 键不含 transfer ID 时被误判为坏 metadata 的问题。Web 生产依赖改为精确 AWS SDK v3 `3.1107.0`，移除历史 `@netlify/blobs`；联网 `npm audit --omit=dev` 为 0 漏洞；
+- 最终 `npm test`：Node 744 total / 737 pass / 0 fail / 7 skip，Python 368 / 0 failures / 0 errors / 3 skipped，墙钟 123.4 秒；独立隐藏 Electron source 和 Web client smoke 均 PASS，Web 外部请求 0。资源信任 112 文件 / 2,217,733 字节，manifest `de6471b0…c0115`、anchor `6165a430…bd51`；本轮没有真实账号、迁移、桶、CORS、worker、部署、推送、重新打包或生产零留存证据。
 
 ### 已完成：0.1.0-alpha.60 官方平台准入核对与 Supabase 新密钥兼容（源码检查点，2026-08-10）
 
@@ -801,12 +811,12 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 5. 下一执行顺序
 
-不要重新做宽泛规划。alpha.60 已完成第一个具官方来源的平台 profile，并否决当前 Netlify Functions 全包式拓扑；没有重新打包，仍不是可售卖正式版。下一步直接推进可部署 Web 数据面：
+不要重新做宽泛规划。alpha.61 已完成对象存储直传/直取源码闭环和 v2 组合，但没有真实迁移、桶、worker 或部署，也没有重新打包，仍不是可售卖正式版。下一步直接推进可部署 Web 执行面：
 
-1. 按 v2.0 既定的“短期上传/任务凭证”方向，以 TDD 把 Web 大文件数据面改为对象存储直传/直取，公开 API 只处理 content-free 元数据、授权和短期凭证；新契约必须保持单任务明示同意、一次性领取与三路删除语义，不能用 CORS 或签名 URL 放宽身份/零留存门禁；
-2. 同时只用官方当前资料选择并建立专用隔离 worker 的候选 profile；必须明确验证固定 Python 子进程/镜像、绝对 executable、private scratch、只读应用、OS 级禁网、至少 240 秒执行、调度、失败告警与秘密注入，不能把 Netlify Background Function 冒充通过；
-3. 具体支付商 webhook 验签实现必须等用户授权联网并选定平台后，依据官方协议单独开发；当前规范化事件入口继续只接受上游已经验签的 content-free 快照；
-4. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，先按 manifest 执行/复核真实迁移与 RLS，再填充 `desktop-auth.json` / `desktop-license.json`，执行真实 PKCE、最小临时任务、三路清扫、签发刷新、撤销和网站后台 E2E；
+1. 只用官方当前资料选择并建立专用隔离 worker 的候选 profile；必须明确验证固定 Python 子进程/镜像、绝对 executable、private scratch、只读应用、OS 级禁网、至少 240 秒执行、调度、失败告警与秘密注入，不能把 Netlify Background Function 冒充通过；
+2. 为选定的 Supabase 项目制定私有桶、exact 官网 Origin CORS、S3 service key 轮换、计划清扫和告警配置；未取得真实预生产授权前只提交不含端点/密钥的配置模板和验证器；
+3. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，先按 5 份 migration manifest 执行/复核真实迁移与 RLS，再做 50 MiB 上传、100 MiB 下载、断传、重复 PUT、凭证过期、staging 遗留、三路清扫和删除确认 E2E；
+4. 具体支付商 webhook 验签实现必须等用户选定平台后，依据官方协议单独开发；当前规范化事件入口继续只接受上游已经验签的 content-free 快照；
 5. OpenAI、Anthropic、Gemini 官方云适配仍必须先核对当前官方协议；其后再关闭许可、发行身份、签名、真实安装、macOS 与生产零留存等发行门禁。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。

@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.60` 源码架构；最新真实 Windows packaged 证据仍为未签名 alpha.58。alpha.59 将 Git checkout 的所有文本固定为 LF；alpha.60 以官方当前资料建立首个具体平台 profile，正式拒绝将现有 50/100 MiB 缓冲协议原样部署到 Netlify Functions，并补齐 Supabase 新 `sb_secret_` 的 apikey-only 兼容。标准页当前为 14 项标准、39 条规则、6 个机械 fixer，但外部来源 verified 仍为 0。默认账号与权益配置无端点/密钥，仓库无生产私钥；真实账号、支付、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.61` 源码架构；最新真实 Windows packaged 证据仍为未签名 alpha.58。alpha.60 正式拒绝将 50/100 MiB 缓冲协议原样部署到 Netlify Functions；alpha.61 以短期 Supabase S3 SigV4 PUT/GET、content-free v2 控制面、005 状态迁移和 v2 准入替换该数据面。标准页当前为 14 项标准、39 条规则、6 个机械 fixer，但外部来源 verified 仍为 0。默认账号与权益配置无端点/密钥，仓库无生产私钥；真实账号、支付、数据库/对象存储/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
 
 ## 1. 总体分层
 
@@ -248,6 +248,16 @@ alpha.56 的 `deployment-requirements-v1.json` / `deployment-admission.js` 将�
 alpha.60 新增 `platform-profiles/netlify-functions-blobs-supabase-20260810.json` 与具日期的官方证据记录。同步 Netlify Function 的二进制请求有效约 4.5 MiB、缓冲响应 6 MiB、同步时限 60 秒，均不满足上述合同；Background Function 的 15 分钟窗口因异步 `202`、256 KiB 载荷和返回值丢弃不能替代同步入口。Blobs strong consistency/conditional write/metadata/prefix list、Postgres/RLS/advisory lock/RPC 与 Cron 调度有来源支持；但 exact 子进程、绝对 executable、private scratch、OS 禁网、只读应用和 retry alerting 未被该组合证明。准入器因此固定返回 9 个拒绝码，当前拓扑不得上线。完整证据见 `docs/PLATFORM_ADMISSION_NETLIFY_SUPABASE_20260810.md`。
 
 Supabase 服务端 repository 通过 `supabase-server-key.js` 统一构造凭据头：当前 `sb_secret_` 只发送 `apikey`，legacy `service_role` JWT 在迁移期继续同时发送 `apikey` 与 Bearer。内部参数名暂保留 `serviceRoleKey` 以避免破坏组合契约，但生产应使用可轮换 secret key；两种值均不得进入浏览器、Renderer、日志或仓库。
+
+### AD-033 Web 大文件数据面必须“公开面无字节—短凭证直传—ETag 提升—单次 claim—到期清扫”（2026-08-10，冻结）
+
+alpha.61 以 `/manuscript/api/v2/jobs` 替代生产组合中的 v1 缓冲字节路由。创建、状态、取消、删除仍经同源认证控制面；浏览器只能通过 `input-transfer` / `result-transfer` 取得 30—300 秒的 Supabase S3 SigV4 PUT/GET。credential schema 固定 job/transfer、method、exact Storage origin、headers、MIME、size、expiry、completion path 与 `single_issue`，拒绝 Authorization/Cookie/api-key header、外域、重定向语义和 extra field。公开函数不读取、代理或返回稿件 body。
+
+上传先进入随机 `staging/<transfer>`，PUT 固定 `If-None-Match:*`、`private, no-store, max-age=0` 与任务/transfer/delete-at metadata。content-free 完成通知只含 transfer ID；服务先用 revision CAS 进入 `upload_finalizing`，再以 HEAD 精确复核 Content-Length/Type/Cache-Control/Metadata/ETag，用 `CopySourceIfMatch` 提升为内部 input，最后确认 staging 已删除才入队。私有 worker 才读取 input 并运行结构/主动内容检查；因此公开计算面无稿件字节，但恶意内容仍可能短暂存在隔离 staging/input，必须依靠私有桶权限和到期清扫。
+
+结果先用 revision CAS 独占进入 `result_transfer`，再针对内部 output 签发一次短 GET；并发/二次签发失败。客户端校验已收字节数后提交 completion，服务删除 output 并写 content-free 终态墓碑。若 completion 丢失，客户端可保存已经下载的结果，但不得宣称远端已删；job/object 双清扫按 `delete_at` 恢复。预签名 URL 本质上是有效期内 bearer credential，`single_issue` 只限制应用控制面，不能保证对象存储传输层绝对单次使用；真实重放、断线和生命周期必须在预生产验证。
+
+`005_direct_object_transfer.sql` 增加 `upload_finalizing` / `result_transfer` 及其到期清理；`deployment-requirements-v2.json` 把公开面降为 64 KiB control plane，把 100 MiB 容量、private bucket、presigned expiry、exact-origin CORS、conditional create、source-ETag copy、HEAD/metadata/list/delete-confirm 转为对象存储硬要求，同时保留 240 秒私有执行、OS 禁网、只读应用、数据库和告警门禁。`web-job-runtime.js` 只组合 v2 Supabase S3 数据面，readiness 仍固定生产未验证。AD-018—AD-023 与 AD-030 中关于 v1 缓冲路由/Netlify Blobs 的文字保留为历史实现；与当前生产组合冲突时以本决定为准。
 
 alpha.39 的 `DesktopAuthProvider` 以受信 `desktop-auth.json` 为唯一端点来源。配置为 `pending_configuration` 时，授权、token、user、Sync API origin、client 与 public key 必须全部为 null，登录返回 `configuration_required` 且不打开页面。配置完整时，主进程生成随机 state/verifier、先将 pending 状态写入独立 `OAKAUTH1` safeStorage 密文，再通过系统浏览器发起 Authorization Code + PKCE S256；Windows second-instance 与 macOS open-url 只接受固定 `oak-manuscript-auth://callback` 的唯一 `code+state`，拒绝 token/额外参数/错配/过期/重放。code exchange 后必须再调用固定 user endpoint 取得 exact account ID；刷新后同样复核账号，错绑清除会话。access/refresh token 和 verifier 不进入 Renderer、项目、报告或日志。
 

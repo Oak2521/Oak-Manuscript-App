@@ -330,7 +330,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 113,
-      "sha256": "d6161ce784b3bbcce136aba02c43fae32735501abb7c33693517c7e69d975fdd"
+      "sha256": "7c968d698e78e680d0e00dad48a3b18f724cdc1d65e8fd06b3082456267ba360"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

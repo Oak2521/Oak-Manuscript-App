@@ -15,7 +15,7 @@ The project is built around several non-negotiable properties:
 - registration is not required for local checking, and network features require explicit user action;
 - AI output is advisory only and cannot silently rewrite a manuscript.
 
-The current `0.1.0-alpha.59` source includes DOCX/TXT/Markdown checks, citation-style inference with a safe default, checkpointed repair workflows, signed standards-package verification and rollback controls, account/entitlement/result-sync contracts, three AI modes (Oak-hosted, local, and user-supplied OpenAI-compatible providers), and Web job isolation/retention contracts. It also forces LF checkouts for repository text so canonical JSON, SQL, migration, and resource-trust bytes do not drift under Windows Git settings. The latest real Windows internal-test build remains the unsigned `0.1.0-alpha.58` package. macOS signing/notarization, production account and payment infrastructure, production standards services, public Web deployment, and a sellable signed release remain incomplete.
+The current `0.1.0-alpha.61` source includes DOCX/TXT/Markdown checks, citation-style inference with a safe default, checkpointed repair workflows, signed standards-package verification and rollback controls, account/entitlement/result-sync contracts, three AI modes (Oak-hosted, local, and user-supplied OpenAI-compatible providers), and a tested Web direct-object transfer control plane. Browser manuscript bytes now bypass the public function through short-lived Supabase S3 PUT/GET credentials; an independent deployment-time Storage origin pin remains empty and fail-closed in the repository. Production migration, private-worker isolation, lifecycle evidence, and deployment remain incomplete. The latest real Windows internal-test build remains the unsigned `0.1.0-alpha.58` package.
 
 Oak Manuscript deliberately separates five claims that are often blurred together: implemented, tested, packaged, deployed, and production-ready. Passing repository tests does not claim that production infrastructure or a commercial release exists. Current evidence and blockers are recorded in [`docs/DEVELOPMENT_STATUS.md`](docs/DEVELOPMENT_STATUS.md) and [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md).
 
@@ -31,7 +31,7 @@ Contributions are welcome. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), repo
 
 ## 中文说明
 
-本地优先的稿件检查与修订产品。当前源码为 `0.1.0-alpha.59`，最新真实 Windows 打包版本仍为 `0.1.0-alpha.58`；Windows 制品未签名，只是可验证内测检查点，不是可售卖正式版。已有 Electron 桌面端、Python 检查核心、离线标准包验证/项目固定/显式升级/回滚链路、受控标准在线更新/撤回链、三模式 AI、统一账号/权益/同步和网站账号后台源码。Web 临时稿件处理仍与长期结果同步分流；alpha.58 为 TXT/Markdown 增加保守空白卫生提示、行号和格式覆盖矩阵，alpha.59 固定全仓库文本 LF checkout，避免 Windows Git 设置破坏 canonical JSON/SQL、迁移清单和资源信任字节。账号、权益和标准联网配置均为 `pending_configuration`，仓库不含生产私钥、真实端点或生产公钥；真实发布源、部署、监控和后台调度尚未实现。商业正式版目标为 Windows、macOS 与 Web。
+本地优先的稿件检查与修订产品。当前源码为 `0.1.0-alpha.61`，最新真实 Windows 打包版本仍为 `0.1.0-alpha.58`；Windows 制品未签名，只是可验证内测检查点，不是可售卖正式版。已有 Electron 桌面端、Python 检查核心、离线标准包验证/项目固定/显式升级/回滚链路、受控标准在线更新/撤回链、三模式 AI、统一账号/权益/同步和网站账号后台源码。alpha.61 把 Web 临时稿件数据面改为短期 Supabase S3 直传/直取，公开函数只保留 content-free 控制面；浏览器的部署期 Storage origin pin 在仓库中故意留空并关闭稿件控件，长期结果同步仍是独立流程。真实迁移、桶/CORS、隔离 worker、生产零留存和官网部署尚未完成。商业正式版目标为 Windows、macOS 与 Web。
 
 **当前桌面核心承诺**：稿件默认只在本机处理；永不原地修改原稿（SHA-256 全程校验）；不强制注册；报告与导出不设营销门槛。
 
@@ -55,7 +55,7 @@ alpha.58 发布 `oak-standards/oak-rules 2.1.0`（release sequence 3）：新增
 
 此前两个固定 AI 组合的窄验收仍成立：Ollama 0.32.5 + qwen3:4b，以及 LM Studio headless llmster 0.0.20+1 + 同一 Qwen3 4B GGUF；这不是所有版本、模型、硬件、桌面 GUI 或稿件类型的全面兼容/质量承诺。OpenAI、Anthropic、Gemini 官方云仍未接入。账号和权益默认配置均没有网络目标，所以当前普通 APP 仍不能登录、刷新生产订阅或上传。“源码接线存在”不等于生产服务已经验收。
 
-最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.59 当前回归为 Node 720 total / 713 pass / 0 fail / 7 skip、Python 368 total / 0 failures / 0 errors / 3 skipped；沙箱外独立隐藏 Electron 源码 smoke PASS。alpha.59 没有重新打包；最新 alpha.58 Windows NSIS、ZIP、真实 ASAR/fuse/资源门禁、双进程 packaged smoke 与 schema v2 发布清单仍是上一制品证据。制品未签名、真实系统安装未执行、发行身份 `complete=false`，因此仍只是内测包。
+最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.61 当前回归为 Node 744 total / 737 pass / 0 fail / 7 skip、Python 368 total / 0 failures / 0 errors / 3 skipped。alpha.61 没有重新打包；最新 alpha.58 Windows NSIS、ZIP、真实 ASAR/fuse/资源门禁、双进程 packaged smoke 与 schema v2 发布清单仍是上一制品证据。制品未签名、真实系统安装未执行、发行身份 `complete=false`，因此仍只是内测包。
 
 当前桌面安全边界包括：默认 Electron session 离线与固定 CSP；PDF 使用禁 JavaScript/导航/网络的非持久隔离 session；项目 schema/路径完整校验与跨进程内核写锁；创建项目在锁内以单一输入文件描述符复制到 `source`，再生成 `working`；自选导出目录逐级验证、全部目标预检和逐文件原子换入；标准包以 canonical manifest、内容寻址存储、高水位和精确回滚目标 fail-closed。已有项目不会因全局标准更新而静默换规则，必须先查看差异并显式确认，升级后强制重检。
 

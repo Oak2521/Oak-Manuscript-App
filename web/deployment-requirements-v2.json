@@ -1,0 +1,53 @@
+{
+  "schema_version": "2.0",
+  "requirements_type": "oak_manuscript_web_direct_deployment_requirements",
+  "source_contracts": [
+    "web/direct-transfer-contract.js",
+    "web/supabase-s3-direct-storage.js",
+    "web/persistent-job-service.js",
+    "web/python-core-process-processor.js",
+    "web/supabase/005_direct_object_transfer.sql",
+    "web/zero-retention-sweeper.js"
+  ],
+  "public_http": {
+    "min_control_request_bytes": 65536,
+    "min_control_response_bytes": 65536,
+    "min_execution_ms": 10000,
+    "requires_same_origin_https": true
+  },
+  "private_execution": {
+    "min_execution_ms": 240000,
+    "requires_child_process": true,
+    "requires_absolute_executable": true,
+    "requires_writable_private_scratch": true,
+    "requires_os_network_deny": true,
+    "requires_read_only_application": true
+  },
+  "object_storage": {
+    "min_object_bytes": 104857600,
+    "requires_private_bucket": true,
+    "requires_presigned_put": true,
+    "requires_presigned_get": true,
+    "requires_presigned_expiry_control": true,
+    "requires_exact_origin_cors": true,
+    "requires_strong_consistency": true,
+    "requires_conditional_create": true,
+    "requires_source_etag_copy": true,
+    "requires_metadata": true,
+    "requires_head": true,
+    "requires_paginated_prefix_list": true,
+    "requires_delete_confirmation": true
+  },
+  "database": {
+    "requires_transactions": true,
+    "requires_advisory_locks": true,
+    "requires_row_level_security": true,
+    "requires_service_role_rpc": true
+  },
+  "operations": {
+    "requires_private_worker_scheduler": true,
+    "requires_cleanup_scheduler": true,
+    "requires_retry_alerting": true,
+    "requires_secret_injection": true
+  }
+}

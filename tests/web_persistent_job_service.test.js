@@ -213,6 +213,8 @@ class FakePersistentRepository {
   async listCleanupDue({ before, limit }) {
     return [...this.jobs.values()]
       .filter((record) => record.state === "deletion_pending" ||
+        (record.state === "result_transfer" &&
+          Date.parse(record.upload_reservation_expires_at) <= Date.parse(before)) ||
         Date.parse(record.expires_at) <= Date.parse(before))
       .sort((a, b) => {
         const stateOrder = Number(a.state !== "deletion_pending") -
@@ -234,6 +236,74 @@ class FailingDeleteStorage extends MemoryEphemeralStorage {
   async deleteInput(jobId) {
     if (this.failDeletes) throw new Error("input delete failed");
     return super.deleteInput(jobId);
+  }
+}
+
+class DirectMemoryStorage extends MemoryEphemeralStorage {
+  constructor() {
+    super();
+    this.directBytes = Buffer.from("secret", "utf8");
+    this.storageOrigin = "https://project-ref.storage.supabase.co";
+    this.credentialTtlSeconds = 120;
+  }
+
+  async createUploadTransfer({ jobId, transferId, sizeBytes, mediaType, deleteAt }) {
+    return Object.freeze({
+      schema_version: "1.0",
+      credential_type: "oak_manuscript_direct_upload",
+      transfer_id: transferId,
+      job_id: jobId,
+      method: "PUT",
+      url: "https://project-ref.storage.supabase.co/storage/v1/s3/private/input?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260728T120000Z&X-Amz-Expires=120&X-Amz-SignedHeaders=cache-control%3Bcontent-type%3Bhost%3Bif-none-match&X-Amz-Signature=test",
+      headers: {
+        "cache-control": "private, no-store, max-age=0",
+        "content-type": mediaType,
+        "if-none-match": "*",
+      },
+      media_type: mediaType,
+      size_bytes: sizeBytes,
+      expires_at: "2026-07-28T12:02:00.000Z",
+      complete_path: `/manuscript/api/v2/jobs/${jobId}/input-transfer/${transferId}/complete`,
+      claim_policy: "single_issue",
+    });
+  }
+
+  async finalizeUploadedInput({ jobId, sizeBytes, mediaType, deleteAt }) {
+    assert.equal(sizeBytes, this.directBytes.length);
+    assert.equal(mediaType, "text/plain");
+    await this.putInput(jobId, this.directBytes, { deleteAt });
+    return Object.freeze({ size_bytes: sizeBytes, media_type: mediaType });
+  }
+
+  async describeOutput(jobId) {
+    const found = this.outputs.get(jobId);
+    if (!found) return null;
+    return Object.freeze({
+      size_bytes: found.bytes.length,
+      media_type: found.mediaType,
+      delete_at: found.deleteAt,
+    });
+  }
+
+  async requiresWorkerInspection() {
+    return true;
+  }
+
+  async createDownloadTransfer({ jobId, transferId, sizeBytes, mediaType }) {
+    return Object.freeze({
+      schema_version: "1.0",
+      credential_type: "oak_manuscript_direct_download",
+      transfer_id: transferId,
+      job_id: jobId,
+      method: "GET",
+      url: "https://project-ref.storage.supabase.co/storage/v1/s3/private/output?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260728T120000Z&X-Amz-Expires=120&X-Amz-SignedHeaders=host&X-Amz-Signature=test",
+      headers: {},
+      media_type: mediaType,
+      size_bytes: sizeBytes,
+      expires_at: "2026-07-28T12:02:00.000Z",
+      complete_path: `/manuscript/api/v2/jobs/${jobId}/result-transfer/${transferId}/complete`,
+      claim_policy: "single_issue",
+    });
   }
 }
 
@@ -274,6 +344,41 @@ test("task and idempotency state survive a service restart without retaining man
     assert.equal(persisted.includes(forbidden), false, forbidden);
   }
   await assert.rejects(second.getJob(OTHER, created.job_id), expectCode("JOB_NOT_FOUND"));
+});
+
+test("direct object transfer keeps manuscript bytes out of public service calls and issues one result claim", async () => {
+  let inspections = 0;
+  const storage = new DirectMemoryStorage();
+  const { service } = serviceHarness({
+    storage,
+    contentInspector: acceptingInspector(async ({ bytes }) => {
+      inspections += 1;
+      assert.equal(bytes.toString("utf8"), "secret");
+      return Object.freeze({ ok: true });
+    }),
+  });
+  const created = await service.createJob(OWNER, createRequest());
+  const upload = await service.beginDirectUpload(OWNER, created.job_id);
+  assert.equal(upload.credential_type, "oak_manuscript_direct_upload");
+  assert.equal(JSON.stringify(upload).includes("secret"), false);
+  assert.equal(inspections, 0);
+
+  const queued = await service.completeDirectUpload(OWNER, created.job_id, upload.transfer_id);
+  assert.equal(queued.state, "queued");
+  assert.equal(inspections, 0);
+
+  const work = await service.claimNextProcessing();
+  assert.equal(inspections, 1);
+  await service.completeClaim(work, { bytes: Buffer.from("result", "utf8"), media_type: "text/plain" });
+  const download = await service.beginDirectDownload(OWNER, created.job_id);
+  assert.equal(download.credential_type, "oak_manuscript_direct_download");
+  assert.equal((await service.getJob(OWNER, created.job_id)).state, "result_transfer");
+  await assert.rejects(service.beginDirectDownload(OWNER, created.job_id), expectCode("INVALID_TRANSITION"));
+
+  const receipt = await service.completeDirectDownload(OWNER, created.job_id, download.transfer_id);
+  assert.equal(receipt.reason, "downloaded");
+  assert.equal(storage.inspect(created.job_id).output_present, false);
+  await assert.rejects(service.getJob(OWNER, created.job_id), expectCode("JOB_NOT_FOUND"));
 });
 
 test("persistent upload reservation, processing lease, and result survive service replacement", async () => {

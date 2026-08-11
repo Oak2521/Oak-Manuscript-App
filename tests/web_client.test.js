@@ -91,6 +91,47 @@ test("Web client rejects invalid enums, limits, consent time, and idempotency", 
   assert.throws(() => contract.parseJobStatus({ ...status, job_id: "undefined" }), /响应非法/);
 });
 
+test("Web client accepts only short Supabase S3 direct-transfer credentials", () => {
+  const credential = {
+    schema_version: "1.0",
+    credential_type: "oak_manuscript_direct_upload",
+    transfer_id: "webtransfer-20000000-0000-4000-8000-000000000002",
+    job_id: "webjob-10000000-0000-4000-8000-000000000001",
+    method: "PUT",
+    url: "https://project-ref.storage.supabase.co/storage/v1/s3/private/input?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20260810T120000Z&X-Amz-Expires=120&X-Amz-SignedHeaders=cache-control%3Bcontent-type%3Bhost%3Bif-none-match&X-Amz-Signature=test",
+    headers: {
+      "cache-control": "private, no-store, max-age=0", "content-type": "text/plain", "if-none-match": "*",
+    },
+    media_type: "text/plain",
+    size_bytes: 6,
+    expires_at: "2026-08-10T12:02:00.000Z",
+    complete_path: "/manuscript/api/v2/jobs/webjob-10000000-0000-4000-8000-000000000001/input-transfer/webtransfer-20000000-0000-4000-8000-000000000002/complete",
+    claim_policy: "single_issue",
+  };
+  const parsed = contract.parseDirectTransferCredential(
+    credential, "https://project-ref.storage.supabase.co", new Date("2026-08-10T12:00:00.000Z"),
+  );
+  assert.equal(parsed.transfer_id, credential.transfer_id);
+  assert.equal(Object.isFrozen(parsed.headers), true);
+  assert.deepEqual(contract.buildTransferCompletion(credential.transfer_id), {
+    schema_version: "1.0", request_type: "oak_manuscript_direct_transfer_completion",
+    transfer_id: credential.transfer_id,
+  });
+  assert.throws(() => contract.parseDirectTransferCredential({
+    ...credential, url: "https://evil.example/input?X-Amz-Expires=120&X-Amz-Signature=test",
+  }, "https://project-ref.storage.supabase.co", new Date("2026-08-10T12:00:00.000Z")));
+  assert.throws(() => contract.parseDirectTransferCredential({
+    ...credential,
+    url: credential.url.replace("project-ref.storage", "foreign-project.storage"),
+  }, "https://project-ref.storage.supabase.co", new Date("2026-08-10T12:00:00.000Z")));
+  assert.throws(() => contract.parseDirectTransferCredential(
+    credential, "", new Date("2026-08-10T12:00:00.000Z"),
+  ));
+  assert.throws(() => contract.parseDirectTransferCredential({
+    ...credential, expires_at: "2026-08-10T12:06:00.000Z",
+  }, "https://project-ref.storage.supabase.co", new Date("2026-08-10T12:00:00.000Z")));
+});
+
 test("Web account background parses an exact content-free SyncRecord list into a safe view model", () => {
   const record = {
     schema_version: "1.0", record_type: "oak_manuscript_result",
@@ -139,6 +180,7 @@ test("Web page preserves login/register, default citation, consent, cancel, down
     '<option value="default">默认', 'id="processing-consent"', 'id="cancel-job"',
     'id="download-result"', 'id="sync-panel"', "同步功能尚未启用", "结果只能领取一次",
     'id="sync-history-panel"', 'id="sync-history-list"', 'id="refresh-sync-history"',
+    'name="oak-manuscript-storage-origin" content=""',
   ]) assert.equal(HTML.includes(required), true, required);
   assert.equal(HTML.includes("登录本身不等于同意同步"), true);
   assert.equal(HTML.includes("文件名不会写入任务元数据"), true);
@@ -154,9 +196,14 @@ test("Web client uses safe text rendering and no browser persistence or analytic
   assert.equal(JS.includes("textContent"), true);
   assert.equal(JS.includes('credentials: "omit"'), true);
   assert.equal(JS.includes('headers.set("Authorization", "Bearer " + token)'), true);
-  assert.match(JS, /\/result", \{ method: "POST" \}/);
+  assert.equal(JS.includes('"/input-transfer"'), true);
+  assert.equal(JS.includes('"/result-transfer"'), true);
+  assert.equal(JS.includes("directTransfer(uploadTicket, file)"), true);
+  assert.equal(JS.includes("directTransfer(ticket)"), true);
+  assert.equal(JS.includes("confirmTransfer(ticket)"), true);
+  assert.equal(JS.includes('API_BASE + "/" + encodeURIComponent(currentJobId) + "/input"'), false);
   assert.equal(JS.includes('api("/manuscript/api/v1/sync-records", { method: "GET" })'), true);
   assert.equal(JS.includes('contract.syncRecordPath(idempotencyId)'), true);
   assert.equal(JS.includes('method: "DELETE"'), true);
-  assert.equal(JS.includes('setStatus("结果已领取；服务器临时副本已在返回前删除。'), true);
+  assert.equal(JS.includes("服务器已返回临时对象删除回执"), true);
 });

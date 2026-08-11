@@ -2,6 +2,17 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.61 Web 对象存储直传/直取验收（2026-08-10）
+
+- [x] `/manuscript/api/v2/jobs` 的公开控制面只签发/完成 direct transfer，不存在经公开函数缓冲的 input/result 字节路由；浏览器登录/注册、默认引用和单任务明示同意仍保留；
+- [x] 上传 credential 固定 HTTPS Supabase Storage origin、30—300 秒、随机 staging key、exact headers、`If-None-Match:*` 与 no-store；只签发一次，完成负载只含 opaque transfer ID；
+- [x] 服务端 HEAD 复核大小/MIME/metadata/ETag，以 source ETag 条件复制到内部 input 并确认 staging 删除；worker 的结构检查仍在私有执行面读取后完成，不把稿件字节交给公开函数；
+- [x] 结果先 CAS 独占为 `result_transfer`，再签发一次短 GET；客户端校验长度并提交完成通知后，服务端删除 output/写墓碑；过期状态和对象清扫覆盖 input/output/staging；
+- [x] `005_direct_object_transfer.sql` 与 5 文件 canonical migration bundle、v2 部署要求/准入和 v2 生产组合通过正反测试；声明能力通过仍固定 `production_evidence_verified=false`、`production_ready=false`；
+- [x] Node 744/737/0/7、Python 368/0/0/3；Web 生产依赖精确锁定 AWS SDK v3 `3.1107.0`，联网 `npm audit --omit=dev` 为 0 漏洞；
+- [ ] 真实 Supabase migration/RLS、私有桶、exact 官网 CORS、S3 service key 轮换、50/100 MiB 传输、断线/重放、调度/告警、隔离 worker 和三路零留存 E2E 已验证；当前均未运行；
+- [ ] alpha.61 Windows/macOS 制品、签名、公证和真实安装生命周期完成；最新真实 Windows packaged 仍为未签名 alpha.58。
+
 ## 0.1.0-alpha.60 官方平台准入与 Supabase 新密钥兼容验收（2026-08-10）
 
 - [x] 具体候选 profile 只含 exact 非敏感能力字段，并有单独的日期、官方 URL、取值理由和未验证边界记录；

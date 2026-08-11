@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-08-10 — 0.1.0-alpha.61（ChatGPT Web 对象存储直传/直取）
+
+> 源码检查点；按用户授权下载并核对生产依赖、查阅 Supabase/AWS 官方资料，但未使用生产账号/密钥、执行迁移、部署、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.58。
+
+- Web 作业 API 升为 v2 direct-object 控制面；浏览器以短期 SigV4 凭证直接 PUT/GET Supabase S3 私有桶，公开函数不再缓冲 50 MiB input 或 100 MiB result；
+- 新增 exact 直传 credential/完成契约、单次签发、随机 staging、HEAD metadata/ETag 复核、source-ETag 条件提升、结果 CAS 独占和完成后删除；
+- 浏览器新增部署期独立 Supabase Storage origin pin；仓库默认留空并关闭稿件控件，另一 Supabase 项目或未绑定上传头的 credential 均 fail-closed；
+- 新增 005 migration、5 文件迁移锁、`upload_finalizing` / `result_transfer` 到期清理、S3 分页清扫和 v2 部署准入；生产组合已移除 Netlify Blobs，改为 Supabase S3 direct storage；
+- Web 生产依赖精确锁定 AWS SDK v3 `3.1107.0`，移除 `@netlify/blobs`，联网 npm audit 为 0 漏洞；
+- Node 744/737/0/7、Python 368/0/0/3；资源信任 112 文件 / 2,217,733 字节，manifest `de6471b0…c0115`、anchor `6165a430…bd51`；真实迁移、桶/CORS、隔离 worker、部署和生产零留存仍未验证。
+
 ### 2026-08-10 — 0.1.0-alpha.60（ChatGPT 官方平台准入与 Supabase 新密钥兼容）
 
 > 源码检查点；按用户授权联网核对官方资料，但未使用生产账号/密钥、迁移、部署、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.58。

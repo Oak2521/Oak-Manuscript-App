@@ -2,8 +2,13 @@
 
 const { randomUUID, timingSafeEqual } = require("node:crypto");
 const { WebJobError } = require("./job-contract");
+const {
+  TRANSFER_ID_PATTERN,
+  validateTransferCompletion,
+} = require("./direct-transfer-contract");
 
 const API_BASE_PATH = "/manuscript/api/v1/jobs";
+const DIRECT_API_BASE_PATH = "/manuscript/api/v2/jobs";
 const DEFAULT_MAX_JSON_BYTES = 64 * 1024;
 const STATE_CHANGING_METHODS = new Set(["POST", "PUT", "DELETE"]);
 const FORBIDDEN_UPLOAD_HEADERS = Object.freeze([
@@ -25,6 +30,7 @@ const ERROR_STATUS = Object.freeze({
   CONSENT_STALE: 400,
   CROSS_SITE_REQUEST: 403,
   CSRF_REQUIRED: 403,
+  DIRECT_TRANSFER_UNAVAILABLE: 503,
   FORBIDDEN_METADATA: 400,
   GLOBAL_CONCURRENCY_LIMIT: 429,
   IDEMPOTENCY_CONFLICT: 409,
@@ -60,6 +66,7 @@ const ERROR_MESSAGES = Object.freeze({
   CONSENT_STALE: "本次处理同意已经失效",
   CROSS_SITE_REQUEST: "拒绝跨站请求",
   CSRF_REQUIRED: "请求缺少有效的防跨站令牌",
+  DIRECT_TRANSFER_UNAVAILABLE: "对象直传服务暂时不可用",
   FORBIDDEN_METADATA: "请求不得携带文件名或内容摘要元数据",
   GLOBAL_CONCURRENCY_LIMIT: "服务并发已满",
   IDEMPOTENCY_CONFLICT: "幂等键与既有请求冲突",
@@ -96,6 +103,13 @@ const AUDIT_ROUTES = new Set([
   `${API_BASE_PATH}/:job_id/input`,
   `${API_BASE_PATH}/:job_id/result`,
   `${API_BASE_PATH}/:job_id/cancel`,
+  DIRECT_API_BASE_PATH,
+  `${DIRECT_API_BASE_PATH}/:job_id`,
+  `${DIRECT_API_BASE_PATH}/:job_id/input-transfer`,
+  `${DIRECT_API_BASE_PATH}/:job_id/input-transfer/:transfer_id/complete`,
+  `${DIRECT_API_BASE_PATH}/:job_id/result-transfer`,
+  `${DIRECT_API_BASE_PATH}/:job_id/result-transfer/:transfer_id/complete`,
+  `${DIRECT_API_BASE_PATH}/:job_id/cancel`,
   "unmatched",
 ]);
 
@@ -211,21 +225,40 @@ async function requireEmptyBody(request) {
   await readBoundedBody(request, 0, length);
 }
 
-function parseRoute(requestUrl) {
+function parseRoute(requestUrl, { basePath = API_BASE_PATH, direct = false } = {}) {
   if (typeof requestUrl !== "string" || !requestUrl.startsWith("/") || requestUrl.startsWith("//")) {
     fail("NOT_FOUND");
   }
   const parsed = new URL(requestUrl, "https://route.invalid");
   if (parsed.search || parsed.hash || parsed.pathname.includes("%")) fail("NOT_FOUND");
-  if (parsed.pathname === API_BASE_PATH) return { kind: "collection", template: API_BASE_PATH };
-  const escaped = API_BASE_PATH.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  if (parsed.pathname === basePath) return { kind: "collection", template: basePath };
+  const escaped = basePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  if (direct) {
+    const directMatch = parsed.pathname.match(new RegExp(
+      `^${escaped}/(webjob-[0-9a-f-]+)(?:/(cancel|input-transfer|result-transfer)` +
+      `(?:/(webtransfer-[0-9a-f-]+)/complete)?)?$`,
+    ));
+    if (!directMatch || !JOB_ID_PATTERN.test(directMatch[1])) fail("NOT_FOUND");
+    const suffix = directMatch[2] || null;
+    const transferId = directMatch[3] || null;
+    if (transferId && !TRANSFER_ID_PATTERN.test(transferId)) fail("NOT_FOUND");
+    if (transferId && !new Set(["input-transfer", "result-transfer"]).has(suffix)) fail("NOT_FOUND");
+    const kind = transferId ? `${suffix.replace("-", "_")}_complete` :
+      suffix ? suffix.replace("-", "_") : "job";
+    return {
+      kind,
+      jobId: directMatch[1],
+      transferId,
+      template: `${basePath}/:job_id${suffix ? `/${suffix}` : ""}${transferId ? "/:transfer_id/complete" : ""}`,
+    };
+  }
   const match = parsed.pathname.match(new RegExp(`^${escaped}/(webjob-[0-9a-f-]+)(?:/(input|result|cancel))?$`));
   if (!match || !JOB_ID_PATTERN.test(match[1])) fail("NOT_FOUND");
   const suffix = match[2] || null;
   return {
     kind: suffix || "job",
     jobId: match[1],
-    template: `${API_BASE_PATH}/:job_id${suffix ? `/${suffix}` : ""}`,
+    template: `${basePath}/:job_id${suffix ? `/${suffix}` : ""}`,
   };
 }
 
@@ -298,9 +331,17 @@ function createWebJobHttpHandler({
   requestIdFactory = randomUUID,
   clock = () => new Date(),
   securityEventSink = () => {},
+  dataPlane = "buffered",
 } = {}) {
-  if (!service || ["createJob", "getJob", "reserveUpload", "acceptReservedUpload",
-    "releaseUploadReservation", "downloadResultWithMetadata", "cancelJob", "deleteJob"]
+  if (!new Set(["buffered", "direct_object"]).has(dataPlane)) {
+    throw new TypeError("dataPlane 必须是 buffered 或 direct_object");
+  }
+  const serviceMethods = dataPlane === "direct_object" ?
+    ["createJob", "getJob", "beginDirectUpload", "completeDirectUpload",
+      "beginDirectDownload", "completeDirectDownload", "cancelJob", "deleteJob"] :
+    ["createJob", "getJob", "reserveUpload", "acceptReservedUpload",
+      "releaseUploadReservation", "downloadResultWithMetadata", "cancelJob", "deleteJob"];
+  if (!service || serviceMethods
     .some((name) => typeof service[name] !== "function")) {
     throw new TypeError("service 未实现完整 Web 作业 HTTP 接口");
   }
@@ -325,7 +366,10 @@ function createWebJobHttpHandler({
     let errorCode = null;
     try {
       if (isSecureRequest(request) !== true) fail("INSECURE_TRANSPORT");
-      route = parseRoute(request.url);
+      route = parseRoute(request.url, {
+        basePath: dataPlane === "direct_object" ? DIRECT_API_BASE_PATH : API_BASE_PATH,
+        direct: dataPlane === "direct_object",
+      });
 
       const requestOrigin = singleHeader(request, "origin");
       const fetchSite = singleHeader(request, "sec-fetch-site");
@@ -366,7 +410,45 @@ function createWebJobHttpHandler({
         return;
       }
 
-      if (route.kind === "input" && method === "PUT") {
+      if (dataPlane === "direct_object" && route.kind === "input_transfer" && method === "POST") {
+        await requireEmptyBody(request);
+        const result = await service.beginDirectUpload(session.principal, route.jobId);
+        status = 201;
+        sendJson(response, status, result);
+        return;
+      }
+
+      if (dataPlane === "direct_object" && route.kind === "result_transfer" && method === "POST") {
+        await requireEmptyBody(request);
+        const result = await service.beginDirectDownload(session.principal, route.jobId);
+        status = 200;
+        sendJson(response, status, result);
+        return;
+      }
+
+      if (dataPlane === "direct_object" &&
+          new Set(["input_transfer_complete", "result_transfer_complete"]).has(route.kind) &&
+          method === "POST") {
+        const contentType = singleHeader(request, "content-type", { required: true });
+        if (contentType !== "application/json") fail("UNSUPPORTED_MEDIA_TYPE");
+        const length = declaredLength(request, { required: true });
+        if (length > maxJsonBytes) fail("REQUEST_TOO_LARGE");
+        const bytes = await readBoundedBody(request, maxJsonBytes, length);
+        let body;
+        try {
+          body = validateTransferCompletion(JSON.parse(bytes.toString("utf8")), route.transferId);
+        } catch {
+          fail("INVALID_JSON");
+        }
+        const result = route.kind === "input_transfer_complete" ?
+          await service.completeDirectUpload(session.principal, route.jobId, body.transfer_id) :
+          await service.completeDirectDownload(session.principal, route.jobId, body.transfer_id);
+        status = route.kind === "input_transfer_complete" ? 202 : 200;
+        sendJson(response, status, result);
+        return;
+      }
+
+      if (dataPlane === "buffered" && route.kind === "input" && method === "PUT") {
         for (const name of FORBIDDEN_UPLOAD_HEADERS) {
           if (singleHeader(request, name) !== undefined) fail("FORBIDDEN_METADATA");
         }
@@ -396,7 +478,7 @@ function createWebJobHttpHandler({
 
       // Result retrieval consumes and purges the server-side artifact. Keep it
       // on a state-changing method so Origin and cookie-CSRF gates always run.
-      if (route.kind === "result" && method === "POST") {
+      if (dataPlane === "buffered" && route.kind === "result" && method === "POST") {
         await requireEmptyBody(request);
         const result = await service.downloadResultWithMetadata(session.principal, route.jobId);
         status = 200;
@@ -421,7 +503,9 @@ function createWebJobHttpHandler({
       }
 
       const knownRoute = route.kind === "collection" || route.kind === "job" ||
-        route.kind === "input" || route.kind === "result" || route.kind === "cancel";
+        route.kind === "input" || route.kind === "result" || route.kind === "cancel" ||
+        route.kind === "input_transfer" || route.kind === "result_transfer" ||
+        route.kind === "input_transfer_complete" || route.kind === "result_transfer_complete";
       fail(knownRoute ? "METHOD_NOT_ALLOWED" : "NOT_FOUND");
     } catch (error) {
       errorCode = normalizeError(error);
@@ -459,6 +543,7 @@ function createWebJobHttpHandler({
 
 module.exports = {
   API_BASE_PATH,
+  DIRECT_API_BASE_PATH,
   DEFAULT_MAX_JSON_BYTES,
   WebHttpError,
   createWebJobHttpHandler,

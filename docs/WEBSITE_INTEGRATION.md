@@ -4,7 +4,7 @@
 
 ## Provider 一览（当前 alpha.56 源码）
 
-alpha.38—alpha.54 已形成 SyncRecord、桌面账号、权益/设备、标准更新/撤回和确认后即时同步源码链；alpha.55 增加 Web 临时稿件的 exact 生产组合与 SQL 来源门禁；alpha.56 增加平台无关能力准入；alpha.60 依据官方当前资料正式拒绝将现有缓冲协议原样部署到 Netlify Functions，并支持 Supabase 新 `sb_secret_` 的 apikey-only 请求。受信配置仍为 `pending_configuration`，数据库迁移、发布源、API 与客户端均未部署；仓库没有真实服务端 key、OAuth 配置、权益/标准私钥或 AI key。
+alpha.38—alpha.54 已形成 SyncRecord、桌面账号、权益/设备、标准更新/撤回和确认后即时同步源码链；alpha.60 依据官方当前资料正式拒绝将缓冲协议原样部署到 Netlify Functions；alpha.61 改为 Supabase S3 短凭证直传/直取和 content-free v2 控制面。受信配置仍为 `pending_configuration`，数据库迁移、私有桶/CORS、隔离 worker、发布源、API 与客户端均未部署；仓库没有真实服务端 key、S3 service key、OAuth 配置、权益/标准私钥或 AI key。
 
 | Provider | 当前行为 | 未来对接目标 |
 |---|---|---|
@@ -62,7 +62,26 @@ alpha.51—alpha.53 的撤回清单合同见 `STANDARDS_REVOCATION_V1.md`。固�
 
 `web/supabase/004_subscription_events_and_devices.sql` 增加事件表、权益来源列和三个 service-role-only RPC。它必须在 001—003 之后执行。alpha.47 的 `client-contract.js` 与 `license-account-controller.js` 已加入订阅状态、最多 20 台设备、设备 ID 末尾掩码和逐台原生确认撤销；退出会清空，失败允许重试，旧响应不能在退出后回填。当前 SQL 未在真实 PostgreSQL/Supabase 解析或运行，客户端也未部署，因此不能称为线上设备自助后台已完成。
 
-## Web 作业契约 v1、HTTP/GoTrue/Fetch/Blobs/Postgres/inspection/worker/result/cleanup 与账号适配（alpha.31）
+## Web 作业契约 v2、短凭证直传/直取与账号适配（alpha.61）
+
+当前 `web-job-runtime.js` 只启用 `data_plane:"direct_object"`。官网同源控制面固定：
+
+| 方法 | 路径 | 用途 | 成功状态 |
+|---|---|---|---|
+| `POST` | `/manuscript/api/v2/jobs` | 创建 content-free 单任务 | 201 |
+| `GET` | `/manuscript/api/v2/jobs/:job_id` | 查询状态 | 200 |
+| `POST` | `/manuscript/api/v2/jobs/:job_id/input-transfer` | 签发一次 30—300 秒 S3 PUT | 200 |
+| `POST` | `/manuscript/api/v2/jobs/:job_id/input-transfer/:transfer_id/complete` | 只提交 transfer ID，复核/提升 staging 并入队 | 202 |
+| `POST` | `/manuscript/api/v2/jobs/:job_id/result-transfer` | CAS 独占并签发一次短 S3 GET | 200 |
+| `POST` | `/manuscript/api/v2/jobs/:job_id/result-transfer/:transfer_id/complete` | 确认下载并清理 output/终态化 | 200 |
+| `POST` | `/manuscript/api/v2/jobs/:job_id/cancel` | 取消并清理 | 200 |
+| `DELETE` | `/manuscript/api/v2/jobs/:job_id` | 删除并清理 | 200 |
+
+官网必须把 API Origin 和 Supabase Storage Origin 分开配置：控制面只允许官网同源 HTTPS；构建/部署还必须把唯一 Storage origin（仅 origin，不含路径、查询或尾随斜线）写入同源 HTML 的 `<meta name="oak-manuscript-storage-origin">`。仓库该值故意为空，客户端因而关闭稿件控件；它不会从控制面 credential 学习或信任任意 `*.storage.supabase.co`，另一 Supabase 项目会被拒绝。Storage CORS 只允许精确官网 Origin、`PUT`/`GET` 和 credential 中列出的 headers，不允许 `*`、Cookie 或任意 header。浏览器始终使用 `credentials:"omit"`，不持久化签名 URL。上传完成前 byte stream 只到私有 staging；控制面以 HEAD/ETag/metadata 提升，私有 worker 再检查内容。结果 GET 后客户端验证字节数，再调用固定 completion path；completion 失败不得声称远端已删。
+
+官网 UI 继续保留湖岸账号登录、注册和账户入口；引用体例默认可由后台按检查类型/文档结构决定；创建任务前必须勾选本次临时处理同意。临时稿件对象不得进入长期 SyncRecord；检查完成后的内容无关结果摘要仍只有在用户另行明确选择同步时才走 `/manuscript/api/v1/sync-records`。
+
+## Web 作业契约 v1 历史实现（alpha.22—alpha.60）
 
 源码入口为 `web/job-contract.js` 与 `web/http-handler.js`，机器可读契约为：
 
@@ -89,7 +108,7 @@ alpha.51—alpha.53 的撤回清单合同见 `STANDARDS_REVOCATION_V1.md`。固�
 
 `web/supabase/001_web_job_state.sql` 建立强制 RLS 的任务/幂等表及八个 service-role-only RPC；创建/重放用 advisory transaction lock，状态更新用 revision CAS，删除保留 content-free terminal tombstone，私有领取用 `FOR UPDATE SKIP LOCKED` 且要求完整租约窗，清扫列表优先返回 `deletion_pending`。`web/persistent-job-service.js`、`web/python-core-process-processor.js`、`web/private-lease-worker.js` 与 `web/zero-retention-sweeper.js` 依次负责持久状态、上传 `web-inspect`/共享核心 `web-check` 固定子进程、身份最小化处理及任务—对象—任务清扫。原 `WebJobService` 只保留为内存参考实现。迁移必须先在隔离预生产 Supabase 由有权人员执行和复核，不能由浏览器或普通用户 JWT 运行。
 
-alpha.55 的 `web/web-job-runtime.js` 是上述临时作业组件的唯一生产组合根；调用方必须显式注入 exact 配置/适配器、分离公开与服务端 secret/service-role key，并绑定迁移清单。alpha.56 又要求绑定部署需求 SHA-256 `6f993e8abd88b2df9e5964638901f453708c9b6f56280b96fb0149045a27eb77` 和 exact 非敏感平台 profile。alpha.60 的 `netlify-functions-blobs-supabase-20260810` 真实 profile 因 50/100 MiB、240 秒和私有隔离/告警缺口固定返回 9 个拒绝码；Blobs/Postgres 基本能力通过并不能覆盖公开 Function 限制。readiness 固定生产未就绪。
+alpha.55 的 `web/web-job-runtime.js` 曾组合上述 v1 缓冲组件；alpha.60 的 `netlify-functions-blobs-supabase-20260810` profile 因 50/100 MiB、240 秒和私有隔离/告警缺口固定返回 9 个拒绝码。alpha.61 已不再把该 v1/Netlify Blobs 组合当作生产入口；它只作为历史参考与回归模型保留。
 
 | 方法 | 路径 | 用途 | 成功状态 |
 |---|---|---|---:|
@@ -100,7 +119,7 @@ alpha.55 的 `web/web-job-runtime.js` 是上述临时作业组件的唯一生产
 | `POST` | `/manuscript/api/v1/jobs/:job_id/cancel` | 明确取消并触发删除 | 200 |
 | `DELETE` | `/manuscript/api/v1/jobs/:job_id` | 删除任务内容并取得回执 | 200 |
 
-部署必须用服务端环境分别注入 Supabase origin、GoTrue 所需 publishable/public API key 和仅供 repository 使用的 `sb_secret_`（推荐）或迁移期 legacy service-role key；新 secret 只放 `apikey`，不得放入 Bearer。任何服务端 key 都不得进入浏览器、客户端 bundle、日志、错误、inspector 或 processor。不能本地无验签解码 JWT，也不能把请求正文、普通代理头或浏览器自报角色映射为 principal。Cookie 部署则返回带 `csrf_token` 的 cookie session。反向代理只能从受信基础设施信息判断 HTTPS，不能直接信任客户端 `X-Forwarded-Proto`。Blobs store 必须为站点级强一致配置，私有计划任务应调用 `ZeroRetentionSweeper.runCycle()` 并对失败、pending、非法键和截断告警；metadata 本身不是自动 TTL。本地报告固定不宣称生产零留存。`web/client/` 已有登录/注册、默认引用、单任务同意、创建/上传/轮询/取消/一次性领取、SyncRecord 列表/刷新/属主删除，以及订阅状态/掩码设备/逐台确认撤销 UI；当前仍没有直传数据面、生产迁移/容器部署、OS 级禁网、病毒库/平台恶意软件扫描、订阅计费、真实生命周期证明或官网部署。
+部署必须用服务端环境分别注入 Supabase origin、GoTrue 所需 publishable/public API key、仅供 repository 使用的 `sb_secret_`（推荐）或迁移期 legacy service-role key，以及只授权私有临时桶的 S3 service key；新 Supabase secret 只放 `apikey`，不得放入 Bearer。任何服务端 key 都不得进入浏览器、客户端 bundle、日志、错误、inspector 或 processor。不能本地无验签解码 JWT，也不能把请求正文、普通代理头或浏览器自报角色映射为 principal。Cookie 部署则返回带 `csrf_token` 的 cookie session。反向代理只能从受信基础设施信息判断 HTTPS，不能直接信任客户端 `X-Forwarded-Proto`。私有计划任务应调用 `ZeroRetentionSweeper.runCycle()` 并对失败、pending、非法键和截断告警；metadata 本身不是自动 TTL。本地报告固定不宣称生产零留存。`web/client/` 已有登录/注册、默认引用、单任务同意、直传/轮询/取消/一次性结果、SyncRecord 列表/刷新/属主删除，以及订阅状态/掩码设备/逐台确认撤销 UI；当前仍没有生产迁移/桶/CORS/隔离 worker 部署、OS 级禁网、病毒库/平台恶意软件扫描、订阅计费、真实生命周期证明或官网部署。
 
 ## 网站侧待建页面
 

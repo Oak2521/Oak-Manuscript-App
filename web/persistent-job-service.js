@@ -2,6 +2,10 @@
 
 const { createHash, randomUUID } = require("node:crypto");
 const {
+  TRANSFER_ID_PATTERN,
+  validateDirectTransferCredential,
+} = require("./direct-transfer-contract");
+const {
   DEFAULT_MAX_RESULT_BYTES,
   DEFAULT_MAX_UPLOAD_BYTES,
   DEFAULT_TTL_MS,
@@ -95,7 +99,8 @@ function publicRecord(record) {
     expires_at: record.expires_at,
     input_retained: record.input_retained,
     result_available: record.result_available,
-    deletion_due_at: record.expires_at,
+    deletion_due_at: record.state === "result_transfer" && record.upload_reservation_expires_at ?
+      record.upload_reservation_expires_at : record.expires_at,
   };
   validatePublicJob(value);
   return Object.freeze(value);
@@ -464,6 +469,104 @@ class PersistentWebJobService {
     }
   }
 
+  _directStorage() {
+    const methods = [
+      "createUploadTransfer", "finalizeUploadedInput", "describeOutput", "createDownloadTransfer",
+    ];
+    if (methods.some((name) => typeof this.storage[name] !== "function") ||
+        typeof this.storage.storageOrigin !== "string" ||
+        !Number.isSafeInteger(this.storage.credentialTtlSeconds) ||
+        this.storage.credentialTtlSeconds < 1 || this.storage.credentialTtlSeconds > 300) {
+      fail("DIRECT_TRANSFER_UNAVAILABLE", "当前临时存储未配置受信对象直传能力");
+    }
+    return this.storage;
+  }
+
+  _transferUuid(transferId) {
+    if (typeof transferId !== "string" || !TRANSFER_ID_PATTERN.test(transferId)) {
+      fail("INVALID_REQUEST", "直传标识非法");
+    }
+    return transferId.slice("webtransfer-".length);
+  }
+
+  async beginDirectUpload(principalInput, jobId) {
+    const storage = this._directStorage();
+    const source = await this._owned(principalInput, jobId);
+    const reservation = await this.reserveUpload(principalInput, jobId, {
+      size_bytes: source.document.size_bytes,
+      media_type: INPUT_MEDIA_TYPES[source.document.format],
+    });
+    const transferId = `webtransfer-${reservation.reservation_id}`;
+    try {
+      const record = await this._owned(principalInput, jobId);
+      const credential = await storage.createUploadTransfer({
+        jobId: record.job_id,
+        transferId,
+        sizeBytes: record.document.size_bytes,
+        mediaType: INPUT_MEDIA_TYPES[record.document.format],
+        deleteAt: record.expires_at,
+      });
+      return validateDirectTransferCredential(credential, {
+        expectedStorageOrigin: storage.storageOrigin,
+        now: this._now(),
+        maxLifetimeSeconds: 300,
+      });
+    } catch (error) {
+      try { await this.releaseUploadReservation(principalInput, jobId, reservation); } catch {}
+      throw error;
+    }
+  }
+
+  async completeDirectUpload(principalInput, jobId, transferId) {
+    const storage = this._directStorage();
+    const reservationId = this._transferUuid(transferId);
+    const record = await this._owned(principalInput, jobId);
+    if (record.state !== "awaiting_upload" || record.upload_reservation_id !== reservationId ||
+        Date.parse(record.upload_reservation_expires_at) <= this._now().getTime()) {
+      fail("INVALID_TRANSITION", "直传上传凭证不存在、已使用或已经过期");
+    }
+    const finalizing = await this._cas(record, this._next(record, { state: "upload_finalizing" }));
+    if (!finalizing) fail("INVALID_TRANSITION", "直传上传确认竞争失败");
+    try {
+      await storage.finalizeUploadedInput({
+        jobId: finalizing.job_id,
+        transferId,
+        sizeBytes: finalizing.document.size_bytes,
+        mediaType: INPUT_MEDIA_TYPES[finalizing.document.format],
+        deleteAt: finalizing.expires_at,
+      });
+      const queued = await this._cas(finalizing, this._next(finalizing, {
+        state: "queued",
+        input_retained: true,
+        upload_reservation_id: null,
+        upload_reservation_expires_at: null,
+      }));
+      if (!queued) {
+        try { await storage.deleteInput(finalizing.job_id); } catch {
+          await this._markProcessingFailure(finalizing, true);
+          fail("ZERO_RETENTION_DELETE_FAILED", "直传提交竞争且临时输入删除失败");
+        }
+        fail("INVALID_TRANSITION", "直传提交时任务状态已变化");
+      }
+      this._audit("direct_upload_stored", queued);
+      return publicRecord(queued);
+    } catch (error) {
+      const current = await this.repository.getOwned({
+        owner_key: finalizing.owner_key,
+        job_id: finalizing.job_id,
+      });
+      if (current?.state === "upload_finalizing" && current.upload_reservation_id === reservationId) {
+        try { await storage.deleteInput(finalizing.job_id); } catch {}
+        await this._cas(current, this._next(current, {
+          state: "awaiting_upload",
+          upload_reservation_id: null,
+          upload_reservation_expires_at: null,
+        }));
+      }
+      throw error;
+    }
+  }
+
   async claimNextProcessing() {
     const leaseId = this._uuid();
     const record = await this.repository.claimNext({
@@ -496,6 +599,31 @@ class PersistentWebJobService {
       await this._markProcessingFailure(record, retained);
       if (retained) fail("ZERO_RETENTION_DELETE_FAILED", "非法临时输入无法确认删除");
       fail("INVALID_UPLOAD", "临时输入与已确认任务不一致");
+    }
+
+    if (typeof this.storage.requiresWorkerInspection === "function" &&
+        await this.storage.requiresWorkerInspection(record.job_id)) {
+      const inspectionDigest = createHash("sha256").update(bytes).digest("hex");
+      try {
+        await this.contentInspector.inspect(Object.freeze({
+          schema_version: "1.0",
+          request_type: "oak_manuscript_upload_inspection_request",
+          document: Object.freeze({ ...record.document }),
+          bytes,
+        }));
+        if (createHash("sha256").update(bytes).digest("hex") !== inspectionDigest) {
+          throw new Error("contentInspector 改变了直传 Buffer");
+        }
+      } catch {
+        let retained = true;
+        try {
+          await this.storage.deleteInput(record.job_id);
+          retained = false;
+        } catch {}
+        await this._markProcessingFailure(record, retained);
+        if (retained) fail("ZERO_RETENTION_DELETE_FAILED", "未通过门禁的直传输入无法确认删除");
+        fail("UNSAFE_DOCUMENT", "上传文档未通过结构与主动内容安全门禁");
+      }
     }
 
     const lease = Object.freeze({
@@ -702,6 +830,65 @@ class PersistentWebJobService {
 
   async downloadResult(principalInput, jobId) {
     return (await this.downloadResultWithMetadata(principalInput, jobId)).bytes;
+  }
+
+  async beginDirectDownload(principalInput, jobId) {
+    const storage = this._directStorage();
+    const record = await this._owned(principalInput, jobId);
+    if (record.state !== "result_ready" || !record.result_available || !record.result_media_type) {
+      fail("INVALID_TRANSITION", "任务结果当前不能签发直取凭证");
+    }
+    const description = await storage.describeOutput(record.job_id);
+    if (!description || !Number.isSafeInteger(description.size_bytes) ||
+        description.size_bytes < 1 || description.size_bytes > this.maxResultBytes ||
+        description.media_type !== record.result_media_type || description.delete_at !== record.expires_at) {
+      fail("RESULT_NOT_AVAILABLE", "临时结果对象身份不匹配");
+    }
+    const transferUuid = this._uuid();
+    const transferId = `webtransfer-${transferUuid}`;
+    const transferExpiry = new Date(Math.min(
+      this._now().getTime() + storage.credentialTtlSeconds * 1000,
+      Date.parse(record.expires_at),
+    )).toISOString();
+    const reserved = await this._cas(record, this._next(record, {
+      state: "result_transfer",
+      upload_reservation_id: transferUuid,
+      upload_reservation_expires_at: transferExpiry,
+    }));
+    if (!reserved) fail("INVALID_TRANSITION", "结果直取凭证竞争失败");
+    try {
+      const credential = await storage.createDownloadTransfer({
+        jobId: reserved.job_id,
+        transferId,
+        sizeBytes: description.size_bytes,
+        mediaType: description.media_type,
+        deleteAt: reserved.expires_at,
+      });
+      return validateDirectTransferCredential(credential, {
+        expectedStorageOrigin: storage.storageOrigin,
+        now: this._now(),
+        maxLifetimeSeconds: 300,
+      });
+    } catch (error) {
+      const current = await this.repository.getOwned({ owner_key: reserved.owner_key, job_id: reserved.job_id });
+      if (current?.state === "result_transfer" && current.upload_reservation_id === transferUuid) {
+        await this._cas(current, this._next(current, {
+          state: "result_ready",
+          upload_reservation_id: null,
+          upload_reservation_expires_at: null,
+        }));
+      }
+      throw error;
+    }
+  }
+
+  async completeDirectDownload(principalInput, jobId, transferId) {
+    const transferUuid = this._transferUuid(transferId);
+    const record = await this._owned(principalInput, jobId, { allowExpired: true });
+    if (record.state !== "result_transfer" || record.upload_reservation_id !== transferUuid) {
+      fail("INVALID_TRANSITION", "结果直取凭证不存在或已经使用");
+    }
+    return this._purgeRecord(record, "downloaded");
   }
 
   async _purgeRecord(original, reason) {
