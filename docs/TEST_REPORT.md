@@ -2,7 +2,31 @@
 
 > 更新日期：2026-08-10。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.59 Windows LF checkout 可复现性
+## 最新验证结论：0.1.0-alpha.60 官方平台准入与 Supabase 新密钥兼容
+
+验证日期：2026-08-10。本轮经用户授权联网读取 Netlify、Supabase 与 PostgreSQL 官方当前资料；没有使用生产账号/密钥、执行数据库迁移、部署、推送、运行安装器或重新打包。最新真实 Windows 制品仍为未签名 alpha.58。
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| 官方资料核对 | **PASS（来源记录）** | `docs/PLATFORM_ADMISSION_NETLIFY_SUPABASE_20260810.md` 记录核对日期、官方 URL、容量/能力取值与未验证边界；Supabase `changelog.md` 端点返回内部错误，改从官方 breaking-change 索引及当前迁移文档核对，不凭摘要补写未取得内容 |
+| 候选平台 profile | **FAIL（准入按设计拒绝）** | `netlify-functions-blobs-supabase-20260810` 对当前 50 MiB / 100 MiB / 240 秒缓冲合同返回 9 个稳定拒绝码；`declared_capabilities_satisfied=false`、`production_evidence_verified=false`、`production_ready=false` |
+| 公开 HTTP 容量 | **不满足** | Netlify 当前官方上限：二进制请求有效约 4.5 MiB、缓冲响应 6 MiB、同步执行 60 秒；Background Function 虽为 15 分钟，但异步 `202`、256 KiB 载荷且丢弃 handler 结果，不能替代现有公开协议 |
+| Blobs / Postgres / 调度 | **声明能力有官方依据，未做真实环境验证** | Blobs strong consistency、conditional create、metadata、prefix pagination、delete + strong-read 组合；Postgres 事务/advisory lock/RLS/服务端 RPC；Supabase Cron 调度均有官方资料支持。没有连接真实 store/database/scheduler，不能写为生产 E2E |
+| 私有执行与告警 | **未证明，按失败关闭** | 当前官方资料未证明 exact 任意子进程、绝对 executable、private scratch、逐作业 OS 禁网、只读应用；Netlify Observability 明确不含 alerting，外部 Log Drain 未纳入候选组合 |
+| Supabase 新 secret key | **PASS（本地契约）** | `sb_secret_` 只发 `apikey`、不发 Bearer；legacy `service_role` JWT 继续双头迁移兼容。共享 helper、一个真实 repository header 集成及注入反向测试通过；没有使用真实 key 或网络 RPC |
+| TDD 红灯 | **PASS（预期失败已记录）** | profile、证据文件和共享 key helper 尚不存在时，两个测试文件以 `MODULE_NOT_FOUND` / `ENOENT` 失败；实现后专项 29/29 |
+| Node 全量 | **PASS** | 726 total / 719 pass / 0 fail / 7 skip，8.927 秒；跳过项不计作通过 |
+| Python 全量 | **PASS** | 368 total / 0 failures / 0 errors / 3 skipped，128.273 秒 |
+| 统一墙钟 | **PASS** | `npm test` 总墙钟 205.8 秒，Node 与 Python 均实际完成 |
+| 资源信任 | **PASS** | 112 文件 / 2,217,733 字节；manifest `cf9250301aa9f5c9bb8cff9c6ba2e6a817d4ae98a47849276d4183f464717a45`；anchor `f02738d29fe390f237e686608a17328d767bd5a72bc479d23d39c8907bb5e21d` |
+| 关键源码门禁 | **PASS** | Electron runtime、Windows builder/Electron/EpubCheck/JRE/CPython provenance、resource trust、Windows 源码资源、fuse 配置、Web migrations、standards 全部通过 |
+| 源码 Electron smoke | **PASS（独立隐藏窗口）** | 保持 Renderer sandbox，`SMOKE-RESULT: PASS`；输出 `out/source-smoke/runs/msnxaeqt-db05606bd175823b/projects/` |
+| 发行身份 | **结构通过，仍不完整** | `ok=true`、`complete=false`；仍缺法定主体、正式 URL、版权、证书主体、具名复核和 package author/copyright 共 11 项 |
+| 打包 / 部署 | **未执行** | 没有 alpha.60 NSIS/ZIP/unpacked、packaged smoke、签名、真实安装、macOS 或生产 Web 证据；alpha.58 制品摘要不移植为 alpha.60 结论 |
+
+结论：alpha.60 首次把一个真实候选平台的官方能力纳入 fail-closed 准入，并证明现有 Netlify Functions 全包式组合不可上线；同时修复 Supabase 2026 新服务端密钥的请求头兼容。它没有选择或验证替代 worker，没有部署任何生产系统，也没有使产品达到可售卖状态。
+
+## 历史验证结论：0.1.0-alpha.59 Windows LF checkout 可复现性
 
 验证日期：2026-08-10。本轮未联网、未下载依赖、未部署、未推送、未运行真实安装器，也未重新打包。最新真实 Windows 制品仍为未签名 alpha.58。
 

@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "profile_type": "oak_manuscript_web_platform_profile",
+  "profile_id": "netlify-functions-blobs-supabase-20260810",
+  "public_http": {
+    "max_buffered_request_bytes": 4718592,
+    "max_buffered_response_bytes": 6291456,
+    "max_execution_ms": 60000,
+    "supports_same_origin_https": true
+  },
+  "private_execution": {
+    "max_execution_ms": 900000,
+    "supports_child_process": false,
+    "supports_absolute_executable": false,
+    "supports_writable_private_scratch": false,
+    "supports_os_network_deny": false,
+    "supports_read_only_application": false
+  },
+  "object_storage": {
+    "supports_strong_consistency": true,
+    "supports_conditional_create": true,
+    "supports_metadata": true,
+    "supports_paginated_prefix_list": true,
+    "supports_delete_confirmation": true
+  },
+  "database": {
+    "supports_transactions": true,
+    "supports_advisory_locks": true,
+    "supports_row_level_security": true,
+    "supports_service_role_rpc": true
+  },
+  "operations": {
+    "supports_private_worker_scheduler": true,
+    "supports_cleanup_scheduler": true,
+    "supports_retry_alerting": false,
+    "supports_secret_injection": true
+  }
+}

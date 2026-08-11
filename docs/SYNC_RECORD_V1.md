@@ -1,6 +1,6 @@
 # SyncRecord v1 — 结果与元数据同步契约
 
-> 状态：当前源码为 `0.1.0-alpha.59`；SyncRecord 功能链仍以 alpha.54 的“明确确认后即时发送、失败安全留队”纵向证据为准，最新 Windows packaged smoke 属于未签名 alpha.58。alpha.55—alpha.59 的后续变化没有改变本契约，也没有执行真实迁移。受信账号配置仍为 `pending_configuration`；API 和页面均未部署，所以普通 APP 仍不发同步请求。
+> 状态：当前源码为 `0.1.0-alpha.60`；SyncRecord 功能链仍以 alpha.54 的“明确确认后即时发送、失败安全留队”纵向证据为准，最新 Windows packaged smoke 属于未签名 alpha.58。alpha.60 只为 Supabase repository 增加新 `sb_secret_` apikey-only 兼容，没有改变 SyncRecord 数据契约，也没有执行真实迁移。受信账号配置仍为 `pending_configuration`；API 和页面均未部署，所以普通 APP 仍不发同步请求。
 
 ## 1. 信任边界
 

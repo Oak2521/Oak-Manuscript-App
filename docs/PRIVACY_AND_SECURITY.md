@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；本文件描述 `0.1.0-alpha.59` 源码隐私边界。标准治理摘要只含条目分类计数和门禁布尔值，不含稿件、账号、端点或密钥；Web 能力 profile 同样不能转化为生产证据。默认账号/权益无网络目标，仓库无生产私钥；最新 alpha.58 Windows 制品仍未签名。alpha.59 仅修复 LF checkout 可复现性，没有新增联网能力。真实账号、支付、迁移、API/官网部署和生产隔离未实现。
+> 当前权威为商业正式版开发方案 v2.0；本文件描述 `0.1.0-alpha.60` 源码隐私边界。标准治理摘要只含条目分类计数和门禁布尔值，不含稿件、账号、端点或密钥；具体平台 profile 也只含公开能力值，不能转化为生产证据。alpha.60 联网仅用于读取官方规格，没有上传稿件、使用真实账号/密钥或部署；默认账号/权益仍无网络目标，仓库无生产私钥，最新 alpha.58 Windows 制品仍未签名。真实账号、支付、迁移、API/官网部署和生产隔离未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -58,7 +58,7 @@
 - 退出、错账号、撤销、过期、未生效、篡改或损坏统一降为 Free，不删除本地项目，不锁导出；恶意刷新结果不能覆盖已验证缓存；
 - 默认 `desktop-license.json` 为 `pending_configuration`，因此当前普通 APP 不会访问权益端点。生产签发、私钥保管/轮换、支付、设备后台和真实 E2E 尚未完成；详见 `SIGNED_ENTITLEMENT_V1.md`。
 
-alpha.45 的服务端请求只接受 GoTrue 验证后的 Bearer account principal 与 device ID；账号、套餐、时间和状态不能由客户端自报。权益/设备表不允许稿件、文件名、路径、哈希、token 或私钥字段，浏览器角色无表/RPC 权限。Signer、public API key、service-role key 和 audit sink 分别注入；成功响应发送前再次 exact 校验，固定错误与审计不记录账号、设备、token、请求头、稿件或上游正文。当前仅有 SQL 静态契约和注入测试，不能据此宣称生产秘密隔离或 RLS 已验证。
+alpha.45 的服务端请求只接受 GoTrue 验证后的 Bearer account principal 与 device ID；账号、套餐、时间和状态不能由客户端自报。权益/设备表不允许稿件、文件名、路径、哈希、token 或私钥字段，浏览器角色无表/RPC 权限。Signer、public API key、服务端 `sb_secret_`/legacy service-role key 和 audit sink 分别注入；新 secret 只进入 `apikey`，不得作为 Bearer。成功响应发送前再次 exact 校验，固定错误与审计不记录账号、设备、token、请求头、稿件或上游正文。当前仅有 SQL 静态契约和注入测试，不能据此宣称生产秘密隔离或 RLS 已验证。
 
 alpha.46 的订阅事件核心不接收原始 webhook、价格、币种、订单、付款工具、邮箱、姓名或账单地址；只保留 provider/event 标识、账号/权益标识、原因、状态、规范时间窗、canonical 指纹和处理结果。真实支付商适配器必须先独立验证签名和来源，再调用绑定固定 provider 的 ingestor，不能把原始载荷存入该表。账号设备 API 只向已验证属主返回公开状态；响应删除 account/entitlement ID 与 revision，审计把设备路由归一化为占位符，不记录实际 device ID。该边界目前只有静态/注入证据。
 

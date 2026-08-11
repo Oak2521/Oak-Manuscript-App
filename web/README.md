@@ -1,6 +1,6 @@
 # Web 作业契约与同源 HTTP handler（alpha）
 
-`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.55 新增 `web-job-runtime.js` 作为临时任务的唯一生产组合入口，并用 `supabase/migrations-v1.json` 锁定四份 SQL 的顺序与精确字节。源码可本机测试，但临时作业、长期同步、订阅权益和标准更新/撤回服务均未部署。
+`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.55 新增 `web-job-runtime.js` 作为临时任务的唯一生产组合入口，并用 `supabase/migrations-v1.json` 锁定四份 SQL 的顺序与精确字节。alpha.60 新增具官方来源的 Netlify Functions + Blobs + Supabase profile；当前缓冲协议因容量、同步时限、私有执行隔离和告警缺口被拒绝。源码可本机测试，但临时作业、长期同步、订阅权益和标准更新/撤回服务均未部署。
 
 Web 服务端依赖与 Electron 桌面依赖隔离：
 
@@ -27,7 +27,7 @@ alpha.38 长期 SyncRecord 固定：
 
 - API 前缀 `/manuscript/api/v1/sync-records`：`POST/GET` collection，`GET/DELETE` item；请求不能自报 owner，先验证 GoTrue/Cookie 会话，再由服务端独立 exact validator 复核 SyncRecord v1；
 - `sync-record-service.js` 提供账户容量、幂等创建/重放/冲突、分页列表、读取和属主删除；repository 的 list 单次返回 `{rows,total}`，避免跨查询快照不一致；
-- `supabase-sync-record-repository.js` 只调用四个白名单 RPC，固定 HTTPS、service-role、无 Cookie/重定向、超时/响应上限及严格响应归属；
+- `supabase-sync-record-repository.js` 只调用四个白名单 RPC，固定 HTTPS、服务端 key、无 Cookie/重定向、超时/响应上限及严格响应归属；`supabase-server-key.js` 让新 `sb_secret_` 只使用 `apikey`，legacy service-role JWT 保留迁移期 Bearer 兼容；
 - `supabase/002_sync_records.sql` 建立不含稿件内容、标题、路径、文件名、片段或哈希的长期表，强制 RLS、撤销浏览器权限，并用账户 advisory transaction lock 原子执行容量检查和幂等创建；
 - `sync-record-runtime.js` 明确分离公开 Supabase API key、service-role key 与必填审计接收器；它只组合依赖，不读取真实部署环境；
 - Electron client/coordinator 已由 main 在受信账号配置完整时条件实例化；仓库默认配置无端点/key，当前 APP 不会调用此 API；SQL 未在真实 PostgreSQL/Supabase 执行。
@@ -84,6 +84,8 @@ alpha.23—alpha.31 固定：
 部署适配层应只通过 `createWebJobProductionRuntime({ configuration, adapters })` 创建临时稿件运行时。配置与适配器均为 exact 对象；公开 Supabase key 和 service-role key 必须分离，所有 store/network/spawn/audit/clock/ID 能力显式注入。构造过程不读取 `process.env`，也不在启动时联网；processor 使用空继承环境。返回值只包含 `handleRequest`、`runWorkerOnce`、`runCleanupCycle` 与去敏 `readiness`。
 
 alpha.56 的 `deployment-requirements-v1.json` / `deployment-admission.js` 将当前代码真实上限绑定为平台无关准入条件：公开链至少能缓冲 50 MiB 请求、100 MiB 响应并允许 4 分钟检查；私有执行至少 4 分钟并支持固定子进程、绝对可执行文件、私有 scratch、OS 禁网和只读应用；对象存储、Postgres/RLS/RPC、worker/cleanup 调度、告警与秘密注入也必须完整。平台 profile 只能包含能力和容量，不能包含端点或密钥。即使声明能力全部满足，报告仍固定 `production_evidence_verified: false`、`production_ready: false`；只有后续官方规格核对和真实环境证据才能提升生产状态。
+
+alpha.60 的真实候选 profile 位于 `platform-profiles/netlify-functions-blobs-supabase-20260810.json`，证据位于 `docs/PLATFORM_ADMISSION_NETLIFY_SUPABASE_20260810.md`。该组合固定返回 9 个拒绝码和 `production_ready:false`；不得通过修改 profile、改用 Background Function 或引用 Blobs 5 GB 对象上限掩盖公开 Function 的 4.5/6 MiB、60 秒限制。下一数据面必须采用短期凭证直传/直取或满足全部容量的专用同源服务，并另行验证隔离 worker。
 
 部署前先运行：
 
@@ -151,7 +153,7 @@ const handleSyncRecordRequest = createSyncRecordFetchHandler({
 // 生产调度仍须放入有 OS 禁网、只读根和资源限制的隔离环境。
 ```
 
-部署前须由数据库所有者在隔离预生产项目按顺序执行并复核 `supabase/001_web_job_state.sql`、`supabase/002_sync_records.sql`、`supabase/003_manuscript_entitlements.sql` 与 `supabase/004_subscription_events_and_devices.sql`。GoTrue verifier 使用服务端可用的最小 API key；各 repository 单独使用仅存在于服务器环境的 service-role key，权益 runtime 另注入 Ed25519 私钥；这些秘密不得进入浏览器、客户端 bundle、日志或错误。不得只解码未验签 JWT，也不得把请求正文、普通代理头或 user metadata 角色映射为 principal。若改用 HttpOnly Cookie，session resolver 必须返回 `auth_mode:"cookie"` 与服务器绑定 CSRF；权益端点仍固定只接受 Bearer。计划任务应调用 `ZeroRetentionSweeper.runCycle()`，由它有界运行状态 `sweepDeletionDue()`、内容 `sweepExpiredObjects()` 和第二次状态收敛；必须监控 `attention_required` 与截断。周期清零仍不自动证明平台后台副本已删除，正式零留存需要生产生命周期证据。
+部署前须由数据库所有者在隔离预生产项目按顺序执行并复核 `supabase/001_web_job_state.sql`、`supabase/002_sync_records.sql`、`supabase/003_manuscript_entitlements.sql` 与 `supabase/004_subscription_events_and_devices.sql`。GoTrue verifier 使用服务端可用的最小 publishable/public API key；各 repository 单独使用仅存在于服务器环境的 `sb_secret_`（推荐）或迁移期 legacy service-role key，权益 runtime 另注入 Ed25519 私钥；新 secret 只发送 `apikey`，这些秘密均不得进入浏览器、客户端 bundle、日志或错误。不得只解码未验签 JWT，也不得把请求正文、普通代理头或 user metadata 角色映射为 principal。若改用 HttpOnly Cookie，session resolver 必须返回 `auth_mode:"cookie"` 与服务器绑定 CSRF；权益端点仍固定只接受 Bearer。计划任务应调用 `ZeroRetentionSweeper.runCycle()`，由它有界运行状态 `sweepDeletionDue()`、内容 `sweepExpiredObjects()` 和第二次状态收敛；必须监控 `attention_required` 与截断。周期清零仍不自动证明平台后台副本已删除，正式零留存需要生产生命周期证据。
 
 ## 稳定错误码
 

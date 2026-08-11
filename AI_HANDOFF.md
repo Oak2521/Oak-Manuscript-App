@@ -2,9 +2,9 @@
 
 > 更新日期：2026-08-10
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.59`
+> 当前版本：`0.1.0-alpha.60`
 > 当前分支：`main`
-> 当前源码标签：`chatgpt-v0.1.0-alpha.59-lf-checkout`；最新真实 Windows packaged 标签仍为 `chatgpt-v0.1.0-alpha.58-text-hygiene`，打包内容未签名
+> 当前源码标签：`chatgpt-v0.1.0-alpha.60-platform-admission`；最新真实 Windows packaged 标签仍为 `chatgpt-v0.1.0-alpha.58-text-hygiene`，打包内容未签名
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,16 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.60 官方平台准入核对与 Supabase 新密钥兼容（源码检查点，2026-08-10）
+
+- 经用户授权联网，只使用 Netlify、Supabase 与 PostgreSQL 官方当前资料，新增 `web/platform-profiles/netlify-functions-blobs-supabase-20260810.json` 和 `docs/PLATFORM_ADMISSION_NETLIFY_SUPABASE_20260810.md`；证据日期、来源、取值和未验证边界均入库；
+- 当前 Netlify 同步 Function 官方上限为二进制请求有效约 4.5 MiB、缓冲响应 6 MiB、同步执行 60 秒，低于代码合同的 50 MiB / 100 MiB / 240 秒；Background Function 的 15 分钟窗口也因异步 `202`、256 KiB 载荷和丢弃返回值不能替代该公开协议；
+- profile 对 Blobs 强一致/条件创建/metadata/prefix list/delete-confirm、Postgres 事务/advisory lock/RLS/服务端 RPC、调度和秘密注入作有来源的肯定声明；对子进程、绝对 executable、private scratch、OS 禁网、只读应用和 retry alerting 因官方资料未证明 exact 能力而 fail-closed；
+- 准入报告固定 `declared_capabilities_satisfied=false`、`production_evidence_verified=false`、`production_ready=false`，并返回 9 个稳定拒绝码；因此“当前缓冲协议原样部署到 Netlify Functions”已被正式否决，不得再作为候选生产拓扑；
+- 官方 2026 密钥迁移还揭示：新 `sb_secret_` 是 opaque API key，只能发在 `apikey`，不能复制为 Bearer JWT。新增共享 `supabase-server-key.js`，任务、同步记录和权益 repository 现兼容新 secret key，同时保留 legacy `service_role` JWT 迁移期行为；
+- TDD 先记录 profile/证据/helper 缺失失败；专项 29/29。最终 `npm test`：Node 726 total / 719 pass / 0 fail / 7 skip（8.927 秒），Python 368 / 0 failures / 0 errors / 3 skipped（128.273 秒）；关键源码门禁和独立隐藏 Electron source smoke 通过，输出 `out/source-smoke/runs/msnxaeqt-db05606bd175823b/projects/`；
+- 资源信任为 112 文件 / 2,217,733 字节，manifest `cf925030…7a45`、anchor `f02738d2…e21d`。本轮没有真实迁移、生产密钥、账号、部署、推送或重新打包；alpha.60 仍是源码检查点，最新 Windows packaged 仍为未签名 alpha.58。
 
 ### 已完成：0.1.0-alpha.59 Windows LF checkout 可复现性（源码检查点，2026-08-10）
 
@@ -761,10 +771,10 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 ## 4. 已核实但尚未解决的缺口
 
 - 打包版 Ace：alpha.37 已有真实 packaged utilityProcess/loopback Chrome 功能证据，并由发布清单消费 EXE、输出树与双进程结果的 canonical 哈希证据；正式版仍缺自带且校验过的浏览器运行时、OS 级默认拒绝网络、代码签名/可信见证和正式人工许可审计；
-- Windows：alpha.58 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke、schema v2 发布证据，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；alpha.59 未重新打包。仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
+- Windows：alpha.58 已有未签名 NSIS/ZIP、真实全 9 fuse/ASAR/资源、ASAR 内生产发行身份、双阶段 packaged smoke、schema v2 发布证据，以及 CPython/EpubCheck/Temurin-JRE/Electron/builder 来源机器证据；alpha.60 未重新打包。仍未执行真实安装、升级、降级探测、卸载和无开发运行时验证，也没有完整发行身份或 Authenticode 签名；
 - macOS：已有 x64/arm64 原生 runner、静态聚合和两架构 CPython `3.13.14` 固定策略，但缺对应 Electron/Python/JRE 实际资源；尚无 `.app` / DMG、签名、公证或真实硬件探针证据；
-- Web：临时作业链保持；alpha.38 另实现 SyncRecord 独立服务验证、同源 API、GoTrue/runtime、Supabase repository/002 迁移源码。生产环境/真实账号与 Blobs/Postgres E2E、病毒库/平台扫描、容器/OS 禁网与资源隔离、计费和官网嵌入仍未实现；
-- 账号/订阅/同步：离线 Provider/Free+Pro、逐字段确认、OS 加密队列和重启恢复、桌面 PKCE/加密 token-store/条件 main 接线、SyncRecord 服务链、签名权益、规范化订阅事件、属主设备管理服务及网站订阅/掩码设备客户端源码已实现；默认账号/权益配置仍为空，生产私钥不存在，真实 PKCE/刷新、支付商 webhook 验签适配、Supabase 迁移/部署和网站后台未连接；
+- Web：临时作业链保持；alpha.60 已用官方当前资料正式拒绝“现有 50/100 MiB 缓冲协议原样部署到 Netlify Functions”，并记录 9 个稳定能力缺口；Blobs/Postgres 基本能力有来源支持，但真实账号/E2E、直传协议或专用同源服务、隔离 worker、病毒库/平台扫描、容器/OS 禁网、计费和官网嵌入仍未实现；
+- 账号/订阅/同步：离线 Provider/Free+Pro、逐字段确认、OS 加密队列和重启恢复、桌面 PKCE/加密 token-store/条件 main 接线、SyncRecord 服务链、签名权益、规范化订阅事件、属主设备管理服务及网站订阅/掩码设备客户端源码已实现；alpha.60 repository 已兼容 Supabase 新 `sb_secret_` 的 apikey-only 规则，legacy service-role 仍可迁移期使用；默认账号/权益配置仍为空，生产私钥不存在，真实 PKCE/刷新、支付商 webhook 验签适配、Supabase 迁移/部署和网站后台未连接；
 - AI：Ollama 0.32.5 + qwen3:4b 与 LM Studio llmster 0.0.20+1 + 同一 Qwen3 4B GGUF 已分别通过一个匿名连续空格问题的窄范围验收；其他版本/模型/硬件、多模型语义、多规则/真实稿件质量、官方云、远程 TLS 与湖岸 AI 仍未验收；
 - 标准库：治理结构、引用解析政策、alpha.57 用户可见治理摘要与 alpha.58 TXT/Markdown 保守覆盖已完成，14 项标准、39 条规则和 6 个 fixer 映射一致；但外部来源核验仍为 0 项（13 pending、1 unavailable），4 项外部标准仍为 `under_review`，reviewer 仅是角色占位，内容深度与真实人工签核仍不完整；
 - 标准升级：本地验证、签名包导入/回滚、项目固定/显式升级、用户触发桌面客户端、服务端 fixed HTTP/Fetch 契约、本地真实签名 E2E，以及独立角色签名撤回的本地拒绝/恢复、固定获取纵向链和 alpha.53 main/IPC/UI 恢复入口已编码；默认地址与生产 trust pin 为空，生产发布/撤回源、调度、密钥治理、真实网络联调和后台自动检查未实现；
@@ -791,13 +801,13 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 5. 下一执行顺序
 
-不要重新做宽泛规划。alpha.59 已关闭 Windows LF checkout 可复现性缺口，但没有重新打包，仍不是可售卖正式版；下一步直接推进生产联调前置条件：
+不要重新做宽泛规划。alpha.60 已完成第一个具官方来源的平台 profile，并否决当前 Netlify Functions 全包式拓扑；没有重新打包，仍不是可售卖正式版。下一步直接推进可部署 Web 数据面：
 
-1. 取得联网只读授权后，只使用候选平台官方当前文档核对 50 MiB 请求、100 MiB 响应、240 秒执行、子进程、调度、存储与隔离能力，形成具来源 profile；不接受测试 profile 作为平台选择证据；
-2. 具体支付商 webhook 验签实现必须等用户授权联网并选定平台后，依据官方协议单独开发；当前规范化事件入口继续只接受上游已经验签的 content-free 快照；
-3. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，先按 manifest 执行/复核真实迁移与 RLS，再填充 `desktop-auth.json` / `desktop-license.json`，执行真实 PKCE、最小临时任务、三路清扫、签发刷新、撤销和网站后台 E2E；
-4. OpenAI、Anthropic、Gemini 官方云适配仍必须先核对当前官方协议；不得套用 compatible 形状或凭记忆猜测，但不排在账号/订阅主线之前；
-5. 其后关闭发行门禁：具名许可/再分发签核、发行身份、Ace 自带浏览器/OS 隔离、Windows Authenticode/真实安装生命周期、macOS 双架构签名/公证/实机、Web 生产零留存；经联网授权后再核验标准官方来源并执行真实更新服务联调。
+1. 按 v2.0 既定的“短期上传/任务凭证”方向，以 TDD 把 Web 大文件数据面改为对象存储直传/直取，公开 API 只处理 content-free 元数据、授权和短期凭证；新契约必须保持单任务明示同意、一次性领取与三路删除语义，不能用 CORS 或签名 URL 放宽身份/零留存门禁；
+2. 同时只用官方当前资料选择并建立专用隔离 worker 的候选 profile；必须明确验证固定 Python 子进程/镜像、绝对 executable、private scratch、只读应用、OS 级禁网、至少 240 秒执行、调度、失败告警与秘密注入，不能把 Netlify Background Function 冒充通过；
+3. 具体支付商 webhook 验签实现必须等用户授权联网并选定平台后，依据官方协议单独开发；当前规范化事件入口继续只接受上游已经验签的 content-free 快照；
+4. 取得用户对隔离预生产环境、正式端点和测试账号的单独授权后，先按 manifest 执行/复核真实迁移与 RLS，再填充 `desktop-auth.json` / `desktop-license.json`，执行真实 PKCE、最小临时任务、三路清扫、签发刷新、撤销和网站后台 E2E；
+5. OpenAI、Anthropic、Gemini 官方云适配仍必须先核对当前官方协议；其后再关闭许可、发行身份、签名、真实安装、macOS 与生产零留存等发行门禁。
 
 涉及联网、依赖下载、生产账号、证书、签名、发布、远端推送或网站写入时，必须先向用户取得明确授权。
 

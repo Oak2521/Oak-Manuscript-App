@@ -4,6 +4,16 @@
 
 ## [未发布]
 
+### 2026-08-10 — 0.1.0-alpha.60（ChatGPT 官方平台准入与 Supabase 新密钥兼容）
+
+> 源码检查点；按用户授权联网核对官方资料，但未使用生产账号/密钥、迁移、部署、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.58。
+
+- 新增具日期的 Netlify Functions + Blobs + Supabase exact profile 与官方证据记录；二进制请求有效约 4.5 MiB、缓冲响应 6 MiB、同步执行 60 秒均低于当前 50 MiB / 100 MiB / 240 秒合同；
+- 准入报告固定为不满足，返回公开容量、私有执行隔离和 retry alerting 共 9 个稳定拒绝码；Blobs/Postgres/调度等有官方依据的能力与未证明能力明确分开；
+- 新增 Supabase 服务端 key 共享适配：新 `sb_secret_` 只放 `apikey`，不再错误复用为 Bearer JWT；legacy `service_role` JWT 保留迁移期双头兼容，三个 repository 共用注入安全校验；
+- TDD 专项 29/29；最终 `npm test` 为 Node 726/719/0/7、Python 368/0/0/3；关键源码门禁与独立隐藏 Electron smoke PASS；
+- 资源信任 112 文件 / 2,217,733 字节，manifest `cf925030…7a45`、anchor `f02738d2…e21d`；未生成 alpha.60 安装包，未改变 production-ready=false。
+
 ### 2026-08-10 — 0.1.0-alpha.59（ChatGPT Windows LF checkout 可复现性）
 
 > 源码检查点；未联网、部署、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.58。

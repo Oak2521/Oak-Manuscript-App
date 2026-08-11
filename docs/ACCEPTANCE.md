@@ -2,6 +2,16 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.60 官方平台准入与 Supabase 新密钥兼容验收（2026-08-10）
+
+- [x] 具体候选 profile 只含 exact 非敏感能力字段，并有单独的日期、官方 URL、取值理由和未验证边界记录；
+- [x] Netlify 公开请求/响应/同步时限与项目 50 MiB / 100 MiB / 240 秒合同逐项比较，不能以 Background Function 的异步窗口混淆同步协议；
+- [x] 当前组合固定被 9 个稳定 code 拒绝，且 `production_evidence_verified=false`、`production_ready=false`；
+- [x] Supabase 新 `sb_secret_` 只发送 `apikey`；legacy `service_role` JWT 保留迁移期 Bearer 兼容；任务、同步和权益 repository 共用规则；
+- [x] 专项 29/29、Node 726/719/0/7、Python 368/0/0/3、关键源码门禁与独立隐藏 Electron source smoke 通过；
+- [ ] 对象存储直传/直取协议、专用隔离 worker profile、真实迁移/RLS/调度/告警/零留存和官网 E2E 完成；当前 Netlify Functions 全包式拓扑不得上线；
+- [ ] alpha.60 Windows/macOS 制品、签名、公证和真实安装生命周期完成；最新真实 Windows packaged 仍为未签名 alpha.58。
+
 ## 0.1.0-alpha.59 Windows LF checkout 可复现性验收（2026-08-10）
 
 - [x] `.gitattributes` 对所有 Git 识别文本强制 `eol=lf`，不依赖宿主 `core.autocrlf`；属性文件自身为 LF；
@@ -38,7 +48,7 @@
 - [x] Web 生产组合强制绑定需求摘要并在 store/network 前拒绝能力不足 profile；
 - [x] 能力全部声明满足时仍固定 `production_evidence_verified=false`、`production_ready=false`；
 - [x] 聚焦 8/8、Node 711/704/0/7、Python 362/0/0/3、隐藏 Electron smoke 与资源信任通过；
-- [ ] 任何具体平台的官方规格、真实 profile 和预生产运行证据已核对；当前未联网、未生成、未部署；
+- [x] 首个具体平台的官方规格和真实 profile 已在 alpha.60 核对；结果是不满足，未执行预生产或部署；
 - [ ] alpha.56 Windows/macOS 制品、签名、公证和真实安装生命周期完成；最新 Windows packaged 仍为未签名 alpha.54。
 
 ## 0.1.0-alpha.55 Web 部署组合与迁移字节门禁验收（2026-07-29）

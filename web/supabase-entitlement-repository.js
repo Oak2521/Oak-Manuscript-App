@@ -2,6 +2,10 @@
 
 "use strict";
 
+const {
+  createSupabaseServerCredentialHeaders,
+  validateSupabaseServerKey,
+} = require("./supabase-server-key");
 const { ACCOUNT_PATTERN, DEVICE_PATTERN } = require("./entitlement-signer");
 const { validateDeviceAuthorizationResult } = require("./entitlement-service");
 const {
@@ -54,11 +58,6 @@ function canonicalHttpsOrigin(value) {
   return value;
 }
 
-function validSecret(value) {
-  return typeof value === "string" && value.length >= 20 && value.length <= 8192 &&
-    !/[\u0000-\u0020\u007f,]/u.test(value);
-}
-
 function canonicalTime(value) {
   return typeof value === "string" && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString() === value;
 }
@@ -85,7 +84,8 @@ async function readBoundedJson(response) {
 class SupabaseEntitlementRepository {
   constructor({ supabaseOrigin, serviceRoleKey, fetchImpl = globalThis.fetch, timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
     this.origin = canonicalHttpsOrigin(supabaseOrigin);
-    if (!validSecret(serviceRoleKey)) throw new TypeError("serviceRoleKey 不是安全的服务端 Supabase service-role key");
+    try { validateSupabaseServerKey(serviceRoleKey); }
+    catch { throw new TypeError("serviceRoleKey 不是安全的服务端 Supabase service-role/secret key"); }
     if (typeof fetchImpl !== "function") throw new TypeError("fetchImpl 必须是函数");
     if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 30_000) throw new TypeError("timeoutMs 非法");
     this.serviceRoleKey = serviceRoleKey;
@@ -103,8 +103,7 @@ class SupabaseEntitlementRepository {
         method: "POST",
         headers: {
           accept: "application/json",
-          apikey: this.serviceRoleKey,
-          authorization: `Bearer ${this.serviceRoleKey}`,
+          ...createSupabaseServerCredentialHeaders(this.serviceRoleKey),
           "content-type": "application/json",
         },
         body: JSON.stringify(body),

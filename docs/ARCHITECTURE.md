@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.59` 源码架构；最新真实 Windows packaged 证据仍为未签名 alpha.58。alpha.59 将 Git checkout 的所有文本固定为 LF，使 canonical JSON/SQL、迁移清单和资源信任不依赖宿主 `core.autocrlf`。标准页从已验证 registry 派生审阅/来源核验治理摘要，当前为 14 项标准、39 条规则、6 个机械 fixer，但外部来源 verified 仍为 0。Web 临时作业已有 exact 生产组合、SQL 字节门禁及平台无关能力准入；readiness 故意不声称官方平台限制、真实迁移、OS 禁网或生产零留存已验证。默认账号与权益配置无端点/密钥，仓库无生产私钥；真实账号、支付、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.60` 源码架构；最新真实 Windows packaged 证据仍为未签名 alpha.58。alpha.59 将 Git checkout 的所有文本固定为 LF；alpha.60 以官方当前资料建立首个具体平台 profile，正式拒绝将现有 50/100 MiB 缓冲协议原样部署到 Netlify Functions，并补齐 Supabase 新 `sb_secret_` 的 apikey-only 兼容。标准页当前为 14 项标准、39 条规则、6 个机械 fixer，但外部来源 verified 仍为 0。默认账号与权益配置无端点/密钥，仓库无生产私钥；真实账号、支付、数据库/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
 
 ## 1. 总体分层
 
@@ -243,7 +243,11 @@ alpha.55 以 `web/web-job-runtime.js` 作为临时稿件任务的唯一生产组
 
 alpha.56 的 `deployment-requirements-v1.json` / `deployment-admission.js` 将当前数据面实际需要的 50 MiB 请求、100 MiB 响应、240 秒公开检查/私有处理，以及子进程、绝对 executable、私有 scratch、OS 禁网、只读应用、强一致条件写存储、事务/RLS/RPC、调度/告警/秘密注入固化为准入条件。数字直接与 job/storage/processor 导出常量交叉绑定，防止部署文档和运行时静默分叉。
 
-候选平台只能提交 exact、无端点/密钥的能力 profile；不足项生成稳定 content-free code，生产组合在创建 store 或网络适配前拒绝。通过只表示“声明值满足当前下限”，不表示厂商官方规格真实如此，也不表示预生产环境具备这些能力；因此报告与 runtime 始终保留 `production_evidence_verified=false`、`production_ready=false`。只有联网核对官方文档、形成具来源 profile 并完成真实故障/隔离/生命周期验收后，才能另行产生生产证据，不能修改本合同中的事实含义。
+候选平台只能提交 exact、无端点/密钥的能力 profile；不足项生成稳定 content-free code，生产组合在创建 store 或网络适配前拒绝。通过只表示“声明值满足当前下限”，不表示预生产环境具备这些能力；因此报告与 runtime 始终保留 `production_evidence_verified=false`、`production_ready=false`。只有完成真实故障/隔离/生命周期验收后，才能另行产生生产证据，不能修改本合同中的事实含义。
+
+alpha.60 新增 `platform-profiles/netlify-functions-blobs-supabase-20260810.json` 与具日期的官方证据记录。同步 Netlify Function 的二进制请求有效约 4.5 MiB、缓冲响应 6 MiB、同步时限 60 秒，均不满足上述合同；Background Function 的 15 分钟窗口因异步 `202`、256 KiB 载荷和返回值丢弃不能替代同步入口。Blobs strong consistency/conditional write/metadata/prefix list、Postgres/RLS/advisory lock/RPC 与 Cron 调度有来源支持；但 exact 子进程、绝对 executable、private scratch、OS 禁网、只读应用和 retry alerting 未被该组合证明。准入器因此固定返回 9 个拒绝码，当前拓扑不得上线。完整证据见 `docs/PLATFORM_ADMISSION_NETLIFY_SUPABASE_20260810.md`。
+
+Supabase 服务端 repository 通过 `supabase-server-key.js` 统一构造凭据头：当前 `sb_secret_` 只发送 `apikey`，legacy `service_role` JWT 在迁移期继续同时发送 `apikey` 与 Bearer。内部参数名暂保留 `serviceRoleKey` 以避免破坏组合契约，但生产应使用可轮换 secret key；两种值均不得进入浏览器、Renderer、日志或仓库。
 
 alpha.39 的 `DesktopAuthProvider` 以受信 `desktop-auth.json` 为唯一端点来源。配置为 `pending_configuration` 时，授权、token、user、Sync API origin、client 与 public key 必须全部为 null，登录返回 `configuration_required` 且不打开页面。配置完整时，主进程生成随机 state/verifier、先将 pending 状态写入独立 `OAKAUTH1` safeStorage 密文，再通过系统浏览器发起 Authorization Code + PKCE S256；Windows second-instance 与 macOS open-url 只接受固定 `oak-manuscript-auth://callback` 的唯一 `code+state`，拒绝 token/额外参数/错配/过期/重放。code exchange 后必须再调用固定 user endpoint 取得 exact account ID；刷新后同样复核账号，错绑清除会话。access/refresh token 和 verifier 不进入 Renderer、项目、报告或日志。
 
