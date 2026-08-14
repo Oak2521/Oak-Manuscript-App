@@ -84,12 +84,12 @@ test("sandboxed preload exposes only bounded account and sync operations", async
 
 test("license refresh IPC requires a currently authenticated account and forwards no renderer payload", async () => {
   const handlers = new Map();
-  let accountId = null;
+  let oakAccountId = null;
   const refreshes = [];
   const authProvider = {
-    status: () => accountId
-      ? { state: "authenticated", loggedIn: true, accountId }
-      : { state: "signed_out", loggedIn: false, accountId: null },
+    status: () => oakAccountId
+      ? { state: "authenticated", loggedIn: true, oakAccountId }
+      : { state: "signed_out", loggedIn: false, oakAccountId: null },
     beginLogin: () => ({}), logout: () => ({}),
   };
   registerAccountSyncIpc({
@@ -109,11 +109,11 @@ test("license refresh IPC requires a currently authenticated account and forward
   });
   assert.equal((await handlers.get("provider:license-refresh")(null, { forgedTier: "pro" })).ok, false);
   assert.equal(refreshes.length, 0);
-  accountId = "account-1";
+  oakAccountId = "account-1";
   const refreshed = await handlers.get("provider:license-refresh")(null, { forgedTier: "pro" });
   assert.equal(refreshed.ok, true);
   assert.equal(refreshed.status.effectiveTier, "pro");
-  assert.deepEqual(refreshes, [{ state: "authenticated", loggedIn: true, accountId: "account-1" }]);
+  assert.deepEqual(refreshes, [{ state: "authenticated", loggedIn: true, oakAccountId: "account-1" }]);
 });
 
 test("account/sync IPC obtains the record from trusted core source, not renderer content", async () => {
@@ -147,7 +147,7 @@ test("account/sync IPC obtains the record from trusted core source, not renderer
   };
   let sourceArgs = null;
   const authProvider = {
-    status: () => ({ state: "authenticated", loggedIn: true, accountId: "account-1" }),
+    status: () => ({ state: "authenticated", loggedIn: true, oakAccountId: "account-1" }),
     beginLogin: () => ({ state: "configuration_required", opened: false }),
     logout: () => ({ state: "signed_out", loggedIn: false }),
   };
@@ -204,7 +204,7 @@ test("explicit sync confirmation sends immediately when transport is configured"
     project_id: "0123456789abcdef",
   };
   const authProvider = {
-    status: () => ({ state: "authenticated", loggedIn: true, accountId: "account-1" }),
+    status: () => ({ state: "authenticated", loggedIn: true, oakAccountId: "account-1" }),
     beginLogin: () => ({}), logout: () => ({}),
   };
   registerAccountSyncIpc({
@@ -254,7 +254,7 @@ test("failed immediate delivery keeps the explicitly authorized queue item", asy
     ipcMain: { handle: (name, fn) => handlers.set(name, fn) },
     pathPolicy: { looksLikeProject: () => true },
     authProvider: {
-      status: () => ({ state: "authenticated", loggedIn: true, accountId: "account-1" }),
+      status: () => ({ state: "authenticated", loggedIn: true, oakAccountId: "account-1" }),
       beginLogin: () => ({}), logout: () => ({}),
     },
     licenseProvider: { status: () => ({}) },
@@ -325,17 +325,17 @@ test("account/sync IPC rejects untrusted paths, choices and stale confirmations"
 test("signed-out IPC never reads a sync source and account changes invalidate previews", async () => {
   const handlers = new Map();
   let sourceCalls = 0;
-  let accountId = null;
+  let oakAccountId = null;
   const record = {
     idempotency_id: "sync-v1:0123456789abcdef:check-0001",
     project_id: "0123456789abcdef",
   };
   const authProvider = {
-    status: () => accountId
-      ? { state: "authenticated", loggedIn: true, accountId }
-      : { state: "signed_out", loggedIn: false, accountId: null },
+    status: () => oakAccountId
+      ? { state: "authenticated", loggedIn: true, oakAccountId }
+      : { state: "signed_out", loggedIn: false, oakAccountId: null },
     beginLogin: () => ({}),
-    logout: () => { accountId = null; return { state: "signed_out", loggedIn: false }; },
+    logout: () => { oakAccountId = null; return { state: "signed_out", loggedIn: false }; },
   };
   registerAccountSyncIpc({
     ipcMain: { handle: (name, fn) => handlers.set(name, fn) },
@@ -357,12 +357,12 @@ test("signed-out IPC never reads a sync source and account changes invalidate pr
   assert.equal(signedOut.ok, false);
   assert.equal(sourceCalls, 0);
 
-  accountId = "account-1";
+  oakAccountId = "account-1";
   const preview = await handlers.get("provider:sync-preview")(null, {
     project: "C:\\projects\\oak", event: "export", includeIssues: false,
   });
   assert.equal(preview.ok, true);
-  accountId = "account-2";
+  oakAccountId = "account-2";
   const switched = await handlers.get("provider:sync-confirm")(null, {
     idempotencyId: record.idempotency_id, choice: "sync_once",
   });
@@ -372,13 +372,13 @@ test("signed-out IPC never reads a sync source and account changes invalidate pr
 
 test("queue IPC is account-scoped and signed-out callers cannot inspect or mutate it", async () => {
   const handlers = new Map();
-  let accountId = null;
+  let oakAccountId = null;
   const calls = [];
   const persistence = { state: "ready", encrypted: true, persistent: true };
   const authProvider = {
-    status: () => accountId
-      ? { state: "authenticated", loggedIn: true, accountId }
-      : { state: "signed_out", loggedIn: false, accountId: null },
+    status: () => oakAccountId
+      ? { state: "authenticated", loggedIn: true, oakAccountId }
+      : { state: "signed_out", loggedIn: false, oakAccountId: null },
     beginLogin: () => ({}),
     logout: () => ({}),
   };
@@ -411,7 +411,7 @@ test("queue IPC is account-scoped and signed-out callers cannot inspect or mutat
   }
   assert.deepEqual(calls, []);
 
-  accountId = "account-1";
+  oakAccountId = "account-1";
   const signedInQueue = await handlers.get("provider:sync-queue")();
   assert.equal(signedInQueue.ok, true);
   assert.equal(signedInQueue.signedOut, false);
@@ -424,18 +424,18 @@ test("queue IPC is account-scoped and signed-out callers cannot inspect or mutat
 
   for (const call of calls) {
     const status = call.at(-1);
-    assert.equal(status.accountId, "account-1");
+    assert.equal(status.oakAccountId, "account-1");
     assert.equal(status.loggedIn, true);
   }
 });
 
 test("sync send IPC requires authentication and an explicitly configured coordinator", async () => {
-  const handlers = new Map(); let accountId = null; const flushed = [];
+  const handlers = new Map(); let oakAccountId = null; const flushed = [];
   registerAccountSyncIpc({
     ipcMain: { handle: (name, fn) => handlers.set(name, fn) },
     pathPolicy: { looksLikeProject: () => true },
     authProvider: {
-      status: () => accountId ? { state: "authenticated", loggedIn: true, accountId } : { state: "signed_out", loggedIn: false },
+      status: () => oakAccountId ? { state: "authenticated", loggedIn: true, oakAccountId } : { state: "signed_out", loggedIn: false },
       beginLogin: async () => ({}), logout: async () => ({}),
     },
     licenseProvider: { status: () => ({}) },
@@ -445,7 +445,7 @@ test("sync send IPC requires authentication and an explicitly configured coordin
   });
   const signedOut = await handlers.get("provider:sync-send")(null, { queueId: "queue-1" });
   assert.equal(signedOut.ok, false); assert.deepEqual(flushed, []);
-  accountId = "account-1";
+  oakAccountId = "account-1";
   const sent = await handlers.get("provider:sync-send")(null, { queueId: "queue-1" });
   assert.equal(sent.ok, true); assert.deepEqual(flushed, ["queue-1"]);
 });

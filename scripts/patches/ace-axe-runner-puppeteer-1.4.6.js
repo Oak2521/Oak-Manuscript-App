@@ -57,6 +57,7 @@ const AUTHOR_DOCUMENT_CSP = [
 let browser;
 let browserLaunchPromise;
 let browserClosePromise;
+let browserExternallyManaged = false;
 let browserProfileDirectory;
 let browserProfileOwned = false;
 const BROWSER_PROFILE_PREFIX = 'oak-ace-chrome-';
@@ -134,6 +135,15 @@ async function removeBrowserProfileDirectory() {
             await new Promise((resolve) => setTimeout(resolve, 250));
         }
     }
+}
+
+async function closeBrowserSession(activeBrowser, externallyManaged) {
+    if (!activeBrowser) return;
+    if (externallyManaged) {
+        activeBrowser.disconnect();
+        return;
+    }
+    await activeBrowser.close();
 }
 
 const MILLISECONDS_TIMEOUT_INITIAL = positiveIntegerEnvironment('ACE_TIMEOUT_INITIAL', 5000);
@@ -325,6 +335,7 @@ module.exports = {
                         || MILLISECONDS_TIMEOUT_EXTENSION,
                 });
                 browser = await browserLaunchPromise;
+                browserExternallyManaged = true;
                 return;
             } finally {
                 browserLaunchPromise = undefined;
@@ -348,6 +359,7 @@ module.exports = {
                 userDataDir,
             });
             browser = await browserLaunchPromise;
+            browserExternallyManaged = false;
         } catch (error) {
             await removeBrowserProfileDirectory();
             throw error;
@@ -362,9 +374,10 @@ module.exports = {
         }
         browserClosePromise = (async () => {
             try {
-                if (browser) await browser.close();
+                await closeBrowserSession(browser, browserExternallyManaged);
             } finally {
                 browser = undefined;
+                browserExternallyManaged = false;
                 await removeBrowserProfileDirectory();
             }
         })();
@@ -449,6 +462,7 @@ module.exports = {
         BROWSER_PROFILE_PREFIX,
         CHROMIUM_SECURITY_ARGS,
         allowedNonFileProtocol,
+        closeBrowserSession,
         handleRequest,
         isPathWithin,
         resolveAllowedFileUrl,

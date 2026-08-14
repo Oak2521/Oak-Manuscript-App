@@ -212,7 +212,7 @@ test("Ace staging copies only the recursive production closure and writes an aud
     assert.ok(saved.excluded.some((item) => item.includes("electron")));
     assert.ok(saved.excluded.some((item) => item.includes("浏览器")));
     assert.equal(saved.patches.length, 1);
-    assert.equal(saved.patches[0].patch_id, "OAK-ACE-ISOLATION-002");
+    assert.equal(saved.patches[0].patch_id, "OAK-ACE-ISOLATION-003");
     assert.equal(
       saved.patches[0].controlled_replacement,
       "scripts/patches/ace-axe-runner-puppeteer-1.4.6.js",
@@ -628,4 +628,28 @@ test("Ace staging refuses to synthesize a notice for an unsupported license expr
   } finally {
     fs.rmSync(project, { recursive: true, force: true });
   }
+});
+
+test("controlled Ace runner disconnects from an externally managed Chrome session", async () => {
+  const calls = [];
+  const browser = {
+    async close() { calls.push("close"); },
+    disconnect() { calls.push("disconnect"); },
+  };
+
+  await controlledRunner.__oakSecurity.closeBrowserSession(browser, true);
+
+  assert.deepEqual(calls, ["disconnect"]);
+});
+
+test("controlled Ace runner closes a Chrome session that it launched", async () => {
+  const calls = [];
+  const browser = {
+    async close() { calls.push("close"); },
+    disconnect() { calls.push("disconnect"); },
+  };
+
+  await controlledRunner.__oakSecurity.closeBrowserSession(browser, false);
+
+  assert.deepEqual(calls, ["close"]);
 });

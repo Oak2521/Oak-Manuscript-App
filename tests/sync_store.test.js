@@ -16,8 +16,8 @@ const {
 } = require("../electron/sync-store");
 
 const KEY = crypto.createHash("sha256").update("oak-sync-store-test-key").digest();
-const ACCOUNT_A = Object.freeze({ state: "authenticated", loggedIn: true, accountId: "account-a" });
-const ACCOUNT_B = Object.freeze({ state: "authenticated", loggedIn: true, accountId: "account-b" });
+const ACCOUNT_A = Object.freeze({ state: "authenticated", loggedIn: true, oakAccountId: "account-a" });
+const ACCOUNT_B = Object.freeze({ state: "authenticated", loggedIn: true, oakAccountId: "account-b" });
 
 function makeRoot(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "oak-sync-store-"));
