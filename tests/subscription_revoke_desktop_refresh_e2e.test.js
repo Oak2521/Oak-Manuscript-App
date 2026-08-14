@@ -10,16 +10,17 @@ const contract = require("../web/client/client-contract");
 const { createLicenseAccountController } = require("../web/client/license-account-controller");
 const { createEntitlementFetchHandler } = require("../web/entitlement-runtime");
 const { createLicenseAccountFetchHandler } = require("../web/license-account-runtime");
+const { createOakAccountTokenFixture } = require("./fixtures/oak-account-token");
 
 const API_ORIGIN = "https://accounts.oakbylake.com";
 const SUPABASE_ORIGIN = "https://project-ref.supabase.co";
-const API_KEY = `sb_publishable_${"a".repeat(40)}`;
 const SERVICE_KEY = `service_role_${"b".repeat(48)}`;
-const TOKEN = `${"c".repeat(36)}.${"d".repeat(36)}.${"e".repeat(36)}`;
 const ACCOUNT = "8f3b65e1-0e6e-42b4-81c0-61e5cf9a1020";
 const DEVICE = "device-10000000-0000-4000-8000-000000000001";
 const ENTITLEMENT = "ent-20000000-0000-4000-8000-000000000002";
 const NOW = "2026-07-29T12:00:00.000Z";
+const ACCOUNT_AUTH = createOakAccountTokenFixture({ oakAccountId: ACCOUNT, now: new Date(NOW) });
+const TOKEN = ACCOUNT_AUTH.token;
 
 class FakeNode {
   constructor(tag = "div") {
@@ -83,13 +84,6 @@ function createStatefulDatabaseFetch() {
   return {
     state,
     async fetch(url, options) {
-      if (url === `${SUPABASE_ORIGIN}/auth/v1/user`) {
-        assert.equal(options.headers.authorization, `Bearer ${TOKEN}`);
-        return new Response(JSON.stringify({ id: ACCOUNT }), {
-          status: 200,
-          headers: { "content-type": "application/json" },
-        });
-      }
       assert.equal(options.headers.apikey, SERVICE_KEY);
       assert.equal(options.headers.authorization, `Bearer ${SERVICE_KEY}`);
       const input = JSON.parse(options.body);
@@ -155,8 +149,10 @@ test("account UI revoke flows through signed service refresh and safely downgrad
   const audit = [];
   const common = {
     apiOrigin: API_ORIGIN,
+    accountIssuer: ACCOUNT_AUTH.issuer,
+    accountAudience: ACCOUNT_AUTH.audience,
+    accountTrustedKeys: ACCOUNT_AUTH.trustedKeys,
     supabaseOrigin: SUPABASE_ORIGIN,
-    supabaseApiKey: API_KEY,
     supabaseServiceRoleKey: SERVICE_KEY,
     fetchImpl: database.fetch,
     clock: () => new Date(NOW),
@@ -188,13 +184,13 @@ test("account UI revoke flows through signed service refresh and safely downgrad
       public_key_jwk: { kty: "OKP", crv: "Ed25519", x: publicJwk.x },
     }],
   };
-  const auth = { state: "authenticated", loggedIn: true, accountId: ACCOUNT };
+  const auth = { state: "authenticated", loggedIn: true, oakAccountId: ACCOUNT };
   const store = memoryStore();
   const desktop = new ProductionLicenseProvider({
     config,
     store,
     client,
-    accessTokenProvider: async ({ accountId }) => ({ accountId, accessToken: TOKEN }),
+    accessTokenProvider: async ({ oakAccountId }) => ({ oakAccountId, accessToken: TOKEN }),
     authStatusProvider: () => auth,
     clock: () => new Date(NOW),
   });
@@ -254,7 +250,7 @@ test("account UI revoke flows through signed service refresh and safely downgrad
   assert.equal(store.inspect().entitlement.claims.device_state, "revoked");
 
   assert.equal(audit.length, 4);
-  for (const secret of [TOKEN, API_KEY, SERVICE_KEY, ACCOUNT, DEVICE]) {
+  for (const secret of [TOKEN, SERVICE_KEY, ACCOUNT, DEVICE]) {
     assert.equal(JSON.stringify(audit).includes(secret), false);
   }
 });

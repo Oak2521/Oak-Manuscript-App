@@ -7,14 +7,14 @@
 const { createHash } = require("node:crypto");
 
 const { createFetchHandlerAdapter } = require("./fetch-adapter");
-const { createGoTrueAccessTokenVerifier } = require("./gotrue-verifier");
+const { createOakAccountAccessTokenVerifier } = require("./oak-account-token-verifier");
+const { createOakAccountSessionResolver } = require("./oak-account-session-adapter");
 const { createWebJobHttpHandler } = require("./http-handler");
 const { PersistentWebJobService } = require("./persistent-job-service");
 const { PrivateLeaseWorker } = require("./private-lease-worker");
 const { PythonCoreProcessProcessor } = require("./python-core-process-processor");
 const { SupabaseJobRepository } = require("./supabase-job-repository");
 const { SupabaseS3DirectStorage } = require("./supabase-s3-direct-storage");
-const { createSupabaseSessionResolver } = require("./supabase-session-adapter");
 const { ZeroRetentionSweeper } = require("./zero-retention-sweeper");
 const {
   DIRECT_DEPLOYMENT_REQUIREMENTS_SHA256,
@@ -29,8 +29,10 @@ const MIGRATION_MANIFEST_SHA256 = createHash("sha256")
 const CONFIGURATION_KEYS = Object.freeze([
   "schema_version",
   "api_origin",
+  "account_issuer",
+  "account_audience",
+  "account_trusted_keys",
   "supabase_origin",
-  "supabase_api_key",
   "supabase_service_role_key",
   "python_executable",
   "python_core_dir",
@@ -84,10 +86,6 @@ function validateConfiguration(input) {
   if (value.expected_deployment_requirements_sha256 !== DIRECT_DEPLOYMENT_REQUIREMENTS_SHA256) {
     throw new TypeError("Web 作业生产配置未绑定当前部署需求");
   }
-  if (typeof value.supabase_api_key === "string" &&
-      value.supabase_api_key === value.supabase_service_role_key) {
-    throw new TypeError("Supabase 公开 API key 与 service-role key 必须分离");
-  }
   const deploymentAdmission = assessDirectWebDeploymentProfile(value.deployment_profile);
   if (deploymentAdmission.declared_capabilities_satisfied !== true) {
     throw new TypeError("Web 作业部署平台能力不足");
@@ -138,15 +136,16 @@ function createWebJobProductionRuntime({ configuration, adapters } = {}) {
     uuidFactory: injected.uuid_factory,
     auditSink: injected.job_audit_sink,
   });
-  const verifyAccessToken = createGoTrueAccessTokenVerifier({
-    supabaseOrigin: config.supabase_origin,
-    apiKey: config.supabase_api_key,
-    fetchImpl: injected.fetch_impl,
+  const verifyAccessToken = createOakAccountAccessTokenVerifier({
+    issuer: config.account_issuer,
+    audience: config.account_audience,
+    trustedKeys: config.account_trusted_keys,
+    clock: injected.clock,
   });
   const nodeHandler = createWebJobHttpHandler({
     service,
     expectedOrigin: config.api_origin,
-    resolveSession: createSupabaseSessionResolver({ verifyAccessToken }),
+    resolveSession: createOakAccountSessionResolver({ verifyAccessToken }),
     requestIdFactory: injected.request_id_factory,
     clock: injected.clock,
     securityEventSink: injected.security_event_sink,

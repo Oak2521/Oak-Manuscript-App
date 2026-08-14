@@ -12,12 +12,14 @@ const {
 const {
   DIRECT_DEPLOYMENT_REQUIREMENTS_SHA256,
 } = require("../web/deployment-admission-v2");
+const { createOakAccountTokenFixture } = require("./fixtures/oak-account-token");
 
-const PUBLIC_KEY = "public-api-key-0000000000000001";
 const SERVICE_KEY = "service-role-key-0000000000001";
 const S3_ACCESS_KEY = "test-s3-access-key-id";
 const S3_SECRET_KEY = "test-s3-secret-access-key-value";
 const UUID = "10000000-0000-4000-8000-000000000001";
+const NOW = new Date("2026-08-10T20:00:00.000Z");
+const ACCOUNT_AUTH = createOakAccountTokenFixture({ oakAccountId: UUID, now: NOW });
 
 function deploymentProfile(overrides = {}) {
   const profile = {
@@ -81,8 +83,10 @@ function configuration(overrides = {}) {
   return {
     schema_version: "2.0",
     api_origin: "https://app.example.test",
+    account_issuer: ACCOUNT_AUTH.issuer,
+    account_audience: ACCOUNT_AUTH.audience,
+    account_trusted_keys: ACCOUNT_AUTH.trustedKeys,
     supabase_origin: "https://project.supabase.test",
-    supabase_api_key: PUBLIC_KEY,
     supabase_service_role_key: SERVICE_KEY,
     python_executable: process.execPath,
     python_core_dir: path.resolve(__dirname, "..", "python"),
@@ -111,7 +115,7 @@ function adapters(state, overrides = {}) {
     security_event_sink: (event) => state.security.push(event),
     job_audit_sink: (event) => state.jobs.push(event),
     cleanup_audit_sink: async (event) => state.cleanup.push(event),
-    clock: () => new Date("2026-08-10T20:00:00.000Z"),
+    clock: () => NOW,
     request_id_factory: () => UUID,
     uuid_factory: () => UUID,
     ...overrides,
@@ -152,7 +156,7 @@ test("production Web job runtime composes v2 direct control plane without startu
   assert.deepEqual(Object.keys(runtime).sort(),
     ["handleRequest", "readiness", "runCleanupCycle", "runWorkerOnce"].sort());
   const serialized = JSON.stringify(runtime);
-  for (const secret of [PUBLIC_KEY, SERVICE_KEY, S3_ACCESS_KEY, S3_SECRET_KEY]) {
+  for (const secret of [SERVICE_KEY, S3_ACCESS_KEY, S3_SECRET_KEY]) {
     assert.equal(serialized.includes(secret), false);
   }
   assert.equal(observed.fetches, 0);
@@ -179,8 +183,8 @@ test("production Web job runtime fails closed on incomplete, extra, mixed, or in
     configuration: { ...configuration(), unexpected: true }, adapters: validAdapters,
   }), /字段集合/);
   assert.throws(() => createWebJobProductionRuntime({
-    configuration: configuration({ supabase_api_key: SERVICE_KEY }), adapters: validAdapters,
-  }), /必须分离/);
+    configuration: configuration({ account_trusted_keys: [] }), adapters: validAdapters,
+  }), /Oak Account/);
   assert.throws(() => createWebJobProductionRuntime({
     configuration: configuration({ schema_version: "1.0" }), adapters: validAdapters,
   }), /版本不兼容/);

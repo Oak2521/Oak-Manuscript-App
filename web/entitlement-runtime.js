@@ -4,8 +4,8 @@
 "use strict";
 
 const { createFetchHandlerAdapter } = require("./fetch-adapter");
-const { createGoTrueAccessTokenVerifier } = require("./gotrue-verifier");
-const { createSupabaseSessionResolver } = require("./supabase-session-adapter");
+const { createOakAccountAccessTokenVerifier } = require("./oak-account-token-verifier");
+const { createOakAccountSessionResolver } = require("./oak-account-session-adapter");
 const { createEd25519EntitlementSigner } = require("./entitlement-signer");
 const { EntitlementService } = require("./entitlement-service");
 const { createEntitlementHttpHandler } = require("./entitlement-http-handler");
@@ -17,13 +17,13 @@ function createEntitlementFetchHandler({
   audience,
   keyId,
   signingPrivateKey,
+  accountIssuer,
+  accountAudience,
+  accountTrustedKeys,
   supabaseOrigin,
-  supabaseApiKey,
   supabaseServiceRoleKey,
   fetchImpl = globalThis.fetch,
-  authFetchImpl = fetchImpl,
   databaseFetchImpl = fetchImpl,
-  authTimeoutMs,
   databaseTimeoutMs,
   maxDevicesPerAccount,
   requestIdFactory,
@@ -31,14 +31,11 @@ function createEntitlementFetchHandler({
   securityEventSink,
 } = {}) {
   if (typeof securityEventSink !== "function") throw new TypeError("生产权益运行时需要 securityEventSink");
-  if (typeof supabaseApiKey === "string" && supabaseApiKey === supabaseServiceRoleKey) {
-    throw new TypeError("Supabase 公开 API key 与 service-role key 必须分离");
-  }
-  const verifyAccessToken = createGoTrueAccessTokenVerifier({
-    supabaseOrigin,
-    apiKey: supabaseApiKey,
-    fetchImpl: authFetchImpl,
-    ...(authTimeoutMs === undefined ? {} : { timeoutMs: authTimeoutMs }),
+  const verifyAccessToken = createOakAccountAccessTokenVerifier({
+    issuer: accountIssuer,
+    audience: accountAudience,
+    trustedKeys: accountTrustedKeys,
+    ...(clock === undefined ? {} : { clock }),
   });
   const repository = new SupabaseEntitlementRepository({
     supabaseOrigin,
@@ -56,7 +53,7 @@ function createEntitlementFetchHandler({
   const nodeHandler = createEntitlementHttpHandler({
     service,
     expectedOrigin: apiOrigin,
-    resolveSession: createSupabaseSessionResolver({ verifyAccessToken }),
+    resolveSession: createOakAccountSessionResolver({ verifyAccessToken }),
     securityEventSink,
     ...(requestIdFactory === undefined ? {} : { requestIdFactory }),
     ...(clock === undefined ? {} : { clock }),

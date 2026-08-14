@@ -70,7 +70,7 @@ function validateClaims(claims) {
   return claims;
 }
 
-function verifyEntitlement(envelope, { config, accountId, deviceId } = {}) {
+function verifyEntitlement(envelope, { config, oakAccountId, deviceId } = {}) {
   const trusted = validateDesktopLicenseConfig(config);
   if (trusted.status !== "configured") throw new Error("生产订阅权益尚未配置");
   if (!exactKeys(envelope, ENVELOPE_KEYS) || envelope.schema_version !== "1.0" ||
@@ -80,7 +80,7 @@ function verifyEntitlement(envelope, { config, accountId, deviceId } = {}) {
   }
   const claims = validateClaims(envelope.claims);
   if (claims.issuer !== trusted.issuer || claims.audience !== trusted.audience ||
-      claims.account_id !== accountId || claims.device_id !== deviceId) {
+      claims.account_id !== oakAccountId || claims.device_id !== deviceId) {
     throw new Error("订阅权益的发行方、受众、账号或设备绑定不匹配");
   }
   const key = trusted.trusted_keys.find((item) => item.key_id === envelope.key_id);
@@ -141,11 +141,11 @@ class ProductionLicenseProvider {
 
   status() {
     const auth = this.authStatusProvider();
-    const authenticated = auth && auth.state === "authenticated" && auth.loggedIn === true && ACCOUNT_PATTERN.test(auth.accountId || "");
+    const authenticated = auth && auth.state === "authenticated" && auth.loggedIn === true && ACCOUNT_PATTERN.test(auth.oakAccountId || "");
     if (!authenticated) return this._base({ entitlementState: "signed_out", message: "登录湖岸账号后可显式刷新订阅权益；本地文件始终可访问。" });
     if (this.state.entitlement === null) return this._base({ entitlementState: "not_cached", refreshAvailable: true, message: "尚无本机订阅权益缓存；点击刷新后才会联网查询。" });
     let claims;
-    try { claims = verifyEntitlement(this.state.entitlement, { config: this.config, accountId: auth.accountId, deviceId: this.state.device_id }); }
+    try { claims = verifyEntitlement(this.state.entitlement, { config: this.config, oakAccountId: auth.oakAccountId, deviceId: this.state.device_id }); }
     catch { return this._base({ entitlementState: "invalid", refreshAvailable: true, message: "本机订阅权益无效或不属于当前账号；已安全降级 Free。" }); }
     const now = this.clock().getTime();
     let entitlementState;
@@ -167,20 +167,20 @@ class ProductionLicenseProvider {
     const current = this.authStatusProvider();
     if (!authStatus || authStatus.state !== "authenticated" || authStatus.loggedIn !== true ||
         !current || current.state !== "authenticated" || current.loggedIn !== true ||
-        authStatus.accountId !== current.accountId || !ACCOUNT_PATTERN.test(current.accountId || "")) {
+        authStatus.oakAccountId !== current.oakAccountId || !ACCOUNT_PATTERN.test(current.oakAccountId || "")) {
       throw new Error("必须先登录稳定的湖岸账号才能刷新订阅权益");
     }
-    const binding = await this.accessTokenProvider({ accountId: current.accountId });
-    if (!binding || binding.accountId !== current.accountId || typeof binding.accessToken !== "string") {
+    const binding = await this.accessTokenProvider({ oakAccountId: current.oakAccountId });
+    if (!binding || binding.oakAccountId !== current.oakAccountId || typeof binding.accessToken !== "string") {
       throw new Error("湖岸账号授权与当前账号不匹配");
     }
     const envelope = await this.client.fetchEntitlement({ accessToken: binding.accessToken, deviceId: this.state.device_id });
     const latest = this.authStatusProvider();
     if (!latest || latest.state !== "authenticated" || latest.loggedIn !== true ||
-        latest.accountId !== current.accountId) {
+        latest.oakAccountId !== current.oakAccountId) {
       throw new Error("湖岸账号在订阅权益请求期间发生变化；未保存返回的权益");
     }
-    verifyEntitlement(envelope, { config: this.config, accountId: latest.accountId, deviceId: this.state.device_id });
+    verifyEntitlement(envelope, { config: this.config, oakAccountId: latest.oakAccountId, deviceId: this.state.device_id });
     const next = validateCacheState({ ...this.state, revision: this.state.revision + 1, entitlement: structuredClone(envelope) });
     this.state = validateCacheState(this.store.save(next, { expectedRevision: this.state.revision }));
     return this.status();

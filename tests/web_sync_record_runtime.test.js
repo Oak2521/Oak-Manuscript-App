@@ -6,13 +6,15 @@ const test = require("node:test");
 const { buildSyncRecordV1 } = require("../electron/providers");
 const { canonicalSyncRecordV1 } = require("../web/sync-record-service");
 const { createSyncRecordFetchHandler } = require("../web/sync-record-runtime");
+const { createOakAccountTokenFixture } = require("./fixtures/oak-account-token");
 
 const API_ORIGIN = "https://manuscript.test";
 const SUPABASE_ORIGIN = "https://project-ref.supabase.co";
-const API_KEY = `sb_publishable_${"a".repeat(40)}`;
 const SERVICE_KEY = `service_role_${"b".repeat(48)}`;
-const TOKEN = `${"c".repeat(36)}.${"d".repeat(36)}.${"e".repeat(36)}`;
 const ACCOUNT = "8f3b65e1-0e6e-42b4-81c0-61e5cf9a1020";
+const NOW = new Date("2026-07-28T12:05:00.000Z");
+const ACCOUNT_AUTH = createOakAccountTokenFixture({ oakAccountId: ACCOUNT, now: NOW });
+const TOKEN = ACCOUNT_AUTH.token;
 
 function record() {
   return buildSyncRecordV1({
@@ -43,36 +45,27 @@ function record() {
   });
 }
 
-test("production sync composition requires separate public and service credentials plus audit sink", () => {
+test("production sync composition requires Oak Account trust and an audit sink", () => {
   const base = {
     apiOrigin: API_ORIGIN,
+    accountIssuer: ACCOUNT_AUTH.issuer,
+    accountAudience: ACCOUNT_AUTH.audience,
+    accountTrustedKeys: ACCOUNT_AUTH.trustedKeys,
     supabaseOrigin: SUPABASE_ORIGIN,
-    supabaseApiKey: API_KEY,
     supabaseServiceRoleKey: SERVICE_KEY,
     fetchImpl: async () => null,
     securityEventSink() {},
   };
   assert.throws(() => createSyncRecordFetchHandler({ ...base, securityEventSink: undefined }), /securityEventSink/);
-  assert.throws(() => createSyncRecordFetchHandler({
-    ...base,
-    supabaseApiKey: SERVICE_KEY,
-  }), /必须分离/);
+  assert.throws(() => createSyncRecordFetchHandler({ ...base, accountTrustedKeys: [] }), /Oak Account/);
 });
 
-test("one production-style Fetch request verifies GoTrue identity then atomically stores the record", async () => {
+test("one production-style Fetch request verifies Oak identity then atomically stores the record", async () => {
   const calls = [];
   const events = [];
   const value = record();
   const fetchImpl = async (url, options) => {
     calls.push({ url, options });
-    if (url === `${SUPABASE_ORIGIN}/auth/v1/user`) {
-      assert.equal(options.headers.authorization, `Bearer ${TOKEN}`);
-      assert.equal(options.headers.apikey, API_KEY);
-      return new Response(JSON.stringify({ id: ACCOUNT, email: "private@example.test" }), {
-        status: 200,
-        headers: { "content-type": "application/json" },
-      });
-    }
     assert.equal(url, `${SUPABASE_ORIGIN}/rest/v1/rpc/oak_manuscript_sync_record_create_or_replay`);
     assert.equal(options.headers.authorization, `Bearer ${SERVICE_KEY}`);
     const input = JSON.parse(options.body);
@@ -92,11 +85,13 @@ test("one production-style Fetch request verifies GoTrue identity then atomicall
   };
   const handler = createSyncRecordFetchHandler({
     apiOrigin: API_ORIGIN,
+    accountIssuer: ACCOUNT_AUTH.issuer,
+    accountAudience: ACCOUNT_AUTH.audience,
+    accountTrustedKeys: ACCOUNT_AUTH.trustedKeys,
     supabaseOrigin: SUPABASE_ORIGIN,
-    supabaseApiKey: API_KEY,
     supabaseServiceRoleKey: SERVICE_KEY,
     fetchImpl,
-    clock: () => new Date("2026-07-28T12:05:00.000Z"),
+    clock: () => NOW,
     requestIdFactory: () => "20000000-0000-4000-8000-000000000001",
     securityEventSink: (event) => events.push(event),
   });
@@ -117,11 +112,11 @@ test("one production-style Fetch request verifies GoTrue identity then atomicall
   ));
   assert.equal(response.status, 201);
   assert.equal((await response.json()).outcome, "created");
-  assert.equal(calls.length, 2);
+  assert.equal(calls.length, 1);
   assert.equal(events.length, 1);
   assert.equal(events[0].http_status, 201);
   const serialized = JSON.stringify(events);
-  for (const secret of [TOKEN, API_KEY, SERVICE_KEY, ACCOUNT]) {
+  for (const secret of [TOKEN, SERVICE_KEY, ACCOUNT]) {
     assert.equal(serialized.includes(secret), false);
   }
 });
