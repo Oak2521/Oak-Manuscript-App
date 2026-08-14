@@ -1,0 +1,154 @@
+{
+  "schema_version": "oak-desktop-application-login/1.0",
+  "status": "FROZEN_FOR_CONSUMER_IMPLEMENTATION",
+  "freeze_date": "2026-08-14",
+  "protocol": "fixed_first_party_application_login",
+  "registered_applications": [
+    "oak-manuscript-desktop",
+    "oak-research-desktop"
+  ],
+  "boundaries": {
+    "production_oauth_enabled": false,
+    "hosted_oauth_server_required": false,
+    "dynamic_client_registration": false,
+    "client_secret_in_desktop": false,
+    "legacy_provider_addresses_allowed": false,
+    "real_credentials_created": false,
+    "runtime_implemented": false,
+    "environment_isolation_required": true
+  },
+  "routes": {
+    "browser_login": "/application-login/start",
+    "exchange": "/api/application-login/exchange",
+    "refresh": "/api/application-login/refresh",
+    "revoke": "/api/application-login/revoke",
+    "account_sessions": "/api/account/application-sessions"
+  },
+  "browser_login": {
+    "user_agent": "system_browser_only",
+    "embedded_webview": "forbidden",
+    "password_collection_by_desktop": "forbidden",
+    "account_center_session": "same_origin_http_only_cookie",
+    "application_confirmation": "explicit",
+    "scopes": "not_supported"
+  },
+  "callback": {
+    "scheme": "http",
+    "host": "127.0.0.1",
+    "port": "runtime_selected_1024_65535",
+    "path_prefix": "/application-login/callback/",
+    "path_nonce_minimum_bits": 256,
+    "state_minimum_bits": 256,
+    "listener_lifetime_seconds": 600,
+    "custom_uri_scheme": "not_in_contract_1_0"
+  },
+  "pkce": {
+    "required": true,
+    "method": "S256",
+    "verifier_minimum_bits": 256,
+    "plain_method_allowed": false
+  },
+  "one_time_code": {
+    "format": "opaque_random",
+    "minimum_bits": 256,
+    "maximum_lifetime_seconds": 120,
+    "single_use": true,
+    "server_storage": "hash_only",
+    "consume_before_token_issue": true,
+    "bindings": [
+      "application_id",
+      "oak_account_id",
+      "redirect_uri",
+      "pkce_challenge",
+      "account_session",
+      "environment"
+    ]
+  },
+  "tokens": {
+    "access": {
+      "format": "asymmetric_signed_jwt",
+      "maximum_lifetime_seconds": 300,
+      "storage": "main_process_memory_only",
+      "claims_schema": "oak-desktop-session-claims/1.0",
+      "exact_issuer_and_audience_required": true
+    },
+    "refresh": {
+      "format": "opaque_random",
+      "minimum_bits": 256,
+      "storage": "operating_system_secure_credential_store_only",
+      "request_schema": "oak-desktop-refresh/1.0",
+      "response_schema": "oak-desktop-token-response/1.0",
+      "rotation": "every_successful_refresh",
+      "reuse_action": "revoke_token_family",
+      "account_status_checked_before_rotation": true,
+      "application_binding_required": true,
+      "maximum_idle_seconds": 604800,
+      "maximum_absolute_seconds": 2592000
+    }
+  },
+  "claims": {
+    "identity_contract": "oak-identity-claims/1.0",
+    "application_roles_source": "application_local_service",
+    "subscription_and_entitlements_source": "application_local_service",
+    "email_in_claims": false,
+    "display_name_in_claims": false,
+    "business_authorization_in_claims": false
+  },
+  "secure_storage": {
+    "windows": "DPAPI_or_Windows_Credential_Manager",
+    "macos": "Keychain",
+    "unavailable_action": "login_and_refresh_fail_closed",
+    "forbidden_locations": [
+      "renderer",
+      "sqlite",
+      "project_files",
+      "ordinary_configuration",
+      "logs",
+      "crash_reports",
+      "clipboard",
+      "sync_packages"
+    ],
+    "pending_state": "memory_or_same_secure_store_with_ttl",
+    "access_token_persistence": false
+  },
+  "offline": {
+    "local_project_open_edit_export": "continue",
+    "new_remote_authorization": "fail_closed",
+    "remote_sync_and_account_actions": "unavailable",
+    "identity_failure_must_not_delete_or_lock_local_files": true,
+    "subscription_decision_is_separate": true
+  },
+  "logout_and_revocation": {
+    "desktop_revoke_request_schema": "oak-desktop-revoke/1.0",
+    "desktop_revoke_mode": "current_token_family",
+    "account_portal_revoke_modes": ["one_application_session", "all_application_sessions"],
+    "revocation_is_idempotent": true,
+    "local_logout_order": [
+      "erase_local_credentials",
+      "report_local_signed_out",
+      "attempt_or_confirm_remote_revocation"
+    ],
+    "remote_failure_state": "local_signed_out_remote_revocation_unconfirmed",
+    "lost_device_action": "revoke_application_session_or_all_sessions_in_account_center",
+    "session_identifier_is_not_identity": true,
+    "hardware_fingerprint": "forbidden"
+  },
+  "account_lifecycle": {
+    "pending": "login_denied_until_activation",
+    "active": "login_and_refresh_allowed_subject_to_local_authorization",
+    "suspended": "new_login_refresh_and_remote_authorization_denied",
+    "deletion_pending": "new_login_refresh_sync_and_remote_authorization_denied_local_files_preserved",
+    "deleted": "credentials_and_cached_global_profile_purged_local_files_preserved",
+    "status_transition_source": "account_center",
+    "application_data_deletion": "application_policy_and_legal_retention"
+  },
+  "consumer_rules": {
+    "unknown_major": "fail_closed",
+    "unknown_issuer": "fail_closed",
+    "wrong_audience": "fail_closed",
+    "non_active_account": "fail_closed_for_remote_authorization",
+    "pro_or_role_from_identity": "forbidden",
+    "consumer_database_authorization": "required",
+    "desktop_secret": "none"
+  }
+}

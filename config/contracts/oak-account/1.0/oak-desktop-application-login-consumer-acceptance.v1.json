@@ -1,0 +1,42 @@
+{
+  "schema_version": "oak-desktop-application-login-consumer-acceptance/1.0",
+  "status": "FROZEN_FOR_SYNTHETIC_ACCEPTANCE",
+  "required_contract_major": 1,
+  "consumers": [
+    {
+      "application_id": "oak-manuscript-desktop",
+      "current_state": "pending_contract_migration",
+      "runtime_accepted": false
+    },
+    {
+      "application_id": "oak-research-desktop",
+      "current_state": "not_implemented",
+      "runtime_accepted": false
+    }
+  ],
+  "checklist": [
+    {"id": "D01", "requirement": "system_browser_only", "evidence": "synthetic_login_flow"},
+    {"id": "D02", "requirement": "loopback_127_0_0_1_random_port_and_path_nonce", "evidence": "callback_negative_vectors"},
+    {"id": "D03", "requirement": "pkce_s256_state_and_single_use_code", "evidence": "replay_and_binding_tests"},
+    {"id": "D04", "requirement": "access_token_at_most_300_seconds_and_memory_only", "evidence": "storage_and_expiry_tests"},
+    {"id": "D05", "requirement": "refresh_rotation_and_family_reuse_revocation", "evidence": "refresh_replay_test"},
+    {"id": "D06", "requirement": "remote_revoke_current_and_all_application_sessions", "evidence": "revocation_test"},
+    {"id": "D07", "requirement": "operating_system_secure_storage_or_fail_closed", "evidence": "secure_storage_unavailable_test"},
+    {"id": "D08", "requirement": "minimal_identity_claims_only", "evidence": "forbidden_claims_tests"},
+    {"id": "D09", "requirement": "application_authorization_and_entitlements_are_local", "evidence": "local_authorization_test"},
+    {"id": "D10", "requirement": "offline_local_projects_remain_open_editable_exportable", "evidence": "offline_acceptance_test"},
+    {"id": "D11", "requirement": "suspended_deletion_pending_deleted_fail_closed_online", "evidence": "lifecycle_matrix_test"},
+    {"id": "D12", "requirement": "account_deletion_purges_credentials_not_local_files", "evidence": "deletion_preservation_test"},
+    {"id": "D13", "requirement": "tokens_verifier_and_codes_never_reach_renderer_logs_or_project_data", "evidence": "data_flow_and_redaction_test"},
+    {"id": "D14", "requirement": "no_production_oauth_client_secret_or_legacy_provider_address", "evidence": "configuration_negative_test"},
+    {"id": "D15", "requirement": "logout_reports_unconfirmed_remote_revocation", "evidence": "offline_logout_test"},
+    {"id": "D16", "requirement": "unknown_major_issuer_audience_or_signature_fails_closed", "evidence": "token_validation_negative_tests"}
+  ],
+  "release_gates": {
+    "synthetic_fixtures_required": true,
+    "consumer_runtime_accepted": false,
+    "production_oauth_enabled": false,
+    "real_credentials_allowed": false,
+    "production_ready": false
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "schema_version": "oak-desktop-login-authorization/1.0",
+  "application_id": "oak-manuscript-desktop",
+  "redirect_uri": "http://127.0.0.1:49152/application-login/callback/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn",
+  "state": "sssssssssssssssssssssssssssssssssssssssssss",
+  "code_challenge": "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh",
+  "code_challenge_method": "S256",
+  "request_expires_at": "2026-08-14T12:10:00Z"
+}

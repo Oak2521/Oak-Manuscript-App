@@ -1,0 +1,21 @@
+{
+  "schema_version": "oak-desktop-token-response/1.0",
+  "token_type": "Bearer",
+  "access_token": "synthetic_header_segment_not_a_token.synthetic_payload_segment_not_a_token.synthetic_signature_segment_not_a_token",
+  "expires_in": 300,
+  "refresh_token": "synthetic_refresh_token_000000000000000000000000000000000000000000000000",
+  "refresh_expires_at": "2026-09-13T12:00:00Z",
+  "claims": {
+    "iss": "https://identity.example.invalid/application-login",
+    "sub": "61000000-0000-4000-8000-000000000001",
+    "aud": "oak-manuscript-desktop",
+    "sid": "62000000-0000-4000-8000-000000000002",
+    "iat": 1786723200,
+    "exp": 1786723500,
+    "aal": "aal1",
+    "oak_account_id": "63000000-0000-4000-8000-000000000003",
+    "oak_account_status": "active",
+    "oak_profile_version": 3,
+    "oak_claims_version": "1.0"
+  }
+}

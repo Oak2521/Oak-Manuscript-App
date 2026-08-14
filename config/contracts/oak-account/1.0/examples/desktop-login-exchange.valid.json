@@ -1,0 +1,7 @@
+{
+  "schema_version": "oak-desktop-login-exchange/1.0",
+  "application_id": "oak-manuscript-desktop",
+  "code": "ccccccccccccccccccccccccccccccccccccccccccc",
+  "code_verifier": "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv",
+  "redirect_uri": "http://127.0.0.1:49152/application-login/callback/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"
+}

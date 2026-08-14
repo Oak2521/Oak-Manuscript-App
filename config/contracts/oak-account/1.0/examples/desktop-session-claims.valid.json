@@ -1,0 +1,13 @@
+{
+  "iss": "https://identity.example.invalid/application-login",
+  "sub": "61000000-0000-4000-8000-000000000001",
+  "aud": "oak-manuscript-desktop",
+  "sid": "62000000-0000-4000-8000-000000000002",
+  "iat": 1786723200,
+  "exp": 1786723500,
+  "aal": "aal1",
+  "oak_account_id": "63000000-0000-4000-8000-000000000003",
+  "oak_account_status": "active",
+  "oak_profile_version": 3,
+  "oak_claims_version": "1.0"
+}

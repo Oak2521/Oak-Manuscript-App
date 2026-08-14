@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.oakbylake.com/identity/oak-desktop-session-claims-1.0.schema.json",
+  "title": "Oak Desktop Application Session Claims 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["iss", "sub", "aud", "sid", "iat", "exp", "aal", "oak_account_id", "oak_account_status", "oak_profile_version", "oak_claims_version"],
+  "properties": {
+    "iss": {"type": "string", "format": "uri"},
+    "sub": {"type": "string", "format": "uuid"},
+    "aud": {"enum": ["oak-manuscript-desktop", "oak-research-desktop"]},
+    "sid": {"type": "string", "format": "uuid"},
+    "iat": {"type": "integer", "minimum": 1},
+    "exp": {"type": "integer", "minimum": 1},
+    "aal": {"enum": ["aal1", "aal2"]},
+    "oak_account_id": {"type": "string", "format": "uuid"},
+    "oak_account_status": {"const": "active"},
+    "oak_profile_version": {"type": "integer", "minimum": 1},
+    "oak_claims_version": {"const": "1.0"}
+  }
+}
