@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.61` 源码架构；最新真实 Windows packaged 证据仍为未签名 alpha.58。alpha.60 正式拒绝将 50/100 MiB 缓冲协议原样部署到 Netlify Functions；alpha.61 以短期 Supabase S3 SigV4 PUT/GET、content-free v2 控制面、005 状态迁移和 v2 准入替换该数据面。标准页当前为 14 项标准、39 条规则、6 个机械 fixer，但外部来源 verified 仍为 0。默认账号与权益配置无端点/密钥，仓库无生产私钥；真实账号、支付、数据库/对象存储/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.62` 源码架构；最新真实 Windows packaged 证据仍为未签名 alpha.58。alpha.62 消费 OAK-4 冻结 application-login 合同，并把桌面与四个 Web 生产 composition root 的身份主键收敛到 `oak_account_id`；账号配置仍无端点/公钥，仓库无真实凭据或生产私钥。alpha.61 的短期 Supabase S3 数据面继续作为对象存储使用，不承担旧身份认证。真实账号、支付、数据库/对象存储/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
 
 ## 1. 总体分层
 
@@ -135,11 +135,19 @@ Renderer 不能构造同步负载，也不能提供 token、任意 URL 或 trans
 
 只有已登录状态才可生成预览；预览本身不入队、不发送。界面必须逐字段展示同一份缓存负载，用户随后明确选择 `sync_once`、`ask_each_time`、`not_now` 或 `never_for_project`。确认只提交 opaque `idempotency_id` 和固定选择，过期或替换后的预览拒绝。alpha.21 队列固定为 `pending_transport|canceled`，使用 Electron `safeStorage` 加密并按账户隔离；内部状态以 exact schema/canonical JSON 校验，经同目录独占候选、文件 `fsync`、原子替换、提交后解密复验和 revision CAS 落盘。未登录不读取队列，Renderer 不接收内部账户 ID。alpha.39 只在受信账号配置完整时由 main 实例化 client/coordinator；alpha.54 把 `sync_once|ask_each_time` 的确认本身作为本次发送授权，先持久入队再立即 flush。只有远端 `created|replayed` 后删除，失败保留并要求设置页明确重试；登录、预览和队列恢复均不自动发送。默认配置仍为空，所以当前普通 APP 不上传，“已入队”绝不等于“已同步到网站”。
 
+### AD-034 桌面与 Web 只消费冻结 Oak Account application-login 合同（2026-08-14）
+
+合同来源固定为 Account Center 提交 `6aea9986539a0f55b2961426fa08e486a9e30b19`；版本化副本、文件摘要、schema、合法 fixture、负向向量和验收清单位于 `config/contracts/oak-account/1.0/`。未知 major、issuer/audience 漂移、过期、非 active 状态、未知 claims 或签名失败一律失败关闭。冻结只证明合同可供消费，不证明真实端点、服务端运行时、Staging 或 Production 存在。
+
+桌面登录只使用系统浏览器和运行时随机的 `127.0.0.1` loopback：随机端口、256 位 path nonce/state/verifier、PKCE S256、精确路径/单值参数/一次回调。access token 最长 300 秒且只在 Electron 主进程内存；refresh token 只在 `OAKAUTH2/session-v2.enc` 的 OS 加密状态中，成功使用必须轮换，客户端另行执行 7 天空闲和 30 天绝对上限。退出先清本地后撤销；离线撤销返回 `local_signed_out_remote_revocation_unconfirmed`。旧自定义 scheme 不再注册或打包，旧 v1 安全存储只安全清除、不迁移凭据。
+
+所有跨系统 owner 只从已验签 `oak_account_id` 派生。`sub`、`sid`、email、显示名、角色和请求自报字段都不能成为 owner。Web 的同步、权益、账户设备和直传作业 composition root 使用同一 Oak JWT 本地验签器；Supabase 只保留为服务端数据库/对象存储。Account Center claims 不包含也不授予 Pro；Pro 继续由 Oak Manuscript 独立 Ed25519 权益合同判定。账号或权益失败不得锁定、删除或改写本地项目。
+
 ### AD-025 SyncRecord 长期结果必须“可信身份—服务端再验证—事务幂等—属主删除”（2026-07-28，冻结）
 
-桌面端通过固定规范 HTTPS origin 和 `/manuscript/api/v1/sync-records` 发送 Bearer 请求；不得携带 Cookie、重定向、任意 URL 或 Renderer 自报 token。主进程 token provider 必须返回 exact `{accessToken,accountId}`，且 accountId 与当前队列账号一致，否则在 transport 前拒绝。`SyncTransportCoordinator` 在发送前后复核账户稳定性，并保证每个本地队列项同一时刻最多一个请求；只有远端返回同一 canonical 记录的 `created|replayed` 才删除精确本地项，任何远端失败、账户切换或本地提交失败都保留记录供幂等重试。
+桌面端通过固定规范 HTTPS origin 和 `/manuscript/api/v1/sync-records` 发送 Bearer 请求；不得携带 Cookie、重定向、任意 URL 或 Renderer 自报 token。主进程 token provider 必须返回 exact `{accessToken,oakAccountId}`，且 `oakAccountId` 与当前队列账号一致，否则在 transport 前拒绝。`SyncTransportCoordinator` 在发送前后复核账户稳定性，并保证每个本地队列项同一时刻最多一个请求；只有远端返回同一 canonical 记录的 `created|replayed` 才删除精确本地项，任何远端失败、账户切换或本地提交失败都保留记录供幂等重试。
 
-服务端先由 GoTrue 得到 exact trusted subject，再由独立 `SyncRecordService` 重新执行字段、计数、时间、ID、容量和永久禁止键校验；不能复用或信任 Electron 已过滤结论。HTTP 边界固定创建、分页列表、读取和删除四类动作，使用 HTTPS、同源/Fetch Metadata、Cookie CSRF 或 Bearer、固定错误和不含主体/记录 ID/内容的审计。列表必须由 repository 单次快照返回 `{rows,total}`，避免数据行与总数跨查询漂移。
+服务端先本地验签 Oak Account access token，并只将 `oak_account_id` 转成 exact trusted subject，再由独立 `SyncRecordService` 重新执行字段、计数、时间、ID、容量和永久禁止键校验；不能复用或信任 Electron 已过滤结论。HTTP 边界固定创建、分页列表、读取和删除四类动作，使用 HTTPS、同源/Fetch Metadata、Cookie CSRF 或 Bearer、固定错误和不含主体/记录 ID/内容的审计。列表必须由 repository 单次快照返回 `{rows,total}`，避免数据行与总数跨查询漂移。
 
 `web/supabase/002_sync_records.sql` 的长期表不含稿件、标题、路径、文件名、片段或内容哈希，强制 RLS 且不给浏览器角色表/RPC 权限；四个固定 RPC 仅授予 `service_role`。创建/重放在账户 advisory transaction lock 内原子执行容量限制、幂等比对和插入；读取、列表和删除始终绑定可信 owner，外来与不存在记录不可区分。alpha.38 只有 SQL 静态契约和 Fake fetch/repository 测试，未执行真实迁移、RLS、多实例、备份恢复、官网后台或删除审计，因此不能表述为生产同步已开通。
 
@@ -153,11 +161,11 @@ alpha.44 在 `web/client/` 增加当前账号的同步历史列表与属主删�
 
 缓存明文由 `license-cache-v1.schema.json` 定义，只作为 `OAKLIC1` safeStorage 密文保存；revision CAS、独占候选、`fsync`、原子换入、提交后解密复验、父链/链接/硬链接/读取竞态门禁沿用账号/同步 store 的 fail-closed 标准。active 与 grace 提供 Pro；expired、revoked、not-yet-valid、invalid、signed-out 与 not-cached 均为 Free。任何状态固定 `localProjectsLocked=false`，订阅失败不得劫持用户已有本地文件。
 
-alpha.45 的服务端链由 `entitlement-runtime.js` 组合 GoTrue verifier/session resolver、service-role repository、独立 Ed25519 signer、HTTP handler 和 Fetch adapter。`003_manuscript_entitlements.sql` 把权益与设备分表，强制 RLS，唯一 RPC 在 account advisory lock 内原子读取权益、复核既有设备或检查容量后登记新设备。Signer 不复用 Electron canonicalizer，私钥只允许服务器构造注入；HTTP 成功响应还要再次通过 exact shape/容量校验，错误与审计 content-free。支付/退款事件摄入、设备管理 UI、真实迁移/RLS/多实例、生产私钥托管/轮换与 E2E 仍是独立门禁；详见 `SIGNED_ENTITLEMENT_V1.md`。
+alpha.62 的服务端链由 `entitlement-runtime.js` 组合 Oak Account verifier/session resolver、service-role repository、独立 Ed25519 signer、HTTP handler 和 Fetch adapter。`003_manuscript_entitlements.sql` 把权益与设备分表，强制 RLS，唯一 RPC 在 account advisory lock 内原子读取权益、复核既有设备或检查容量后登记新设备。Signer 不复用 Electron canonicalizer，私钥只允许服务器构造注入；HTTP 成功响应还要再次通过 exact shape/容量校验，错误与审计 content-free。支付/退款事件摄入、设备管理 UI、真实迁移/RLS/多实例、生产私钥托管/轮换与 E2E 仍是独立门禁；详见 `SIGNED_ENTITLEMENT_V1.md`。
 
 alpha.46 在 signer 上游增加 provider-bound 的规范化订阅快照 ingestor。支付商原始 webhook、签名、金额、支付工具和客户 PII 必须由未来的独立适配器处理；核心只接受权益原因/状态/时间窗，以 provider event ID 和 canonical SHA-256 实现重放、冲突和乱序语义。`004_subscription_events_and_devices.sql` 在同一账号 advisory lock 内保存 content-free 事件并更新权益来源真相，旧事件只记 `stale`，不能覆盖较新状态。
 
-同一迁移增加账号权益概览与属主设备撤销 RPC；`license-account-runtime.js` 组合 GoTrue、service-role repository、service 和固定 HTTP/Fetch 边界。GET 只返回当前账号的公开权益时间窗与最多 20 台设备，POST 只撤销 URL 指定且归属当前账号的设备；状态变更强制 exact same-origin。公开响应和 audit 均删除账号、权益 ID、revision 与实际设备路由值。SQL 尚未真实迁移。
+同一迁移增加账号权益概览与属主设备撤销 RPC；`license-account-runtime.js` 组合 Oak Account 验签、service-role repository、service 和固定 HTTP/Fetch 边界。GET 只返回当前账号的公开权益时间窗与最多 20 台设备，POST 只撤销 URL 指定且归属当前账号的设备；状态变更强制 exact same-origin。公开响应和 audit 均删除账号、权益 ID、revision 与实际设备路由值。SQL 尚未真实迁移。
 
 alpha.47 的 `web/client/license-account-controller.js` 通过既有同源 Bearer API 消费上述路由。浏览器再次 exact parse，按桌面同一 `valid_until` / `grace_until` 边界派生显示态，只把设备 ID 末尾掩码交给 DOM；撤销必须逐台原生确认。控制器用 busy 状态阻止并发修改，用 generation token 使退出后的旧请求失效，失败不修改本地列表。它不持久化权益或设备，也不接触稿件内容；当前隐藏浏览器证据使用匿名内存假服务，不代表真实部署。
 

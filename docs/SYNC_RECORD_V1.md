@@ -1,6 +1,6 @@
 # SyncRecord v1 — 结果与元数据同步契约
 
-> 状态：当前源码为 `0.1.0-alpha.60`；SyncRecord 功能链仍以 alpha.54 的“明确确认后即时发送、失败安全留队”纵向证据为准，最新 Windows packaged smoke 属于未签名 alpha.58。alpha.60 只为 Supabase repository 增加新 `sb_secret_` apikey-only 兼容，没有改变 SyncRecord 数据契约，也没有执行真实迁移。受信账号配置仍为 `pending_configuration`；API 和页面均未部署，所以普通 APP 仍不发同步请求。
+> 状态：当前源码与最新未签名 Windows packaged 检查点为 `0.1.0-alpha.62`。SyncRecord 数据合同不变；桌面 Auth 已切换为冻结 Oak Account application-login，服务端生产组合根本地验签 access token 并只用 `oak_account_id` 绑定 owner。“明确确认后即时发送、失败安全留队”继续通过本地生产形状测试。受信账号配置仍为 `pending_configuration`；API 和页面均未部署，所以普通 APP 仍不发同步请求。
 
 ## 1. 信任边界
 
@@ -17,7 +17,7 @@
   -> [仅正式配置时由 main 实例化] 确认后立即调用 SyncTransportCoordinator
   -> 固定 HTTPS/Bearer SyncHttpClient
   -> /manuscript/api/v1/sync-records
-  -> GoTrue 验证后的可信主体
+  -> Oak Account 本地验签后的 `oak_account_id` 可信主体
   -> 服务端独立 exact 校验与账号归属绑定
   -> service-role-only RPC / 强制 RLS 的长期结果表
 ```
@@ -71,21 +71,21 @@ alpha.39 在 alpha.38 的 `SyncHttpClient` / `SyncTransportCoordinator` 上接�
 
 ## 5. 账号、加密会话与权益边界
 
-- `AuthProvider` 在生产配置完整时使用系统浏览器 Authorization Code + PKCE S256/state；未配置时 `beginLogin` 返回 `configuration_required`，不打开网页、不联网；
-- 固定 `oak-manuscript-auth://callback` 只允许唯一 code/state；Windows second-instance 与 macOS open-url 共用严格解析。token、额外参数、错 scheme、过期/错配/重放 state 均拒绝；
-- pending verifier 与 access/refresh token 仅保存在 `userData/auth/session-v1.enc` 的 safeStorage 密文；code exchange 后与 refresh 后都经固定 user endpoint 复核 exact account ID；
+- `AuthProvider` 在生产配置完整时使用系统浏览器 application-login + PKCE S256/state；未配置时 `beginLogin` 返回 `configuration_required`，不打开网页、不联网；
+- callback 只允许随机 `127.0.0.1` 端口和随机路径的一次 code/state；不注册自定义 scheme。额外参数、过期/错配/重放 state 均拒绝；
+- pending verifier 与 access token 只驻内存；`userData/auth/session-v2.enc` 的 `OAKAUTH2` safeStorage 密文只保存轮换 refresh 会话。旧 v1 会话安全删除但不迁移；
 - 本地测试可模拟 authenticated、signed_out、expired、revoked，但生产运行不开放模拟入口；
 - alpha.44 的生产 `LicenseProvider` 只接受受信配置中的 Ed25519 signed-entitlement，精确绑定 issuer/audience/账号/设备/时间；状态查询零网络，只有设置页显式刷新才请求固定端点；
 - 权益缓存只进入 `userData/license/entitlement-v1.enc` 的 `OAKLIC1` safeStorage 密文；无效响应不覆盖有效缓存；
 - 订阅过期只影响新的 Pro 权益，`localProjectsLocked` 永远为 false；
-- 真实 OAuth/OIDC 契约、nonce/ID-token 取舍、服务端权益签发/支付/设备撤销、生产密钥轮换和真实端点均未联调；详见 `SIGNED_ENTITLEMENT_V1.md`。
+- 真实 Account Center application-login、生命周期传播、服务端权益签发/支付/设备撤销、生产密钥轮换和真实端点均未联调；详见 `SIGNED_ENTITLEMENT_V1.md`。
 
 ## 6. alpha.39 服务端与桌面 transport 源码边界
 
 - `web/sync-record-service.js` 独立验证记录、账号归属、幂等创建/重放/冲突、分页列表、读取与删除；列表由 repository 单次快照返回 `{rows,total}`，避免结果与总数跨查询漂移；
 - `web/sync-record-http-handler.js` 固定 `POST/GET /manuscript/api/v1/sync-records` 及 `GET/DELETE /:id`，强制 HTTPS、同源/Fetch Metadata、Cookie CSRF 或已验证 Bearer、JSON framing/大小和固定非反射错误；审计受 exact schema 限制且接收器失败不改变响应；
 - `web/supabase-sync-record-repository.js` 只能调用四个固定 service-role RPC；`web/supabase/002_sync_records.sql` 对内容无关记录表启用强制 RLS，撤销浏览器角色权限，并用账户 advisory transaction lock 原子化“计数—创建/重放”；
-- `web/sync-record-runtime.js` 明确分离公开 Supabase API key、service-role key 与审计接收器，组合 GoTrue、会话解析、repository、service、HTTP handler 和 Fetch adapter；
+- `web/sync-record-runtime.js` 明确分离 Oak Account issuer/audience/trusted keys、Supabase service-role key 与审计接收器，组合本地 access-token 验签、会话解析、repository、service、HTTP handler 和 Fetch adapter；
 - `electron/sync-http-client.js` 与 `electron/sync-transport-coordinator.js` 只存在于主进程边界；不会读取 Renderer 自报 token/URL，也不会把远端失败伪装为成功；
 - alpha.44 的 `web/client/` 对列表响应再次 strict parse，只安全展示当前账号记录，并在用户确认后调用 owner-scoped DELETE；退出登录清空本地视图。
 
@@ -94,8 +94,8 @@ alpha.39 在 alpha.38 的 `SyncHttpClient` / `SyncTransportCoordinator` 上接�
 ## 7. 生产对接前必须补齐
 
 1. 经授权现场核对网站当前 Supabase、账号和后台 schema，并在隔离预生产执行/复核 `002_sync_records.sql`；
-2. 在正式 OAuth/OIDC 契约确定后验证真实 PKCE、nonce/ID-token 取舍、刷新/退出/过期/撤销；默认 Electron session 必须继续离线；
+2. 用冻结 application-login 合同验证真实系统浏览器 PKCE、loopback、刷新轮换、退出、过期与账号生命周期；默认 Electron session 必须继续离线；
 3. 补完限次退避、模糊失败、浏览器打开失败、并发回调，以及远端提交与本地队列删除之间的崩溃恢复验收；
-4. 部署同源 API，验证真实 GoTrue、Postgres RLS/RPC、多实例并发、备份/恢复、限额、删除和无密钥泄露；
+4. 部署同源 API，验证真实 Oak Account token、Postgres RLS/RPC、多实例并发、备份/恢复、限额、删除和无密钥泄露；
 5. 部署并真实验收 APP 与网站后台的查看、删除和内容无关审计记录；补充尚未实现的导出；
 6. 完成正文、文件名、路径、片段、哈希泄露反向生产集成测试及真实隐私验收。

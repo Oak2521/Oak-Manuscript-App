@@ -2,6 +2,20 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.62 Oak Account、Pro 与同步生产形状验收（2026-08-14）
+
+- [x] 消费副本绑定 Account Center 冻结提交 `6aea9986539a0f55b2961426fa08e486a9e30b19` 的 16 个文件、6 个有效 fixture、20 个 negative vector 与 16 项验收清单；未知 major 或字节漂移失败关闭；
+- [x] 桌面登录只使用系统浏览器、随机 `127.0.0.1` callback、PKCE S256 和一次 state；无自定义 scheme，access token 只驻内存，OS 加密存储只保存轮换 refresh 会话；
+- [x] 旧 v1 会话只在安全文件身份下删除、不迁移；refresh 拒绝、退出及 `suspended|deletion_pending|deleted` 生命周期清除本地凭据而不锁本地项目；
+- [x] Web entitlement、license account、SyncRecord 和临时稿件四个生产组合根本地验签 Oak access token，只用 `oak_account_id` 派生 owner；`sub`、`sid`、role、email 或请求正文不能代替；
+- [x] Oak identity 不授予 Pro；Oak Manuscript 独立 signed entitlement 继续绑定账号/设备/时限/撤销，失败回落 Free；
+- [x] 同步继续要求逐字段预览和一次明确确认；成功精确出队，失败 OS 加密保留并显式重试；direct-object S3 与一次领取/清扫链未被身份迁移削弱；
+- [x] Node 761/755/0/6、Python 368/0/0/3；最终 `npm run build:win` 305.1 秒退出 0，packaged smoke、真实 ASAR/fuse/资源、NSIS/ZIP 与 schema v2 发行证据通过；
+- [x] Ace 外部连接双重关闭竞态已以 TDD 修复，`OAK-ACE-ISOLATION-003` 及 Node/Python 双重固定摘要验证通过；
+- [ ] 真实 Account Center Staging URL/公钥/凭据、系统浏览器端到端登录、生命周期跨服务传播已验证；当前均未配置/未运行；
+- [ ] 真实 Supabase migration/RLS/桶/CORS、官网账户后台、50/100 MiB 传输与生产零留存已验证；当前均未运行；
+- [ ] Windows 干净机安装/升级/卸载、Authenticode、macOS 原生构建/签名/公证、部署和可售卖发行身份完成；当前均未完成。
+
 ## 0.1.0-alpha.61 Web 对象存储直传/直取验收（2026-08-10）
 
 - [x] `/manuscript/api/v2/jobs` 的公开控制面只签发/完成 direct transfer，不存在经公开函数缓冲的 input/result 字节路由；浏览器登录/注册、默认引用和单任务明示同意仍保留；

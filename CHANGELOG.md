@@ -4,6 +4,17 @@
 
 ## [未发布]
 
+### 2026-08-14 — 0.1.0-alpha.62（ChatGPT Oak Account application-login）
+
+> 本地生产形状与未签名 Windows packaged 检查点；未联网、未使用真实账号/密钥、未迁移、部署、推送、运行安装器、签名或构建 macOS。
+
+- 冻结消费 Oak Account Center 提交 `6aea9986539a0f55b2961426fa08e486a9e30b19`；新增 16 文件 provenance、合同/fixture/negative vector 校验和未知 major 失败关闭；
+- 桌面认证改为系统浏览器 application-login、随机 loopback、PKCE S256、内存 access token 与 OS 加密轮换 refresh；移除 production package 的旧 OAuth client/provider 和自定义 scheme；
+- Web 四个生产组合根改为本地 Ed25519 验证 Oak access token，只用 `oak_account_id` 派生 owner；账号身份不授予 Pro，独立 signed entitlement 继续失败回落 Free；
+- 保留结果同步的逐字段预览/一次确认、加密失败队列/幂等补偿/跨账号隔离，以及 S3 direct-object、一次领取和清扫链；仓库继续以空 Production 配置失败关闭；
+- 修复 Ace 外部 `puppeteer.connect()` 会话与主进程双重关闭 Chrome 的竞态：外部会话只断开连接，主进程保持唯一生命周期 owner；补丁升级为 `OAK-ACE-ISOLATION-003` 并重锁 Node/Python/资源摘要；
+- Node 761/755/0/6、Python 368/0/0/3；Windows 全链构建 305.1 秒退出 0，packaged smoke、NSIS/ZIP、SHA256SUMS 与 schema v2 manifest 通过；制品仍未签名，非 deployed 或 production-ready。
+
 ### 2026-08-10 — 0.1.0-alpha.61（ChatGPT Web 对象存储直传/直取）
 
 > 源码检查点；按用户授权下载并核对生产依赖、查阅 Supabase/AWS 官方资料，但未使用生产账号/密钥、执行迁移、部署、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.58。

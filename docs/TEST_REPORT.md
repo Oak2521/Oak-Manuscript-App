@@ -1,8 +1,33 @@
 # TEST_REPORT — 测试报告
 
-> 更新日期：2026-08-10。只记录真实执行结果；未运行项不得写成通过。
+> 更新日期：2026-08-14。只记录真实执行结果；未运行项不得写成通过。
 
-## 最新验证结论：0.1.0-alpha.61 Web 对象存储直传/直取
+## 最新验证结论：0.1.0-alpha.62 Oak Account、Pro 与同步生产形状接入
+
+验证日期：2026-08-14。全程未联网，未使用真实账号、Production URL、密钥或数据库；未迁移、部署、推送、运行安装器、签名或构建 macOS。Account Center 合同来自只读提交 `6aea9986539a0f55b2961426fa08e486a9e30b19`，消费副本固定 16 个文件的精确字节与 SHA-256。
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| 冻结合同与来源 | **PASS** | 6 个有效 fixture、20 个 negative vector、16 项验收清单和 16 文件 provenance 全部验证；未知 major、单字节篡改、错误 claims/签名/issuer/audience 失败关闭；不证明服务端已部署 |
+| 桌面 application-login | **PASS（本地/真实 loopback）** | 固定系统浏览器、随机 `127.0.0.1` 端口/路径、PKCE S256、一次 state/callback；access token 只驻内存，refresh-only `OAKAUTH2` 存储、7 天 idle/30 天 absolute、轮换、退出本地先清除与离线撤销未确认均覆盖 |
+| 账户生命周期 | **PASS（注入）** | `suspended`、`deletion_pending`、`deleted` 清除本机凭据并阻止新远端操作；服务端 refresh 拒绝也清除会话。未验证真实跨服务推送/轮询时延 |
+| Renderer / package 泄漏门禁 | **PASS** | preload/Renderer 不获得 token、code、verifier 或完整账号 UUID；ASAR 含新 application-login 四模块，旧 `auth-http-client.js` / `desktop-auth-provider.js` 被 production package 明确排除；无自定义 protocol 注册 |
+| Oak Account 服务端身份 | **PASS（本地签名 fixture）** | 四个生产组合根本地 Ed25519 验证 exact Oak access token，只把 `oak_account_id` 映射为 owner；`sub` 与 `sid` 使用不同值的 fixture，role/extra field 拒绝；旧 GoTrue/Supabase identity 模块不再被生产组合根导入 |
+| Pro 分离 | **PASS** | Oak active identity 不直接授予 Pro；Pro 仍由 Oak Manuscript 独立 signed entitlement 的账号/设备/时间/撤销与签名决定，失败回落 Free 且 `localProjectsLocked=false` |
+| 显式同步与 direct-object | **PASS（本地/注入）** | 定向 49/49：逐字段预览、一次确认、OS 加密失败队列、幂等补偿、跨账号隔离、短凭证 S3 直传/领取、ETag/MIME/长度/metadata、清扫和零留存状态机；未连接真实 Supabase |
+| Ace 生命周期回归 | **PASS** | 首轮完整重跑发现外部 `puppeteer.connect()` 会话与主进程双重关闭的偶发竞态；TDD 修复为外部会话只 `disconnect()`、主进程唯一停止。`OAK-ACE-ISOLATION-003`、Node/Python 双重摘要、stage lock 和 20/20 定向测试均通过 |
+| Node 全量 | **PASS** | 761 total / 755 pass / 0 fail / 6 skip，5.862 秒；跳过项不计作通过 |
+| Python 全量 | **PASS** | 368 total / 0 failures / 0 errors / 3 skipped，43.921 秒 |
+| 统一入口 | **PASS** | `npm test` 依次完成 Node 与 Python，墙钟 54.3 秒 |
+| 资源信任 | **PASS** | 131 文件 / 2,243,858 字节；manifest `9b00c85bf99dda9fef05e8078cbc8cab526e104a30b29ae7dac31498ccd69bbc`；anchor `bc69e8c3051f336f88e52270f18bde048bf5cf4289dfb1207d1dcb30a0e05e16` |
+| Windows 完整构建 | **PASS** | 最终 `npm run build:win` 全链退出码 0，305.1 秒；JRE/Ace stage、源码门禁、electron-builder、9 fuse、packaged 资源、smoke 与发行证据一次完成 |
+| Packaged smoke | **PASS** | `SMOKE-RESULT: PASS`；运行根 `out/packaged-smoke/runs/msslwfuj-5c4e1e4dc65c88fc/projects/`，76 文件 / 1,378,165 字节 / SHA-256 `e0235b95442498d37817111d238c098ef115cf4c6c6ee4f2d0d28e1d715d01a7` |
+| Windows 制品 | **PASS（未签名内测）** | NSIS 190,078,160 字节 / SHA-256 `3a3c74dae29ff936ca0771534c2660e0527899a724211f0bb17e1cc58271bb64`；ZIP 233,924,735 字节 / SHA-256 `9263fb67551dada1feb76899f520c12a1bdfdab2123f8dbe12520d94c1ca2f5c`；schema v2 manifest 与 `SHA256SUMS.txt` 复验通过 |
+| 签名 / 安装 / Staging / 部署 | **未执行** | NSIS 与 unpacked EXE 的 Authenticode 均为 `NotSigned`；未做干净机安装/升级/卸载、macOS 原生构建/签名/公证、真实 Account Center/Supabase/官网 E2E 或生产零留存 |
+
+结论：Alpha.62 已完成 OAK-10 的本地生产形状实现、全量回归和真实 Windows 未签名 packaged 检查点；它没有真实后端配置或环境联调，因而不是 deployed、production-ready 或可售卖正式版。
+
+## 历史验证结论：0.1.0-alpha.61 Web 对象存储直传/直取
 
 验证日期：2026-08-10。经用户授权读取 Supabase/AWS 官方资料、下载精确 Web 生产依赖并查询 npm 漏洞库；没有使用生产账号/密钥、执行真实迁移、连接对象存储、部署、推送、运行安装器或重新打包。最新真实 Windows 制品仍为未签名 alpha.58。
 

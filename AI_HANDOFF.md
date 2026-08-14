@@ -1,10 +1,10 @@
 # AI_HANDOFF — 湖岸稿件（Oak Manuscript）项目交接说明
 
-> 更新日期：2026-08-10
+> 更新日期：2026-08-14
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.61`
-> 当前分支：`main`
-> 当前源码标签：`chatgpt-v0.1.0-alpha.61-direct-object-transfer`；最新真实 Windows packaged 标签仍为 `chatgpt-v0.1.0-alpha.58-text-hygiene`，打包内容未签名
+> 当前版本：`0.1.0-alpha.62`
+> 当前分支：`codex/oak-10-manuscript-account`
+> 当前源码标签：尚未创建；最新真实 Windows packaged 检查点为本分支的未签名 `0.1.0-alpha.62`
 
 ## 1. 权威入口与工作区
 
@@ -29,6 +29,17 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 源 Claude 仓库、`oak-publishing-system`、`netlify-site` 和商业计划书目录均只读。所有开发、测试和构建产物只能留在当前克隆目录。
 
 ## 2. 当前现场事实
+
+### 已完成：0.1.0-alpha.62 Oak Account 桌面登录、Pro 分离与同步生产形状接入（本地检查点，2026-08-14）
+
+- 冻结消费 `D:\Workspace\Oak by Lake\oak-account-center` 提交 `6aea9986539a0f55b2961426fa08e486a9e30b19` 的 application-login 1.0 合同；`config/contracts/oak-account/1.0/provenance.json` 锁定 16 个来源文件的精确字节与 SHA-256。未知 major、来源漂移、错误签名/claims/issuer/audience 均失败关闭；这不证明 Account Center 服务已部署。
+- 桌面不再使用自定义 scheme 或通用 OAuth 兼容路径。登录固定为系统浏览器 + 随机 `127.0.0.1` 端口/路径 + PKCE S256 + 一次 state；access token 最长 300 秒且只驻内存，OS 加密 `OAKAUTH2/session-v2.enc` 只保存轮换 refresh 会话。旧 v1 会话只安全删除、不迁移；退出本地先清除，离线撤销明确标为未确认。
+- Web 的 entitlement、license account、SyncRecord 和临时稿件四个生产组合入口改为本地 Ed25519 验证 Oak access token，只从 `oak_account_id` 派生 owner；`sub`、`sid`、email、role 或请求正文均不能成为属主。旧 GoTrue/Supabase session 模块只保留历史测试，不再进入这些生产组合根。
+- Oak 账号只证明 active 身份，不授予 Pro。Pro 仍由 Oak Manuscript 独立签名权益、设备、时限与撤销状态决定；未登录、权益失效或验签失败均回落 Free，本地项目永不锁定。
+- 结果同步仍要求逐字段预览与用户一次明确确认；成功后删除精确本机队列项，失败保留 OS 加密队列并要求显式重试。Supabase S3 继续只承担短期对象数据面，未因身份迁移删除或降级。
+- 调试期间完整构建首次发现 Ace 的外部 `puppeteer.connect()` 会话错误调用 `browser.close()`，与主进程 Chrome owner 形成双重关闭竞态；已改为外部会话仅 `disconnect()`、主进程唯一终止，并以 `OAK-ACE-ISOLATION-003`、双重固定哈希和测试锁定。
+- 统一测试：Node 761/755/0/6，Python 368/0/0/3。最终 `npm run build:win` 305.1 秒退出 0；真实 packaged smoke、ASAR/fuse/资源、NSIS/ZIP、SHA256SUMS 与 schema v2 manifest 同链通过。
+- 仍未完成：Production URL/真实密钥、Account Center Staging、真实 Supabase migration/RLS/S3/CORS、官网联调、干净机安装生命周期、Windows 签名、macOS 构建/签名/公证、部署与生产零留存。因此 Alpha.62 不是可售卖正式版。
 
 ### 已完成：0.1.0-alpha.61 Web 对象存储直传/直取源码闭环（源码检查点，2026-08-10）
 

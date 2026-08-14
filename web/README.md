@@ -1,6 +1,6 @@
 # Web 作业契约与同源 HTTP handler（alpha）
 
-`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.61 将唯一生产组合 `web-job-runtime.js` 切换为 v2 direct-object 数据面，并用 `supabase/migrations-v1.json` 锁定五份 SQL。浏览器稿件字节使用短期 Supabase S3 PUT/GET，不再经公开 Function 缓冲；真实桶、CORS、迁移、隔离 worker、清扫/告警和官网部署仍未完成。
+`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.61 将唯一生产组合 `web-job-runtime.js` 切换为 v2 direct-object 数据面；alpha.62 再把作业、SyncRecord、权益和账户设备四个生产组合根切换为 Oak Account Ed25519 access-token 本地验签，只从 `oak_account_id` 派生 owner。浏览器稿件字节仍使用短期 Supabase S3 PUT/GET，不经公开 Function 缓冲；真实账号、桶、CORS、迁移、隔离 worker、清扫/告警和官网部署仍未完成。
 
 Web 服务端依赖与 Electron 桌面依赖隔离：
 
@@ -13,7 +13,7 @@ npm audit --prefix web --omit=dev
 
 当前边界：
 
-- 可信会话主体作为独立参数传入，创建请求不能自报账号；
+- 生产组合根只接受已验签 Oak Account Bearer 会话，并把 exact `oak_account_id` 映射成主体；创建请求不能自报账号；
 - 每个任务必须携带 `single_job_processing` 明示同意；
 - 请求元数据不接受文件名、路径、正文、片段、内容哈希或任意扩展字段；
 - 浏览器把字节直接 PUT 到随机 staging key；公开控制面只验证对象 HEAD/metadata/ETag 并提升为内部 input，不读取或转发稿件字节；
@@ -89,7 +89,7 @@ alpha.23—alpha.31 历史 v1 缓冲协议：
 - HTTP 错误与安全审计分别受 `web-http-error-v1`、`web-http-audit-v1` exact schema 约束。审计不记录主体、任务 ID、URL、请求头或稿件元数据；
 - handler 不设置 CORS，响应固定 `no-store` / `nosniff` / CSP / `no-referrer`。错误文案固定且不反射异常、路径、账号或稿件内容。
 
-生产实现仍须补齐：在隔离环境依序执行/复核五份 canonical migration，完成 GoTrue/Postgres/Supabase S3 私有桶与 exact 官网 Origin CORS 的真实 E2E、平台恶意软件扫描、容器/OS 禁网与资源隔离、支付商 webhook 验签适配、S3/service key 托管轮换、部署计划双清扫/告警/故障演练、生产 PKCE/main transport 接线和网站后台联调。短签名 URL、source-ETag copy 和本地清扫测试不证明生产传输一次性或三路零留存。
+生产实现仍须补齐：在隔离环境依序执行/复核五份 canonical migration，完成 Oak Account/Postgres/Supabase S3 私有桶与 exact 官网 Origin CORS 的真实 E2E、平台恶意软件扫描、容器/OS 禁网与资源隔离、支付商 webhook 验签适配、S3/service key 托管轮换、部署计划双清扫/告警/故障演练、生产 application-login/main transport 接线和网站后台联调。短签名 URL、source-ETag copy 和本地清扫测试不证明生产传输一次性或三路零留存。
 
 ## 生产组合、迁移来源与平台能力门禁（alpha.61）
 
@@ -127,8 +127,10 @@ const jobRuntime = createWebJobProductionRuntime({
   configuration: {
     schema_version: "2.0",
     api_origin: deploymentConfig.apiOrigin,
+    account_issuer: deploymentConfig.accountIssuer,
+    account_audience: deploymentConfig.accountAudience,
+    account_trusted_keys: deploymentConfig.accountTrustedKeys,
     supabase_origin: deploymentConfig.supabaseOrigin,
-    supabase_api_key: deploymentSecrets.supabasePublicKey,
     supabase_service_role_key: deploymentSecrets.supabaseServiceRoleKey,
     python_executable: deploymentConfig.pythonExecutable,
     python_core_dir: deploymentConfig.pythonCoreDir,
@@ -157,8 +159,10 @@ const jobRuntime = createWebJobProductionRuntime({
 });
 const handleSyncRecordRequest = createSyncRecordFetchHandler({
   apiOrigin: deploymentConfig.apiOrigin,
+  accountIssuer: deploymentConfig.accountIssuer,
+  accountAudience: deploymentConfig.accountAudience,
+  accountTrustedKeys: deploymentConfig.accountTrustedKeys,
   supabaseOrigin: deploymentConfig.supabaseOrigin,
-  supabaseApiKey: deploymentSecrets.supabasePublicKey,
   supabaseServiceRoleKey: deploymentSecrets.supabaseServiceRoleKey,
   securityEventSink: contentFreeSyncAuditSink,
 });
@@ -170,7 +174,7 @@ const handleSyncRecordRequest = createSyncRecordFetchHandler({
 // 生产调度仍须放入有 OS 禁网、只读根和资源限制的隔离环境。
 ```
 
-部署前须由数据库所有者在隔离预生产项目按顺序执行并复核 `supabase/001_web_job_state.sql` 至 `supabase/005_direct_object_transfer.sql`。GoTrue verifier 使用服务端可用的最小 publishable/public API key；各 repository 单独使用仅存在于服务器环境的 `sb_secret_`（推荐）或迁移期 legacy service-role key，S3 adapter 另用只授予私有临时桶所需权限的 service key，权益 runtime 另注入 Ed25519 私钥；这些秘密均不得进入浏览器、客户端 bundle、日志或错误。不得只解码未验签 JWT，也不得把请求正文、普通代理头或 user metadata 角色映射为 principal。若改用 HttpOnly Cookie，session resolver 必须返回 `auth_mode:"cookie"` 与服务器绑定 CSRF；权益端点仍固定只接受 Bearer。计划任务应调用 `ZeroRetentionSweeper.runCycle()`，由它有界运行状态 `sweepDeletionDue()`、内容 `sweepExpiredObjects()` 和第二次状态收敛；必须监控 `attention_required` 与截断。周期清零仍不自动证明平台后台副本已删除，正式零留存需要生产生命周期证据。
+部署前须由数据库所有者在隔离预生产项目按顺序执行并复核 `supabase/001_web_job_state.sql` 至 `supabase/005_direct_object_transfer.sql`。Oak Account verifier 只接受部署注入的 exact issuer、audience 与 Ed25519 trusted-key 集合；各 repository 单独使用仅存在于服务器环境的 `sb_secret_`（推荐）或迁移期 legacy service-role key，S3 adapter 另用只授予私有临时桶所需权限的 service key，权益 runtime 另注入 Oak Manuscript 自己的 Ed25519 私钥；这些秘密均不得进入浏览器、客户端 bundle、日志或错误。不得只解码未验签 JWT，也不得把 `sub`、`sid`、请求正文、普通代理头或 role/email metadata 映射为 principal。当前生产组合根固定 Bearer application-login，不接受 Cookie 兼容回退。计划任务应调用 `ZeroRetentionSweeper.runCycle()`，由它有界运行状态 `sweepDeletionDue()`、内容 `sweepExpiredObjects()` 和第二次状态收敛；必须监控 `attention_required` 与截断。周期清零仍不自动证明平台后台副本已删除，正式零留存需要生产生命周期证据。
 
 ## 稳定错误码
 
