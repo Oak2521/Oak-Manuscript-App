@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript/desktop-auth-v2.schema.json",
+  "title": "Oak Manuscript desktop application-login configuration v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "config_type", "status", "application_id",
+    "account_center_origin", "issuer", "trusted_keys", "sync_api_origin"
+  ],
+  "properties": {
+    "schema_version": { "const": "2.0" },
+    "config_type": { "const": "oak_manuscript_desktop_application_login" },
+    "status": { "enum": ["pending_configuration", "configured"] },
+    "application_id": { "const": "oak-manuscript-desktop" },
+    "account_center_origin": { "type": ["string", "null"] },
+    "issuer": { "type": ["string", "null"] },
+    "trusted_keys": {
+      "type": "array",
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key_id", "algorithm", "public_key_jwk"],
+        "properties": {
+          "key_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+          "algorithm": { "const": "Ed25519" },
+          "public_key_jwk": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["crv", "kty", "x"],
+            "properties": {
+              "crv": { "const": "Ed25519" },
+              "kty": { "const": "OKP" },
+              "x": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" }
+            }
+          }
+        }
+      }
+    },
+    "sync_api_origin": { "type": ["string", "null"] }
+  }
+}

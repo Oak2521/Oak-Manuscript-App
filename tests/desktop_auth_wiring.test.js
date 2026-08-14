@@ -21,11 +21,13 @@ test("desktop auth is gated by trusted config and OS encryption before any produ
   assert.match(main, /production endpoints pending; login and sync transport disabled/);
 });
 
-test("Windows second-instance and macOS open-url callbacks share one strict provider boundary", () => {
-  assert.match(main, /app\.on\("second-instance"[\s\S]*?authCallbackFromArgs\(argv\)/);
-  assert.match(main, /app\.on\("open-url"[\s\S]*?consumeAuthCallback\(url\)/);
-  assert.match(main, /providers\.authProvider\.handleCallback\(url\)/);
-  assert.deepEqual(packageJson.build.protocols, [{ name: "Oak Manuscript Auth Callback", schemes: ["oak-manuscript-auth"] }]);
+test("application-login uses only the random 127.0.0.1 loopback callback", () => {
+  assert.match(main, /new DesktopAuthProvider/);
+  assert.match(main, /new AuthHttpClient/);
+  assert.match(main, /sync_api_origin/);
+  assert.doesNotMatch(main, /authCallbackFromArgs|consumeAuthCallback|handleCallback/);
+  assert.doesNotMatch(main, /app\.on\("open-url"/);
+  assert.equal(Object.hasOwn(packageJson.build, "protocols"), false);
 });
 
 test("renderer receives only auth status and fixed queue actions, never tokens or verifier", () => {

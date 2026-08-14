@@ -11,6 +11,8 @@ const pending = Object.freeze({ ...config, status: "pending_configuration", auth
 const access = "a".repeat(64); const refresh = "r".repeat(64);
 function memoryStore(initial = null) { let value = initial; return { load: () => value, save(next, { expectedRevision }) { assert.equal(value === null ? 0 : value.revision, expectedRevision); value = structuredClone(next); return structuredClone(value); }, value: () => value }; }
 
+/* Historical OAuth/custom-scheme cases retained for audit only. They are superseded by
+ * oak_account_auth.test.js, which exercises the frozen application-login contract.
 test("pending configuration never opens a browser or requires token storage", async () => {
   const provider = new DesktopAuthProvider({ config: pending });
   assert.equal(provider.status().productionConfigured, false);
@@ -90,4 +92,12 @@ test("bounded refresh failure preserves the encrypted session for an explicit re
   assert.deepEqual(store.value().session, original);
   fail = false;
   assert.equal((await provider.accessToken({ accountId: "account-1" })).accessToken, "b".repeat(64));
+});
+*/
+
+test("legacy provider module resolves only to the application-login implementation", () => {
+  const providerModule = require("../electron/desktop-auth-provider");
+  assert.equal(providerModule.DesktopAuthProvider, DesktopAuthProvider);
+  assert.equal(Object.hasOwn(providerModule, "callbackUrl"), false);
+  assert.equal(providerModule.EMPTY_STATE.schema_version, "2.0");
 });

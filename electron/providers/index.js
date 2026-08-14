@@ -319,12 +319,12 @@ class AuthProvider {
   constructor({ allowLocalSimulation = false, clock = () => new Date() } = {}) {
     this.allowLocalSimulation = allowLocalSimulation;
     this.clock = clock;
-    this.session = { state: "signed_out", accountId: null, sessionExpiresAt: null };
+    this.session = { state: "signed_out", oakAccountId: null, sessionExpiresAt: null };
     this.production = null;
   }
 
   configureProduction(provider) {
-    if (!provider || ["status", "beginLogin", "logout", "handleCallback", "accessToken"]
+    if (!provider || ["status", "beginLogin", "logout", "accessToken"]
       .some((name) => typeof provider[name] !== "function")) {
       throw new TypeError("production auth provider 接口不完整");
     }
@@ -338,9 +338,9 @@ class AuthProvider {
     return {
       state: this.session.state,
       loggedIn,
-      accountId: loggedIn ? this.session.accountId : null,
+      oakAccountId: loggedIn ? this.session.oakAccountId : null,
       sessionExpiresAt: loggedIn ? this.session.sessionExpiresAt : null,
-      authMode: "system_browser_pkce",
+      authMode: "system_browser_application_login_pkce",
       productionConfigured: false,
       message: this.session.state === "signed_out"
         ? "湖岸统一账号尚未接入生产服务；当前不会打开登录页或发起网络请求。"
@@ -357,39 +357,34 @@ class AuthProvider {
     return {
       state: "configuration_required",
       opened: false,
-      authMode: "system_browser_pkce",
+      authMode: "system_browser_application_login_pkce",
       message: "生产账号服务尚未配置，未发起网络请求。",
     };
   }
 
-  simulateLogin({ accountId, ttlSeconds = 3600 } = {}) {
+  simulateLogin({ oakAccountId, ttlSeconds = 3600 } = {}) {
     if (!this.allowLocalSimulation) throw new Error("本地账号模拟未启用");
-    safeString(accountId, "accountId", /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/);
+    safeString(oakAccountId, "oakAccountId", /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/);
     if (!Number.isSafeInteger(ttlSeconds) || ttlSeconds < 1) throw new Error("ttlSeconds 非法");
     const expires = new Date(this.clock().getTime() + ttlSeconds * 1000).toISOString();
-    this.session = { state: "authenticated", accountId, sessionExpiresAt: expires };
+    this.session = { state: "authenticated", oakAccountId, sessionExpiresAt: expires };
     return this.status();
   }
 
   logout() {
     if (this.production !== null) return this.production.logout();
-    this.session = { state: "signed_out", accountId: null, sessionExpiresAt: null };
+    this.session = { state: "signed_out", oakAccountId: null, sessionExpiresAt: null };
     return this.status();
   }
 
   expireSession() {
-    this.session = { state: "expired", accountId: null, sessionExpiresAt: null };
+    this.session = { state: "expired", oakAccountId: null, sessionExpiresAt: null };
     return this.status();
   }
 
   revokeDevice() {
-    this.session = { state: "revoked", accountId: null, sessionExpiresAt: null };
+    this.session = { state: "revoked", oakAccountId: null, sessionExpiresAt: null };
     return this.status();
-  }
-
-  handleCallback(url) {
-    if (this.production === null) throw new Error("生产账号服务尚未配置");
-    return this.production.handleCallback(url);
   }
 
   accessToken(binding) {
@@ -610,14 +605,15 @@ class SyncProvider {
   }
 
   _requireAuth(authStatus) {
-    if (!authStatus || authStatus.loggedIn !== true || authStatus.state !== "authenticated") {
+    if (!authStatus || authStatus.loggedIn !== true || authStatus.state !== "authenticated" ||
+        typeof authStatus.oakAccountId !== "string" || !authStatus.oakAccountId) {
       throw new Error("必须先登录湖岸账号；登录本身不代表同意同步");
     }
   }
 
   shouldOffer(projectId, authStatus) {
     if (!authStatus || authStatus.loggedIn !== true || authStatus.state !== "authenticated") return false;
-    return this.preference !== "off" && !this.projectBlocks.has(this._blockKey(accountId(authStatus.accountId), projectId));
+    return this.preference !== "off" && !this.projectBlocks.has(this._blockKey(accountId(authStatus.oakAccountId), projectId));
   }
 
   preview(record, authStatus) {
@@ -643,11 +639,11 @@ class SyncProvider {
       return { action: choice, queued: false, preference: this.preference };
     }
     if (choice === "never_for_project") {
-      const key = this._blockKey(accountId(authStatus.accountId), record.project_id);
+      const key = this._blockKey(accountId(authStatus.oakAccountId), record.project_id);
       if (!this.projectBlocks.has(key)) this._transaction((draft) => { draft.projectBlocks.add(key); });
       return { action: choice, queued: false, preference: this.preference };
     }
-    const account = accountId(authStatus.accountId);
+    const account = accountId(authStatus.oakAccountId);
 
     const existingId = this.byIdempotency.get(this._idempotencyKey(account, record.idempotency_id));
     if (existingId && this.queue.has(existingId)) {
@@ -698,7 +694,7 @@ class SyncProvider {
 
   listQueue(authStatus) {
     this._requireAuth(authStatus);
-    const account = accountId(authStatus.accountId);
+    const account = accountId(authStatus.oakAccountId);
     return [...this.queue.values()]
       .filter((item) => item.account_id === account)
       .map((item) => this._publicItem(item));
@@ -709,7 +705,7 @@ class SyncProvider {
     safeString(queueId, "queueId", /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/);
     const item = this.queue.get(queueId);
     if (!item) throw new Error("同步队列项不存在");
-    if (item.account_id !== accountId(authStatus.accountId)) throw new Error("同步队列项不属于当前账号");
+    if (item.account_id !== accountId(authStatus.oakAccountId)) throw new Error("同步队列项不属于当前账号");
     return item;
   }
 

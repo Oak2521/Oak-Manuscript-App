@@ -132,4 +132,4 @@ class DesktopAuthProvider {
   }
 }
 
-module.exports = { DesktopAuthProvider, EMPTY_STATE, PENDING_TTL_MS, REFRESH_WINDOW_MS, callbackUrl, validateState };
+module.exports = require("./desktop-application-login-provider");
