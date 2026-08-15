@@ -1,6 +1,6 @@
 # DEVELOPMENT_STATUS — 开发状态（唯一状态来源）
 
-> 更新日期：2026-08-14。新记录在上；“已完成”必须有本地测试或构建证据。
+> 更新日期：2026-08-15。新记录在上；“已完成”必须有本地测试或构建证据。
 
 ## 当前版本与基线
 
@@ -13,6 +13,14 @@
 - 只读 Claude 基线：0.0.1，提交 `16736147ed734a3be3535d43152719cf4b97a07e`，标签 `claude-0.0.1-baseline`
 - 当前内置标准为 `oak-standards 2.1.0` / `oak-rules 2.1.0`（release sequence 3）：39 条规则、6 个白名单机械 fixer；alpha.58 新增 4 条不可自动修复的 TXT/Markdown 保守空白卫生提示。
 - OAK-10 冻结合同：只读 Account Center 提交 `6aea9986539a0f55b2961426fa08e486a9e30b19`，状态 `FROZEN_FOR_CONSUMER_IMPLEMENTATION`；本仓库消费副本固定 16 个文件的字节与 SHA-256。仓库默认无 Production URL、真实公钥或凭据。
+
+## OAK-10 重启恢复补件（2026-08-15）
+
+- 权威 Taskboard 复核为 project `oak` / OAK-10 `in_review`；总控只接受 implemented/tested/packaged unsigned Windows alpha，不接受 staging/signed/deployed/production-ready。
+- 恢复前 HEAD 为 `f7d14f027623975799224da4eb824e080aa451de`，工作树原为干净；Alpha.62 NSIS、ZIP、unpacked EXE 和 `SHA256SUMS.txt` 的字节/摘要与 2026-08-14 发行证据一致。
+- 唯一明确仓库内补件是审计文档两处尾随空格，已修复。重启后合同、Node 761 项、fuse、packaged 资源/运行时探针、smoke 证据和 schema v2 发行证据全部复验通过。
+- 受限 shell 首轮 Node 因临时目录创建被拒绝而 `EPERM`；诊断证明 PowerShell 和 Node 在同一项目路径均无法新建文件/目录，获准非受限运行后即恢复 755 pass / 0 fail。未因该环境假失败修改产品代码。
+- 真实 Staging、Supabase/替代架构、干净机安装、签名、公证、部署、法务和可售卖身份仍是未授权/未通过门禁。
 
 ## 商业正式版路线状态
 

@@ -1,7 +1,7 @@
 # OAK-10 基线与实施审计
 
-日期：2026-08-14  
-实施分支：`codex/oak-10-manuscript-account`  
+日期：2026-08-14
+实施分支：`codex/oak-10-manuscript-account`
 修改前基线：`f0ed468f3c6af6c15bc21e9bd2d55a0a7280361b`（Alpha.61 后续 main 检查点）
 
 ## 冻结合同
@@ -70,3 +70,11 @@
 - ASAR 清单只包含新的 application-login client/provider、loopback listener 与 Oak token verifier；旧通用 Auth client/provider 被 production package 排除。
 - Windows Authenticode：NSIS 与 unpacked EXE 均为 `NotSigned`。
 - 构建调试中发现并修复 Ace 外部 `puppeteer.connect()` 会话与主进程双重关闭 Chrome 的偶发竞态；受控补丁升级为 `OAK-ACE-ISOLATION-003`，Node/Python 双重固定摘要与 20/20 定向测试通过。
+
+## 总控复检后恢复补件（2026-08-15）
+
+- 重启恢复时分支与 HEAD 仍为 `codex/oak-10-manuscript-account` / `f7d14f027623975799224da4eb824e080aa451de`；五个原实施提交及 96 文件基线无漂移。
+- Alpha.62 NSIS、ZIP、unpacked EXE 和 `SHA256SUMS.txt` 的字节数/SHA-256 与原 schema v2 证据完全一致；`desktop-auth.json` 仍为 `pending_configuration`，发行身份仍未完整。
+- 总控指出的本文第 3、4 行尾随空格已移除。合同验证、Node 761 项、9 项 fuse、packaged 资源/探针、packaged smoke 证据与发行证据均重新通过。
+- 受限 shell 中首次 Node 回归因项目内临时目录创建被环境拒绝而统一 `EPERM`；该结果未计为产品失败。同一 HEAD 在获准的项目内非受限运行中为 755 pass / 0 fail / 6 skip。
+- 本补件不填写真实 URL/密钥，不执行 Staging、数据库/对象存储、安装生命周期、签名、macOS、部署或法务状态变更。OAK-10 继续保持 `in_review`。

@@ -1,6 +1,24 @@
 # TEST_REPORT — 测试报告
 
-> 更新日期：2026-08-14。只记录真实执行结果；未运行项不得写成通过。
+> 更新日期：2026-08-15。只记录真实执行结果；未运行项不得写成通过。
+
+## OAK-10 重启恢复复验（2026-08-15）
+
+本轮只修复 `docs/OAK10_BASELINE_AND_IMPLEMENTATION_AUDIT.md` 两处尾随空格并补齐交接证据，未修改产品代码、配置语义或已打包制品。
+
+| 复验项 | 结果 | 证据边界 |
+|---|---|---|
+| Repo / 配置漂移 | **PASS** | 恢复前分支 `codex/oak-10-manuscript-account`、HEAD `f7d14f027623975799224da4eb824e080aa451de`、五个实施提交与原干净工作树一致；`desktop-auth.json` 仍 `pending_configuration`，发行身份仍 `complete=false` |
+| 文档空白 | **PASS（已修复）** | 总控指出的第 3、4 行尾随空格已移除；提交前以 `git diff --check` 复验 |
+| 冻结合同 | **PASS** | commit `6aea9986539a0f55b2961426fa08e486a9e30b19`；16 files / 6 valid fixtures / 20 negative vectors / 16 checklist items |
+| Node 全量 | **PASS** | 获准的项目内非受限运行：761 total / 755 pass / 0 fail / 6 skip，5.582 秒 |
+| 受限 shell 首轮 | **无效环境失败，不计回归** | Node 与 PowerShell 均无法在项目内创建临时文件/目录，大量测试统一在 `mkdtemp` 返回 `EPERM`；同一 HEAD 非受限重跑全通过，未修改代码规避 |
+| 9 项 Electron fuse | **PASS** | 无未知 fuse，alpha policy 全部符合 |
+| Packaged 资源 | **PASS** | 实际执行 CPython 3.13.14 与 JRE/EpubCheck 探针；errors=[]，仍如实返回 12 项 sale blocker |
+| Packaged smoke 证据 | **PASS** | run `msslwfuj-5c4e1e4dc65c88fc`；EXE `93bdbf88…539c9`，输出树 `e0235b95…01a7` |
+| Schema v2 发行证据 | **PASS** | NSIS `3a3c74da…bb64`，ZIP `9263fb67…2f5c`，`SHA256SUMS.txt` `d6956898…190e`；未重建或签名 |
+
+状态边界不变：implemented/tested/packaged unsigned Windows alpha 成立；staging/signed/deployed/production-ready/可售卖仍不成立。
 
 ## 最新验证结论：0.1.0-alpha.62 Oak Account、Pro 与同步生产形状接入
 

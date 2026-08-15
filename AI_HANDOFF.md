@@ -1,6 +1,6 @@
 # AI_HANDOFF — 湖岸稿件（Oak Manuscript）项目交接说明
 
-> 更新日期：2026-08-14
+> 更新日期：2026-08-15
 > 当前开发方：ChatGPT Codex
 > 当前版本：`0.1.0-alpha.62`
 > 当前分支：`codex/oak-10-manuscript-account`
@@ -40,6 +40,14 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 - 调试期间完整构建首次发现 Ace 的外部 `puppeteer.connect()` 会话错误调用 `browser.close()`，与主进程 Chrome owner 形成双重关闭竞态；已改为外部会话仅 `disconnect()`、主进程唯一终止，并以 `OAK-ACE-ISOLATION-003`、双重固定哈希和测试锁定。
 - 统一测试：Node 761/755/0/6，Python 368/0/0/3。最终 `npm run build:win` 305.1 秒退出 0；真实 packaged smoke、ASAR/fuse/资源、NSIS/ZIP、SHA256SUMS 与 schema v2 manifest 同链通过。
 - 仍未完成：Production URL/真实密钥、Account Center Staging、真实 Supabase migration/RLS/S3/CORS、官网联调、干净机安装生命周期、Windows 签名、macOS 构建/签名/公证、部署与生产零留存。因此 Alpha.62 不是可售卖正式版。
+
+### OAK-10 重启恢复与总控补件（2026-08-15）
+
+- 权威 Taskboard 仍为 `http://127.0.0.1:47823` / project `oak`；OAK-10 保持 `in_review`，总控结论是本地 Alpha.62 检查点通过、整体不验收完成。
+- 重启后从 `f7d14f027623975799224da4eb824e080aa451de` 恢复；分支、五个原实施提交、Alpha.62 制品字节与 SHA-256 无漂移。`desktop-auth.json` 仍为 `pending_configuration`，发行身份仍 `complete=false`。
+- 总控指出的 `docs/OAK10_BASELINE_AND_IMPLEMENTATION_AUDIT.md` 第 3、4 行尾随空格已移除。
+- 重启后首次受限 shell 内 Node 全量因无法在项目内创建临时目录而批量返回 `EPERM`，这次不计作产品回归结果。同一 HEAD 在获准的项目内非受限运行中为 761 total / 755 pass / 0 fail / 6 skip。
+- 冻结合同、9 项 fuse、packaged 资源及真实运行时探针、packaged smoke 证据和 schema v2 发行证据已重新复验通过；未重建、未运行安装器、未签名、未联网或部署。
 
 ### 已完成：0.1.0-alpha.61 Web 对象存储直传/直取源码闭环（源码检查点，2026-08-10）
 
