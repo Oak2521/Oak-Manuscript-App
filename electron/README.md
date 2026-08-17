@@ -44,7 +44,7 @@
 
 打包安全另由 `scripts/electron_fuse_policy.js` 固定：必须启用 ASAR 与 embedded integrity、用顶层 `@electron/fuses 2.1.3` 显式设置 Electron 43 全部 9 项，并在 electron-builder 后从真实应用二进制读回。索引 8 已定义为 `WasmTrapHandlers`；未来未知 wire 项仍 fail-closed。alpha.10 已把 Ace 迁移到 `utilityProcess` 并固定 `RunAsNode=false`。详见 `docs/ELECTRON_FUSE_POLICY.md`。
 
-当前源码的 `resource-trust-anchor.json` 绑定应用 loose 文件与目标平台运行锁；精确摘要以 `docs/TEST_REPORT.md` 为准。alpha.62 源码锚点为 131 文件 / 2,243,858 字节，manifest `9b00c85b…bbc`、anchor `bc69e8c3…5e16`；全仓库文本固定 LF，避免 Windows checkout 改写受信字节。最新真实 packaged 锚点、ASAR、fuse、资源门禁及隐藏 smoke 属于未签名 alpha.62。packaged 门禁继续从真实 ASAR 读取 production `package.json` 与 `oakReleaseIdentity`。
+当前源码的 `resource-trust-anchor.json` 绑定应用 loose 文件与目标平台运行锁；精确摘要以 `docs/TEST_REPORT.md` 为准。alpha.63 源码锚点为 131 文件 / 2,244,237 字节，manifest `e03de88c…cb68`、anchor `11d122fd…5380`；全仓库文本固定 LF，避免 Windows checkout 改写受信字节。最新真实 packaged 锚点、ASAR、fuse、资源门禁及隐藏 smoke 以当前 release manifest 和测试报告为准。packaged 门禁继续从真实 ASAR 读取 production `package.json` 与 `oakReleaseIdentity`。
 
 PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专用 CSP 只允许自包含 HTML 所需的内联样式和 `data:` 图片。加载报告前后核对文件身份，拒绝项目根/`exports`/报告/目标的 symlink、junction/reparse、硬链接和目录身份换入，最后同目录原子写入。
 
@@ -52,7 +52,7 @@ PDF session 不使用 `persist:`、禁缓存并设置 `javascript=false`；专�
 
 `app:info` 返回 `appVersion`、经当前存储重新验证的七字段 `standardIdentity` 和 `packaged=app.isPackaged`。smoke 必须先通过 Renderer 规划并确认引用解析，再读取本次创建的 `project.json` 及其引用报告，核对 Python core 版本、check ID、`citation_resolution`，以及 APP/项目/检查/报告的完整标准身份；条件外部 smoke 还要求 EpubCheck/Ace 确实运行，打包 smoke 强制 `packaged=true`。打包态 Python、JRE 或 Ace stage 失配时必须失败关闭，不得回退用户环境中的同名代码资源；Electron 43.1.0 `win32-x64` 自身仍由受版本控制的全树锁固定：2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `f5c2c915633c1917bc37377f8232bde4259588eb138bc4072a3c7df976e27486`，并绑定官方 ZIP/SHASUMS256/npm checksums provenance。当前 Ace 浏览器运行时仍依赖用户系统 Chrome。
 
-账号与同步 IPC 不接受 Renderer 自带的负载、token、URL 或 transport；主进程通过固定 `sync-source` 命令取值并重建 SyncRecord v1。alpha.62 只在受信 application-login 配置完整且 safeStorage 可用时实例化系统浏览器 PKCE、随机 loopback、refresh-only Auth 与 Sync coordinator；默认 `pending_configuration` 没有任何网络目标。用户明确选择同步后由主进程立即发送同一持久队列项；失败保留并可逐项明确重试，登录/预览/启动不自动发送。access token、refresh token、code、verifier 与完整 `oak_account_id` 永不跨 preload；远端创建或幂等重放后才删除本机队列。详见 `docs/SYNC_RECORD_V1.md`。
+账号与同步 IPC 不接受 Renderer 自带的负载、token、URL 或 transport；主进程通过固定 `sync-source` 命令取值并重建 SyncRecord v1。alpha.63 只在受信 application-login 配置完整且 safeStorage 可用时实例化系统浏览器 PKCE、随机 loopback、refresh-only Auth 与 Sync coordinator；默认 `pending_configuration` 没有任何网络目标。用户明确选择同步后由主进程立即发送同一持久队列项；失败保留并可逐项明确重试，登录/预览/启动不自动发送。access token、refresh token、code、verifier 与完整 `oak_account_id` 永不跨 preload；远端创建或幂等重放后才删除本机队列。详见 `docs/SYNC_RECORD_V1.md`。
 
 订阅权益同样不接受 Renderer 自报 claims、token、URL 或公钥。alpha.44 只在受信权益配置完整且 safeStorage 可用时组合 HTTP client/provider；`status()` 只验本机密文，只有已登录用户调用固定 refresh IPC 才请求一次服务。Ed25519 envelope 必须绑定当前账号、stable device ID、issuer/audience 与时间；失败降 Free 且不锁本地项目。默认配置为空；详见 `docs/SIGNED_ENTITLEMENT_V1.md`。
 

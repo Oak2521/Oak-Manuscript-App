@@ -33,12 +33,24 @@ function canonicalHttpsUrl(value, label, { originOnly = false } = {}) {
 function validateTrustedKey(value) {
   if (!exactKeys(value, ["key_id", "algorithm", "public_key_jwk"]) ||
       typeof value.key_id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u.test(value.key_id) ||
-      value.algorithm !== "Ed25519" || !exactKeys(value.public_key_jwk, ["crv", "kty", "x"]) ||
-      value.public_key_jwk.crv !== "Ed25519" || value.public_key_jwk.kty !== "OKP" ||
-      typeof value.public_key_jwk.x !== "string" || !/^[A-Za-z0-9_-]{43}$/u.test(value.public_key_jwk.x)) {
-    throw new Error("桌面账号配置错误：受信 Ed25519 公钥非法");
+      value.algorithm !== "ES256" ||
+      !exactKeys(value.public_key_jwk, ["alg", "crv", "ext", "key_ops", "kid", "kty", "use", "x", "y"]) ||
+      value.public_key_jwk.alg !== "ES256" || value.public_key_jwk.crv !== "P-256" ||
+      value.public_key_jwk.ext !== true || !Array.isArray(value.public_key_jwk.key_ops) ||
+      value.public_key_jwk.key_ops.length !== 1 || value.public_key_jwk.key_ops[0] !== "verify" ||
+      value.public_key_jwk.kid !== value.key_id || value.public_key_jwk.kty !== "EC" ||
+      value.public_key_jwk.use !== "sig" ||
+      typeof value.public_key_jwk.x !== "string" || !/^[A-Za-z0-9_-]{43}$/u.test(value.public_key_jwk.x) ||
+      typeof value.public_key_jwk.y !== "string" || !/^[A-Za-z0-9_-]{43}$/u.test(value.public_key_jwk.y)) {
+    throw new Error("桌面账号配置错误：受信 ES256/P-256 JWKS 公钥非法");
   }
-  return Object.freeze({ ...value, public_key_jwk: Object.freeze({ ...value.public_key_jwk }) });
+  return Object.freeze({
+    ...value,
+    public_key_jwk: Object.freeze({
+      ...value.public_key_jwk,
+      key_ops: Object.freeze([...value.public_key_jwk.key_ops]),
+    }),
+  });
 }
 
 function validateDesktopAuthConfig(value) {

@@ -1,10 +1,10 @@
 # AI_HANDOFF — 湖岸稿件（Oak Manuscript）项目交接说明
 
-> 更新日期：2026-08-15
+> 更新日期：2026-08-17
 > 当前开发方：ChatGPT Codex
-> 当前版本：`0.1.0-alpha.62`
+> 当前版本：`0.1.0-alpha.63`
 > 当前分支：`codex/oak-10-manuscript-account`
-> 当前源码标签：尚未创建；最新真实 Windows packaged 检查点为本分支的未签名 `0.1.0-alpha.62`
+> 当前源码标签：尚未创建；最新真实 Windows packaged 检查点为本分支的未签名 `0.1.0-alpha.63`
 
 ## 1. 权威入口与工作区
 
@@ -30,7 +30,18 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 2. 当前现场事实
 
-### 已完成：0.1.0-alpha.62 Oak Account 桌面登录、Pro 分离与同步生产形状接入（本地检查点，2026-08-14）
+### 已完成：0.1.0-alpha.63 对齐 OAK-16 Staging runtime（本地/未签名 Windows 检查点，2026-08-17）
+
+- 从 `97a7958aee29f8433e174b1a8fcf9edb059c0086` 的 10 个未提交遗留文件恢复，逐文件审计后确认目标是消费 OAK-16 已验收的 Staging runtime，而不是回退到旧 Supabase/通用 OAuth。冻结的 Desktop Application Login 1.0 消费副本、来源提交 `6aea9986539a0f55b2961426fa08e486a9e30b19` 和 16 文件 provenance 均未改写；合同验证仍为 6 个有效 fixture、20 个 negative vector、16 项 checklist。
+- 桌面与 Web Oak access token 验签从历史 Ed25519 运行假设收敛到 OAK-16 的 ES256/P-256 JWKS：只接受 exact public JWK、`kid`/`alg`/`use`/`key_ops` 一致、最长 300 秒 access token 和 P1363 64 字节签名；revoke 只接受 HTTP 200 的 exact `{revoked:true}`。仓库 `desktop-auth.json` 继续是 `pending_configuration`，没有写入 Staging/Production URL、公钥、账号或秘密。
+- Web verifier 新增信任锚快照回归：修复构造后调用方可改写原 JWK `x/y`、以替换私钥签发伪造 token 的漏洞；现在构造时即生成独立 `KeyObject`，后续不再读取可变调用方对象。测试先证明替换密钥可被错误接受，再验证修复后返回 `null`。
+- 新增 OAK-16 Staging consumer 测试，但只在显式 `OAK10_STAGING_CONSUMER=1` 时运行；默认全量回归保持跳过，没有连接真实 Staging。旧 HEAD + 新账户测试的恢复副本得到 15 total / 4 pass / 11 fail，明确重建 ES256/revoke 改动的 RED 证据；当前定向为 37 total / 36 pass / 0 fail / 1 skip。
+- 最终统一回归：Node 767 total / 760 pass / 0 fail / 7 skip；Python 368 total / 0 failures / 0 errors / 3 skipped。资源信任为 131 文件 / 2,244,237 字节，manifest `e03de88c…cb68`、anchor `11d122fd…5380`。
+- 离线 `npm run build:win` 全链退出 0；packaged smoke run `msxhfjrn-167d5b76cd673e8b` PASS，输出树 76 文件 / 1,378,019 字节 / `181eea1e…fc5`。NSIS 190,078,315 字节 / `5ac3dc23…eb35`，ZIP 233,925,031 字节 / `861fd3af…6a42`，schema v2 发行证据独立复验通过。
+- Alpha.62 制品完整保留在 `release/archive/0.1.0-alpha.62/`；安装生命周期常量由过期 Alpha.12 更新为 Alpha.62，专项 13/13 和 Alpha.62→Alpha.63 只读预检通过。安装/升级/降级/卸载没有执行；unpacked 与 NSIS 均为 `NotSigned`。
+- OAK-10 继续保持 `in_review`。本批次没有连接真实账号、配置环境、迁移 Staging/数据库、部署、签名、运行安装器或构建 macOS；implemented/tested/packaged unsigned Windows 成立，staging-validated/deployed/signed/production-ready/可售卖均不成立。
+
+### 历史检查点：0.1.0-alpha.62 Oak Account 桌面登录、Pro 分离与同步生产形状接入（2026-08-14）
 
 - 冻结消费 `D:\Workspace\Oak by Lake\oak-account-center` 提交 `6aea9986539a0f55b2961426fa08e486a9e30b19` 的 application-login 1.0 合同；`config/contracts/oak-account/1.0/provenance.json` 锁定 16 个来源文件的精确字节与 SHA-256。未知 major、来源漂移、错误签名/claims/issuer/audience 均失败关闭；这不证明 Account Center 服务已部署。
 - 桌面不再使用自定义 scheme 或通用 OAuth 兼容路径。登录固定为系统浏览器 + 随机 `127.0.0.1` 端口/路径 + PKCE S256 + 一次 state；access token 最长 300 秒且只驻内存，OS 加密 `OAKAUTH2/session-v2.enc` 只保存轮换 refresh 会话。旧 v1 会话只安全删除、不迁移；退出本地先清除，离线撤销明确标为未确认。

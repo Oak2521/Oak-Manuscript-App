@@ -1,6 +1,6 @@
 # Web 作业契约与同源 HTTP handler（alpha）
 
-`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.61 将唯一生产组合 `web-job-runtime.js` 切换为 v2 direct-object 数据面；alpha.62 再把作业、SyncRecord、权益和账户设备四个生产组合根切换为 Oak Account Ed25519 access-token 本地验签，只从 `oak_account_id` 派生 owner。浏览器稿件字节仍使用短期 Supabase S3 PUT/GET，不经公开 Function 缓冲；真实账号、桶、CORS、迁移、隔离 worker、清扫/告警和官网部署仍未完成。
+`job-contract.js` 是商业方案 v2.0 的服务端临时任务契约与内存参考实现；`persistent-job-service.js`、`python-core-process-processor.js`、`private-lease-worker.js` 与 `zero-retention-sweeper.js` 组成未部署的临时处理纵向边界。alpha.61 将唯一生产组合 `web-job-runtime.js` 切换为 v2 direct-object 数据面；alpha.63 保持四个生产组合根只从 Oak Account `oak_account_id` 派生 owner，并把 access-token 本地验签对齐到 OAK-16 的 ES256/P-256 runtime。浏览器稿件字节仍使用短期 Supabase S3 PUT/GET，不经公开 Function 缓冲；真实账号、桶、CORS、迁移、隔离 worker、清扫/告警和官网部署仍未完成。
 
 Web 服务端依赖与 Electron 桌面依赖隔离：
 

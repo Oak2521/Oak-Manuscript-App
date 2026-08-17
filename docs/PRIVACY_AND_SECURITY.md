@@ -1,6 +1,6 @@
 # PRIVACY_AND_SECURITY — 隐私与安全基线
 
-> 当前权威为商业正式版开发方案 v2.0；本文件描述 `0.1.0-alpha.62` 源码隐私边界。alpha.62 本地消费 OAK-4 冻结 application-login 合同，没有联网、上传稿件、使用真实账号/密钥或部署；默认账号/权益配置仍无网络目标，仓库无生产私钥，最新真实 Windows 制品仍是未签名 alpha.58。真实 Account Center、Staging、支付、迁移、API/官网部署和生产隔离未实现。
+> 当前权威为商业正式版开发方案 v2.0；本文件描述 `0.1.0-alpha.63` 源码隐私边界。alpha.63 保持 OAK-4 冻结 application-login 合同并对齐 OAK-16 ES256/P-256 runtime，没有联网、上传稿件、使用真实账号/密钥或部署；默认账号/权益配置仍无网络目标，仓库无生产私钥，最新真实 Windows 制品为未签名 alpha.63。真实 Account Center Staging、支付、迁移、API/官网部署和生产隔离未实现。
 
 ## 1. 本地优先承诺（产品级）
 
@@ -30,7 +30,7 @@
 本地技术日志（`logs/`）与导出诊断信息不得包含正文、标题、文件名和路径。
 脱敏评估摘要仅含：稿件类型、语言、字数区间、问题统计、出版目标、规则版本、咨询意图；当前只在本地生成，未来真实发送仍须用户逐字段确认。
 
-上述“数据不出本机”只描述默认桌面状态。alpha.62 的 Web 代码具备 Oak Account JWT 本地验签、content-free v2 稿件控制面、Supabase S3 短凭证直传/直取、Postgres 状态、私有 worker 结构检查、固定 Python 共享核心子进程和单次结果 claim 的生产形状，但网络/store/DB 仍为注入仿真或 SQL 静态检查且页面未部署。本机子进程烟测不等于病毒库、容器或 OS 禁网隔离。客户端只在用户选择文件并勾选本次处理同意后上传，创建元数据不含文件名/路径；Bearer 与 S3 请求均显式 `credentials:"omit"`。数据库表只含内容无关状态和最小文档枚举，浏览器角色无访问权；repository secret 和 S3 service key 必须仅由服务器环境注入。`delete_at` metadata 不会自动删除对象，必须运行双清扫器并监控未确认删除。在真实迁移、私有桶/CORS、生产隔离/恶意软件扫描、计划任务、隐私文案和三路零留存验收完成前，不得宣称 Web 能力已上线。
+上述“数据不出本机”只描述默认桌面状态。alpha.63 的 Web 代码具备 Oak Account JWT 本地验签、content-free v2 稿件控制面、Supabase S3 短凭证直传/直取、Postgres 状态、私有 worker 结构检查、固定 Python 共享核心子进程和单次结果 claim 的生产形状，但网络/store/DB 仍为注入仿真或 SQL 静态检查且页面未部署。本机子进程烟测不等于病毒库、容器或 OS 禁网隔离。客户端只在用户选择文件并勾选本次处理同意后上传，创建元数据不含文件名/路径；Bearer 与 S3 请求均显式 `credentials:"omit"`。数据库表只含内容无关状态和最小文档枚举，浏览器角色无访问权；repository secret 和 S3 service key 必须仅由服务器环境注入。`delete_at` metadata 不会自动删除对象，必须运行双清扫器并监控未确认删除。在真实迁移、私有桶/CORS、生产隔离/恶意软件扫描、计划任务、隐私文案和三路零留存验收完成前，不得宣称 Web 能力已上线。
 
 开发者构建输入是另一条隔离边界：`npm run download:builder:win` 只在用户明确批准后由命令行显式启动，只能请求合同固定的 electron-builder GitHub release URL/受限重定向主机，并把归档写入仓库 `out/`。它不接触项目、稿件、报告、账号或应用用户数据，也不会被普通 build/test 或桌面应用隐式触发。
 
@@ -58,7 +58,7 @@
 - 退出、错账号、撤销、过期、未生效、篡改或损坏统一降为 Free，不删除本地项目，不锁导出；恶意刷新结果不能覆盖已验证缓存；
 - 默认 `desktop-license.json` 为 `pending_configuration`，因此当前普通 APP 不会访问权益端点。生产签发、私钥保管/轮换、支付、设备后台和真实 E2E 尚未完成；详见 `SIGNED_ENTITLEMENT_V1.md`。
 
-alpha.62 的服务端请求只接受冻结 Oak Account 合同验签后的 Bearer principal 与 device ID；唯一跨系统 owner 是 `oak_account_id`，`sub`、`sid`、email、角色、账号套餐、时间和状态不能由客户端自报。权益/设备表不允许稿件、文件名、路径、哈希、token 或私钥字段，浏览器角色无表/RPC 权限。Signer、服务端 `sb_secret_`/legacy service-role key 和 audit sink 分别注入；新 secret 只进入 `apikey`，不得作为 Bearer。成功响应发送前再次 exact 校验，固定错误与审计不记录账号、设备、token、请求头、稿件或上游正文。当前仅有 SQL 静态契约和注入测试，不能据此宣称生产秘密隔离或 RLS 已验证。
+alpha.63 的服务端请求只接受冻结 Oak Account 合同下、按 OAK-16 ES256/P-256 runtime 验签后的 Bearer principal 与 device ID；唯一跨系统 owner 是 `oak_account_id`，`sub`、`sid`、email、角色、账号套餐、时间和状态不能由客户端自报。权益/设备表不允许稿件、文件名、路径、哈希、token 或私钥字段，浏览器角色无表/RPC 权限。Signer、服务端 `sb_secret_`/legacy service-role key 和 audit sink 分别注入；新 secret 只进入 `apikey`，不得作为 Bearer。成功响应发送前再次 exact 校验，固定错误与审计不记录账号、设备、token、请求头、稿件或上游正文。当前仅有 SQL 静态契约和注入测试，不能据此宣称生产秘密隔离或 RLS 已验证。
 
 alpha.46 的订阅事件核心不接收原始 webhook、价格、币种、订单、付款工具、邮箱、姓名或账单地址；只保留 provider/event 标识、账号/权益标识、原因、状态、规范时间窗、canonical 指纹和处理结果。真实支付商适配器必须先独立验证签名和来源，再调用绑定固定 provider 的 ingestor，不能把原始载荷存入该表。账号设备 API 只向已验证属主返回公开状态；响应删除 account/entitlement ID 与 revision，审计把设备路由归一化为占位符，不记录实际 device ID。该边界目前只有静态/注入证据。
 
@@ -101,7 +101,7 @@ alpha.61 当前生产组合使用 `/manuscript/api/v2/jobs` 直传控制面。�
 - `sync-record-service.js` 独立执行 exact key、永久禁止键、ID/时间、计数一致性、记录条数和 64 KiB 上限验证；不能把 Electron 已验证当作服务端信任；
 - `oak_manuscript_sync_records` 只保存 SyncRecord v1 白名单 JSON 及 owner/时间，不保存稿件、正文、标题、片段、路径、文件名、参考文献原文或内容哈希。数据库递归拒绝可疑键，强制 RLS，浏览器角色无表/RPC 权限；
 - service-role repository 只能调用四个固定 RPC，不把密钥写入 URL/Cookie/错误。创建/重放在账户 advisory transaction lock 内原子执行容量限制和幂等判断；列表在一次 RPC 快照返回记录与 total，删除只按可信 owner；
-- alpha.62 新增的 Oak Account 验签与单一 E2E 贯通明确确认、即时发送、服务端 `oak_account_id` owner 绑定和网站历史 strict parse。证据仍是本地匿名 Fetch/内存 repository/SQL 静态契约；没有真实迁移、Account Center/Staging、RLS、多实例、备份、删除、日志和密钥泄露生产证据，不得据此宣称云端隐私验收完成。
+- alpha.63 的 Oak Account ES256 验签与单一 E2E 继续贯通明确确认、即时发送、服务端 `oak_account_id` owner 绑定和网站历史 strict parse。证据仍是本地匿名 Fetch/内存 repository/SQL 静态契约；没有真实迁移、Account Center Staging、RLS、多实例、备份、删除、日志和密钥泄露生产证据，不得据此宣称云端隐私验收完成。
 
 ## 5. 文件与压缩包安全
 

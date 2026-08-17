@@ -25,15 +25,21 @@
         "required": ["key_id", "algorithm", "public_key_jwk"],
         "properties": {
           "key_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
-          "algorithm": { "const": "Ed25519" },
+          "algorithm": { "const": "ES256" },
           "public_key_jwk": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["crv", "kty", "x"],
+            "required": ["alg", "crv", "ext", "key_ops", "kid", "kty", "use", "x", "y"],
             "properties": {
-              "crv": { "const": "Ed25519" },
-              "kty": { "const": "OKP" },
-              "x": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" }
+              "alg": { "const": "ES256" },
+              "crv": { "const": "P-256" },
+              "ext": { "const": true },
+              "key_ops": { "const": ["verify"] },
+              "kid": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+              "kty": { "const": "EC" },
+              "use": { "const": "sig" },
+              "x": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" },
+              "y": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43}$" }
             }
           }
         }

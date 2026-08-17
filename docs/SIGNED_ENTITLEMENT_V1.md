@@ -1,6 +1,6 @@
 # Signed Entitlement v1 — 桌面订阅权益契约
 
-> 状态：`0.1.0-alpha.62` 保留独立 Oak Manuscript signed-entitlement，并把服务端身份来源切换为冻结 Oak Account application-login access token。Oak active identity 不直接授予 Pro；服务端先本地验签并取得 `oak_account_id`，再把该值绑定到权益合同内部历史字段 `account_id`。桌面仍严格验证账号/设备/时间/撤销和 Ed25519 签名，失败回落 Free 且本地项目不锁定。仓库默认配置为 `pending_configuration`，没有生产端点、公钥或私钥，不会发起权益网络请求。支付商 webhook、真实迁移/部署和联调尚未实现。
+> 状态：`0.1.0-alpha.63` 保留独立 Oak Manuscript signed-entitlement，并把服务端身份来源固定为冻结 Oak Account application-login access token。Oak Account token 按 OAK-16 runtime 使用 ES256/P-256；Oak Manuscript entitlement envelope 继续使用独立 Ed25519 信任根，两者不得混用。Oak active identity 不直接授予 Pro；服务端先本地验签并取得 `oak_account_id`，再把该值绑定到权益合同内部历史字段 `account_id`。桌面仍严格验证账号/设备/时间/撤销和 entitlement 签名，失败回落 Free 且本地项目不锁定。仓库默认配置为 `pending_configuration`，没有生产端点、公钥或私钥，不会发起权益网络请求。支付商 webhook、真实迁移/部署和联调尚未实现。
 
 ## 1. 目的与边界
 

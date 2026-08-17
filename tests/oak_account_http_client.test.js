@@ -28,10 +28,17 @@ test("application-login HTTP client uses fixed JSON routes without legacy keys o
   for (const call of calls) { assert.equal(call.options.headers.authorization, undefined); assert.equal(call.options.headers.apikey, undefined); assert.equal(call.options.headers.cookie, undefined); assert.equal(call.options.credentials, "omit"); }
 });
 
-test("revoke uses the fixed current-family request and accepts only empty 204", async () => {
+test("revoke uses the fixed current-family request and accepts the exact runtime result", async () => {
   let call;
-  const client = new AuthHttpClient({ config, fetchImpl: async (url, options) => { call = { url, options }; return response(204, null); } });
-  await client.revoke("r".repeat(43));
+  const client = new AuthHttpClient({ config, fetchImpl: async (url, options) => { call = { url, options }; return response(200, { revoked: true }); } });
+  assert.deepEqual(await client.revoke("r".repeat(43)), { revoked: true });
   assert.equal(call.url, "https://identity.example.invalid/api/application-login/revoke");
   assert.deepEqual(JSON.parse(call.options.body), { schema_version: "oak-desktop-revoke/1.0", application_id: "oak-manuscript-desktop", refresh_token: "r".repeat(43), mode: "current_token_family" });
+});
+
+test("revoke fails closed on legacy or widened response shapes", async () => {
+  for (const invalidResponse of [response(204, null), response(200, { revoked: false }), response(200, { revoked: true, detail: "extra" })]) {
+    const client = new AuthHttpClient({ config, fetchImpl: async () => invalidResponse });
+    await assert.rejects(() => client.revoke("r".repeat(43)), { code: "AUTH_RESPONSE_INVALID" });
+  }
 });

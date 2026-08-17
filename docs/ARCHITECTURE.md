@@ -1,6 +1,6 @@
 # ARCHITECTURE — 架构与关键技术决策
 
-> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.62` 源码架构；最新真实 Windows packaged 证据仍为未签名 alpha.58。alpha.62 消费 OAK-4 冻结 application-login 合同，并把桌面与四个 Web 生产 composition root 的身份主键收敛到 `oak_account_id`；账号配置仍无端点/公钥，仓库无真实凭据或生产私钥。alpha.61 的短期 Supabase S3 数据面继续作为对象存储使用，不承担旧身份认证。真实账号、支付、数据库/对象存储/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
+> 当前权威：`湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`。v1.2 Claude 方案仅为 `0.0.1` 历史基线。本文件记录 `0.1.0-alpha.63` 源码架构；最新真实 Windows packaged 证据为未签名 alpha.63。alpha.63 保持 OAK-4 冻结 application-login 合同，并把桌面与四个 Web 生产 composition root 对齐到 OAK-16 的 ES256/P-256 runtime，身份主键继续只取 `oak_account_id`；账号配置仍无端点/公钥，仓库无真实凭据或生产私钥。alpha.61 的短期 Supabase S3 数据面继续作为对象存储使用，不承担旧身份认证。真实账号、支付、数据库/对象存储/网站部署、官方云 AI、生产隔离、代码签名、真实安装生命周期和 macOS 仍待验收。
 
 ## 1. 总体分层
 
@@ -161,7 +161,7 @@ alpha.44 在 `web/client/` 增加当前账号的同步历史列表与属主删�
 
 缓存明文由 `license-cache-v1.schema.json` 定义，只作为 `OAKLIC1` safeStorage 密文保存；revision CAS、独占候选、`fsync`、原子换入、提交后解密复验、父链/链接/硬链接/读取竞态门禁沿用账号/同步 store 的 fail-closed 标准。active 与 grace 提供 Pro；expired、revoked、not-yet-valid、invalid、signed-out 与 not-cached 均为 Free。任何状态固定 `localProjectsLocked=false`，订阅失败不得劫持用户已有本地文件。
 
-alpha.62 的服务端链由 `entitlement-runtime.js` 组合 Oak Account verifier/session resolver、service-role repository、独立 Ed25519 signer、HTTP handler 和 Fetch adapter。`003_manuscript_entitlements.sql` 把权益与设备分表，强制 RLS，唯一 RPC 在 account advisory lock 内原子读取权益、复核既有设备或检查容量后登记新设备。Signer 不复用 Electron canonicalizer，私钥只允许服务器构造注入；HTTP 成功响应还要再次通过 exact shape/容量校验，错误与审计 content-free。支付/退款事件摄入、设备管理 UI、真实迁移/RLS/多实例、生产私钥托管/轮换与 E2E 仍是独立门禁；详见 `SIGNED_ENTITLEMENT_V1.md`。
+alpha.63 的服务端链由 `entitlement-runtime.js` 组合 ES256/P-256 Oak Account verifier/session resolver、service-role repository、独立 Ed25519 entitlement signer、HTTP handler 和 Fetch adapter。Oak Account access token 与 Oak Manuscript 权益 envelope 使用不同算法和信任根，不得混用。`003_manuscript_entitlements.sql` 把权益与设备分表，强制 RLS，唯一 RPC 在 account advisory lock 内原子读取权益、复核既有设备或检查容量后登记新设备。Signer 不复用 Electron canonicalizer，私钥只允许服务器构造注入；HTTP 成功响应还要再次通过 exact shape/容量校验，错误与审计 content-free。支付/退款事件摄入、设备管理 UI、真实迁移/RLS/多实例、生产私钥托管/轮换与 E2E 仍是独立门禁；详见 `SIGNED_ENTITLEMENT_V1.md`。
 
 alpha.46 在 signer 上游增加 provider-bound 的规范化订阅快照 ingestor。支付商原始 webhook、签名、金额、支付工具和客户 PII 必须由未来的独立适配器处理；核心只接受权益原因/状态/时间窗，以 provider event ID 和 canonical SHA-256 实现重放、冲突和乱序语义。`004_subscription_events_and_devices.sql` 在同一账号 advisory lock 内保存 content-free 事件并更新权益来源真相，旧事件只记 `stale`，不能覆盖较新状态。
 

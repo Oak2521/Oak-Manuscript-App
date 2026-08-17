@@ -1,6 +1,6 @@
 # SyncRecord v1 — 结果与元数据同步契约
 
-> 状态：当前源码与最新未签名 Windows packaged 检查点为 `0.1.0-alpha.62`。SyncRecord 数据合同不变；桌面 Auth 已切换为冻结 Oak Account application-login，服务端生产组合根本地验签 access token 并只用 `oak_account_id` 绑定 owner。“明确确认后即时发送、失败安全留队”继续通过本地生产形状测试。受信账号配置仍为 `pending_configuration`；API 和页面均未部署，所以普通 APP 仍不发同步请求。
+> 状态：当前源码与最新未签名 Windows packaged 检查点为 `0.1.0-alpha.63`。SyncRecord 数据合同不变；桌面 Auth 保持冻结 Oak Account application-login，并对齐 OAK-16 ES256/P-256 runtime；服务端生产组合根本地验签 access token 并只用 `oak_account_id` 绑定 owner。“明确确认后即时发送、失败安全留队”继续通过本地生产形状测试。受信账号配置仍为 `pending_configuration`；API 和页面均未部署，所以普通 APP 仍不发同步请求。
 
 ## 1. 信任边界
 

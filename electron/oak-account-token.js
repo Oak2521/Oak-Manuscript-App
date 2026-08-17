@@ -9,15 +9,24 @@ function verifyDesktopAccessToken(token, responseClaims, { config, clock = () =>
   if (typeof token !== "string" || token.length < 64 || token.length > 8192) throw new Error("access token 非法");
   const parts = token.split("."); if (parts.length !== 3) throw new Error("access token 非法");
   const header = decode(parts[0]); const claims = decode(parts[1]);
-  if (!exact(header, ["alg", "kid", "typ"]) || header.alg !== "EdDSA" || header.typ !== "JWT") throw new Error("access token header 非法");
+  if (!exact(header, ["alg", "kid", "typ"]) || header.alg !== "ES256" || header.typ !== "JWT") throw new Error("access token header 非法");
   if (!exact(claims, CLAIM_KEYS) || !same(claims, responseClaims) || claims.iss !== config.issuer || claims.aud !== config.application_id ||
       !UUID.test(claims.sub || "") || !UUID.test(claims.sid || "") || !UUID.test(claims.oak_account_id || "") || claims.oak_account_status !== "active" ||
       !["aal1", "aal2"].includes(claims.aal) || claims.oak_claims_version !== "1.0" || !Number.isSafeInteger(claims.oak_profile_version) || claims.oak_profile_version < 1 ||
       !Number.isSafeInteger(claims.iat) || !Number.isSafeInteger(claims.exp) || claims.exp <= claims.iat || claims.exp - claims.iat > 300) throw new Error("access token claims 非法");
   const now = Math.floor(clock().getTime() / 1000); if (claims.iat > now + 30 || claims.exp <= now) throw new Error("access token 时间非法");
   const trusted = config.trusted_keys.find((item) => item.key_id === header.kid); if (!trusted) throw new Error("access token 签名密钥未知");
-  let key; try { key = crypto.createPublicKey({ key: trusted.public_key_jwk, format: "jwk" }); } catch { throw new Error("access token 公钥非法"); }
-  const signature = Buffer.from(parts[2], "base64url"); if (signature.length !== 64 || signature.toString("base64url") !== parts[2] || !crypto.verify(null, Buffer.from(`${parts[0]}.${parts[1]}`, "ascii"), key, signature)) throw new Error("access token 签名无效");
+  let key;
+  try {
+    const { kty, crv, x, y } = trusted.public_key_jwk;
+    key = crypto.createPublicKey({ key: { kty, crv, x, y }, format: "jwk" });
+  } catch { throw new Error("access token 公钥非法"); }
+  const signature = Buffer.from(parts[2], "base64url");
+  if (signature.length !== 64 || signature.toString("base64url") !== parts[2] ||
+      !crypto.verify("sha256", Buffer.from(`${parts[0]}.${parts[1]}`, "ascii"), {
+        key,
+        dsaEncoding: "ieee-p1363",
+      }, signature)) throw new Error("access token 签名无效");
   return Object.freeze({ ...claims });
 }
 module.exports = { CLAIM_KEYS, UUID, verifyDesktopAccessToken };

@@ -13,8 +13,11 @@ const configured = Object.freeze({
   account_center_origin: "https://accounts.example.invalid",
   issuer: "https://accounts.example.invalid/application-login",
   trusted_keys: [{
-    key_id: "test-key-1", algorithm: "Ed25519",
-    public_key_jwk: { crv: "Ed25519", kty: "OKP", x: "x".repeat(43) },
+    key_id: "test-key-1", algorithm: "ES256",
+    public_key_jwk: {
+      alg: "ES256", crv: "P-256", ext: true, key_ops: ["verify"],
+      kid: "test-key-1", kty: "EC", use: "sig", x: "x".repeat(43), y: "y".repeat(43),
+    },
   }],
   sync_api_origin: "https://manuscript-api.example.invalid",
 });

@@ -128,6 +128,12 @@ test("SemVer comparison orders prereleases without lexical alpha.10/alpha.9 erro
   assert.throws(() => compareSemver("v1", "1.0.0"), /合法 SemVer/);
 });
 
+test("Alpha.63 install acceptance uses the immediate packaged Alpha.62 predecessor", () => {
+  assert.equal(CURRENT_VERSION, "0.1.0-alpha.63");
+  assert.equal(PREVIOUS_VERSION, "0.1.0-alpha.62");
+  assert.equal(compareSemver(PREVIOUS_VERSION, CURRENT_VERSION), -1);
+});
+
 test("downgrade probe requires the old installer process to complete but allows a policy exit code", () => {
   assert.equal(validateDowngradeProbeProcess({ status: 17, signal: null, stdout: "blocked", stderr: "" }).status, 17);
   assert.throws(

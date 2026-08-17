@@ -2,6 +2,17 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.63 OAK-16 runtime 消费验收（2026-08-17）
+
+- [x] 冻结 Desktop Application Login 1.0 合同、16 文件 provenance、6 个有效 fixture、20 个 negative vector 和 16 项 checklist 保持原字节，不以 OAK-16 实现细节重写合同；
+- [x] 桌面与 Web consumer 只接受 OAK-16 runtime 的 exact ES256/P-256 public JWKS、P1363 签名、300 秒 access token 和 exact `{revoked:true}` 撤销响应；历史 Ed25519 application-login 运行假设失败关闭；
+- [x] Web verifier 在构造时把信任锚转换为独立 `KeyObject`；调用方事后替换原 JWK 坐标不能改变信任集合，且有先红后绿回归证据；
+- [x] 新增 opt-in Staging consumer，默认全量不联网并明确 skip；旧 HEAD + 新测试 15/4/11 重建遗留 TDD RED，当前定向 37/36/0/1；
+- [x] Node 767/760/0/7、Python 368/0/0/3；资源信任 131 文件 / 2,244,237 字节；Windows Alpha.63 全链、9 fuse、packaged smoke、NSIS/ZIP 与 schema v2 发行证据通过；
+- [x] Alpha.62 制品完整归档；安装验收基线从过期 Alpha.12 更新为 Alpha.62，专项 13/13 和 Alpha.62→Alpha.63 只读预检通过；
+- [ ] 真实 OAK-16 Staging 登录、refresh rotation/replay、revoke、生命周期及 hold-active 场景已执行；当前未授权、未运行；
+- [ ] Windows 真实安装/升级/降级/卸载、Authenticode、macOS 构建/签名/公证、部署与可售卖发行身份完成；当前均未完成。
+
 ## 0.1.0-alpha.62 Oak Account、Pro 与同步生产形状验收（2026-08-14）
 
 - [x] 消费副本绑定 Account Center 冻结提交 `6aea9986539a0f55b2961426fa08e486a9e30b19` 的 16 个文件、6 个有效 fixture、20 个 negative vector 与 16 项验收清单；未知 major 或字节漂移失败关闭；

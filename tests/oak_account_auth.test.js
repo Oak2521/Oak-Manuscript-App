@@ -17,14 +17,24 @@ const SESSION = "62000000-0000-4000-8000-000000000002";
 const NOW = new Date("2026-08-14T12:00:00.000Z");
 
 function signingFixture() {
-  const { publicKey, privateKey } = crypto.generateKeyPairSync("ed25519");
-  return { publicJwk: publicKey.export({ format: "jwk" }), privateKey };
+  const { publicKey, privateKey } = crypto.generateKeyPairSync("ec", { namedCurve: "P-256" });
+  const exported = publicKey.export({ format: "jwk" });
+  return {
+    publicJwk: {
+      alg: "ES256", crv: "P-256", ext: true, key_ops: ["verify"],
+      kid: "oak-login-test-1", kty: "EC", use: "sig", x: exported.x, y: exported.y,
+    },
+    privateKey,
+  };
 }
 
-function jwt(privateKey, claims, header = { alg: "EdDSA", kid: "oak-login-test-1", typ: "JWT" }) {
+function jwt(privateKey, claims, header = { alg: "ES256", kid: "oak-login-test-1", typ: "JWT" }) {
   const first = Buffer.from(JSON.stringify(header)).toString("base64url");
   const second = Buffer.from(JSON.stringify(claims)).toString("base64url");
-  const signature = crypto.sign(null, Buffer.from(`${first}.${second}`, "ascii"), privateKey).toString("base64url");
+  const signature = crypto.sign("sha256", Buffer.from(`${first}.${second}`, "ascii"), {
+    key: privateKey,
+    dsaEncoding: "ieee-p1363",
+  }).toString("base64url");
   return `${first}.${second}.${signature}`;
 }
 
@@ -53,7 +63,7 @@ function configured(publicJwk) {
     application_id: "oak-manuscript-desktop",
     account_center_origin: "https://identity.example.invalid",
     issuer: "https://identity.example.invalid/application-login",
-    trusted_keys: [{ key_id: "oak-login-test-1", algorithm: "Ed25519", public_key_jwk: publicJwk }],
+    trusted_keys: [{ key_id: "oak-login-test-1", algorithm: "ES256", public_key_jwk: publicJwk }],
     sync_api_origin: "https://manuscript-api.example.invalid",
   });
 }
@@ -99,6 +109,59 @@ test("signed access token accepts only exact active Oak claims and never Pro cla
   ]) {
     assert.throws(() => verifyDesktopAccessToken(jwt(key.privateKey, poison), poison, { config, clock: () => NOW }));
   }
+});
+
+test("desktop consumer accepts only the runtime ES256 JWKS key shape", () => {
+  const fixture = signingFixture();
+  const trustedKey = {
+    key_id: "oak-login-test-1",
+    algorithm: "ES256",
+    public_key_jwk: fixture.publicJwk,
+  };
+  const config = validateDesktopAuthConfig({
+    schema_version: "2.0",
+    config_type: "oak_manuscript_desktop_application_login",
+    status: "configured",
+    application_id: "oak-manuscript-desktop",
+    account_center_origin: "https://account-staging.oakbylake.com",
+    issuer: "https://account-staging.oakbylake.com/application-login",
+    trusted_keys: [trustedKey],
+    sync_api_origin: "https://manuscript-staging.oakbylake.com",
+  });
+  const stagingClaims = claims({
+    iss: "https://account-staging.oakbylake.com/application-login",
+  });
+
+  const accepted = verifyDesktopAccessToken(
+    jwt(fixture.privateKey, stagingClaims),
+    stagingClaims,
+    { config, clock: () => NOW },
+  );
+  assert.equal(accepted.oak_account_id, ACCOUNT);
+
+  assert.throws(() => verifyDesktopAccessToken(
+    jwt(fixture.privateKey, stagingClaims, {
+      alg: "EdDSA", kid: "oak-login-test-1", typ: "JWT",
+    }),
+    stagingClaims,
+    { config, clock: () => NOW },
+  ));
+  assert.throws(() => validateDesktopAuthConfig({
+    ...config,
+    trusted_keys: [{
+      ...trustedKey,
+      public_key_jwk: { ...trustedKey.public_key_jwk, d: "private-material" },
+    }],
+  }));
+  const legacy = crypto.generateKeyPairSync("ed25519").publicKey.export({ format: "jwk" });
+  assert.throws(() => validateDesktopAuthConfig({
+    ...config,
+    trusted_keys: [{
+      key_id: "legacy-ed25519",
+      algorithm: "Ed25519",
+      public_key_jwk: legacy,
+    }],
+  }));
 });
 
 test("loopback listener binds 127.0.0.1 on a runtime port and consumes one exact callback", async () => {

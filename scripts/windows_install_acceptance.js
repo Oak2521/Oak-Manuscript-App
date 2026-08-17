@@ -23,7 +23,7 @@ const { parseJsonStrict } = require("./strict_json");
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
 const SCHEMA_VERSION = 1;
-const PREVIOUS_VERSION = "0.1.0-alpha.12";
+const PREVIOUS_VERSION = "0.1.0-alpha.62";
 const PRODUCT = "湖岸稿件 Oak Manuscript";
 const APP_ID = "com.oakbylake.manuscript";
 const ELECTRON_BUILDER_NS_UUID = UUID.parse("50e065bc-3134-11e6-9bab-38c9862bdaf3");

@@ -4,6 +4,16 @@
 
 ## [未发布]
 
+### 2026-08-17 — 0.1.0-alpha.63（ChatGPT OAK-16 runtime consumer compatibility）
+
+> 本地实现、回归和未签名 Windows packaged 检查点；未联网、未连接真实 Staging/账号、未配置 URL/密钥、未迁移、部署、签名、安装或构建 macOS。
+
+- 保持 Desktop Application Login 1.0 冻结合同与 provenance 原字节不变，把桌面/Web Oak access-token consumer 对齐到 OAK-16 的 ES256/P-256 JWKS、P1363 签名和 exact revoke `{revoked:true}`；
+- 新增显式 opt-in 的 OAK-16 Staging consumer 测试，默认回归不联网并跳过；以精确旧 HEAD + 新测试重建 15/4/11 的遗留 TDD RED；
+- 修复 Web verifier 构造后可由调用方替换 JWK 坐标的信任锚可变性漏洞，改为构造期独立 `KeyObject`，并保留先红后绿回归；
+- Alpha.62 制品完整归档；安装验收基线由 Alpha.12 更新为 Alpha.62，专项 13/13 与 Alpha.62→Alpha.63 只读预检通过，未运行安装器；
+- Node 767/760/0/7、Python 368/0/0/3；资源信任 131 文件 / 2,244,237 字节；Windows 全链、packaged smoke、NSIS/ZIP 和 schema v2 发行证据通过。制品仍 `NotSigned`，非 deployed 或 production-ready。
+
 ### 2026-08-14 — 0.1.0-alpha.62（ChatGPT Oak Account application-login）
 
 > 本地生产形状与未签名 Windows packaged 检查点；未联网、未使用真实账号/密钥、未迁移、部署、推送、运行安装器、签名或构建 macOS。

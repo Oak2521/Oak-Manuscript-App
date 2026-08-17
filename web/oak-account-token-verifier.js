@@ -27,9 +27,15 @@ function decode(segment) {
 function trustedKey(value) {
   return exact(value, ["key_id", "algorithm", "public_key_jwk"]) &&
     typeof value.key_id === "string" && /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u.test(value.key_id) &&
-    value.algorithm === "Ed25519" && exact(value.public_key_jwk, ["crv", "kty", "x"]) &&
-    value.public_key_jwk.crv === "Ed25519" && value.public_key_jwk.kty === "OKP" &&
-    typeof value.public_key_jwk.x === "string" && /^[A-Za-z0-9_-]{43}$/u.test(value.public_key_jwk.x);
+    value.algorithm === "ES256" &&
+    exact(value.public_key_jwk, ["alg", "crv", "ext", "key_ops", "kid", "kty", "use", "x", "y"]) &&
+    value.public_key_jwk.alg === "ES256" && value.public_key_jwk.crv === "P-256" &&
+    value.public_key_jwk.ext === true && Array.isArray(value.public_key_jwk.key_ops) &&
+    value.public_key_jwk.key_ops.length === 1 && value.public_key_jwk.key_ops[0] === "verify" &&
+    value.public_key_jwk.kid === value.key_id && value.public_key_jwk.kty === "EC" &&
+    value.public_key_jwk.use === "sig" &&
+    typeof value.public_key_jwk.x === "string" && /^[A-Za-z0-9_-]{43}$/u.test(value.public_key_jwk.x) &&
+    typeof value.public_key_jwk.y === "string" && /^[A-Za-z0-9_-]{43}$/u.test(value.public_key_jwk.y);
 }
 
 function createOakAccountAccessTokenVerifier({ issuer, audience, trustedKeys, clock = () => new Date() } = {}) {
@@ -40,7 +46,15 @@ function createOakAccountAccessTokenVerifier({ issuer, audience, trustedKeys, cl
       typeof clock !== "function") {
     throw new TypeError("Oak Account access-token verifier configuration is invalid");
   }
-  const keys = new Map(trustedKeys.map((item) => [item.key_id, item]));
+  let keys;
+  try {
+    keys = new Map(trustedKeys.map((item) => {
+      const { kty, crv, x, y } = item.public_key_jwk;
+      return [item.key_id, crypto.createPublicKey({ key: { kty, crv, x, y }, format: "jwk" })];
+    }));
+  } catch {
+    throw new TypeError("Oak Account access-token verifier configuration is invalid");
+  }
 
   return async function verifyAccessToken(token) {
     try {
@@ -49,7 +63,7 @@ function createOakAccountAccessTokenVerifier({ issuer, audience, trustedKeys, cl
       if (parts.length !== 3) return null;
       const header = decode(parts[0]);
       const claims = decode(parts[1]);
-      if (!exact(header, ["alg", "kid", "typ"]) || header.alg !== "EdDSA" || header.typ !== "JWT" ||
+      if (!exact(header, ["alg", "kid", "typ"]) || header.alg !== "ES256" || header.typ !== "JWT" ||
           !exact(claims, CLAIM_KEYS) || claims.iss !== issuer || claims.aud !== audience ||
           !UUID.test(claims.sub || "") || !UUID.test(claims.sid || "") ||
           !UUID.test(claims.oak_account_id || "") || claims.oak_account_status !== "active" ||
@@ -59,12 +73,14 @@ function createOakAccountAccessTokenVerifier({ issuer, audience, trustedKeys, cl
           claims.exp <= claims.iat || claims.exp - claims.iat > 300) return null;
       const now = Math.floor(clock().getTime() / 1000);
       if (claims.iat > now + 30 || claims.exp <= now) return null;
-      const trusted = keys.get(header.kid);
-      if (!trusted) return null;
-      const publicKey = crypto.createPublicKey({ key: trusted.public_key_jwk, format: "jwk" });
+      const publicKey = keys.get(header.kid);
+      if (!publicKey) return null;
       const signature = Buffer.from(parts[2], "base64url");
       if (signature.length !== 64 || signature.toString("base64url") !== parts[2] ||
-          !crypto.verify(null, Buffer.from(`${parts[0]}.${parts[1]}`, "ascii"), publicKey, signature)) return null;
+          !crypto.verify("sha256", Buffer.from(`${parts[0]}.${parts[1]}`, "ascii"), {
+            key: publicKey,
+            dsaEncoding: "ieee-p1363",
+          }, signature)) return null;
       return Object.freeze({ oak_account_id: claims.oak_account_id });
     } catch {
       return null;

@@ -10,7 +10,7 @@
     "config/tool-manifests/app-resources-v1.json"
   ],
   "file_count": 131,
-  "total_bytes": 2243858,
+  "total_bytes": 2244237,
   "files": [
     {
       "path": "config/app-config.json",
@@ -189,8 +189,8 @@
     },
     {
       "path": "config/schemas/desktop-auth-v2.schema.json",
-      "size_bytes": 1649,
-      "sha256": "9ded4ecb7341e90280d5b901900c28bf3e69d1f30d757cdd25ee673d60c708ba"
+      "size_bytes": 2028,
+      "sha256": "24eb999927ceaf3334a1948fa23121285e08382302343ded37f2d688391135e1"
     },
     {
       "path": "config/schemas/desktop-license-v1.schema.json",
@@ -425,7 +425,7 @@
     {
       "path": "python/oak_manuscript_core/__init__.py",
       "size_bytes": 113,
-      "sha256": "a07f045c10c347506533dc3725131959227cba2e997e19ce44be80a392a5d28d"
+      "sha256": "c271704fdb03b2ea69d28441d9e704bb34129d0ad7a76bf4dc2837ae34aa2d5c"
     },
     {
       "path": "python/oak_manuscript_core/__main__.py",

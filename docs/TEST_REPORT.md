@@ -1,6 +1,29 @@
 # TEST_REPORT — 测试报告
 
-> 更新日期：2026-08-15。只记录真实执行结果；未运行项不得写成通过。
+> 更新日期：2026-08-17。只记录真实执行结果；未运行项不得写成通过。
+
+## 最新验证结论：0.1.0-alpha.63 对齐 OAK-16 Staging runtime（2026-08-17）
+
+本轮未联网，未配置真实 URL、公钥或秘密，未连接账号、Staging、Supabase/替代后端或网站，未部署、签名、安装、卸载或构建 macOS。冻结 Desktop Application Login 1.0 合同及其来源提交 `6aea9986539a0f55b2961426fa08e486a9e30b19` 未改写；新增代码只消费 OAK-16 已验收 runtime 的 ES256/P-256 与 revoke 结果形状。
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| 遗留现场审计 | **PASS** | HEAD `97a7958aee29f8433e174b1a8fcf9edb059c0086` 上 10 个遗留文件全部保留并逐项审计；目标是 OAK-16 runtime compatibility，不是旧 Supabase/通用 OAuth |
+| 遗留实现 RED 重建 | **PASS（预期失败）** | 精确旧 HEAD + 新三组账户测试/fixture 的项目内隔离副本：15 total / 4 pass / 11 fail；失败集中为旧 Ed25519 key shape、ES256 token 拒绝和 revoke `{revoked:true}` 契约不匹配 |
+| 冻结合同 | **PASS** | `verify_oak_account_contract.js`：16 files / 6 valid fixtures / 20 negative vectors / 16 checklist items；source commit 和 machine contract SHA 未漂移 |
+| ES256 桌面/Web 消费者 | **PASS** | exact ES256/P-256 public JWKS、`kid`/`alg`/`use`/`key_ops`、P1363 64 字节签名、300 秒 access token 和 `{revoked:true}` 均有正反测试；旧 Ed25519 application-login key 被拒绝 |
+| Web 信任锚可变性 TDD | **PASS** | 修复前测试证明构造后替换原 JWK `x/y` 可让替换私钥 token 通过；修复后 verifier 使用构造期独立 `KeyObject`，同一 token 返回 `null` |
+| 定向账户/合同/Web 组合 | **PASS** | 37 total / 36 pass / 0 fail / 1 skip；跳过项为必须显式 `OAK10_STAGING_CONSUMER=1` 的真实 Staging consumer，本轮未授权运行 |
+| Node 全量 | **PASS** | 767 total / 760 pass / 0 fail / 7 skip；跳过项不计作通过 |
+| Python 全量 | **PASS** | 368 total / 0 failures / 0 errors / 3 skipped |
+| 资源信任 | **PASS** | 131 文件 / 2,244,237 字节；manifest `e03de88c22cb290be29c44cb63eea25b081e4cc6fa43be879e6ff4f3e8bccb68`；anchor `11d122fd3d41cdf33bbed73611b716a19d6a879de90df3abc047d332cd4e5380` |
+| Windows 完整构建 | **PASS** | 离线 `npm run build:win` 全链退出 0；JRE/Ace stage、源码资源、9 fuse、electron-builder、packaged 资源/运行时探针、隐藏 smoke 和发行证据同链完成 |
+| Packaged smoke | **PASS** | run `msxhfjrn-167d5b76cd673e8b`；unpacked EXE 225,449,472 字节 / `210705cb3cd3ce9aeb4eb6433752bf3368b0e35bab4c9303e37ffa8f1f916036`；输出树 76 文件 / 1,378,019 字节 / `181eea1e2f7d2d1220a237e557666dbabf691966a59d833aef1967dbcfa90fc5` |
+| Windows 制品/发行证据 | **PASS（未签名内测）** | NSIS 190,078,315 字节 / `5ac3dc231ef5e82812869411f449382a8432db4130da14ea202004bbce22eb35`；ZIP 233,925,031 字节 / `861fd3af185f4e1a5c49249e859d411e4831bb63d49f95a95704f61ae8fe6a42`；schema v2 manifest 与 `SHA256SUMS.txt` 独立复验通过 |
+| 安装生命周期 | **只读预检 PASS；真实运行未执行** | 过期 Alpha.12 基线经 TDD 更新为 Alpha.62；专项 13/13，Alpha.62→Alpha.63 九阶段计划 `ready_for_authorized_run=true` 且 `authorized=false`；未修改 HKCU、快捷方式或系统安装状态 |
+| 签名 / Staging / 部署 | **未执行** | unpacked 与 NSIS 均 `NotSigned`；真实 Account Center Staging、跨服务生命周期、数据库/对象存储、干净机安装、macOS、部署和生产零留存均无新证据 |
+
+结论：Alpha.63 的 implemented、tested 和 packaged unsigned Windows 检查点成立；真实 staging-validated、deployed、signed、production-ready 与可售卖正式版仍不成立。OAK-10 保持 `in_review`。
 
 ## OAK-10 重启恢复复验（2026-08-15）
 
@@ -20,7 +43,7 @@
 
 状态边界不变：implemented/tested/packaged unsigned Windows alpha 成立；staging/signed/deployed/production-ready/可售卖仍不成立。
 
-## 最新验证结论：0.1.0-alpha.62 Oak Account、Pro 与同步生产形状接入
+## 历史验证结论：0.1.0-alpha.62 Oak Account、Pro 与同步生产形状接入
 
 验证日期：2026-08-14。全程未联网，未使用真实账号、Production URL、密钥或数据库；未迁移、部署、推送、运行安装器、签名或构建 macOS。Account Center 合同来自只读提交 `6aea9986539a0f55b2961426fa08e486a9e30b19`，消费副本固定 16 个文件的精确字节与 SHA-256。
 
