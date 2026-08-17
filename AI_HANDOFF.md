@@ -30,6 +30,13 @@ Claude v1.2 方案和 0.0.1 实现是历史基线，不再覆盖 v2.0 的商业�
 
 ## 2. 当前现场事实
 
+### GitHub Hosted 源码门候选（2026-08-17）
+
+- 新增 `.github/workflows/hosted-ci.yml`，在 Ubuntu 24.04 与 Windows 2025 上执行 `npm ci`、workflow 自校验、Electron/迁移/标准/fuse 源码输入门和统一 `npm test`。官方 actions 均固定到完整 commit SHA；权限只有 `contents: read`，checkout 明确 `persist-credentials: false`，不引用 secrets。
+- 新增 `scripts/verify_hosted_ci_workflow.js` 与 `tests/hosted_ci_workflow.test.js`。TDD 红灯先证明 verifier 不存在；实现后专项 2/2 与本地 workflow 自校验通过，YAML 结构解析通过。
+- 该 workflow 只验证源码和构建输入，不运行 `build:win`、不上传 artifact、不签名、不部署。完整 Windows 打包仍依赖仓库外受控 Python/JRE/builder 资源；macOS 原生构建、公证与 Apple 身份仍未执行。
+- 本段记录的是待远端运行的候选。Hosted 是否通过必须以 PR checks 和下载后的独立证据为准，不能用本地结果代替。
+
 ### 已完成：0.1.0-alpha.63 对齐 OAK-16 Staging runtime（本地/未签名 Windows 检查点，2026-08-17）
 
 - 从 `97a7958aee29f8433e174b1a8fcf9edb059c0086` 的 10 个未提交遗留文件恢复，逐文件审计后确认目标是消费 OAK-16 已验收的 Staging runtime，而不是回退到旧 Supabase/通用 OAuth。冻结的 Desktop Application Login 1.0 消费副本、来源提交 `6aea9986539a0f55b2961426fa08e486a9e30b19` 和 16 文件 provenance 均未改写；合同验证仍为 6 个有效 fixture、20 个 negative vector、16 项 checklist。

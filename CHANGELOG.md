@@ -4,6 +4,15 @@
 
 ## [未发布]
 
+### 2026-08-17 — GitHub Hosted 源码门建立
+
+> 仅建立 public repository 的无密钥 Windows/Linux 源码、合同与测试门；不生成发布包，不签名、不部署，也不改变 Staging/Production 状态。
+
+- 新增最小权限 `Hosted source gates` workflow：仅 `contents: read`，checkout 不保留凭据，三个官方 action 固定到完整 commit SHA；
+- Windows 2025 与 Ubuntu 24.04 均执行锁定依赖安装、workflow 自校验、Electron/迁移/标准/fuse 源码输入门及统一 `npm test`；
+- 新增 fail-closed workflow 验证器和 TDD，拒绝 `pull_request_target`、write permission、secret 引用、浮动 action、未固定 runner、缺少 `npm ci`/`npm test`/自校验及发布命令；
+- 完整 Windows package、Authenticode、macOS 原生构建/签名/公证仍是独立门禁，不能由本 workflow 的源码通过替代。
+
 ### 2026-08-17 — 0.1.0-alpha.63（ChatGPT OAK-16 runtime consumer compatibility）
 
 > 本地实现、回归和未签名 Windows packaged 检查点；未联网、未连接真实 Staging/账号、未配置 URL/密钥、未迁移、部署、签名、安装或构建 macOS。

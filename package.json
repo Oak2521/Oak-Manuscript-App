@@ -29,6 +29,7 @@
     "verify:provenance:jre:win": "node scripts/jre_provenance.js",
     "verify:provenance:electron:win": "node scripts/electron_provenance.js",
     "verify:provenance:builder:win": "node scripts/builder_provenance.js",
+    "verify:hosted-ci": "node scripts/verify_hosted_ci_workflow.js",
     "verify:resource-trust": "node scripts/resource_trust_manifest.js",
     "verify:web:migrations": "node scripts/verify_web_migration_bundle.js",
     "verify:release-identity": "node scripts/release_identity.js --platform win32",
