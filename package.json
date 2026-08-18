@@ -20,6 +20,7 @@
     "smoke:web-client": "node scripts/run_web_client_smoke.js",
     "test": "npm run test:node && npm run test:python",
     "test:node": "node --test \"tests/*.test.js\"",
+    "test:hosted": "node scripts/run_hosted_source_tests.js && npm run test:python",
     "test:python": "python scripts/run_tests.py",
     "standards:write-bundled": "node scripts/standard_assets.js --write",
     "verify:standards": "node scripts/standard_assets.js",

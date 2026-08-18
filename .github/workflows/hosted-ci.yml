@@ -41,8 +41,8 @@ jobs:
         run: npm run verify:hosted-ci
       - name: Verify source build inputs
         run: npm run verify:web:migrations && npm run verify:standards && npm run verify:fuses:config
-      - name: Run unified source tests
-        run: npm test
+      - name: Run portable Oak Account source tests
+        run: npm run test:hosted
 
   windows-source:
     name: Windows source and contract gates
@@ -68,5 +68,5 @@ jobs:
         run: npm run verify:hosted-ci
       - name: Verify source build inputs
         run: npm run verify:web:migrations && npm run verify:standards && npm run verify:fuses:config
-      - name: Run unified source tests
-        run: npm test
+      - name: Run portable Oak Account source tests
+        run: npm run test:hosted

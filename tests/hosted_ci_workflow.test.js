@@ -20,6 +20,13 @@ function loadVerifier() {
 test("repository Hosted CI provides safe Windows and Linux source gates", () => {
   const { verifyHostedCiWorkflow } = loadVerifier();
   assert.deepEqual(verifyHostedCiWorkflow(ROOT), { ok: true, errors: [] });
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(ROOT, "package.json"), "utf8"),
+  );
+  assert.equal(
+    packageJson.scripts["test:hosted"],
+    "node scripts/run_hosted_source_tests.js && npm run test:python",
+  );
 });
 
 test("Hosted CI verifier rejects privileged, secret-bearing, and floating workflows", () => {
@@ -48,7 +55,7 @@ jobs:
       "WINDOWS_RUNNER_REQUIRED",
       "PINNED_UBUNTU_RUNNER_REQUIRED",
       "NPM_CI_REQUIRED",
-      "NPM_TEST_REQUIRED",
+      "HOSTED_TEST_REQUIRED",
       "SELF_VERIFICATION_REQUIRED",
       "CHECKOUT_CREDENTIAL_PERSISTENCE_MUST_BE_DISABLED",
     ]),
@@ -70,6 +77,17 @@ test("Hosted CI rejects local-only Electron runtime byte gates", () => {
   assert.equal(result.ok, false);
   assert.equal(
     result.errors.includes("LOCAL_ELECTRON_RUNTIME_GATE_FORBIDDEN"),
+    true,
+  );
+
+  const localUnifiedWorkflow = workflow.replace(
+    "npm run test:hosted",
+    "npm test",
+  );
+  const localUnifiedResult = validateHostedCiText(localUnifiedWorkflow);
+  assert.equal(localUnifiedResult.ok, false);
+  assert.equal(
+    localUnifiedResult.errors.includes("LOCAL_UNIFIED_TEST_ENTRY_FORBIDDEN"),
     true,
   );
 });

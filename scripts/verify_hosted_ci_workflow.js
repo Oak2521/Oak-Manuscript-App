@@ -32,7 +32,7 @@ function validateHostedCiText(text) {
   if (!/^\s*runs-on:\s*windows-2025\s*$/mu.test(text)) add("WINDOWS_RUNNER_REQUIRED");
   if (!/^\s*runs-on:\s*ubuntu-24\.04\s*$/mu.test(text)) add("PINNED_UBUNTU_RUNNER_REQUIRED");
   if (!/^\s*run:\s*npm ci\s*$/mu.test(text)) add("NPM_CI_REQUIRED");
-  if (!/^\s*run:\s*npm test\s*$/mu.test(text)) add("NPM_TEST_REQUIRED");
+  if (!/^\s*run:\s*npm run test:hosted\s*$/mu.test(text)) add("HOSTED_TEST_REQUIRED");
   if (!/^\s*run:\s*npm run verify:hosted-ci\s*$/mu.test(text)) add("SELF_VERIFICATION_REQUIRED");
   if (!/^\s*persist-credentials:\s*false\s*$/mu.test(text)) {
     add("CHECKOUT_CREDENTIAL_PERSISTENCE_MUST_BE_DISABLED");
@@ -42,6 +42,9 @@ function validateHostedCiText(text) {
   }
   if (/\bnpm\s+run\s+verify:electron-runtime\b/u.test(text)) {
     add("LOCAL_ELECTRON_RUNTIME_GATE_FORBIDDEN");
+  }
+  if (/^\s*run:\s*npm test\s*$/mu.test(text)) {
+    add("LOCAL_UNIFIED_TEST_ENTRY_FORBIDDEN");
   }
 
   return { ok: errors.length === 0, errors };
