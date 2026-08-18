@@ -7,9 +7,11 @@
 | 验证项 | 结果 | 证据边界 |
 |---|---|---|
 | TDD 红灯 | **PASS（预期失败）** | verifier 尚不存在时，`hosted_ci_workflow.test.js` 为 0 pass / 2 fail，均精确失败在缺少 Hosted CI verifier |
-| workflow 安全合同 | **PASS（本地）** | 实现后专项 2/2；真实候选通过，带 `pull_request_target`、write permission、secret、浮动 action 和缺少双平台/锁定安装/统一测试的负向候选失败关闭 |
+| workflow 安全合同 | **PASS（本地）** | 当前专项 4/4；拒绝 `pull_request_target`、write permission、secret、浮动 action、本地 Electron runtime 字节门、原始全量本地测试入口及缺少双平台/锁定安装/Hosted 测试的候选 |
 | workflow 自校验 | **PASS（本地）** | `npm run verify:hosted-ci` 返回 `ok=true, errors=[]`；YAML 结构解析得到 `linux-source` 与 `windows-source` 两个 job |
-| Hosted 执行 | **待运行** | 本地证据不能替代 GitHub PR checks；尚未生成远端 run、日志或结论 |
+| Hosted portable Node | **PASS** | 冻结 41 个 OAK-10/Oak Account 文件；PR run `32089121218` 两平台均为 166 total / 165 pass / 0 fail / 1 Staging skip |
+| Hosted Python | **PASS** | 全量 369 项；run `32089121218` 的 Linux/Windows 均为 0 failures / 0 errors，平台条件 skip 如实保留 |
+| Hosted required checks | **PASS** | PR #3、head `d758f6d`：Linux 46 秒、Windows 2 分 5 秒；两项 required contexts 全绿 |
 | package/sign/deploy | **未执行** | workflow 不运行 Windows package、macOS build、签名、公证、artifact upload、Staging 或 Production 部署 |
 
 ## 最新验证结论：0.1.0-alpha.63 对齐 OAK-16 Staging runtime（2026-08-17）

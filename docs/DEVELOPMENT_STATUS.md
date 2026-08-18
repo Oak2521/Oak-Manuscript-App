@@ -14,11 +14,12 @@
 - 当前内置标准为 `oak-standards 2.1.0` / `oak-rules 2.1.0`（release sequence 3）：39 条规则、6 个白名单机械 fixer；alpha.58 新增 4 条不可自动修复的 TXT/Markdown 保守空白卫生提示。
 - OAK-10 冻结合同：只读 Account Center 提交 `6aea9986539a0f55b2961426fa08e486a9e30b19`，状态 `FROZEN_FOR_CONSUMER_IMPLEMENTATION`；本仓库消费副本固定 16 个文件的字节与 SHA-256。仓库默认无 Production URL、真实公钥或凭据。
 
-## GitHub Hosted 源码门候选（2026-08-17）
+## GitHub Hosted 源码门（2026-08-17）
 
-- `.github/workflows/hosted-ci.yml` 为 public repository 建立 Ubuntu 24.04 与 Windows 2025 双平台源码门：锁定安装、workflow 自校验、Electron runtime/迁移/标准/fuse 源码输入门、统一 Node/Python 测试。
+- `.github/workflows/hosted-ci.yml` 为 public repository 建立 Ubuntu 24.04 与 Windows 2025 双平台源码门：锁定安装、workflow 自校验、迁移/标准/fuse portable 输入门、41 文件 OAK-10/Oak Account Node 测试面和全量 Python 测试。
 - 权限固定 `contents: read`，checkout 不保留凭据，不读取 secrets，不上传 artifact，不发布或部署；官方 actions 固定完整 SHA。
-- workflow 验证器以 TDD 建立：专项 2/2、本地自校验和 YAML 结构解析通过。远端 PR checks 尚待实际运行；在其完成前 `Hosted=false`。
+- workflow 与测试面验证器以 TDD 建立；本地 Hosted 入口 Node 166/165/0/1 skip、Python 369/0 failures/0 errors/4 Windows skips。PR #3 run `32089121218` 在 head `d758f6d` 上 Linux/Windows required checks 全绿。
+- 早期 Hosted 失败没有被绕过：移除误放入 Hosted 的本地 Electron 字节门，显式隔离仓库外资源测试，并修复 POSIX 不可读原稿的失败关闭及临时目录权限恢复。
 - 此门不打包 Windows，不构建 macOS，也不关闭签名、公证、Staging、Production 或可售卖门禁。
 
 ## OAK-10 OAK-16 runtime 对齐补件（2026-08-17）

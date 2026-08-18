@@ -10,7 +10,10 @@
 
 - 新增最小权限 `Hosted source gates` workflow：仅 `contents: read`，checkout 不保留凭据，三个官方 action 固定到完整 commit SHA；
 - Windows 2025 与 Ubuntu 24.04 均执行锁定依赖安装、workflow 自校验、Electron/迁移/标准/fuse 源码输入门及统一 `npm test`；
-- 新增 fail-closed workflow 验证器和 TDD，拒绝 `pull_request_target`、write permission、secret 引用、浮动 action、未固定 runner、缺少 `npm ci`/`npm test`/自校验及发布命令；
+- 新增 fail-closed workflow 验证器和 TDD，拒绝 `pull_request_target`、write permission、secret 引用、浮动 action、未固定 runner、缺少 `npm ci`/`npm run test:hosted`/自校验及发布命令；
+- 根据真实 PR 失败证据把 Hosted 测试收敛为 41 文件 OAK-10/Oak Account portable Node 测试面与全量 Python；本地 Electron/runtime/toolchain 字节门继续留在受控本地/packaged 链，不在无制品 runner 上伪造；
+- 修复 POSIX 上不可读原稿使 `Project.verify()` 抛出 `PermissionError` 的缺口，并让测试清理器在遍历受控临时目录前恢复目录权限；
+- PR #3 run `32089121218` 在 Linux/Windows required checks 全绿；
 - 完整 Windows package、Authenticode、macOS 原生构建/签名/公证仍是独立门禁，不能由本 workflow 的源码通过替代。
 
 ### 2026-08-17 — 0.1.0-alpha.63（ChatGPT OAK-16 runtime consumer compatibility）
