@@ -1,6 +1,10 @@
 "use strict";
 
 const { createHash } = require("node:crypto");
+const {
+  createSupabaseServerCredentialHeaders,
+  validateSupabaseServerKey,
+} = require("./supabase-server-key");
 
 const DEFAULT_TIMEOUT_MS = 5_000;
 const DEFAULT_MAX_RESPONSE_BYTES = 256 * 1024;
@@ -21,7 +25,8 @@ const OWNER_KEY_PATTERN = /^(?:account|anonymous):[A-Za-z0-9][A-Za-z0-9._:-]{7,1
 const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$/;
 const FINGERPRINT_PATTERN = /^[0-9a-f]{64}$/;
 const JOB_STATES = new Set([
-  "awaiting_upload", "queued", "processing", "result_ready", "deletion_pending",
+  "awaiting_upload", "upload_finalizing", "queued", "processing", "result_ready",
+  "result_transfer", "deletion_pending",
 ]);
 const RESULT_MEDIA_TYPES = new Set([
   "application/json",
@@ -199,10 +204,13 @@ function validateInternalRecord(value) {
   }
   const statePayloadValid = value.state === "deletion_pending" ||
     (value.state === "awaiting_upload" && !value.input_retained && !value.result_available) ||
+    (value.state === "upload_finalizing" && !value.input_retained && !value.result_available) ||
     (value.state === "queued" && value.input_retained && !value.result_available) ||
     (value.state === "processing" && value.input_retained && !value.result_available) ||
-    (value.state === "result_ready" && !value.input_retained && value.result_available);
-  if (!statePayloadValid || (value.upload_reservation_id !== null && value.state !== "awaiting_upload") ||
+    (value.state === "result_ready" && !value.input_retained && value.result_available) ||
+    (value.state === "result_transfer" && !value.input_retained && value.result_available);
+  const reservationState = new Set(["awaiting_upload", "upload_finalizing", "result_transfer"]);
+  if (!statePayloadValid || (value.upload_reservation_id !== null && !reservationState.has(value.state)) ||
       ((value.lease_id !== null) !== (value.state === "processing"))) {
     throw new TypeError("内部任务记录状态载荷非法");
   }
@@ -232,11 +240,6 @@ function canonicalHttpsOrigin(value) {
     throw new TypeError("supabaseOrigin 必须是不含路径、凭据、查询或片段的规范 HTTPS origin");
   }
   return value;
-}
-
-function validHeaderSecret(value) {
-  return typeof value === "string" && value.length >= 20 && value.length <= 8192 &&
-    !/[\u0000-\u0020\u007f,]/u.test(value);
 }
 
 async function readBoundedJson(response, maximum) {
@@ -273,9 +276,8 @@ class SupabaseJobRepository {
     maxResponseBytes = DEFAULT_MAX_RESPONSE_BYTES,
   } = {}) {
     this.origin = canonicalHttpsOrigin(supabaseOrigin);
-    if (!validHeaderSecret(serviceRoleKey)) {
-      throw new TypeError("serviceRoleKey 不是安全的服务端 Supabase service-role key");
-    }
+    try { validateSupabaseServerKey(serviceRoleKey); }
+    catch { throw new TypeError("serviceRoleKey 不是安全的服务端 Supabase service-role/secret key"); }
     if (typeof fetchImpl !== "function") throw new TypeError("fetchImpl 必须是函数");
     if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 30_000) {
       throw new TypeError("timeoutMs 必须在 100 到 30000 毫秒之间");
@@ -300,8 +302,7 @@ class SupabaseJobRepository {
         method: "POST",
         headers: {
           accept: "application/json",
-          apikey: this.serviceRoleKey,
-          authorization: `Bearer ${this.serviceRoleKey}`,
+          ...createSupabaseServerCredentialHeaders(this.serviceRoleKey),
           "content-type": "application/json",
         },
         body: JSON.stringify(body),

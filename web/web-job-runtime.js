@@ -7,19 +7,19 @@
 const { createHash } = require("node:crypto");
 
 const { createFetchHandlerAdapter } = require("./fetch-adapter");
-const { createGoTrueAccessTokenVerifier } = require("./gotrue-verifier");
+const { createOakAccountAccessTokenVerifier } = require("./oak-account-token-verifier");
+const { createOakAccountSessionResolver } = require("./oak-account-session-adapter");
 const { createWebJobHttpHandler } = require("./http-handler");
-const { createNetlifyEphemeralStorage } = require("./netlify-ephemeral-storage");
 const { PersistentWebJobService } = require("./persistent-job-service");
 const { PrivateLeaseWorker } = require("./private-lease-worker");
 const { PythonCoreProcessProcessor } = require("./python-core-process-processor");
 const { SupabaseJobRepository } = require("./supabase-job-repository");
-const { createSupabaseSessionResolver } = require("./supabase-session-adapter");
+const { SupabaseS3DirectStorage } = require("./supabase-s3-direct-storage");
 const { ZeroRetentionSweeper } = require("./zero-retention-sweeper");
 const {
-  DEPLOYMENT_REQUIREMENTS_SHA256,
-  assessWebDeploymentProfile,
-} = require("./deployment-admission");
+  DIRECT_DEPLOYMENT_REQUIREMENTS_SHA256,
+  assessDirectWebDeploymentProfile,
+} = require("./deployment-admission-v2");
 const migrationManifest = require("./supabase/migrations-v1.json");
 
 const MIGRATION_MANIFEST_SHA256 = createHash("sha256")
@@ -29,14 +29,21 @@ const MIGRATION_MANIFEST_SHA256 = createHash("sha256")
 const CONFIGURATION_KEYS = Object.freeze([
   "schema_version",
   "api_origin",
+  "account_issuer",
+  "account_audience",
+  "account_trusted_keys",
   "supabase_origin",
-  "supabase_api_key",
   "supabase_service_role_key",
   "python_executable",
   "python_core_dir",
   "scratch_root",
-  "blob_store_name",
-  "blob_prefix",
+  "s3_endpoint",
+  "s3_region",
+  "s3_bucket",
+  "s3_prefix",
+  "s3_access_key_id",
+  "s3_secret_access_key",
+  "direct_credential_ttl_seconds",
   "expected_migration_manifest_sha256",
   "expected_deployment_requirements_sha256",
   "deployment_profile",
@@ -44,7 +51,6 @@ const CONFIGURATION_KEYS = Object.freeze([
 
 const ADAPTER_KEYS = Object.freeze([
   "fetch_impl",
-  "get_store_impl",
   "spawn_impl",
   "security_event_sink",
   "job_audit_sink",
@@ -73,18 +79,14 @@ function requiredFunction(value, label) {
 
 function validateConfiguration(input) {
   const value = exactObject(input, CONFIGURATION_KEYS, "Web 作业生产配置");
-  if (value.schema_version !== "1.0") throw new TypeError("Web 作业生产配置版本不兼容");
+  if (value.schema_version !== "2.0") throw new TypeError("Web 作业生产配置版本不兼容");
   if (value.expected_migration_manifest_sha256 !== MIGRATION_MANIFEST_SHA256) {
     throw new TypeError("Web 作业生产配置未绑定当前 Supabase 迁移 bundle");
   }
-  if (value.expected_deployment_requirements_sha256 !== DEPLOYMENT_REQUIREMENTS_SHA256) {
+  if (value.expected_deployment_requirements_sha256 !== DIRECT_DEPLOYMENT_REQUIREMENTS_SHA256) {
     throw new TypeError("Web 作业生产配置未绑定当前部署需求");
   }
-  if (typeof value.supabase_api_key === "string" &&
-      value.supabase_api_key === value.supabase_service_role_key) {
-    throw new TypeError("Supabase 公开 API key 与 service-role key 必须分离");
-  }
-  const deploymentAdmission = assessWebDeploymentProfile(value.deployment_profile);
+  const deploymentAdmission = assessDirectWebDeploymentProfile(value.deployment_profile);
   if (deploymentAdmission.declared_capabilities_satisfied !== true) {
     throw new TypeError("Web 作业部署平台能力不足");
   }
@@ -102,11 +104,15 @@ function createWebJobProductionRuntime({ configuration, adapters } = {}) {
   const config = validated.value;
   const injected = validateAdapters(adapters);
 
-  const storage = createNetlifyEphemeralStorage({
-    storeName: config.blob_store_name,
-    prefix: config.blob_prefix,
+  const storage = new SupabaseS3DirectStorage({
+    endpoint: config.s3_endpoint,
+    region: config.s3_region,
+    bucket: config.s3_bucket,
+    prefix: config.s3_prefix,
+    accessKeyId: config.s3_access_key_id,
+    secretAccessKey: config.s3_secret_access_key,
+    credentialTtlSeconds: config.direct_credential_ttl_seconds,
     clock: injected.clock,
-    getStoreImpl: injected.get_store_impl,
   });
   const repository = new SupabaseJobRepository({
     supabaseOrigin: config.supabase_origin,
@@ -130,18 +136,20 @@ function createWebJobProductionRuntime({ configuration, adapters } = {}) {
     uuidFactory: injected.uuid_factory,
     auditSink: injected.job_audit_sink,
   });
-  const verifyAccessToken = createGoTrueAccessTokenVerifier({
-    supabaseOrigin: config.supabase_origin,
-    apiKey: config.supabase_api_key,
-    fetchImpl: injected.fetch_impl,
+  const verifyAccessToken = createOakAccountAccessTokenVerifier({
+    issuer: config.account_issuer,
+    audience: config.account_audience,
+    trustedKeys: config.account_trusted_keys,
+    clock: injected.clock,
   });
   const nodeHandler = createWebJobHttpHandler({
     service,
     expectedOrigin: config.api_origin,
-    resolveSession: createSupabaseSessionResolver({ verifyAccessToken }),
+    resolveSession: createOakAccountSessionResolver({ verifyAccessToken }),
     requestIdFactory: injected.request_id_factory,
     clock: injected.clock,
     securityEventSink: injected.security_event_sink,
+    dataPlane: "direct_object",
   });
   const worker = new PrivateLeaseWorker({ service, processor });
   const cleanup = new ZeroRetentionSweeper({
@@ -152,14 +160,15 @@ function createWebJobProductionRuntime({ configuration, adapters } = {}) {
   });
 
   const readiness = Object.freeze({
-    schema_version: "1.0",
+    schema_version: "2.0",
     runtime_type: "oak_manuscript_web_job_runtime",
+    data_plane: "direct_object",
     configuration_validated: true,
     public_handler_enabled: true,
     private_worker_enabled: true,
     cleanup_scheduler_required: true,
     migration_manifest_sha256: MIGRATION_MANIFEST_SHA256,
-    deployment_requirements_sha256: DEPLOYMENT_REQUIREMENTS_SHA256,
+    deployment_requirements_sha256: DIRECT_DEPLOYMENT_REQUIREMENTS_SHA256,
     declared_deployment_capabilities_satisfied:
       validated.deploymentAdmission.declared_capabilities_satisfied,
     production_evidence_verified: false,

@@ -1,7 +1,7 @@
 {
   "name": "oak-manuscript",
   "productName": "湖岸稿件 Oak Manuscript",
-  "version": "0.1.0-alpha.58",
+  "version": "0.1.0-alpha.63",
   "private": true,
   "license": "Apache-2.0",
   "description": "本地优先的稿件检查与修订桌面应用（Electron 壳 + Python 零依赖检查核心）",
@@ -20,6 +20,7 @@
     "smoke:web-client": "node scripts/run_web_client_smoke.js",
     "test": "npm run test:node && npm run test:python",
     "test:node": "node --test \"tests/*.test.js\"",
+    "test:hosted": "node scripts/run_hosted_source_tests.js && npm run test:python",
     "test:python": "python scripts/run_tests.py",
     "standards:write-bundled": "node scripts/standard_assets.js --write",
     "verify:standards": "node scripts/standard_assets.js",
@@ -29,6 +30,7 @@
     "verify:provenance:jre:win": "node scripts/jre_provenance.js",
     "verify:provenance:electron:win": "node scripts/electron_provenance.js",
     "verify:provenance:builder:win": "node scripts/builder_provenance.js",
+    "verify:hosted-ci": "node scripts/verify_hosted_ci_workflow.js",
     "verify:resource-trust": "node scripts/resource_trust_manifest.js",
     "verify:web:migrations": "node scripts/verify_web_migration_bundle.js",
     "verify:release-identity": "node scripts/release_identity.js --platform win32",
@@ -91,12 +93,13 @@
       "grantFileProtocolExtraPrivileges": false,
       "resetAdHocDarwinSignature": false
     },
-    "files": ["electron/**/*", "renderer/**/*", "package.json", "LICENSE"],
-    "protocols": [
-      {
-        "name": "Oak Manuscript Auth Callback",
-        "schemes": ["oak-manuscript-auth"]
-      }
+    "files": [
+      "electron/**/*",
+      "!electron/auth-http-client.js",
+      "!electron/desktop-auth-provider.js",
+      "renderer/**/*",
+      "package.json",
+      "LICENSE"
     ],
     "extraResources": [
       { "from": "python/oak_manuscript_core", "to": "python/oak_manuscript_core", "filter": ["**/*.py"] },

@@ -21,8 +21,10 @@
   var MAX_BYTES = 50 * 1024 * 1024;
   var KEY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{15,127}$/;
   var JOB_ID_PATTERN = /^webjob-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+  var TRANSFER_ID_PATTERN = /^webtransfer-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
   var JOB_STATES = Object.freeze([
-    "awaiting_upload", "queued", "processing", "result_ready", "deletion_pending",
+    "awaiting_upload", "upload_finalizing", "queued", "processing", "result_ready",
+    "result_transfer", "deletion_pending",
   ]);
   var STATUS_KEYS = Object.freeze([
     "schema_version", "record_type", "job_id", "state", "created_at", "expires_at",
@@ -36,6 +38,11 @@
     "created_at", "authorized_at",
   ]);
   var LICENSE_ACCOUNT_PATH = "/manuscript/api/v1/account/license";
+  var DIRECT_JOB_BASE = "/manuscript/api/v2/jobs";
+  var DIRECT_CREDENTIAL_KEYS = Object.freeze([
+    "schema_version", "credential_type", "transfer_id", "job_id", "method", "url",
+    "headers", "media_type", "size_bytes", "expires_at", "complete_path", "claim_policy",
+  ]);
   var DEVICE_PATTERN = /^device-[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
   function includes(list, value) { return list.indexOf(value) !== -1; }
@@ -120,6 +127,93 @@
       input_retained: input.input_retained,
       result_available: input.result_available,
       deletion_due_at: input.deletion_due_at,
+    });
+  }
+
+  function parseDirectStorageOrigin(input) {
+    var parsed;
+    try { parsed = new URL(input); } catch (_) { throw new TypeError("对象直传存储源配置非法"); }
+    if (typeof input !== "string" || parsed.protocol !== "https:" || parsed.origin !== input ||
+        parsed.pathname !== "/" || parsed.search || parsed.hash || parsed.username || parsed.password ||
+        !/^[a-z0-9-]+\.storage\.supabase\.co$/.test(parsed.hostname)) {
+      throw new TypeError("对象直传存储源配置非法");
+    }
+    return parsed.origin;
+  }
+
+  function parseDirectTransferCredential(input, expectedStorageOrigin, nowInput) {
+    if (!exactKeys(input, DIRECT_CREDENTIAL_KEYS) || input.schema_version !== "1.0" ||
+        input.claim_policy !== "single_issue" || !JOB_ID_PATTERN.test(input.job_id || "") ||
+        !TRANSFER_ID_PATTERN.test(input.transfer_id || "") || !Number.isSafeInteger(input.size_bytes) ||
+        input.size_bytes < 1 || input.size_bytes > 100 * 1024 * 1024 || !canonicalTime(input.expires_at) ||
+        !input.headers || typeof input.headers !== "object" || Array.isArray(input.headers) ||
+        Object.keys(input.headers).length > 16) {
+      throw new TypeError("对象直传凭证响应非法");
+    }
+    var upload = input.credential_type === "oak_manuscript_direct_upload";
+    var download = input.credential_type === "oak_manuscript_direct_download";
+    if ((!upload && !download) || input.method !== (upload ? "PUT" : "GET")) {
+      throw new TypeError("对象直传凭证响应非法");
+    }
+    var parsed;
+    var expectedOrigin = parseDirectStorageOrigin(expectedStorageOrigin);
+    try { parsed = new URL(input.url); } catch (_) { throw new TypeError("对象直传凭证响应非法"); }
+    if (parsed.protocol !== "https:" || parsed.origin !== expectedOrigin ||
+        parsed.username || parsed.password || parsed.hash || parsed.pathname.indexOf("/storage/v1/s3/") !== 0 ||
+        parsed.searchParams.get("X-Amz-Algorithm") !== "AWS4-HMAC-SHA256" ||
+        !parsed.searchParams.get("X-Amz-Signature")) {
+      throw new TypeError("对象直传凭证响应非法");
+    }
+    var signedSeconds = Number(parsed.searchParams.get("X-Amz-Expires"));
+    var signedDate = parsed.searchParams.get("X-Amz-Date");
+    var signedAt = /^\d{8}T\d{6}Z$/.test(signedDate || "")
+      ? Date.parse(signedDate.slice(0, 4) + "-" + signedDate.slice(4, 6) + "-" +
+        signedDate.slice(6, 8) + "T" + signedDate.slice(9, 11) + ":" +
+        signedDate.slice(11, 13) + ":" + signedDate.slice(13, 15) + "Z")
+      : NaN;
+    var now = nowInput instanceof Date ? new Date(nowInput.getTime()) : new Date(nowInput || Date.now());
+    if (!Number.isSafeInteger(signedSeconds) || signedSeconds < 1 || signedSeconds > 300 ||
+        Number.isNaN(now.getTime()) || Number.isNaN(signedAt) ||
+        Math.abs(Date.parse(input.expires_at) - (signedAt + signedSeconds * 1000)) >= 1000 ||
+        Date.parse(input.expires_at) <= now.getTime() ||
+        Date.parse(input.expires_at) > now.getTime() + 300000) {
+      throw new TypeError("对象直传凭证响应非法");
+    }
+    var resultHeaders = {};
+    Object.keys(input.headers).forEach(function (name) {
+      var value = input.headers[name];
+      if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(name) || /^(authorization|cookie|x-api-key)$/.test(name) ||
+          typeof value !== "string" || value.length > 1024 || /[\u0000-\u001f\u007f]/.test(value)) {
+        throw new TypeError("对象直传凭证响应非法");
+      }
+      resultHeaders[name] = value;
+    });
+    if (upload && (resultHeaders["content-type"] !== input.media_type ||
+        resultHeaders["cache-control"] !== "private, no-store, max-age=0" ||
+        resultHeaders["if-none-match"] !== "*")) {
+      throw new TypeError("对象直传凭证响应非法");
+    }
+    if (download && Object.keys(resultHeaders).length !== 0) throw new TypeError("对象直传凭证响应非法");
+    var signedHeaders = new Set((parsed.searchParams.get("X-Amz-SignedHeaders") || "").split(";"));
+    if (!signedHeaders.has("host") || (upload && Object.keys(resultHeaders).some(function (name) {
+      return !signedHeaders.has(name);
+    }))) throw new TypeError("对象直传凭证响应非法");
+    var side = upload ? "input" : "result";
+    if (input.complete_path !== DIRECT_JOB_BASE + "/" + input.job_id + "/" + side +
+        "-transfer/" + input.transfer_id + "/complete") {
+      throw new TypeError("对象直传凭证响应非法");
+    }
+    return Object.freeze(Object.assign({}, input, { headers: Object.freeze(resultHeaders) }));
+  }
+
+  function buildTransferCompletion(transferId) {
+    if (typeof transferId !== "string" || !TRANSFER_ID_PATTERN.test(transferId)) {
+      throw new TypeError("对象直传标识非法");
+    }
+    return Object.freeze({
+      schema_version: "1.0",
+      request_type: "oak_manuscript_direct_transfer_completion",
+      transfer_id: transferId,
     });
   }
 
@@ -326,10 +420,14 @@
 
   return Object.freeze({
     MAX_BYTES: MAX_BYTES,
+    DIRECT_JOB_BASE: DIRECT_JOB_BASE,
     buildCreatePayload: buildCreatePayload,
+    buildTransferCompletion: buildTransferCompletion,
     formatFromFilename: formatFromFilename,
     mediaTypeForFormat: mediaTypeForFormat,
     parseJobStatus: parseJobStatus,
+    parseDirectTransferCredential: parseDirectTransferCredential,
+    parseDirectStorageOrigin: parseDirectStorageOrigin,
     LICENSE_ACCOUNT_PATH: LICENSE_ACCOUNT_PATH,
     buildLicenseDeviceRevokePayload: buildLicenseDeviceRevokePayload,
     licenseDeviceRevokePath: licenseDeviceRevokePath,

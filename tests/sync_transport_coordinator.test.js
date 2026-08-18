@@ -13,10 +13,10 @@ const { SyncProvider, buildSyncRecordV1 } = require("../electron/providers");
 const AUTH_A = Object.freeze({
   state: "authenticated",
   loggedIn: true,
-  accountId: "account-0001",
+  oakAccountId: "account-0001",
   sessionExpiresAt: "2026-08-01T00:00:00.000Z",
 });
-const AUTH_B = Object.freeze({ ...AUTH_A, accountId: "account-0002" });
+const AUTH_B = Object.freeze({ ...AUTH_A, oakAccountId: "account-0002" });
 const TOKEN = `${"a".repeat(36)}.${"b".repeat(36)}.${"c".repeat(36)}`;
 
 function source() {
@@ -71,12 +71,12 @@ test("coordinator is disabled without all main-process dependencies", () => {
   assert.throws(() => new SyncTransportCoordinator({
     syncProvider: provider,
     authProvider: auth,
-    accessTokenProvider: async () => ({ accessToken: TOKEN, accountId: AUTH_A.accountId }),
+    accessTokenProvider: async () => ({ accessToken: TOKEN, oakAccountId: AUTH_A.oakAccountId }),
   }), /transport/);
   const coordinator = new SyncTransportCoordinator({
     syncProvider: provider,
     authProvider: auth,
-    accessTokenProvider: async () => ({ accessToken: TOKEN, accountId: AUTH_A.accountId }),
+    accessTokenProvider: async () => ({ accessToken: TOKEN, oakAccountId: AUTH_A.oakAccountId }),
     transport: { send: async () => null },
   });
   assert.deepEqual(coordinator.status(), { configured: true, in_flight: 0 });
@@ -90,7 +90,7 @@ test("successful or replayed upload deletes only the exact local queue item", as
     const coordinator = new SyncTransportCoordinator({
       syncProvider: provider,
       authProvider: auth,
-      accessTokenProvider: async ({ accountId }) => ({ accessToken: TOKEN, accountId }),
+      accessTokenProvider: async ({ oakAccountId }) => ({ accessToken: TOKEN, oakAccountId }),
       transport: {
         async send(input) {
           seen.push(input);
@@ -124,7 +124,7 @@ test("remote success followed by local deletion failure keeps an explicitly retr
   const coordinator = new SyncTransportCoordinator({
     syncProvider: provider,
     authProvider: auth,
-    accessTokenProvider: async ({ accountId }) => ({ accessToken: TOKEN, accountId }),
+    accessTokenProvider: async ({ oakAccountId }) => ({ accessToken: TOKEN, oakAccountId }),
     transport: { async send() { return { outcome, idempotency_id: record.idempotency_id, received_at: "2026-07-28T12:05:00.000Z" }; } },
   });
   await assert.rejects(coordinator.flush(queueId), (error) => error.code === "TRANSPORT_UNAVAILABLE" && error.retryable === true);
@@ -145,7 +145,7 @@ test("bounded transport failures persist attempts and stable error code until ex
   const coordinator = new SyncTransportCoordinator({
     syncProvider: provider,
     authProvider: auth,
-    accessTokenProvider: async ({ accountId }) => ({ accessToken: TOKEN, accountId }),
+    accessTokenProvider: async ({ oakAccountId }) => ({ accessToken: TOKEN, oakAccountId }),
     transport: {
       async send({ record }) {
         if (fail) throw new SyncTransportError("TRANSPORT_UNAVAILABLE", true);
@@ -177,7 +177,7 @@ test("account change after upload keeps the original account queue for idempoten
   const coordinator = new SyncTransportCoordinator({
     syncProvider: provider,
     authProvider: auth,
-    accessTokenProvider: async ({ accountId }) => ({ accessToken: TOKEN, accountId }),
+    accessTokenProvider: async ({ oakAccountId }) => ({ accessToken: TOKEN, oakAccountId }),
     transport: {
       async send() {
         auth.set(AUTH_B);
@@ -205,7 +205,7 @@ test("one queue item cannot be flushed concurrently", async () => {
   const coordinator = new SyncTransportCoordinator({
     syncProvider: provider,
     authProvider: auth,
-    accessTokenProvider: async ({ accountId }) => ({ accessToken: TOKEN, accountId }),
+    accessTokenProvider: async ({ oakAccountId }) => ({ accessToken: TOKEN, oakAccountId }),
     transport: {
       async send() {
         await blocked;
@@ -231,7 +231,7 @@ test("a token bound to another account fails before transport and preserves the 
   const coordinator = new SyncTransportCoordinator({
     syncProvider: provider,
     authProvider: auth,
-    accessTokenProvider: async () => ({ accessToken: TOKEN, accountId: AUTH_B.accountId }),
+    accessTokenProvider: async () => ({ accessToken: TOKEN, oakAccountId: AUTH_B.oakAccountId }),
     transport: { async send() { sends += 1; } },
   });
   await assert.rejects(coordinator.flush(queueId), (error) =>

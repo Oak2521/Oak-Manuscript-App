@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oakbylake.com/schemas/oak-manuscript/auth-session-store-v2.schema.json",
+  "title": "Oak Manuscript encrypted application-login state v2",
+  "description": "Main-process state encrypted by Electron safeStorage. Access tokens remain memory-only.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "store_type", "revision", "session", "pending"],
+  "properties": {
+    "schema_version": { "const": "2.0" },
+    "store_type": { "const": "oak_manuscript_application_login" },
+    "revision": { "type": "integer", "minimum": 0 },
+    "session": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "oak_account_id", "session_id", "refresh_token", "refresh_issued_at",
+            "refresh_last_used_at", "refresh_expires_at"
+          ],
+          "properties": {
+            "oak_account_id": { "type": "string", "format": "uuid" },
+            "session_id": { "type": "string", "format": "uuid" },
+            "refresh_token": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43,512}$" },
+            "refresh_issued_at": { "type": "string", "format": "date-time" },
+            "refresh_last_used_at": { "type": "string", "format": "date-time" },
+            "refresh_expires_at": { "type": "string", "format": "date-time" }
+          }
+        }
+      ]
+    },
+    "pending": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "code_verifier", "redirect_uri", "created_at", "expires_at"],
+          "properties": {
+            "state": { "type": "string", "pattern": "^[A-Za-z0-9_-]{43,128}$" },
+            "code_verifier": { "type": "string", "pattern": "^[A-Za-z0-9._~-]{43,128}$" },
+            "redirect_uri": {
+              "type": "string",
+              "pattern": "^http://127\\.0\\.0\\.1:[0-9]{4,5}/application-login/callback/[A-Za-z0-9_-]{43,128}$"
+            },
+            "created_at": { "type": "string", "format": "date-time" },
+            "expires_at": { "type": "string", "format": "date-time" }
+          }
+        }
+      ]
+    }
+  }
+}

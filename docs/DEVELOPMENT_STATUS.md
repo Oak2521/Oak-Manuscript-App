@@ -1,29 +1,59 @@
 # DEVELOPMENT_STATUS — 开发状态（唯一状态来源）
 
-> 更新日期：2026-08-02。新记录在上；“已完成”必须有本地测试或构建证据。
+> 更新日期：2026-08-17。新记录在上；“已完成”必须有本地测试或构建证据。
 
 ## 当前版本与基线
 
-- 当前版本：`0.1.0-alpha.58`
-- 当前分支：`main`
-- 当前源码/Windows packaged 标签：`chatgpt-v0.1.0-alpha.58-text-hygiene`；最新真实 Windows 打包内容为未签名 alpha.58
+- 当前版本：`0.1.0-alpha.63`
+- 当前分支：`codex/oak-10-manuscript-account`
+- 当前源码标签：尚未创建；最新真实 Windows packaged 检查点为本分支的未签名 `0.1.0-alpha.63`
 - GitHub：`Oak2521/Oak-Manuscript-App` 为 public；PR #2 已将 alpha.58 与 OSS 基础合并到默认分支 `main`，merge commit 为 `d4505e93da297ebedf45096a74a04e3f4e21ea95`。远端未配置提交状态 checks，合并证据是 GitHub mergeable 判定与本地全量测试，不冒充远端 CI
 - 开源协作基础：Apache-2.0 `LICENSE`、英文 README 概览、`CONTRIBUTING.md`、`SECURITY.md` 和 npm 仓库/官网元数据已补齐并在远端 `main` 复核；未创建 GitHub Release，公开与合并状态均不改变 production-ready 判定
 - 商业版权威方案：`docs/湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md`
 - 只读 Claude 基线：0.0.1，提交 `16736147ed734a3be3535d43152719cf4b97a07e`，标签 `claude-0.0.1-baseline`
 - 当前内置标准为 `oak-standards 2.1.0` / `oak-rules 2.1.0`（release sequence 3）：39 条规则、6 个白名单机械 fixer；alpha.58 新增 4 条不可自动修复的 TXT/Markdown 保守空白卫生提示。
+- OAK-10 冻结合同：只读 Account Center 提交 `6aea9986539a0f55b2961426fa08e486a9e30b19`，状态 `FROZEN_FOR_CONSUMER_IMPLEMENTATION`；本仓库消费副本固定 16 个文件的字节与 SHA-256。仓库默认无 Production URL、真实公钥或凭据。
+
+## GitHub Hosted 源码门（2026-08-17）
+
+- `.github/workflows/hosted-ci.yml` 为 public repository 建立 Ubuntu 24.04 与 Windows 2025 双平台源码门：锁定安装、workflow 自校验、迁移/标准/fuse portable 输入门、41 文件 OAK-10/Oak Account Node 测试面和全量 Python 测试。
+- 权限固定 `contents: read`，checkout 不保留凭据，不读取 secrets，不上传 artifact，不发布或部署；官方 actions 固定完整 SHA。
+- workflow 与测试面验证器以 TDD 建立；本地 Hosted 入口 Node 166/165/0/1 skip、Python 369/0 failures/0 errors/4 Windows skips。PR #3 run `32089121218` 在 head `d758f6d` 上 Linux/Windows required checks 全绿。
+- 早期 Hosted 失败没有被绕过：移除误放入 Hosted 的本地 Electron 字节门，显式隔离仓库外资源测试，并修复 POSIX 不可读原稿的失败关闭及临时目录权限恢复。
+- 此门不打包 Windows，不构建 macOS，也不关闭签名、公证、Staging、Production 或可售卖门禁。
+
+## OAK-10 OAK-16 runtime 对齐补件（2026-08-17）
+
+- 从 HEAD `97a7958aee29f8433e174b1a8fcf9edb059c0086` 的 10 文件未提交现场恢复；全部原文件保留并逐项审计。旧 HEAD 叠加新账户测试的隔离副本为 15 total / 4 pass / 11 fail，失败精确落在 Ed25519→ES256 与 revoke 响应契约，重建了遗留实现的 RED 证据。
+- 冻结 Desktop Application Login 1.0 合同与 provenance 未改写；消费者对齐 OAK-16 已验收 runtime 的 ES256/P-256 JWKS、P1363 签名和 exact `{revoked:true}`。默认账号配置仍无 URL、公钥、凭据；新增真实 Staging consumer 测试默认跳过。
+- 修复 Web verifier 信任锚可变性：构造时把受信 JWK 编译为独立 `KeyObject`，调用方事后替换 `x/y` 不再改变信任集合；TDD 先复现替换密钥签名被错误接受，再转绿。
+- 最终 `npm test`：Node 767/760/0/7，Python 368/0/0/3。资源信任 131 文件 / 2,244,237 字节，manifest `e03de88c…cb68`、anchor `11d122fd…5380`。
+- Alpha.63 离线 Windows 全链、packaged smoke、9 fuse、ASAR/资源探针和 schema v2 发行证据通过；NSIS `5ac3dc23…eb35`，ZIP `861fd3af…6a42`，unpacked EXE `210705cb…6036`。两份 EXE 均 `NotSigned`。
+- Alpha.62 已完整归档到 `release/archive/0.1.0-alpha.62/`；安装验收从过期 Alpha.12 基线更新为 Alpha.62，13/13 单测与 Alpha.62→Alpha.63 只读预检通过。没有运行安装器。
+- 状态保持：implemented=true、tested=true、packaged unsigned Windows=true；真实 Staging、deployed、signed、macOS packaged、production-ready、可售卖均为 false/未验证。OAK-10 仍为 `in_review`。
+
+## OAK-10 重启恢复补件（2026-08-15）
+
+- 权威 Taskboard 复核为 project `oak` / OAK-10 `in_review`；总控只接受 implemented/tested/packaged unsigned Windows alpha，不接受 staging/signed/deployed/production-ready。
+- 恢复前 HEAD 为 `f7d14f027623975799224da4eb824e080aa451de`，工作树原为干净；Alpha.62 NSIS、ZIP、unpacked EXE 和 `SHA256SUMS.txt` 的字节/摘要与 2026-08-14 发行证据一致。
+- 唯一明确仓库内补件是审计文档两处尾随空格，已修复。重启后合同、Node 761 项、fuse、packaged 资源/运行时探针、smoke 证据和 schema v2 发行证据全部复验通过。
+- 受限 shell 首轮 Node 因临时目录创建被拒绝而 `EPERM`；诊断证明 PowerShell 和 Node 在同一项目路径均无法新建文件/目录，获准非受限运行后即恢复 755 pass / 0 fail。未因该环境假失败修改产品代码。
+- 真实 Staging、Supabase/替代架构、干净机安装、签名、公证、部署、法务和可售卖身份仍是未授权/未通过门禁。
 
 ## 商业正式版路线状态
 
 | 工作流 | 状态 | 现场事实 |
 |---|---|---|
+| OAK-10：Oak Account application-login | **完成（本地源码与 packaged）** | 系统浏览器、随机 loopback、PKCE S256、300 秒内存 access token、OS 加密轮换 refresh、v1 安全清除和生命周期失败关闭均有正反测试；默认待配置，不等于真实账号联调 |
+| OAK-10：统一 owner 与 Pro 分离 | **完成（本地生产形状）** | 四个 Web 生产组合根本地验签 Oak access token，只用 `oak_account_id` 派生 owner；身份 claims 不授予 Pro，独立 signed entitlement 失败回落 Free；真实 Staging/数据库/撤销传播未验收 |
+| OAK-10：显式同步与直传保留 | **完成（本地生产形状）** | 同步逐字段预览、一次确认、加密失败队列、幂等补偿、跨账号隔离和 S3 短期直传/一次领取/清扫均通过；无真实 endpoint、migration、桶/CORS 或官网 E2E |
 | 开源许可与社区治理 | **完成（源码层）** | Apache-2.0 全文/SPDX、英文项目概览、贡献指南和私密漏洞报告政策已入库；不代表制品许可审计、签名或商业发布完成 |
 | P0：集中预览与一次批量确认 | **完成（代码与测试）** | `plan-fixes` 只读；`fix` 强制 `plan_id`；全部离散修改可见；取消零写入 |
 | P0：事务批量修复 | **完成（正常异常模型）** | working / issues / project 失败回滚；已有 5 个检查点时恢复被裁剪目录 |
 | P0：检查点列表、撤销与恢复 | **完成（代码与测试）** | 完整状态快照；恢复前安全点；损坏项 UI 禁用；恢复失败项目树不变 |
 | P0：默认引用体例与确认 | **完成（代码、迁移与 UI）** | 本地结构信号解析；证据不足退回 `structure_only`；`plan-citation` 只读并要求 `citation_plan_id` 确认；项目/报告记录原因、置信度与解析器版本 |
-| P0：Node + Python 统一测试 | **完成（最新统一回归通过）** | alpha.58 Node 719 / Python 368；0 失败 |
-| P0：真实桌面 UI 冒烟 | **完成（alpha.58 source + packaged）** | 两者均保持 Electron sandbox 并完成隐藏本地闭环；Web 客户端 smoke 也通过 |
+| P0：Node + Python 统一测试 | **完成（最新统一入口通过）** | alpha.63 Node 767 total / 760 pass / 0 fail / 7 skip；Python 368 total / 0 failures / 0 errors / 3 skip；见 TEST_REPORT |
+| P0：真实桌面 UI 冒烟 | **完成（alpha.63 packaged）** | 最终 Windows 全链内隐藏 packaged smoke PASS，主进程与恢复进程标志唯一；不等于干净机安装或生产网络验收 |
 | P0：文档与测试基线纠错 | **完成** | 权威改为 v2.0；纠正“185 + Ace = 186”错误 |
 | Windows alpha 运行资源 | **完成（源码资源门禁）** | Python/JRE/EpubCheck/Ace 均有全量哈希/锁；Python 与 EpubCheck 双向探针实际执行并通过 |
 | CPython 3.13.14 来源证据 | **机器验证完成，人工签署待办** | 官方 ZIP/Sigstore/SPDX、34 文件树、33 个原字节文件、1 个受控 `_pth` 追加与 PSF 许可保留已绑定；完整 Sigstore/GPG 与具名法律/再分发签署未完成 |
@@ -32,30 +62,39 @@
 | Electron 43.1.0 来源证据 | **机器验证完成，人工签署待办** | 官方 GitHub release/ZIP/SHASUMS256、npm checksums 与本地 75/75 文件已绑定；release 未提供 detached signature，许可、Chromium 第三方通知、商标与再分发待具名签核 |
 | Windows builder 来源证据 | **机器验证完成，人工签署待办** | 三份官方归档、GitHub release API、`app-builder-lib 26.15.3` 固定选择逻辑与 385/385 重组树已绑定；旧 release 无 digest/签名，部分所选载荷无具名许可证文件 |
 | Ace 正式发布条件 | **部分完成** | tracked full lock、受控 `utilityProcess`、loopback Chrome、两阶段计划、真实 packaged 好/坏结果及本地哈希绑定证据已验证；自带浏览器、OS 网络隔离、代码签名/可信见证及全闭包人工审计未完成 |
-| Windows NSIS / ZIP | **完成（未签名 alpha）** | alpha.58 NSIS/ZIP 已离线生成并复验 |
-| Windows 发布制品证据 | **完成（alpha.58 schema v2）** | SHA256SUMS + canonical manifest 与真实 NSIS/ZIP、packaged-smoke EXE/输出树交叉复验 |
-| Windows 安装生命周期 | **工具/alpha.54 预检完成，真实运行待授权** | 九阶段编排、证据 v1、HKCU/快捷方式探针和专项测试完成；历史 release manifest v1 与当前 v2 均严格验证；alpha.54/alpha.12 安装器只读预检通过；未执行真实安装、升级、回装探测或卸载 |
+| Windows NSIS / ZIP | **完成（未签名 alpha）** | alpha.63 NSIS/ZIP 已离线生成；全链退出 0，schema v2 发行证据复验通过；Authenticode 为 `NotSigned` |
+| Windows 发布制品证据 | **完成（alpha.63 schema v2）** | SHA256SUMS + canonical manifest 与真实 NSIS/ZIP、packaged-smoke EXE/输出树交叉复验 |
+| Windows 安装生命周期 | **Alpha.62→Alpha.63 只读预检完成，真实运行待授权** | 九阶段编排、证据 v1、HKCU/快捷方式探针和专项 13/13 完成；两版 manifest/installer 精确复验；未执行真实安装、升级、回装探测或卸载 |
 | Electron ASAR / fuse 硬化 | **真实制品 9 项全验** | `@electron/fuses 2.1.3` 识别 `WasmTrapHandlers`；afterPack 严格写入全部 9 项并回读；真实 EXE 无未知 fuse |
-| ASAR 资源信任根 | **alpha.58 源码与 packaged 已验证** | 源码锚点固定 112 个 loose 文件；真实 `app.asar`、packaged 全树与发布证据同属 alpha.58 |
+| ASAR 资源信任根 | **alpha.63 源码与 packaged 已验证** | 源码锚点固定 131 个 loose 文件；真实 `app.asar`、packaged 全树与发布证据同属 alpha.63 |
 | 发行商/销售主体元数据 | **源码/生产 ASAR 契约完成，真实身份待确认** | 已知产品/品牌/appId/官网固定；packaged 门禁读取真实 `app.asar/package.json` 的 `oakReleaseIdentity`；法定主体、链接、版权、签名主体和具名复核待定，sale fail-closed |
 | Windows sale 门禁 | **未通过（如实阻断）** | 源码/packaged 资源门禁为 17/12 项；新增发行身份 blocker；签名、来源/许可审计、自带浏览器与 OS 隔离未完成 |
 | macOS arm64/x64 安装版 | **基础设施完成，发行未完成** | 已拆原生 x64/arm64 runner；静态聚合不执行探针；缺 Electron/Python/JRE、`.app`/DMG、签名、公证和真实硬件证据 |
 | 标准包验证、升级、撤回与回滚 | **桌面+服务端源码链完成；生产未配置** | 内置 2.1.0 / sequence 3；v1→v2→v3 历史 CAS、能力子集、签名/回滚/撤回和项目七字段 pin 验证通过。默认端点与 trust pin 仍为空 |
 | 标准与规则补全 | **新增 TXT/Markdown 保守覆盖；内容补全未完成** | 14 标准/39 规则/6 fixer 映射一致；active 10、under_review 4、verified 0、pending 13、unavailable 1，仍禁止“完整标准库”表述 |
-| 湖岸统一账号 / Free+Pro / 结果同步 | **生产形状源码与本地匿名主流程完成，生产未配置/未联调** | alpha.44—alpha.48 已完成权益、签发、订阅/设备服务、网站客户端与撤销传播；alpha.54 贯通登录、Pro、本地结果、明确确认、即时发送/失败留队、服务端 owner 绑定与网站历史 strict parse。默认配置为空且无生产私钥；支付商 webhook、真实 PKCE/迁移/API/部署未完成 |
+| 湖岸统一账号 / Free+Pro / 结果同步 | **Oak Account 本地生产形状与 packaged 完成，生产未配置/未联调** | alpha.63 保持冻结 application-login 合同并对齐 OAK-16 ES256 runtime，系统浏览器/loopback/PKCE、refresh-only 存储、`oak_account_id` owner、独立 Pro 和明确同步链均通过；默认配置无 Production URL/公钥/凭据，支付商、Staging、迁移/API/官网部署未完成 |
 | 三模式 AI / 用户自带 AI | **compatible 源码链完成；Ollama 与 LM Studio 各一固定组合窄验收通过** | alpha.43 以 llmster 0.0.20+1 + Qwen3 4B 验证成功、静默模型替换拒绝、超时和不落盘，并修复 LM Studio 响应模型核对与空 `tool_calls: []`。其他组合/硬件/多模型语义、多规则质量、官方云、Web 会话凭据和湖岸 AI 仍无证据 |
-| Web 服务端统一处理 | **组合、迁移来源及平台准入完成，生产未部署** | alpha.55 增加 exact 组合与 SQL 字节清单；alpha.56 绑定 50 MiB/100 MiB/240 秒及隔离、存储、数据库、调度能力，runtime 拒绝不足 profile。厂商官方规格和真实 profile 尚未核对，readiness 仍为生产未就绪；生产账号/API/官网部署待实现 |
+| Web 服务端统一处理 | **直传/直取源码闭环完成；部署与隔离执行待办** | alpha.61 的 v2 公开控制面签发 30—300 秒 Supabase S3 PUT/GET，浏览器不再经 Function 缓冲稿件；staging→input ETag 绑定、单次 result claim、005 迁移、对象清扫、浏览器独立 Storage origin pin 和 v2 准入均有测试。仓库 pin 默认留空并关闭稿件控件；真实桶/CORS/迁移、隔离 worker、告警、生命周期/零留存与官网 E2E 未验证 |
 | 可售卖正式版发布 | **未达到** | 缺跨端产物、生产账号/支付、条款、签名、公证、内测和网站联调 |
 
 ## 最新测试基线
 
-- 最终分项全量：`npm run test:node` **PASS**，719 total / 712 pass / 0 fail / 7 skip（5.136 秒）；`npm run test:python` **PASS**，368 total / 0 failures / 0 errors / 3 skipped（114.876 秒）。此前一次统一回归暴露 8 个测试模块仍固定规则包 2.0，门禁正确拒绝；切换当前版本测试到 2.1 后分项全量通过。
+- alpha.63 最终统一回归：`npm test` **PASS**；Node 767 total / 760 pass / 0 fail / 7 skip，Python 368 total / 0 failures / 0 errors / 3 skipped。定向账户/合同/Web 组合 37 total / 36 pass / 0 fail / 1 skip；唯一新增跳过是无外部授权的 OAK-16 真实 Staging consumer。
+- alpha.63 资源信任：131 文件 / 2,244,237 字节，manifest `e03de88c…cb68`、anchor `11d122fd…5380`。离线 Windows 全链退出 0；packaged smoke run `msxhfjrn-167d5b76cd673e8b`，输出树 76 文件 / 1,378,019 字节 / `181eea1e…fc5`。
+- alpha.63 NSIS 190,078,315 字节 / `5ac3dc23…eb35`，ZIP 233,925,031 字节 / `861fd3af…6a42`，unpacked EXE 225,449,472 字节 / `210705cb…6036`；schema v2 发行证据独立复验通过，两份 EXE 均 `NotSigned`。Alpha.62→Alpha.63 安装生命周期只读预检通过，真实安装未运行。
+- alpha.62 最终统一回归：`npm test` **PASS**；Node 761 total / 755 pass / 0 fail / 6 skip（5.862 秒），Python 368 total / 0 failures / 0 errors / 3 skipped（43.921 秒），墙钟 54.3 秒。最终 `npm run build:win` 305.1 秒退出 0；packaged smoke 运行根 `out/packaged-smoke/runs/msslwfuj-5c4e1e4dc65c88fc/projects/`，76 文件 / 1,378,165 字节 / `e0235b95…01a7`。
+- alpha.62 资源信任：131 文件 / 2,243,858 字节，manifest `9b00c85b…bbc`、anchor `bc69e8c3…5e16`；NSIS `3a3c74da…bb64`、ZIP `9263fb67…2f5c`，schema v2 发行证据复验通过。两份 Windows EXE 均 `NotSigned`。
+- alpha.61 最终统一回归：`npm test` **PASS**；Node 744 total / 737 pass / 0 fail / 7 skip（7.109 秒），Python 368 total / 0 failures / 0 errors / 3 skipped（111.050 秒），墙钟 123.4 秒。直传 credential、S3 promotion/download/sweep、HTTP v2、持久状态、浏览器客户端、005 migration、v2 admission 和 runtime composition 均纳入 Node 全量。Web 生产依赖联网审计为 0 漏洞；真实 Supabase/worker/生产网络未运行。
+- alpha.61 独立隐藏 Electron source smoke PASS，运行根 `out/source-smoke/runs/mso27a8x-665bbb0e3713f795/projects/`；独立隐藏 Chromium Web client smoke 在修正已自然过期的匿名测试权益日期后 PASS，desktop/390px、设备撤销、空 Storage origin pin 时六个稿件控件 fail-closed 和 0 外部网络请求均通过。
+
+- alpha.60 最终统一回归：`npm test` **PASS**；Node 726 total / 719 pass / 0 fail / 7 skip（8.927 秒），Python 368 total / 0 failures / 0 errors / 3 skipped（128.273 秒），统一墙钟 205.8 秒。具来源平台准入和 Supabase 服务端 key 专项为 29/29。
+- alpha.59 最终统一回归：`npm test` **PASS**；Node 720 total / 713 pass / 0 fail / 7 skip（6.152 秒），Python 368 total / 0 failures / 0 errors / 3 skipped（125.882 秒）。修复前 Windows CRLF checkout 复现为 Node 719/683/29/7；升版后首次回归又暴露 1 个 Ollama 当前版本断言仍固定 alpha.58，更新为 alpha.59 后全量通过。
 - 真实 LM Studio headless 补充验收：官方 `0.0.20-1-win32-x64.full.zip` 881,662,805 字节，SHA-512 匹配；llmster `0.0.20+1` / `a39c907b…9c43`，Qwen3 4B Q4_K_M / 2,497,280,480 字节 / `3e4cb141…4e4f`。最终 **PASS**：成功推理 18,956 ms、静默模型替换被 `AI_SERVICE_INCOMPATIBLE` 拒绝、100 ms 超时、失败 plan 不可重放、不落盘/不改稿；证据 1,661 字节 / `a5f1fb5b…b3e9`。
 - 真实 Ollama 补充验收：官方 0.32.5 standalone ZIP 1,457,824,795 字节 / SHA-256 `7c941ae0…c7bb`；qwen3:4b manifest `359d7dd4…fae7`。最终 run4 为 **PASS**，推理 17,893 ms，证据 1,451 字节 / `767197c5…0f98`，并绑定 APP 0.1.0-alpha.42、规则包 `098b382e…97a4`、`DOCX-SPACE-001` / `FIX-SPACE-001` 和脚本摘要；预览 0 请求，成功/缺失模型/100 ms 超时均各 1 请求，建议不落盘且不改稿。前两次质量门禁失败及未绑定真实规则 ID 的 run3 均保留，不冒充最终证据。
-- Web 客户端 smoke：alpha.55 实际 `web/client/index.html` 在隐藏 Chromium 中使用匿名内存假服务完成桌面/移动布局与设备撤销，**PASS**；HTTP(S) 请求 0，证据在 `out/web-client-smoke/`。该页面本轮未改，这仍不是生产账号/API/部署证据。
-- 源码 Electron smoke：alpha.58 独立隐藏运行 **PASS**，输出 `out/source-smoke/runs/ms66bgk2-768d238594aca8fd/projects/`；Renderer 仍为 sandbox。packaged smoke 在文件系统沙箱内因 GPU `0xC0000135` 失败且不计通过，沙箱外独立隐藏重跑 **PASS**。
-- 发行身份专项纳入 Node 全量：当前仓库身份结构有效但 `complete=false`，12 个 Windows 完备性字段显式缺失；源码 `build.appId`、生产 `oakReleaseIdentity`、重复键、字段/顺序/schema/canonical 字节、占位文本、非官方 URL 和 package 漂移均 fail-closed。
-- ASAR/资源信任专项已纳入 Node 全量：alpha.58 源码 `verify:resource-trust` PASS，112 文件 / 2,220,055 字节，应用清单 SHA-256 `bf5de4af0df4aa3064fc1abd1a9bb181a033c25e2d93d696413be53f3fb6846e`，锚点 SHA-256 `361395233fabaac7a79401bfe0741b84b8ae4822c9300a4604fb21b4d54b527c`；真实 packaged 同版通过。
+- Web 客户端 smoke：alpha.61 实际 `web/client/index.html` 在隐藏 Chromium 中使用匿名内存假服务完成桌面/移动布局、设备撤销和空 Storage origin pin 的 fail-closed 控件验证，**PASS**；HTTP(S) 请求 0，证据在 `out/web-client-smoke/`。这仍不是生产账号/API/部署证据。
+- 源码 Electron smoke：alpha.62 独立隐藏运行 **PASS**，输出 `out/source-smoke/runs/msskld5l-f0e0f3db10320791/projects/`，Renderer 仍为 sandbox；最终 packaged smoke 同样为 alpha.62。
+- 发行身份专项纳入 Node 全量：当前仓库身份结构有效但 `complete=false`，11 个 Windows 完备性字段显式缺失；源码 `build.appId`、生产 `oakReleaseIdentity`、重复键、字段/顺序/schema/canonical 字节、占位文本、非官方 URL 和 package 漂移均 fail-closed。
+- ASAR/资源信任专项已纳入 Node 全量：alpha.61 源码 `verify:resource-trust` PASS，112 文件 / 2,217,733 字节，应用清单 SHA-256 `de6471b0752411a9d06a5b859bf5726859e0e73965199b09b76a20d26b2c0115`，锚点 SHA-256 `6165a4301a2c10de7b39fe25edad53edfc0b23c53fe2e236004dd63de646bd51`；最新真实 packaged 仍为 alpha.58。
 - CPython provenance 专项已纳入 Node 全量：tracked evidence、exact schema/canonical 字节、官方制品摘要、Sigstore leaf、SPDX、34/33/1 推导、证据/运行时清单绑定、真实 `python.exe` 漂移和原子更新故障均通过；证据保持 `machine_status=verified`、`human_review_status=pending`。
 - EpubCheck provenance 专项已纳入 Node 全量：官方 ZIP/服务端 digest、本地 49/49 原字节文件、exact schema/canonical 字节、证据/分发/JRE/资源锚点绑定、自批准与漂移拒绝均通过；证据保持 `machine_status=verified`、`human_review_status=pending`、`license_signal_consistent=false`。
 - Temurin/JRE provenance 专项已纳入 Node 全量：官方 ZIP/API/digest/checksum/build metadata、490/490 JDK 文件树、本机源 JDK、固定 jlink、207 文件 runtime、94 份许可材料、证据/锁/ASAR 绑定、自批准和漂移拒绝均通过；GPG 状态保持 `not_verified_no_openpgp_tool`，人工状态保持 pending。
@@ -63,17 +102,17 @@
 - Windows builder provenance 专项已纳入 Node 全量：三份官方归档/API、固定选择逻辑、受控重解压重组和 385/385 工具树、证据/tool manifest/lock 绑定及反向路径均通过；证据 SHA-256 `c1651839…bb5`，旧 release digest 状态保持 unavailable，人工状态 pending。
 - Ace utility/Chrome controller、两阶段外部验证、Fuse 与相关路径反向测试均纳入上述全量回归；afterPack 专项覆盖全 9 项严格写入、API 漂移、macOS arm64 临时签名和路径逃逸；真实 EXE 回读 `fully_known=true`、`unknown_fuses=[]`。
 - 账号/权益/同步专项：既有明确确认/safeStorage 队列、服务/client/coordinator、PKCE/加密 token-store/main 接线继续通过；alpha.45—alpha.46 的签发/订阅/设备服务之上，alpha.47 新增 Web strict overview/revoke 契约、掩码展示、确认、失败恢复和退出竞态保护。相关客户端/服务 57/57，新增专项累计 12/12。所有网络/DB 仍为注入仿真或 SQL 静态检查，受信端点/公钥为空且仓库没有生产私钥。
-- Web 链继续全通过；alpha.56 的部署需求 SHA-256 为 `6f993e8abd88b2df9e5964638901f453708c9b6f56280b96fb0149045a27eb77`，5 项准入专项与 3 项组合专项共 8/8。能力 profile 不含秘密；合格自报仍固定 `production_evidence_verified=false`、`production_ready=false`。真实 DB/store/network 和厂商 profile 均未运行/核对。
+- Web 链继续全通过；alpha.61 v2 直传部署需求 SHA-256 为 `84fa903a7fd5397549ef7628671e31bb552bed92be93893707d160184e304690`。alpha.60 的 Netlify/Supabase 缓冲 profile 仍以 9 项拒绝码保留历史反证；alpha.61 组合继续固定 `production_evidence_verified=false`、`production_ready=false`。真实 DB/store/migration/worker/deployment 仍未运行。
 - packaged-smoke/发布证据专项纳入全量；canonical smoke 证据绑定实际 EXE、两次进程唯一成功标志/输出摘要和匿名输出树，覆盖输出漂移、EXE 漂移、伪造标志、陈旧路径/版本、隐藏名、链接/硬链接、schema/canonical 篡改；发布 manifest schema v2 强制消费证据，清除与联合提交失败均 fail-closed。
 - downloader 专项：**11/11 通过**；覆盖显式联网授权、固定来源、重定向/容量/哈希门禁、零授权零写入、事务落盘/回滚及路径安全。
 - Electron runtime 锁专项：**37 项、36 通过、0 失败、1 条件跳过**；hardlink 与 junction 反向路径本机实测通过，文件 symlink 因 Windows `EPERM` 条件跳过，不计作通过。
 - alpha.54 source 与 packaged smoke 均强制应用内外部验证并 PASS；packaged 第二进程队列恢复、制品/输出树哈希证据精确属于 alpha.54。两者均保持 Electron sandbox，未使用 `--no-sandbox` 作为证据。
-- `npm run verify:standards`：**PASS**；2.0.0 manifest SHA-256 `0aff75eb181a62869147e9af27330c717bc808bdd23865197534fc9868568427`，规则包 SHA-256 `098b382e33c06ccddf154940fbbd51db384d8025cf235ed7f7e10e83d34897a4`，能力集 SHA-256 `af67d0aaf2ece431ec1b617934bdfa3627b6be1b1301a92fcf3b2b2f29ca232e`。
+- `npm run verify:standards`：**PASS**；当前 2.1.0 / release sequence 3 manifest SHA-256 `88a60da2f55c6de13853e0af56389f56a591c5702e44de1a7943d31afbff0187`；39 条规则、6 个机械 fixer。外部来源核验与具名复核仍未完成。
 - `npm run verify:electron-runtime`：**PASS**；Electron 43.1.0 win32-x64 固定锁覆盖 2 个目录、75 个文件、364,083,658 字节，manifest SHA-256 为 `f5c2c915633c1917bc37377f8232bde4259588eb138bc4072a3c7df976e27486`；tracked manifest 使用严格 JSON、exact schema 和 canonical UTF-8/LF 原始字节，并绑定 Electron provenance。
 - 外层隐藏 `npm run smoke:packaged:win`：**SMOKE-RESULT + SYNC-RECOVERY PASS**；最终输出 `out/packaged-smoke/runs/ms629abp-11818f84be690e63/projects/`，运行真实 alpha.54 二进制 `release/win-unpacked/湖岸稿件 Oak Manuscript.exe`。证据绑定 EXE `d007f78a…d8d8c` 与输出树 76 文件 / 1,368,627 字节 / `3e018199…a264`。
 - 当前测试环境：Windows 11，Python 3.14.6，Node 24.16.0，npm 11.13.0，Electron 43.1.0，Java 21.0.11。
 - Windows alpha 资源门禁：**PASS**。
-  - alpha.56 源码 loose 资源：108 个文件 / 2,171,922 字节，manifest `2b783bc5…1bad3`、anchor `948f1582…f7095`；最新真实 ASAR/packaged 全树证据仍属于 alpha.54；
+  - alpha.59 源码 loose 资源：112 个文件 / 2,217,733 字节，manifest `7e25e075…b496`、anchor `0d055104…9def`；最新真实 ASAR/packaged 全树证据仍属于 alpha.58；
   - Python：34 个文件 / 21,260,753 字节；
   - JRE：207 个文件 / 52,384,264 字节；
   - EpubCheck：49 个文件 / 36,263,890 字节；
@@ -85,6 +124,11 @@
 - 详细证据与首次失败修复记录见 `docs/TEST_REPORT.md`。
 
 ## 本轮关键实现
+
+- `.gitattributes` 从宿主相关的 `* text=auto` 收紧为 `* text=auto eol=lf`；Windows `core.autocrlf=true` 不再改变 tracked canonical JSON/SQL、迁移清单或资源信任输入；
+- 新增 checkout 字节回归测试，固定属性文件自身与 CPython provenance、发行身份/schema、应用资源锁、Web migration manifest/SQL 的 LF 字节；
+- 机械刷新现有工作树后 `git ls-files --eol` 的 `w/crlf` / `w/mixed` 为 0；按 LF 源码树重建 112 文件资源锁，不改变标准包 2.1.0 payload 或 alpha.58 兼容下限；
+- alpha.59 仅为源码检查点；没有把 alpha.58 安装包、packaged smoke 或发布证据重新标记为新版本。
 
 - 新增标准撤回独立 `revocation` 签名角色、canonical envelope/list、追加式持久集合和原子状态事务；active/候选/回滚命中即拒绝，检查途中落地的撤回在预览前优先，但保留 CAS、项目身份、既有结果与导出，并允许安全前进到更高未撤回 release；
 - 新增固定内容无关撤回获取 service/HTTP/Fetch/桌面 client；真实测试 signed envelope 从假发布源贯通独立验签和原子应用。默认未接入 main/IPC/UI，普通运行零撤回网络；
@@ -182,13 +226,12 @@
 
 ## 当前下一项
 
-按 v2.0 方案继续，不重做总体规划；alpha.58 已补齐 TXT/Markdown 保守卫生检查并形成同版 Windows packaged 证据，近期直接推进生产联调前置：
+按 v2.0 方案继续，不重做总体规划；OAK-10 已完成本地实现、回归和未签名 Windows packaged 检查点，但真实账号/执行面与部署证据仍为空。近期直接推进：
 
-1. 经用户联网授权后，以官方当前文档核对候选平台的请求/响应/时限/子进程/调度/存储能力，生成具来源的真实 profile；未经核对不得用测试 profile 选择部署拓扑；
-2. 真实 Supabase/GoTrue/OAuth/OIDC、支付商 webhook、迁移和网站联调仍需另行授权、平台选择及有效预生产配置；得到配置后先执行隔离预生产迁移/RLS/最小作业/清扫证据，再接官网；
-3. OpenAI、Anthropic、Gemini 官方适配必须先获准联网核对当前官方协议；不得套用 compatible 形状或凭记忆猜测，但不排在账号/订阅主线之前；
-4. 同时保留正式发行阻断：具名许可/再分发签核、发行法定身份、Ace 自带浏览器/OS 隔离、Authenticode、干净 Windows 安装生命周期、macOS 签名/公证与实机验证；
-5. alpha 产物不得表述为可售卖正式版；alpha.43 本机 LM Studio/Ollama 证据与 alpha.58 packaged 哈希都不是签名、不可伪造证明或全面兼容矩阵。
+1. 用官方当前资料建立专用隔离 worker 候选 profile，逐项验证固定 Python/绝对 executable、private scratch、只读应用、OS 禁网、240 秒以上执行、调度、告警和秘密注入；
+2. 真实 Oak Account Center、Supabase、支付商 webhook、迁移和网站联调仍需有效预生产配置；得到配置后先完成 application-login/生命周期/owner 联调，再执行隔离预生产迁移/RLS、精确 Storage origin/CORS、最小直传作业和双清扫证据；
+3. OpenAI、Anthropic、Gemini 官方适配必须先核对当前官方协议；不得套用 compatible 形状或凭记忆猜测，但不排在账号/订阅主线之前；
+4. 同时保留正式发行阻断：具名许可/再分发签核、发行法定身份、Ace 自带浏览器/OS 隔离、Authenticode、干净 Windows 安装生命周期、macOS 签名/公证与实机验证。
 
 如构建需要联网下载、安装新依赖、签名或发布，先取得用户授权。
 
@@ -198,16 +241,19 @@
 - Ace 已脱离开发树依赖并取得真实 packaged utility helper 证据，但仍依赖用户系统 Chrome；自带浏览器、OS 级默认拒绝网络及代码签名未完成；
 - Ace 有 18 个依赖包只有生成的许可证通知，且整个 236 包生产闭包的来源、许可证、版权与再分发义务均尚需正式人工审计；
 - CPython、EpubCheck、Temurin/JRE、Electron 与 builder 均已有固定官方制品、完整文件树及下游锁的机器来源证据；但 CPython 信任链/index 异常、EpubCheck 许可信号矛盾、Temurin OpenPGP、Electron 第三方通知/商标以及 builder 旧 release 无 digest/签名和部分载荷无具名许可文件等边界仍需具名法律/再分发签核；
-- Windows Authenticode 和安装包签名尚未完成；alpha.58 制品仅供开发/内测；
-- alpha.58 继续从真实 `app.asar/package.json` 验证发行身份，但 `author` 等缺口仍由 `RELEASE_PUBLISHER_METADATA_PENDING` 阻断；法定销售主体、正式 URL、版权、发行者、具名复核与签名证书主体尚未确认，不能自行猜填；
+- Windows Authenticode 和安装包签名尚未完成；最新 alpha.62 制品仅供开发/内测；
+- alpha.62 源码与 packaged 发行身份结构有效但 `complete=false`，均从真实 `package.json` / `app.asar` 验证身份。`author` 等缺口仍由 `RELEASE_PUBLISHER_METADATA_PENDING` 阻断；法定销售主体、正式 URL、版权、发行者、具名复核与签名证书主体尚未确认，不能自行猜填；
 - 标准治理 schema、完整身份、本地升级链、用户可见治理摘要和 TXT/Markdown 基础卫生覆盖已实现，但没有任何外部来源完成核验，4 项外部标准仍在审阅，reviewer 仅为角色占位，GB/T、APA、Chicago、EPUB、纸质出版和可访问性覆盖仍不够；UI 已明确阻止“标准库完整”表述，但内容缺口本身仍未关闭；
 - 标准包生产 release/revocation trust pin、真实发布/撤回源和联网联调尚未实现；alpha.49—alpha.53 已完成客户端、服务端发布、本地撤回状态、固定获取链以及 main/IPC/UI 安全恢复入口，但两个正式端点仍为空，本地签名包导入仍因无生产 trust pin 按设计禁用；
 - Windows 开发机无法替代真实 macOS 构建、签名、公证和实机 smoke；
-- 本机加密同步队列、确认后即时发送/失败留队、SyncRecord 服务/API/Supabase、桌面 PKCE/token-store/条件 main 接线和网站历史解析均已在本地生产形状 E2E 贯通；Web 临时作业/Blobs/Postgres/worker/双清扫源码也已实现。受信账号配置仍为空，真实 OAuth/OIDC、迁移/容器、OS 禁网、平台恶意软件扫描、调度/告警、订阅、真实零留存与官网后台仍涉及生产系统，网站保持只读；
+- 本机加密同步队列、确认后即时发送/失败留队、SyncRecord 服务/API/Supabase、桌面 application-login/refresh-only store/条件 main 接线和网站历史解析均已在本地生产形状 E2E 贯通；alpha.62 已把生产 owner 切到验签 `oak_account_id`，并保留 alpha.61 直传数据面。受信账号与 Storage origin 配置仍为空，真实 Account Center、迁移/容器、OS 禁网、平台恶意软件扫描、调度/告警、订阅、真实零留存与官网后台仍涉及生产系统，网站保持只读；
 - “接入用户自己的 AI”的六项设计决定已经用户确认并写入 v2.0；三模式设置、OS 加密凭据、单条发送预览、建议人工审阅、有界 HTTP 底座以及 compatible transport 已实现；Ollama 0.32.5 与 LM Studio llmster 0.0.20+1 各一固定组合已完成单匿名规则窄验收，官方云三类、其他上游组合、宽泛质量、湖岸 AI 服务与 Web 会话凭据仍未实现。
 
 ## 历史里程碑
 
+- 2026-08-14：推进到 `0.1.0-alpha.62` 未签名 Windows packaged 检查点；冻结 Oak Account application-login 合同，完成桌面系统浏览器/PKCE/refresh-only、Web `oak_account_id` owner、独立 Pro 与显式同步接入；修复 Ace 双重关闭竞态；Node 761、Python 368、最终 Windows 全链和发行证据零失败；未联网、部署、推送、签名或运行安装器。
+- 2026-08-10：推进到 `0.1.0-alpha.60` 源码检查点；联网核对 Netlify/Supabase/PostgreSQL 官方当前资料，新增真实候选 profile 与证据记录，以 9 个稳定拒绝码否决当前 50/100 MiB 缓冲协议原样部署到 Netlify Functions；补齐 Supabase `sb_secret_` apikey-only 兼容；Node 726、Python 368、关键门禁和独立隐藏 Electron smoke 零失败；未迁移、部署、推送或重新打包。
+- 2026-08-10：推进到 `0.1.0-alpha.59` 源码检查点；修复 Windows `core.autocrlf=true` 导致 canonical JSON/SQL、迁移和资源信任门禁失败的问题，新增 checkout 回归并重建 LF 资源锁；Node 720、Python 368、关键源码门禁与沙箱外独立隐藏 Electron smoke 零失败；未联网、部署、推送或重新打包，最新 Windows packaged 仍为未签名 alpha.58。
 - 2026-07-29：推进到 `0.1.0-alpha.58` packaged 检查点；新增 TXT/Markdown 4 条不可自动修复的保守空白提示、行号和格式覆盖矩阵，标准包升 2.1.0，历史 v1/v2 CAS 继续可验证；Node 719、Python 368、源码/Web/packaged smoke 和 Windows 发布证据通过；未联网、部署、推送或执行真实安装，制品未签名，macOS 静态门禁仍缺双架构资源。
 - 2026-07-29：推进到 `0.1.0-alpha.57` 源码检查点；从已验证注册表派生 exact 治理摘要，标准页分列审阅/来源核验并在 0 verified、4 under_review 时明确阻止“完整”表述；Node 716、Python 362、标准/资源门禁与独立隐藏 Electron smoke 零失败；未改标准 payload，未联网、部署、迁移、推送或打包。
 - 2026-07-29：推进到 `0.1.0-alpha.56` 源码检查点；完成平台无关 Web 部署需求、exact 非敏感 profile、稳定违规报告及 runtime 强制绑定；Node 711、Python 362、隐藏 Electron smoke 与资源信任零失败；未联网核对厂商、迁移、部署、推送或打包。

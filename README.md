@@ -15,7 +15,7 @@ The project is built around several non-negotiable properties:
 - registration is not required for local checking, and network features require explicit user action;
 - AI output is advisory only and cannot silently rewrite a manuscript.
 
-The current `0.1.0-alpha.58` source includes DOCX/TXT/Markdown checks, citation-style inference with a safe default, checkpointed repair workflows, signed standards-package verification and rollback controls, account/entitlement/result-sync contracts, three AI modes (Oak-hosted, local, and user-supplied OpenAI-compatible providers), and Web job isolation/retention contracts. A real unsigned Windows internal-test build has been packaged and exercised. macOS signing/notarization, production account and payment infrastructure, production standards services, public Web deployment, and a sellable signed release remain incomplete.
+The current `0.1.0-alpha.63` source consumes the frozen Oak Account Center application-login contract at commit `6aea9986539a0f55b2961426fa08e486a9e30b19` and aligns its consumers with the accepted OAK-16 Staging runtime. Desktop sign-in uses the system browser, a random `127.0.0.1` callback, PKCE S256, an in-memory access token, and an OS-encrypted rotating refresh session. Server composition roots verify exact ES256/P-256 Oak Account access tokens locally and derive ownership only from `oak_account_id`; identity never grants Pro, which remains a separate Oak Manuscript signed entitlement. Existing explicit result-sync confirmation, encrypted retry queue, and direct-object transfer controls remain intact. Repository configuration intentionally contains no production or Staging URLs, keys, or credentials, so real Account Center, Supabase, Staging, and website integration remain unverified. The latest Windows internal-test package is the unsigned `0.1.0-alpha.63` NSIS/ZIP build.
 
 Oak Manuscript deliberately separates five claims that are often blurred together: implemented, tested, packaged, deployed, and production-ready. Passing repository tests does not claim that production infrastructure or a commercial release exists. Current evidence and blockers are recorded in [`docs/DEVELOPMENT_STATUS.md`](docs/DEVELOPMENT_STATUS.md) and [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md).
 
@@ -31,7 +31,7 @@ Contributions are welcome. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), repo
 
 ## 中文说明
 
-本地优先的稿件检查与修订产品。当前源码与最新真实 Windows 打包版本均为 `0.1.0-alpha.58`；Windows 制品未签名，只是可验证内测检查点，不是可售卖正式版。已有 Electron 桌面端、Python 检查核心、离线标准包验证/项目固定/显式升级/回滚链路、受控标准在线更新/撤回链、三模式 AI、统一账号/权益/同步和网站账号后台源码。Web 临时稿件处理仍与长期结果同步分流；alpha.58 为 TXT/Markdown 增加保守空白卫生提示、行号和格式覆盖矩阵，并保持代码、表格、强制换行与排版敏感块豁免。账号、权益和标准联网配置均为 `pending_configuration`，仓库不含生产私钥、真实端点或生产公钥；真实发布源、部署、监控和后台调度尚未实现。商业正式版目标为 Windows、macOS 与 Web。
+本地优先的稿件检查与修订产品。当前源码与最新真实 Windows 打包版本均为 `0.1.0-alpha.63`；Windows NSIS/ZIP 制品未签名，只是可验证内测检查点，不是可售卖正式版。alpha.63 保持 Oak Account Center 冻结提交 `6aea9986539a0f55b2961426fa08e486a9e30b19` 的 application-login 合同，并把桌面/Web consumer 对齐到 OAK-16 的 ES256/P-256 runtime：随机 loopback、PKCE S256、access token 只驻内存、refresh 会话只存 OS 安全存储。Web 生产组合入口只用验签后的 `oak_account_id` 派生 owner；账号身份与 Pro 权益严格分离。显式结果同步、加密失败队列和 Supabase S3 短期直传/直取仍保留。仓库没有 Production/Staging URL、公钥或真实凭据；真实账号、迁移、桶/CORS、隔离 worker、生产零留存和官网部署尚未完成。商业正式版目标仍为 Windows、macOS 与 Web。
 
 **当前桌面核心承诺**：稿件默认只在本机处理；永不原地修改原稿（SHA-256 全程校验）；不强制注册；报告与导出不设营销门槛。
 
@@ -53,9 +53,9 @@ alpha.57 增加由已验证标准注册表派生的 content-free 治理摘要。
 
 alpha.58 发布 `oak-standards/oak-rules 2.1.0`（release sequence 3）：新增 4 条仅提示、不可自动修复的 TXT/Markdown 空白卫生规则。检查器排除 Markdown 围栏代码、行内代码、表格、强制换行尾随空格，并保守豁免诗歌/刻意排版块；结果、JSON/Markdown/HTML 报告和桌面页显示精确行号与格式覆盖矩阵。规则总数为 39，机械 fixer 仍为 6；当前标准治理为 14 项、active 10、under_review 4、verified 0、pending 13、unavailable 1，正式内容门禁仍未满足。
 
-此前两个固定 AI 组合的窄验收仍成立：Ollama 0.32.5 + qwen3:4b，以及 LM Studio headless llmster 0.0.20+1 + 同一 Qwen3 4B GGUF；这不是所有版本、模型、硬件、桌面 GUI 或稿件类型的全面兼容/质量承诺。OpenAI、Anthropic、Gemini 官方云仍未接入。账号和权益默认配置均没有网络目标，所以当前普通 APP 仍不能登录、刷新生产订阅或上传。“源码接线存在”不等于生产服务已经验收。
+此前两个固定 AI 组合的窄验收仍成立：Ollama 0.32.5 + qwen3:4b，以及 LM Studio headless llmster 0.0.20+1 + 同一 Qwen3 4B GGUF；这不是所有版本、模型、硬件、桌面 GUI 或稿件类型的全面兼容/质量承诺。OpenAI、Anthropic、Gemini 官方云仍未接入。账号、权益和同步默认配置均没有 Production URL 或真实信任根，所以当前普通 APP 仍不能登录、刷新生产订阅或上传。“源码接线存在”不等于生产服务已经验收。
 
-最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.58 当前回归为 Node 719 total / 712 pass / 0 fail / 7 skip、Python 368 total / 0 failures / 0 errors / 3 skipped；独立隐藏 Electron 源码与 Web 客户端 smoke PASS。alpha.58 Windows NSIS、ZIP、真实 ASAR/fuse/资源门禁、双进程 packaged smoke 与 schema v2 发布清单均已通过。制品未签名、真实系统安装未执行、发行身份 `complete=false`，因此仍只是内测包。
+最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.63 当前统一回归为 Node 767 total / 760 pass / 0 fail / 7 skip、Python 368 total / 0 failures / 0 errors / 3 skipped。Windows 全链退出 0，NSIS、ZIP、真实 ASAR/fuse/资源门禁、双进程 packaged smoke 与 schema v2 发布清单均已生成并验证；Alpha.62→Alpha.63 只读安装预检通过。制品仍未签名、真实系统安装未执行、发行身份 `complete=false`，因此仍只是内测包。
 
 当前桌面安全边界包括：默认 Electron session 离线与固定 CSP；PDF 使用禁 JavaScript/导航/网络的非持久隔离 session；项目 schema/路径完整校验与跨进程内核写锁；创建项目在锁内以单一输入文件描述符复制到 `source`，再生成 `working`；自选导出目录逐级验证、全部目标预检和逐文件原子换入；标准包以 canonical manifest、内容寻址存储、高水位和精确回滚目标 fail-closed。已有项目不会因全局标准更新而静默换规则，必须先查看差异并显式确认，升级后强制重检。
 

@@ -68,7 +68,7 @@ const {
 
 const REPO_ROOT = path.resolve(__dirname, "..");
 const PATCH_BEFORE = "681b52d047d5f6eebbfc62a925b7dc22b82589ab63b36a9ea602297f8cd86ea6";
-const PATCH_AFTER = "6c7da7364d05548355fb1ab90c3d6d77366e2fd01b6f67551b648c5fb8285614";
+const PATCH_AFTER = "0373cae0c2d1f5469c9ef905bac44e1c5435ec8379e546ba244175c682c537ff";
 
 function packagedPackageBytes(sourcePath) {
   const source = JSON.parse(fs.readFileSync(sourcePath, "utf8"));
@@ -319,7 +319,7 @@ function createAceStage(root) {
     },
     packages,
     patches: [{
-      patch_id: "OAK-ACE-ISOLATION-002",
+      patch_id: "OAK-ACE-ISOLATION-003",
       target_package: "@daisy/ace-axe-runner-puppeteer",
       target_version: "1.4.6",
       target_file: "node_modules/@daisy/ace-axe-runner-puppeteer/lib/index.js",

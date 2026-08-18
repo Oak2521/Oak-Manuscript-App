@@ -153,6 +153,25 @@ test("atomic create-or-replay uses one fixed RPC and exact service-role request"
   });
 });
 
+test("current Supabase secret key reaches RPC through apikey without invalid Bearer reuse", async () => {
+  const secretKey = ["sb", "secret", "test-only-not-a-real-key"].join("_");
+  let headers;
+  const repo = new SupabaseJobRepository({
+    supabaseOrigin: ORIGIN,
+    serviceRoleKey: secretKey,
+    fetchImpl: async (_url, options) => {
+      headers = options.headers;
+      return jsonResponse(record());
+    },
+  });
+  assert.equal((await repo.getOwned({ owner_key: OWNER, job_id: JOB_ID })).job_id, JOB_ID);
+  assert.deepEqual(headers, {
+    accept: "application/json",
+    apikey: secretKey,
+    "content-type": "application/json",
+  });
+});
+
 test("create outcomes preserve replay while conflicts, tombstones, and limits expose no record", async () => {
   assert.equal(validateCreateResult({
     schema_version: "1.0",

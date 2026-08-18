@@ -456,7 +456,7 @@ async function runSmoke(win, pathPolicy) {
   const auth = await js("window.oak.authStatus()");
   assert(
     auth.state === "signed_out" && auth.loggedIn === false &&
-      auth.productionConfigured === false && auth.authMode === "system_browser_pkce",
+      auth.productionConfigured === false && auth.authMode === "system_browser_application_login_pkce",
     "AuthProvider 应为未配置的系统浏览器 PKCE 离线状态",
   );
   const license = await js("window.oak.licenseStatus()");
@@ -501,7 +501,7 @@ async function runSmoke(win, pathPolicy) {
   const persisted = providers.syncProvider.confirm(smokeRecord, "sync_once", {
     state: "authenticated",
     loggedIn: true,
-    accountId: "smoke-account",
+    oakAccountId: "smoke-account",
   });
   assert(
     persisted.queued === true && persisted.persistence?.persistent === true &&

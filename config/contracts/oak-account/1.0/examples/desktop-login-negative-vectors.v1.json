@@ -1,0 +1,25 @@
+{
+  "schema_version": "oak-desktop-login-negative-vectors/1.0",
+  "vectors": [
+    {"id": "N01_CALLBACK_LOCALHOST", "stage": "authorization_request", "mutation": {"redirect_uri": "http://localhost:49152/application-login/callback/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"}, "expected_error": "CALLBACK_URI_REJECTED"},
+    {"id": "N02_CALLBACK_CUSTOM_SCHEME", "stage": "authorization_request", "mutation": {"redirect_uri": "oak-manuscript-auth://callback"}, "expected_error": "CALLBACK_URI_REJECTED"},
+    {"id": "N03_PKCE_PLAIN", "stage": "authorization_request", "mutation": {"code_challenge_method": "plain"}, "expected_error": "PKCE_METHOD_REJECTED"},
+    {"id": "N04_UNKNOWN_APPLICATION", "stage": "authorization_request", "mutation": {"application_id": "unknown-desktop"}, "expected_error": "APPLICATION_NOT_REGISTERED"},
+    {"id": "N05_EXCHANGE_REDIRECT_CHANGED", "stage": "exchange_request", "mutation": {"redirect_uri": "http://127.0.0.1:49153/application-login/callback/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"}, "preconditions": {"bound_redirect_uri": "http://127.0.0.1:49152/application-login/callback/nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn"}, "expected_error": "CODE_BINDING_MISMATCH"},
+    {"id": "N06_CODE_EXPIRED", "stage": "exchange_semantics", "preconditions": {"code_age_seconds": 121}, "expected_error": "CODE_EXPIRED"},
+    {"id": "N07_CODE_REPLAY", "stage": "exchange_semantics", "preconditions": {"code_consumed": true}, "expected_error": "CODE_ALREADY_USED"},
+    {"id": "N08_STATE_MISMATCH", "stage": "callback_semantics", "preconditions": {"state_matches": false}, "expected_error": "STATE_MISMATCH"},
+    {"id": "N09_WRONG_AUDIENCE", "stage": "session_claims", "mutation": {"aud": "oak-research-desktop"}, "preconditions": {"expected_application_id": "oak-manuscript-desktop"}, "expected_error": "TOKEN_AUDIENCE_MISMATCH"},
+    {"id": "N10_ACCESS_EXPIRED", "stage": "session_claims", "mutation": {"exp": 1786723199}, "expected_error": "TOKEN_TIME_INVALID"},
+    {"id": "N11_UNKNOWN_CLAIMS_MAJOR", "stage": "session_claims", "mutation": {"oak_claims_version": "2.0"}, "expected_error": "CLAIMS_MAJOR_UNSUPPORTED"},
+    {"id": "N12_FORBIDDEN_ENTITLEMENTS", "stage": "session_claims", "mutation": {"entitlements": ["pro"]}, "expected_error": "forbidden_claim"},
+    {"id": "N13_REFRESH_REPLAY", "stage": "refresh_semantics", "preconditions": {"refresh_token_previously_rotated": true}, "expected_error": "REFRESH_REUSE_FAMILY_REVOKED"},
+    {"id": "N14_REFRESH_SUSPENDED", "stage": "refresh_semantics", "preconditions": {"oak_account_status": "suspended"}, "expected_error": "ACCOUNT_NOT_ACTIVE"},
+    {"id": "N15_SECURE_STORAGE_UNAVAILABLE", "stage": "storage_semantics", "preconditions": {"secure_storage_available": false}, "expected_error": "SECURE_STORAGE_REQUIRED"},
+    {"id": "N16_OFFLINE_NEW_AUTHORIZATION", "stage": "offline_semantics", "preconditions": {"network_available": false, "operation": "new_remote_authorization"}, "expected_error": "ONLINE_AUTHORIZATION_REQUIRED"},
+    {"id": "N17_DELETION_PENDING", "stage": "lifecycle_semantics", "preconditions": {"oak_account_status": "deletion_pending", "operation": "refresh"}, "expected_error": "ACCOUNT_NOT_ACTIVE"},
+    {"id": "N18_DELETED_LOCAL_FILES", "stage": "lifecycle_semantics", "preconditions": {"oak_account_status": "deleted", "operation": "open_local_project"}, "expected_error": "PRESERVE_LOCAL_FILES"},
+    {"id": "N19_REMOTE_REVOKE_OFFLINE", "stage": "logout_semantics", "preconditions": {"network_available": false}, "expected_error": "REMOTE_REVOCATION_UNCONFIRMED"},
+    {"id": "N20_REFRESH_WRONG_APPLICATION", "stage": "refresh_semantics", "preconditions": {"token_application_id": "oak-research-desktop", "request_application_id": "oak-manuscript-desktop"}, "expected_error": "TOKEN_APPLICATION_MISMATCH"}
+  ]
+}

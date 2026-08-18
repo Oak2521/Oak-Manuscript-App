@@ -5,6 +5,10 @@
 "use strict";
 
 const {
+  createSupabaseServerCredentialHeaders,
+  validateSupabaseServerKey,
+} = require("./supabase-server-key");
+const {
   MAX_RECORD_BYTES,
   canonicalSyncRecordV1,
   validateServerSyncRecordV1,
@@ -75,11 +79,6 @@ function canonicalHttpsOrigin(value) {
     throw new TypeError("supabaseOrigin 必须是不含路径、凭据、查询或片段的规范 HTTPS origin");
   }
   return value;
-}
-
-function validHeaderSecret(value) {
-  return typeof value === "string" && value.length >= 20 && value.length <= 8192 &&
-    !/[\u0000-\u0020\u007f,]/u.test(value);
 }
 
 function clone(value) {
@@ -162,9 +161,8 @@ class SupabaseSyncRecordRepository {
     maxResponseBytes = DEFAULT_MAX_RESPONSE_BYTES,
   } = {}) {
     this.origin = canonicalHttpsOrigin(supabaseOrigin);
-    if (!validHeaderSecret(serviceRoleKey)) {
-      throw new TypeError("serviceRoleKey 不是安全的服务端 Supabase service-role key");
-    }
+    try { validateSupabaseServerKey(serviceRoleKey); }
+    catch { throw new TypeError("serviceRoleKey 不是安全的服务端 Supabase service-role/secret key"); }
     if (typeof fetchImpl !== "function") throw new TypeError("fetchImpl 必须是函数");
     if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 30_000) {
       throw new TypeError("timeoutMs 必须在 100 到 30000 毫秒之间");
@@ -189,8 +187,7 @@ class SupabaseSyncRecordRepository {
         method: "POST",
         headers: {
           accept: "application/json",
-          apikey: this.serviceRoleKey,
-          authorization: `Bearer ${this.serviceRoleKey}`,
+          ...createSupabaseServerCredentialHeaders(this.serviceRoleKey),
           "content-type": "application/json",
         },
         body: JSON.stringify(body),

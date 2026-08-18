@@ -2,6 +2,61 @@
 
 > 当前依据：商业正式版方案 v2.0；下方 M1—M3 与旧阶段 2/3 条目保留为历史基线。勾选必须以真实运行证据为准（命令 + 输出记录在 TEST_REPORT.md），不得凭实现意图勾选。
 
+## 0.1.0-alpha.63 OAK-16 runtime 消费验收（2026-08-17）
+
+- [x] 冻结 Desktop Application Login 1.0 合同、16 文件 provenance、6 个有效 fixture、20 个 negative vector 和 16 项 checklist 保持原字节，不以 OAK-16 实现细节重写合同；
+- [x] 桌面与 Web consumer 只接受 OAK-16 runtime 的 exact ES256/P-256 public JWKS、P1363 签名、300 秒 access token 和 exact `{revoked:true}` 撤销响应；历史 Ed25519 application-login 运行假设失败关闭；
+- [x] Web verifier 在构造时把信任锚转换为独立 `KeyObject`；调用方事后替换原 JWK 坐标不能改变信任集合，且有先红后绿回归证据；
+- [x] 新增 opt-in Staging consumer，默认全量不联网并明确 skip；旧 HEAD + 新测试 15/4/11 重建遗留 TDD RED，当前定向 37/36/0/1；
+- [x] Node 767/760/0/7、Python 368/0/0/3；资源信任 131 文件 / 2,244,237 字节；Windows Alpha.63 全链、9 fuse、packaged smoke、NSIS/ZIP 与 schema v2 发行证据通过；
+- [x] Alpha.62 制品完整归档；安装验收基线从过期 Alpha.12 更新为 Alpha.62，专项 13/13 和 Alpha.62→Alpha.63 只读预检通过；
+- [ ] 真实 OAK-16 Staging 登录、refresh rotation/replay、revoke、生命周期及 hold-active 场景已执行；当前未授权、未运行；
+- [ ] Windows 真实安装/升级/降级/卸载、Authenticode、macOS 构建/签名/公证、部署与可售卖发行身份完成；当前均未完成。
+
+## 0.1.0-alpha.62 Oak Account、Pro 与同步生产形状验收（2026-08-14）
+
+- [x] 消费副本绑定 Account Center 冻结提交 `6aea9986539a0f55b2961426fa08e486a9e30b19` 的 16 个文件、6 个有效 fixture、20 个 negative vector 与 16 项验收清单；未知 major 或字节漂移失败关闭；
+- [x] 桌面登录只使用系统浏览器、随机 `127.0.0.1` callback、PKCE S256 和一次 state；无自定义 scheme，access token 只驻内存，OS 加密存储只保存轮换 refresh 会话；
+- [x] 旧 v1 会话只在安全文件身份下删除、不迁移；refresh 拒绝、退出及 `suspended|deletion_pending|deleted` 生命周期清除本地凭据而不锁本地项目；
+- [x] Web entitlement、license account、SyncRecord 和临时稿件四个生产组合根本地验签 Oak access token，只用 `oak_account_id` 派生 owner；`sub`、`sid`、role、email 或请求正文不能代替；
+- [x] Oak identity 不授予 Pro；Oak Manuscript 独立 signed entitlement 继续绑定账号/设备/时限/撤销，失败回落 Free；
+- [x] 同步继续要求逐字段预览和一次明确确认；成功精确出队，失败 OS 加密保留并显式重试；direct-object S3 与一次领取/清扫链未被身份迁移削弱；
+- [x] Node 761/755/0/6、Python 368/0/0/3；最终 `npm run build:win` 305.1 秒退出 0，packaged smoke、真实 ASAR/fuse/资源、NSIS/ZIP 与 schema v2 发行证据通过；
+- [x] Ace 外部连接双重关闭竞态已以 TDD 修复，`OAK-ACE-ISOLATION-003` 及 Node/Python 双重固定摘要验证通过；
+- [ ] 真实 Account Center Staging URL/公钥/凭据、系统浏览器端到端登录、生命周期跨服务传播已验证；当前均未配置/未运行；
+- [ ] 真实 Supabase migration/RLS/桶/CORS、官网账户后台、50/100 MiB 传输与生产零留存已验证；当前均未运行；
+- [ ] Windows 干净机安装/升级/卸载、Authenticode、macOS 原生构建/签名/公证、部署和可售卖发行身份完成；当前均未完成。
+
+## 0.1.0-alpha.61 Web 对象存储直传/直取验收（2026-08-10）
+
+- [x] `/manuscript/api/v2/jobs` 的公开控制面只签发/完成 direct transfer，不存在经公开函数缓冲的 input/result 字节路由；浏览器登录/注册、默认引用和单任务明示同意仍保留；
+- [x] 上传 credential 固定 HTTPS Supabase Storage origin、30—300 秒、随机 staging key、exact headers、`If-None-Match:*` 与 no-store；只签发一次，完成负载只含 opaque transfer ID；
+- [x] 服务端 HEAD 复核大小/MIME/metadata/ETag，以 source ETag 条件复制到内部 input 并确认 staging 删除；worker 的结构检查仍在私有执行面读取后完成，不把稿件字节交给公开函数；
+- [x] 结果先 CAS 独占为 `result_transfer`，再签发一次短 GET；客户端校验长度并提交完成通知后，服务端删除 output/写墓碑；过期状态和对象清扫覆盖 input/output/staging；
+- [x] `005_direct_object_transfer.sql` 与 5 文件 canonical migration bundle、v2 部署要求/准入和 v2 生产组合通过正反测试；声明能力通过仍固定 `production_evidence_verified=false`、`production_ready=false`；
+- [x] Node 744/737/0/7、Python 368/0/0/3；Web 生产依赖精确锁定 AWS SDK v3 `3.1107.0`，联网 `npm audit --omit=dev` 为 0 漏洞；
+- [ ] 真实 Supabase migration/RLS、私有桶、exact 官网 CORS、S3 service key 轮换、50/100 MiB 传输、断线/重放、调度/告警、隔离 worker 和三路零留存 E2E 已验证；当前均未运行；
+- [ ] alpha.61 Windows/macOS 制品、签名、公证和真实安装生命周期完成；最新真实 Windows packaged 仍为未签名 alpha.58。
+
+## 0.1.0-alpha.60 官方平台准入与 Supabase 新密钥兼容验收（2026-08-10）
+
+- [x] 具体候选 profile 只含 exact 非敏感能力字段，并有单独的日期、官方 URL、取值理由和未验证边界记录；
+- [x] Netlify 公开请求/响应/同步时限与项目 50 MiB / 100 MiB / 240 秒合同逐项比较，不能以 Background Function 的异步窗口混淆同步协议；
+- [x] 当前组合固定被 9 个稳定 code 拒绝，且 `production_evidence_verified=false`、`production_ready=false`；
+- [x] Supabase 新 `sb_secret_` 只发送 `apikey`；legacy `service_role` JWT 保留迁移期 Bearer 兼容；任务、同步和权益 repository 共用规则；
+- [x] 专项 29/29、Node 726/719/0/7、Python 368/0/0/3、关键源码门禁与独立隐藏 Electron source smoke 通过；
+- [ ] 对象存储直传/直取协议、专用隔离 worker profile、真实迁移/RLS/调度/告警/零留存和官网 E2E 完成；当前 Netlify Functions 全包式拓扑不得上线；
+- [ ] alpha.60 Windows/macOS 制品、签名、公证和真实安装生命周期完成；最新真实 Windows packaged 仍为未签名 alpha.58。
+
+## 0.1.0-alpha.59 Windows LF checkout 可复现性验收（2026-08-10）
+
+- [x] `.gitattributes` 对所有 Git 识别文本强制 `eol=lf`，不依赖宿主 `core.autocrlf`；属性文件自身为 LF；
+- [x] 回归测试覆盖发行身份、资源锁、CPython provenance、Web 迁移 manifest/SQL 等严格字节输入，并在修复前按预期失败；
+- [x] 工作树不再含 `w/crlf` 或 `w/mixed` 的 tracked 文本；Web 迁移、发行身份、资源信任、标准、Electron/runtime/provenance/fuse 和 Windows 源码资源门禁通过；
+- [x] LF 资源锁重建为 112 文件 / 2,217,733 字节，manifest `7e25e075…b496`、anchor `0d055104…9def`；
+- [x] Node 720/713/0/7、Python 368/0/0/3；沙箱外独立隐藏 Electron 源码 smoke PASS；
+- [ ] alpha.59 Windows/macOS 制品、代码签名、真实安装生命周期及生产联网验收完成；最新真实 Windows packaged 仍为未签名 alpha.58。
+
 ## 0.1.0-alpha.58 TXT/Markdown 保守卫生检查验收（2026-07-29）
 
 - [x] 空文件、普通文本连续空格、行内制表符和连续空行有 4 条确定性提示；全部不可自动修复，批量修复白名单仍为 6 条；
@@ -29,7 +84,7 @@
 - [x] Web 生产组合强制绑定需求摘要并在 store/network 前拒绝能力不足 profile；
 - [x] 能力全部声明满足时仍固定 `production_evidence_verified=false`、`production_ready=false`；
 - [x] 聚焦 8/8、Node 711/704/0/7、Python 362/0/0/3、隐藏 Electron smoke 与资源信任通过；
-- [ ] 任何具体平台的官方规格、真实 profile 和预生产运行证据已核对；当前未联网、未生成、未部署；
+- [x] 首个具体平台的官方规格和真实 profile 已在 alpha.60 核对；结果是不满足，未执行预生产或部署；
 - [ ] alpha.56 Windows/macOS 制品、签名、公证和真实安装生命周期完成；最新 Windows packaged 仍为未签名 alpha.54。
 
 ## 0.1.0-alpha.55 Web 部署组合与迁移字节门禁验收（2026-07-29）

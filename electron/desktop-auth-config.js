@@ -5,10 +5,10 @@ const path = require("node:path");
 const { strictJson } = require("./standards-payload");
 
 const CONFIG_FILE = "desktop-auth.json";
-const REDIRECT_URI = "oak-manuscript-auth://callback";
+const APPLICATION_ID = "oak-manuscript-desktop";
 const EXACT_KEYS = Object.freeze([
-  "schema_version", "config_type", "status", "authorization_endpoint", "token_endpoint",
-  "user_endpoint", "client_id", "public_api_key", "api_origin", "redirect_uri", "scopes",
+  "schema_version", "config_type", "status", "application_id", "account_center_origin",
+  "issuer", "trusted_keys", "sync_api_origin",
 ]);
 
 function exactKeys(value, expected = EXACT_KEYS) {
@@ -30,31 +30,50 @@ function canonicalHttpsUrl(value, label, { originOnly = false } = {}) {
   return value;
 }
 
+function validateTrustedKey(value) {
+  if (!exactKeys(value, ["key_id", "algorithm", "public_key_jwk"]) ||
+      typeof value.key_id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u.test(value.key_id) ||
+      value.algorithm !== "ES256" ||
+      !exactKeys(value.public_key_jwk, ["alg", "crv", "ext", "key_ops", "kid", "kty", "use", "x", "y"]) ||
+      value.public_key_jwk.alg !== "ES256" || value.public_key_jwk.crv !== "P-256" ||
+      value.public_key_jwk.ext !== true || !Array.isArray(value.public_key_jwk.key_ops) ||
+      value.public_key_jwk.key_ops.length !== 1 || value.public_key_jwk.key_ops[0] !== "verify" ||
+      value.public_key_jwk.kid !== value.key_id || value.public_key_jwk.kty !== "EC" ||
+      value.public_key_jwk.use !== "sig" ||
+      typeof value.public_key_jwk.x !== "string" || !/^[A-Za-z0-9_-]{43}$/u.test(value.public_key_jwk.x) ||
+      typeof value.public_key_jwk.y !== "string" || !/^[A-Za-z0-9_-]{43}$/u.test(value.public_key_jwk.y)) {
+    throw new Error("桌面账号配置错误：受信 ES256/P-256 JWKS 公钥非法");
+  }
+  return Object.freeze({
+    ...value,
+    public_key_jwk: Object.freeze({
+      ...value.public_key_jwk,
+      key_ops: Object.freeze([...value.public_key_jwk.key_ops]),
+    }),
+  });
+}
+
 function validateDesktopAuthConfig(value) {
-  if (!exactKeys(value) || value.schema_version !== "1.0" ||
-      value.config_type !== "oak_manuscript_desktop_auth" ||
+  if (!exactKeys(value) || value.schema_version !== "2.0" ||
+      value.config_type !== "oak_manuscript_desktop_application_login" ||
       !["pending_configuration", "configured"].includes(value.status) ||
-      value.redirect_uri !== REDIRECT_URI || !Array.isArray(value.scopes) ||
-      value.scopes.length < 1 || value.scopes.length > 8 ||
-      new Set(value.scopes).size !== value.scopes.length ||
-      value.scopes.some((scope) => typeof scope !== "string" || !/^[a-z][a-z0-9:_-]{0,31}$/u.test(scope))) {
+      value.application_id !== APPLICATION_ID || !Array.isArray(value.trusted_keys)) {
     throw new Error("桌面账号配置错误：结构或固定字段非法");
   }
-  const endpoints = ["authorization_endpoint", "token_endpoint", "user_endpoint"];
   if (value.status === "pending_configuration") {
-    for (const key of [...endpoints, "client_id", "public_api_key", "api_origin"]) {
-      if (value[key] !== null) throw new Error("桌面账号配置错误：待配置状态不得携带半成品端点或凭据");
+    if (value.account_center_origin !== null || value.issuer !== null ||
+        value.sync_api_origin !== null || value.trusted_keys.length !== 0) {
+      throw new Error("桌面账号配置错误：待配置状态不得携带端点或密钥");
     }
-    return Object.freeze({ ...value, scopes: Object.freeze([...value.scopes]) });
+    return Object.freeze({ ...value, trusted_keys: Object.freeze([]) });
   }
-  for (const key of endpoints) canonicalHttpsUrl(value[key], key);
-  canonicalHttpsUrl(value.api_origin, "api_origin", { originOnly: true });
-  if (typeof value.client_id !== "string" || !/^[A-Za-z0-9._-]{8,128}$/u.test(value.client_id) ||
-      typeof value.public_api_key !== "string" || value.public_api_key.length < 16 ||
-      value.public_api_key.length > 4096 || /[\r\n\0]/u.test(value.public_api_key)) {
-    throw new Error("桌面账号配置错误：client_id 或 public_api_key 非法");
-  }
-  return Object.freeze({ ...value, scopes: Object.freeze([...value.scopes]) });
+  canonicalHttpsUrl(value.account_center_origin, "account_center_origin", { originOnly: true });
+  canonicalHttpsUrl(value.issuer, "issuer");
+  canonicalHttpsUrl(value.sync_api_origin, "sync_api_origin", { originOnly: true });
+  if (value.trusted_keys.length < 1 || value.trusted_keys.length > 8) throw new Error("桌面账号配置错误：受信公钥数量非法");
+  const trustedKeys = value.trusted_keys.map(validateTrustedKey);
+  if (new Set(trustedKeys.map((item) => item.key_id)).size !== trustedKeys.length) throw new Error("桌面账号配置错误：受信公钥重复");
+  return Object.freeze({ ...value, trusted_keys: Object.freeze(trustedKeys) });
 }
 
 function loadDesktopAuthConfig(configDir, fsImpl = fs) {
@@ -69,4 +88,4 @@ function loadDesktopAuthConfig(configDir, fsImpl = fs) {
   return validateDesktopAuthConfig(strictJson(fsImpl.readFileSync(target), "桌面账号配置", { maxBytes: 64 * 1024 }));
 }
 
-module.exports = { CONFIG_FILE, REDIRECT_URI, loadDesktopAuthConfig, validateDesktopAuthConfig };
+module.exports = { APPLICATION_ID, CONFIG_FILE, loadDesktopAuthConfig, validateDesktopAuthConfig };

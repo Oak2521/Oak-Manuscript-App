@@ -4,10 +4,11 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { randomUUID } = require("node:crypto");
 
-const MAGIC = Buffer.from("OAKAUTH1", "ascii");
+const MAGIC = Buffer.from("OAKAUTH2", "ascii");
 const HEADER_BYTES = MAGIC.length + 4;
 const MAX_CIPHERTEXT_BYTES = 128 * 1024;
-const STATE_FILE = "session-v1.enc";
+const STATE_FILE = "session-v2.enc";
+const LEGACY_STATE_FILE = "session-v1.enc";
 
 function canonicalJson(value) { return `${JSON.stringify(value, null, 2)}\n`; }
 function fail(message) { throw new Error(`账号会话存储错误：${message}`); }
@@ -32,6 +33,25 @@ function realpath(fsImpl, target) {
 function sameIdentity(a, b) {
   return a.dev === b.dev && a.ino === b.ino && a.size === b.size &&
     a.mtimeNs === b.mtimeNs && a.nlink === b.nlink;
+}
+function containsAccessToken(value) {
+  if (!value || typeof value !== "object") return false;
+  if (Array.isArray(value)) return value.some(containsAccessToken);
+  return Object.entries(value).some(([key, child]) =>
+    ["access_token", "accessToken"].includes(key) || containsAccessToken(child));
+}
+function purgeLegacyFile(fsImpl, rootDir) {
+  const target = path.join(rootDir, LEGACY_STATE_FILE);
+  const stat = statOrNull(fsImpl, target);
+  if (stat === null) return;
+  if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1n) {
+    throw new Error("legacy session file is unsafe; refusing to unlink");
+  }
+  if (path.dirname(realpath(fsImpl, target)) !== realpath(fsImpl, rootDir)) {
+    throw new Error("legacy session file is unsafe; refusing to unlink");
+  }
+  fsImpl.unlinkSync(target);
+  fsyncDirectoryBestEffort(fsImpl, rootDir);
 }
 function frame(ciphertext) {
   if (!Buffer.isBuffer(ciphertext) || ciphertext.length < 1 || ciphertext.length > MAX_CIPHERTEXT_BYTES) fail("加密结果非法");
@@ -58,6 +78,7 @@ class EncryptedAuthStore {
     this.rootDir = path.resolve(rootDir); this.statePath = path.join(this.rootDir, STATE_FILE);
     this.protect = protect; this.unprotect = unprotect; this.fs = fsImpl; this.encrypted = true;
     this._ensureRoot();
+    purgeLegacyFile(this.fs, this.rootDir);
   }
   _ensureRoot() {
     const parent = path.dirname(this.rootDir); safeDirectory(this.fs, parent, "账号会话父目录");
@@ -89,12 +110,13 @@ class EncryptedAuthStore {
     return value;
   }
   save(value, { expectedRevision } = {}) {
+    if (containsAccessToken(value)) throw new Error("access token must remain memory-only");
     if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) throw new TypeError("expectedRevision 非法");
     this._ensureRoot(); const current = this.load();
     if ((current === null ? 0 : current.revision) !== expectedRevision) fail("revision 已变化，拒绝覆盖");
     let ciphertext; try { ciphertext = this.protect(canonicalJson(value)); } catch { fail("系统安全存储加密失败"); }
     const bytes = frame(ciphertext);
-    const staged = path.join(this.rootDir, `.session-v1-${process.pid}-${Date.now()}-${randomUUID()}.tmp`);
+    const staged = path.join(this.rootDir, `.session-v2-${process.pid}-${Date.now()}-${randomUUID()}.tmp`);
     let fd = null;
     try {
       fd = this.fs.openSync(staged, fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_WRONLY, 0o600);
@@ -110,4 +132,4 @@ class EncryptedAuthStore {
   }
 }
 
-module.exports = { EncryptedAuthStore, MAGIC, STATE_FILE, canonicalJson, frame, unframe };
+module.exports = { EncryptedAuthStore, MAGIC, STATE_FILE, LEGACY_STATE_FILE, canonicalJson, frame, unframe };

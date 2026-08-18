@@ -1,0 +1,26 @@
+{
+  "schema_version": "oak-manuscript-frozen-contract-provenance/1.0",
+  "contract": "oak-desktop-application-login/1.0",
+  "source_repository": "D:\\Workspace\\Oak by Lake\\oak-account-center",
+  "source_commit": "6aea9986539a0f55b2961426fa08e486a9e30b19",
+  "source_status": "FROZEN_FOR_CONSUMER_IMPLEMENTATION",
+  "copied_at": "2026-08-14",
+  "files": [
+    {"path":"oak-desktop-application-login.v1.json","bytes":5440,"sha256":"582ffbf5bc7d9c5d4028ac2dfd3c8d4013c72cb7eb1b4c12e0919c5eaa6eae2c"},
+    {"path":"oak-desktop-application-login-consumer-acceptance.v1.json","bytes":2693,"sha256":"85da1e15257af68523c3a9f11fb376a7c7c283e0d33218d891f29fac6d324d0b"},
+    {"path":"schemas/oak-desktop-login-authorization.v1.schema.json","bytes":1015,"sha256":"e9d124d8a71458718d18e734458bef4e53d8b715ba65fec6a2e006c94b6b1984"},
+    {"path":"schemas/oak-desktop-login-exchange.v1.schema.json","bytes":838,"sha256":"6e9a2d070d68cf124b3b61de611fd08dbaeb5db04186fad4f56904b6e36dc1ff"},
+    {"path":"schemas/oak-desktop-refresh-request.v1.schema.json","bytes":600,"sha256":"0fd4780deb2b4ace02cc457d2be5e50f5369946cc7980e562ad854652afd4023"},
+    {"path":"schemas/oak-desktop-revoke-request.v1.schema.json","bytes":652,"sha256":"bbf55d8874126dcc464961470628eba59049dd135ff72318cb3dd9fa2b227eec"},
+    {"path":"schemas/oak-desktop-session-claims.v1.schema.json","bytes":1003,"sha256":"bbddb26c3602ae3599ee82904e1684b76e88805210ab7fc17b7ab0556e8dfe3c"},
+    {"path":"schemas/oak-desktop-token-response.v1.schema.json","bytes":979,"sha256":"fb4ac1d371879ecee111fc4121ce0bb9536b8f6a1d39ab2f294b5bfd5d3399bd"},
+    {"path":"examples/desktop-login-authorization.valid.json","bytes":431,"sha256":"1e84f59629083882b57bec65f16c7b2e717831d950eed77c35a281b470a0f824"},
+    {"path":"examples/desktop-login-exchange.valid.json","bytes":362,"sha256":"ca430778a866a5914ac576c06e07855d0fdc48ed150c417dd83fcd0f2bccc68b"},
+    {"path":"examples/desktop-refresh-request.valid.json","bytes":173,"sha256":"34ab4f46898722e2640edb9a38408f47a4c79369c7459c4f6a75fb12f83adfb6"},
+    {"path":"examples/desktop-revoke-request.valid.json","bytes":206,"sha256":"10f3b45e8df190adb8ba76c855acd2592671b4775fe1bf74391bdafc3b61e099"},
+    {"path":"examples/desktop-session-claims.valid.json","bytes":411,"sha256":"d2905169e8b5952bb69b6b0954782f51745186a1bfb42a0d8ba33c062df9cbcd"},
+    {"path":"examples/desktop-token-response.valid.json","bytes":831,"sha256":"02747542b23a0500569cec115ce5cef560079a476f1acfe8a19b4e0ddec0d34f"},
+    {"path":"examples/desktop-login-negative-vectors.v1.json","bytes":3831,"sha256":"5a1fedd05cb6d7afd9f100231d6ea2e20bd3f0c5f007c1598f62b9373b048647"},
+    {"path":"evidence/oak-4-desktop-application-login-contract-evidence.json","bytes":2729,"sha256":"e667e4f538d1dfa4adf4f29cb35d5beb2a032013f7524c243cdc8b064960e390"}
+  ]
+}

@@ -2,7 +2,14 @@
   "use strict";
 
   var contract = window.OakWebClientContract;
-  var API_BASE = "/manuscript/api/v1/jobs";
+  var API_BASE = contract.DIRECT_JOB_BASE;
+  var storageOriginMeta = document.querySelector('meta[name="oak-manuscript-storage-origin"]');
+  var DIRECT_STORAGE_ORIGIN = null;
+  try {
+    DIRECT_STORAGE_ORIGIN = contract.parseDirectStorageOrigin(storageOriginMeta && storageOriginMeta.content);
+  } catch (_storageConfigurationError) {
+    DIRECT_STORAGE_ORIGIN = null;
+  }
   var currentJobId = null;
   var pollTimer = null;
 
@@ -62,9 +69,11 @@
   function humanState(state) {
     return {
       awaiting_upload: "任务已建立，正在上传…",
+      upload_finalizing: "上传完成，正在确认临时对象…",
       queued: "稿件已进入临时队列，等待检查…",
       processing: "正在检查稿件…",
       result_ready: "检查完成，可以下载结果。",
+      result_transfer: "结果直取凭证已经签发；服务器正在等待完成确认或到期清理。",
       deletion_pending: "临时内容删除尚未完整完成，服务正在重试。",
     }[state] || "任务状态不可识别。";
   }
@@ -83,6 +92,7 @@
       nodes.registerLink.hidden = false;
       nodes.accountLink.hidden = true;
       nodes.loginRequired.hidden = false;
+      nodes.loginRequired.textContent = "请先使用湖岸橡树官网账号登录。桌面端基础本地功能不要求登录。";
       setControls(false);
       nodes.syncHistoryPanel.hidden = true;
       nodes.syncHistoryList.replaceChildren();
@@ -93,8 +103,11 @@
     nodes.loginLink.hidden = true;
     nodes.registerLink.hidden = true;
     nodes.accountLink.hidden = false;
-    nodes.loginRequired.hidden = true;
-    setControls(currentJobId === null);
+    nodes.loginRequired.hidden = DIRECT_STORAGE_ORIGIN !== null;
+    nodes.loginRequired.textContent = DIRECT_STORAGE_ORIGIN === null
+      ? "Web 对象直传存储源尚未由部署环境固定，稿件处理保持关闭。"
+      : "请先使用湖岸橡树官网账号登录。桌面端基础本地功能不要求登录。";
+    setControls(currentJobId === null && DIRECT_STORAGE_ORIGIN !== null);
     nodes.syncHistoryPanel.hidden = false;
     await Promise.all([loadSyncHistory(), licenseAccount.show()]);
   }
@@ -120,6 +133,30 @@
       throw new Error(code ? "请求失败：" + code : "请求失败（" + response.status + "）");
     }
     return response;
+  }
+
+  async function directTransfer(credential, body) {
+    var headers = new Headers(credential.headers);
+    var response = await fetch(credential.url, {
+      method: credential.method,
+      headers: headers,
+      body: body,
+      credentials: "omit",
+      cache: "no-store",
+      redirect: "error",
+      referrerPolicy: "no-referrer",
+    });
+    if (!response.ok) throw new Error("对象直传失败（" + response.status + "）");
+    return response;
+  }
+
+  async function confirmTransfer(credential) {
+    var payload = contract.buildTransferCompletion(credential.transfer_id);
+    return api(credential.complete_path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
   }
 
   function stopPolling() {
@@ -215,6 +252,12 @@
         stopPolling();
         return;
       }
+      if (status.state === "result_transfer") {
+        nodes.cancel.hidden = true;
+        nodes.download.hidden = true;
+        stopPolling();
+        return;
+      }
       pollTimer = window.setTimeout(pollStatus, 1500);
     } catch (error) {
       setStatus(error.message);
@@ -252,11 +295,17 @@
       currentJobId = created.job_id;
       nodes.cancel.hidden = false;
       setStatus(humanState(created.state));
-      var uploadResponse = await api(API_BASE + "/" + encodeURIComponent(currentJobId) + "/input", {
-        method: "PUT",
-        headers: { "Content-Type": contract.mediaTypeForFormat(format) },
-        body: file,
-      });
+      var uploadTicketResponse = await api(
+        API_BASE + "/" + encodeURIComponent(currentJobId) + "/input-transfer",
+        { method: "POST" }
+      );
+      var uploadTicket = contract.parseDirectTransferCredential(
+        await uploadTicketResponse.json(), DIRECT_STORAGE_ORIGIN, new Date()
+      );
+      if (uploadTicket.job_id !== currentJobId || uploadTicket.media_type !== contract.mediaTypeForFormat(format) ||
+          uploadTicket.size_bytes !== file.size) throw new Error("上传凭证与当前稿件不一致。");
+      await directTransfer(uploadTicket, file);
+      var uploadResponse = await confirmTransfer(uploadTicket);
       var uploaded = contract.parseJobStatus(await uploadResponse.json());
       setStatus(humanState(uploaded.state));
       pollTimer = window.setTimeout(pollStatus, 800);
@@ -288,8 +337,23 @@
     if (!currentJobId) return;
     nodes.download.disabled = true;
     try {
-      var response = await api(API_BASE + "/" + encodeURIComponent(currentJobId) + "/result", { method: "POST" });
+      var ticketResponse = await api(
+        API_BASE + "/" + encodeURIComponent(currentJobId) + "/result-transfer",
+        { method: "POST" }
+      );
+      var ticket = contract.parseDirectTransferCredential(
+        await ticketResponse.json(), DIRECT_STORAGE_ORIGIN, new Date()
+      );
+      if (ticket.job_id !== currentJobId) throw new Error("结果凭证与当前任务不一致。");
+      var response = await directTransfer(ticket);
       var blob = await response.blob();
+      if (blob.size !== ticket.size_bytes) throw new Error("结果字节数与凭证不一致。");
+      var cleanupConfirmed = true;
+      try {
+        await confirmTransfer(ticket);
+      } catch (_cleanupError) {
+        cleanupConfirmed = false;
+      }
       var url = URL.createObjectURL(blob);
       var link = document.createElement("a");
       link.href = url;
@@ -299,7 +363,9 @@
       currentJobId = null;
       nodes.download.hidden = true;
       setControls(true);
-      setStatus("结果已领取；服务器临时副本已在返回前删除。如本机保存失败，需要重新检查稿件。");
+      setStatus(cleanupConfirmed
+        ? "结果已领取，服务器已返回临时对象删除回执。如本机保存失败，需要重新检查稿件。"
+        : "结果已领取，但删除确认失败；服务器将在短期凭证到期后继续清理，不会再次签发领取凭证。");
       nodes.syncPanel.hidden = false;
     } catch (error) {
       setStatus(error.message);

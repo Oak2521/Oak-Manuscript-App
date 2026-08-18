@@ -28,8 +28,8 @@ function fixtureScript() {
     const entitlement = {
       entitlement_state: "active",
       not_before: "2026-07-01T00:00:00.000Z",
-      valid_until: "2026-08-01T00:00:00.000Z",
-      grace_until: "2026-08-08T00:00:00.000Z",
+      valid_until: "2026-09-01T00:00:00.000Z",
+      grace_until: "2026-09-08T00:00:00.000Z",
     };
     const activeDevice = {
       device_id: deviceId, device_state: "active",
@@ -103,8 +103,13 @@ async function main() {
       cards: document.querySelectorAll(".license-device-item").length,
       activeButtons: Array.from(document.querySelectorAll(".license-device-item button")).filter((button) => !button.disabled).length,
       leaksFullDeviceId: document.body.textContent.includes(fullDeviceId),
+      storagePinFailClosed: ["manuscript-file", "manuscript-type", "check-config", "citation-style", "processing-consent", "submit-job"]
+        .every((id) => document.getElementById(id).disabled) &&
+        !document.getElementById("login-required").hidden &&
+        document.getElementById("login-required").textContent.includes("存储源尚未由部署环境固定"),
     }), DEVICE);
-    if (!before.status.includes("Pro 订阅有效") || before.cards !== 2 || before.activeButtons !== 1 || before.leaksFullDeviceId) {
+    if (!before.status.includes("Pro 订阅有效") || before.cards !== 2 || before.activeButtons !== 1 ||
+        before.leaksFullDeviceId || !before.storagePinFailClosed) {
       throw new Error("WEB-CLIENT-SMOKE: initial account UI mismatch");
     }
     await page.screenshot({ path: path.join(OUTPUT_ROOT, "desktop.png"), fullPage: true });

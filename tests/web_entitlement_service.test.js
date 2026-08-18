@@ -61,7 +61,7 @@ test("trusted account authorization is independently signed and accepted by the 
     { schema_version: "1.0", request_type: "oak_manuscript_entitlement_request", device_id: DEVICE },
   );
   assert.deepEqual(calls, [[ACCOUNT, DEVICE, NOW, 3]]);
-  assert.equal(verifyEntitlement(envelope, { config, accountId: ACCOUNT, deviceId: DEVICE }).tier, "pro");
+  assert.equal(verifyEntitlement(envelope, { config, oakAccountId: ACCOUNT, deviceId: DEVICE }).tier, "pro");
   assert.equal(envelope.claims.account_id, ACCOUNT);
   assert.equal(JSON.stringify(envelope).includes("access_token"), false);
 });
@@ -109,7 +109,7 @@ test("revoked and expired authorizations remain signed so clients can fail close
     const envelope = await service.issue({ kind: "account", subject_id: ACCOUNT }, {
       schema_version: "1.0", request_type: "oak_manuscript_entitlement_request", device_id: DEVICE,
     });
-    const claims = verifyEntitlement(envelope, { config, accountId: ACCOUNT, deviceId: DEVICE });
+    const claims = verifyEntitlement(envelope, { config, oakAccountId: ACCOUNT, deviceId: DEVICE });
     assert.equal(claims.device_state, auth.authorization.device_state);
     assert.equal(claims.valid_until, auth.authorization.valid_until);
   }

@@ -34,17 +34,17 @@ function dependency(value, methods, label) {
 
 function authenticated(status) {
   return status && status.state === "authenticated" && status.loggedIn === true &&
-    typeof status.accountId === "string" && status.accountId.length > 0;
+    typeof status.oakAccountId === "string" && status.oakAccountId.length > 0;
 }
 
-function tokenBinding(value, expectedAccountId) {
+function tokenBinding(value, expectedOakAccountId) {
   if (!value || typeof value !== "object" || Array.isArray(value) ||
-      Object.keys(value).sort().join("\0") !== ["accessToken", "accountId"].sort().join("\0") ||
-      typeof value.accountId !== "string" || typeof value.accessToken !== "string" ||
+      Object.keys(value).sort().join("\0") !== ["accessToken", "oakAccountId"].sort().join("\0") ||
+      typeof value.oakAccountId !== "string" || typeof value.accessToken !== "string" ||
       value.accessToken.length < 32) {
     throw new SyncCoordinatorError("AUTH_REQUIRED", false);
   }
-  if (value.accountId !== expectedAccountId) throw new SyncCoordinatorError("AUTH_CHANGED", false);
+  if (value.oakAccountId !== expectedOakAccountId) throw new SyncCoordinatorError("AUTH_CHANGED", false);
   return value.accessToken;
 }
 
@@ -91,17 +91,17 @@ class SyncTransportCoordinator {
     let failureRecorded = false;
     try {
       const accessToken = tokenBinding(
-        await this.accessTokenProvider(Object.freeze({ accountId: authAtStart.accountId })),
-        authAtStart.accountId,
+        await this.accessTokenProvider(Object.freeze({ oakAccountId: authAtStart.oakAccountId })),
+        authAtStart.oakAccountId,
       );
       const authBeforeSend = this.authProvider.status();
-      if (!authenticated(authBeforeSend) || authBeforeSend.accountId !== authAtStart.accountId) {
+      if (!authenticated(authBeforeSend) || authBeforeSend.oakAccountId !== authAtStart.oakAccountId) {
         throw new SyncCoordinatorError("AUTH_CHANGED", false);
       }
       const raw = await this.transport.send({ accessToken, record: candidate.payload });
       const result = exactSuccess(raw, candidate.idempotency_id);
       const authAfterSend = this.authProvider.status();
-      if (!authenticated(authAfterSend) || authAfterSend.accountId !== authAtStart.accountId) {
+      if (!authenticated(authAfterSend) || authAfterSend.oakAccountId !== authAtStart.oakAccountId) {
         this.syncProvider.transportFailed(queueId, authAtStart, "AUTH_CHANGED");
         failureRecorded = true;
         throw new SyncCoordinatorError("AUTH_CHANGED", false);

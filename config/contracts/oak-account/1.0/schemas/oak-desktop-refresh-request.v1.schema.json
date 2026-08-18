@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.oakbylake.com/identity/oak-desktop-refresh-request-1.0.schema.json",
+  "title": "Oak Desktop Refresh Request 1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "application_id", "refresh_token"],
+  "properties": {
+    "schema_version": {"const": "oak-desktop-refresh/1.0"},
+    "application_id": {"enum": ["oak-manuscript-desktop", "oak-research-desktop"]},
+    "refresh_token": {"type": "string", "minLength": 43, "maxLength": 512, "pattern": "^[A-Za-z0-9_-]+$"}
+  }
+}

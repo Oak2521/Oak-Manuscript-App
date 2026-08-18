@@ -1445,7 +1445,7 @@ class Project:
                     "原稿 SHA-256 与创建时记录不一致：原稿副本可能被外部修改。"
                     "请勿继续在本项目上操作，可从原始文件重建项目。"
                 )
-        except ProjectValidationError:
+        except (ProjectValidationError, OSError):
             problems.append("原稿副本缺失或不安全（source/ 中找不到安全常规文件）。")
         try:
             self.working_path

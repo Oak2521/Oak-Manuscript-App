@@ -1,16 +1,10 @@
 {
-  "schema_version": "1.0",
-  "config_type": "oak_manuscript_desktop_auth",
+  "schema_version": "2.0",
+  "config_type": "oak_manuscript_desktop_application_login",
   "status": "pending_configuration",
-  "authorization_endpoint": null,
-  "token_endpoint": null,
-  "user_endpoint": null,
-  "client_id": null,
-  "public_api_key": null,
-  "api_origin": null,
-  "redirect_uri": "oak-manuscript-auth://callback",
-  "scopes": [
-    "openid",
-    "profile"
-  ]
+  "application_id": "oak-manuscript-desktop",
+  "account_center_origin": null,
+  "issuer": null,
+  "trusted_keys": [],
+  "sync_api_origin": null
 }

@@ -4,9 +4,11 @@ const { createHash, randomUUID } = require("node:crypto");
 
 const JOB_STATES = Object.freeze([
   "awaiting_upload",
+  "upload_finalizing",
   "queued",
   "processing",
   "result_ready",
+  "result_transfer",
   "deletion_pending",
 ]);
 const PRINCIPAL_KINDS = new Set(["account", "anonymous"]);

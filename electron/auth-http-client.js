@@ -82,4 +82,4 @@ class AuthHttpClient {
   }
 }
 
-module.exports = { AuthHttpClient, AuthHttpError, DEFAULT_TIMEOUT_MS, MAX_RESPONSE_BYTES, validToken };
+module.exports = require("./application-login-http-client");

@@ -31,7 +31,7 @@ function opaqueId(value, label) {
 function authenticatedStatus(authProvider) {
   const status = authProvider.status();
   if (!status || status.loggedIn !== true || status.state !== "authenticated" ||
-      typeof status.accountId !== "string" || !status.accountId) {
+      typeof status.oakAccountId !== "string" || !status.oakAccountId) {
     throw new Error("必须先登录湖岸账号；登录本身不代表同意同步");
   }
   return status;
@@ -87,7 +87,7 @@ function registerAccountSyncIpc({
       const authStatus = authenticatedStatus(authProvider);
       const record = await syncRecordSource(project, event, payload.includeIssues);
       const preview = syncProvider.preview(record, authStatus);
-      previews.set(record.idempotency_id, { record, accountId: authStatus.accountId });
+      previews.set(record.idempotency_id, { record, oakAccountId: authStatus.oakAccountId });
       const coordinator = getSyncCoordinator();
       return ok({
         preview: {
@@ -109,7 +109,7 @@ function registerAccountSyncIpc({
       const cached = previews.get(id);
       if (!cached) throw new Error("同步预览不存在或已过期，请重新预览");
       const authStatus = authenticatedStatus(authProvider);
-      if (cached.accountId !== authStatus.accountId) {
+      if (cached.oakAccountId !== authStatus.oakAccountId) {
         previews.delete(id);
         throw new Error("账号已变化，同步预览已失效，请重新预览");
       }

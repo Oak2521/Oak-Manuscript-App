@@ -101,7 +101,7 @@ function registerDesktopFlow({ authProvider, licenseProvider, syncProvider, coor
 test("logged-in entitlement, explicit desktop sync, server ownership, and Web history form one local E2E", async () => {
   const clock = () => new Date(NOW);
   const authProvider = new AuthProvider({ allowLocalSimulation: true, clock });
-  authProvider.simulateLogin({ accountId: ACCOUNT, ttlSeconds: 3600 });
+  authProvider.simulateLogin({ oakAccountId: ACCOUNT, ttlSeconds: 3600 });
   const licenseProvider = new LicenseProvider({ tier: "pro", entitlementState: "active", clock });
   const syncProvider = new SyncProvider({
     clock,
@@ -131,7 +131,7 @@ test("logged-in entitlement, explicit desktop sync, server ownership, and Web hi
   const coordinator = new SyncTransportCoordinator({
     syncProvider,
     authProvider,
-    accessTokenProvider: async ({ accountId }) => ({ accountId, accessToken: TOKEN }),
+    accessTokenProvider: async ({ oakAccountId }) => ({ oakAccountId, accessToken: TOKEN }),
     transport,
   });
   const handlers = registerDesktopFlow({
@@ -144,7 +144,7 @@ test("logged-in entitlement, explicit desktop sync, server ownership, and Web hi
   const auth = await handlers.get("provider:auth-status")();
   const license = await handlers.get("provider:license-status")();
   assert.equal(auth.loggedIn, true);
-  assert.equal(auth.accountId, ACCOUNT);
+  assert.equal(auth.oakAccountId, ACCOUNT);
   assert.equal(license.effectiveTier, "pro");
   assert.equal(license.capabilities.fullSyncHistory, true);
 

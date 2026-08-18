@@ -4,14 +4,16 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const { createLicenseAccountFetchHandler } = require("../web/license-account-runtime");
+const { createOakAccountTokenFixture } = require("./fixtures/oak-account-token");
 
 const API_ORIGIN = "https://accounts.oakbylake.com";
 const SUPABASE_ORIGIN = "https://project-ref.supabase.co";
-const API_KEY = `sb_publishable_${"a".repeat(40)}`;
 const SERVICE_KEY = `service_role_${"b".repeat(48)}`;
-const TOKEN = `${"c".repeat(36)}.${"d".repeat(36)}.${"e".repeat(36)}`;
 const ACCOUNT = "8f3b65e1-0e6e-42b4-81c0-61e5cf9a1020";
 const DEVICE = "device-10000000-0000-4000-8000-000000000001";
+const NOW = new Date("2026-07-29T12:00:00.000Z");
+const ACCOUNT_AUTH = createOakAccountTokenFixture({ oakAccountId: ACCOUNT, now: NOW });
+const TOKEN = ACCOUNT_AUTH.token;
 
 function dbDevice(state = "active") {
   return {
@@ -26,9 +28,6 @@ test("production-shaped license account runtime verifies identity, lists, and re
   const events = [];
   const fetchImpl = async (url, options) => {
     calls.push({ url, options });
-    if (url === `${SUPABASE_ORIGIN}/auth/v1/user`) {
-      return new Response(JSON.stringify({ id: ACCOUNT, email: "private@example.test" }), { status: 200, headers: { "content-type": "application/json" } });
-    }
     if (url.endsWith("oak_manuscript_license_account_overview")) {
       return new Response(JSON.stringify({
         schema_version: "1.0", result_type: "oak_manuscript_license_account_snapshot", account_id: ACCOUNT,
@@ -43,8 +42,10 @@ test("production-shaped license account runtime verifies identity, lists, and re
   };
   const handler = createLicenseAccountFetchHandler({
     apiOrigin: API_ORIGIN, supabaseOrigin: SUPABASE_ORIGIN,
-    supabaseApiKey: API_KEY, supabaseServiceRoleKey: SERVICE_KEY,
-    fetchImpl, clock: () => new Date("2026-07-29T12:00:00.000Z"),
+    accountIssuer: ACCOUNT_AUTH.issuer, accountAudience: ACCOUNT_AUTH.audience,
+    accountTrustedKeys: ACCOUNT_AUTH.trustedKeys,
+    supabaseServiceRoleKey: SERVICE_KEY,
+    fetchImpl, clock: () => NOW,
     requestIdFactory: () => "30000000-0000-4000-8000-000000000003",
     securityEventSink: (event) => events.push(event),
   });
@@ -63,19 +64,21 @@ test("production-shaped license account runtime verifies identity, lists, and re
   const revokedBody = await revoked.json();
   assert.equal(revoked.status, 200, JSON.stringify(revokedBody));
   assert.equal(revokedBody.device.device_state, "revoked");
-  assert.equal(calls.filter((call) => call.url.endsWith("/auth/v1/user")).length, 2);
+  assert.equal(calls.length, 2);
   assert.equal(events.length, 2);
-  for (const secret of [TOKEN, API_KEY, SERVICE_KEY, ACCOUNT, DEVICE]) {
+  for (const secret of [TOKEN, SERVICE_KEY, ACCOUNT, DEVICE]) {
     assert.equal(JSON.stringify(events).includes(secret), false);
   }
 });
 
-test("license account runtime requires separate public/service credentials and an audit sink", () => {
+test("license account runtime requires Oak Account trust and an audit sink", () => {
   const base = {
     apiOrigin: API_ORIGIN, supabaseOrigin: SUPABASE_ORIGIN,
-    supabaseApiKey: API_KEY, supabaseServiceRoleKey: SERVICE_KEY,
+    accountIssuer: ACCOUNT_AUTH.issuer, accountAudience: ACCOUNT_AUTH.audience,
+    accountTrustedKeys: ACCOUNT_AUTH.trustedKeys,
+    supabaseServiceRoleKey: SERVICE_KEY,
     fetchImpl: async () => null, securityEventSink() {},
   };
   assert.throws(() => createLicenseAccountFetchHandler({ ...base, securityEventSink: undefined }), /securityEventSink/);
-  assert.throws(() => createLicenseAccountFetchHandler({ ...base, supabaseApiKey: SERVICE_KEY }), /必须分离/);
+  assert.throws(() => createLicenseAccountFetchHandler({ ...base, accountTrustedKeys: [] }), /Oak Account/);
 });

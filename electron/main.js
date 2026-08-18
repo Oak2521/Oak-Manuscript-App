@@ -27,8 +27,8 @@ const { EncryptedSyncStore } = require("./sync-store");
 const { EncryptedAISettingsStore } = require("./ai-settings-store");
 const { EncryptedAuthStore } = require("./encrypted-auth-store");
 const { loadDesktopAuthConfig } = require("./desktop-auth-config");
-const { AuthHttpClient } = require("./auth-http-client");
-const { DesktopAuthProvider } = require("./desktop-auth-provider");
+const { AuthHttpClient } = require("./application-login-http-client");
+const { DesktopAuthProvider } = require("./desktop-application-login-provider");
 const { loadDesktopLicenseConfig } = require("./desktop-license-config");
 const { loadDesktopStandardsUpdateConfig } = require("./desktop-standards-update-config");
 const { ProductionLicenseProvider } = require("./license-entitlement");
@@ -69,22 +69,6 @@ let mainWindow = null;
 let standardsProvider = null;
 let standardBoundCore = null;
 let syncCoordinator = null;
-let authReady = false;
-const pendingAuthCallbacks = [];
-
-function authCallbackFromArgs(argv) {
-  if (!Array.isArray(argv)) return null;
-  return argv.find((value) => typeof value === "string" && value.startsWith("oak-manuscript-auth://")) || null;
-}
-
-async function consumeAuthCallback(url) {
-  try {
-    await providers.authProvider.handleCallback(url);
-    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("provider:auth-changed");
-  } catch (error) {
-    console.error("[auth] callback rejected:", error && error.message);
-  }
-}
 
 // ---------- 工具 ----------
 
@@ -410,22 +394,11 @@ const hasSingleInstanceLock = app.requestSingleInstanceLock();
 if (!hasSingleInstanceLock) {
   app.quit();
 } else {
-  app.on("second-instance", (_event, argv) => {
-    const callback = authCallbackFromArgs(argv);
-    if (callback) {
-      if (authReady) void consumeAuthCallback(callback);
-      else pendingAuthCallbacks.push(callback);
-    }
+  app.on("second-instance", () => {
     if (mainWindow === null) return;
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.focus();
   });
-
-app.on("open-url", (event, url) => {
-  event.preventDefault();
-  if (authReady) void consumeAuthCallback(url);
-  else pendingAuthCallbacks.push(url);
-});
 
 app.whenReady().then(async () => {
   console.log("[main] app ready");
@@ -463,9 +436,9 @@ app.whenReady().then(async () => {
         syncProvider: providers.syncProvider,
         authProvider: desktopAuth,
         accessTokenProvider: (binding) => desktopAuth.accessToken(binding),
-        transport: new SyncHttpClient({ apiOrigin: config.api_origin }),
+        transport: new SyncHttpClient({ apiOrigin: config.sync_api_origin }),
       });
-      console.log("[auth] encrypted PKCE session ready; network remains user-triggered");
+      console.log("[auth] encrypted application-login session ready; network remains user-triggered");
     } else {
       desktopAuth = new DesktopAuthProvider({ config });
       console.log("[auth] production endpoints pending; login and sync transport disabled");
@@ -498,10 +471,6 @@ app.whenReady().then(async () => {
   } catch (error) {
     console.error("[license] production entitlement boundary unavailable:", error && error.message);
   }
-  authReady = true;
-  const startupCallback = authCallbackFromArgs(process.argv);
-  if (startupCallback) pendingAuthCallbacks.push(startupCallback);
-  while (pendingAuthCallbacks.length) await consumeAuthCallback(pendingAuthCallbacks.shift());
   installAppProtocol(protocol, path.join(pathPolicy.repoRoot(), "renderer"));
   try {
     if (!safeStorage.isEncryptionAvailable()) {
@@ -536,7 +505,7 @@ app.whenReady().then(async () => {
       const items = providers.syncProvider.listQueue({
         state: "authenticated",
         loggedIn: true,
-        accountId: "smoke-account",
+        oakAccountId: "smoke-account",
       });
       if (persistence.state !== "ready" || persistence.encrypted !== true || items.length !== 1 ||
           items[0].state !== "pending_transport" || items[0].payload.project_id !== "0000000000000001" ||

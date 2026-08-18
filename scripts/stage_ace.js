@@ -22,12 +22,12 @@ const GENERATED_LICENSE_URLS = Object.freeze({
   "CC0-1.0": "https://creativecommons.org/publicdomain/zero/1.0/legalcode",
 });
 const SANDBOX_PATCH = Object.freeze({
-  patch_id: "OAK-ACE-ISOLATION-002",
+  patch_id: "OAK-ACE-ISOLATION-003",
   package_name: "@daisy/ace-axe-runner-puppeteer",
   package_version: "1.4.6",
   relative_file: "lib/index.js",
   before_sha256: "681b52d047d5f6eebbfc62a925b7dc22b82589ab63b36a9ea602297f8cd86ea6",
-  after_sha256: "6c7da7364d05548355fb1ab90c3d6d77366e2fd01b6f67551b648c5fb8285614",
+  after_sha256: "0373cae0c2d1f5469c9ef905bac44e1c5435ec8379e546ba244175c682c537ff",
   replacement_source: "scripts/patches/ace-axe-runner-puppeteer-1.4.6.js",
   sanitizer_package: "@xmldom/xmldom",
   sanitizer_version: "0.9.10",

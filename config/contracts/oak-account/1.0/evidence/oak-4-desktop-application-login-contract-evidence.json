@@ -1,0 +1,72 @@
+{
+  "schema_version": "oak-account-oak-4-desktop-login-evidence/1",
+  "task_identifier": "OAK-4",
+  "recorded_at": "2026-08-14",
+  "account_center_source": {
+    "workspace": "D:\\Workspace\\Oak by Lake\\.worktrees\\oak-account-center-oak-4",
+    "branch_at_start": "codex/ac37a-website-acceptance-prep",
+    "head_at_start": "878ea293662b1fa4fc69af1513c3f8f46035d846",
+    "ai_handoff_present_at_start": false,
+    "adrs_read": ["ADR-001", "ADR-002", "ADR-003", "ADR-004", "ADR-005", "ADR-006", "ADR-007", "ADR-008", "ADR-009"],
+    "identity_contract_version": "1.0",
+    "application_login_decision": "ADR-006"
+  },
+  "consumer_audit": {
+    "oak_manuscript": {
+      "workspace": "D:\\Workspace\\Oak Manuscript GPT\\Oak Manuscript Commercial\\repo",
+      "head": "f0ed468",
+      "repository_modified": false,
+      "configuration_state": "pending_configuration",
+      "findings": [
+        "system_browser_pkce_skeleton_exists",
+        "custom_uri_callback_requires_migration",
+        "access_token_persistence_requires_migration",
+        "remote_revocation_and_account_lifecycle_incomplete",
+        "legacy_endpoint_shape_must_not_be_copied"
+      ]
+    },
+    "oak_research": {
+      "workspace": "E:\\Project\\Oak-research",
+      "head": "61e9338",
+      "repository_modified": false,
+      "configuration_state": "not_implemented",
+      "pre_existing_worktree_changes": true,
+      "findings": [
+        "no_desktop_account_configuration",
+        "account_subscription_entitlement_and_credential_store_unimplemented",
+        "offline_local_projects_are_mandatory"
+      ]
+    }
+  },
+  "artifacts": {
+    "machine_contract": "oak-desktop-application-login/1.0",
+    "json_schemas": 6,
+    "valid_fixtures": 6,
+    "negative_vectors": 20,
+    "consumer_checklist_items": 16
+  },
+  "verification": {
+    "focused_unittest": "PASS_8_OF_8",
+    "contract_verifier": "PASS",
+    "python_suite": "PASS_78_OF_78_DEDICATED_WORKTREE",
+    "node_typescript_suite": "PASS_TSC_AND_32_OF_32_DEDICATED_WORKTREE",
+    "json_parse": "PASS_16_OF_16",
+    "diff_and_trailing_whitespace_check": "PASS_OAK4_PATHS"
+  },
+  "workspace_isolation": {
+    "branch": "codex/oak-4-desktop-login-contract",
+    "worktree": "D:\\Workspace\\Oak by Lake\\.worktrees\\oak-account-center-oak-4",
+    "base_commit": "878ea293662b1fa4fc69af1513c3f8f46035d846",
+    "dedicated_worktree": true,
+    "oak5_files_included": false,
+    "clean_commit_checkout_reverification_required": true
+  },
+  "boundaries": {
+    "production_oauth_enabled": false,
+    "real_credentials_created": false,
+    "runtime_implemented": false,
+    "production_ready": false,
+    "downstream_repositories_modified": false,
+    "live_provider_addresses_added": false
+  }
+}

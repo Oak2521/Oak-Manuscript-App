@@ -77,6 +77,7 @@ def _cleanup_test_tempdir(run_temp: Path) -> None:
         raise RuntimeError(f"拒绝清理不安全的测试临时目录：{run_temp}")
 
     def prepare(directory: Path) -> None:
+        directory.chmod(0o700)
         for entry in os.scandir(directory):
             item = Path(entry.path)
             info = entry.stat(follow_symlinks=False)

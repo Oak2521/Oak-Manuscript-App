@@ -1486,7 +1486,7 @@ function renderAccountStatus() {
   const license = state.licenseStatus;
   if (auth) {
     $("#auth-status-text").textContent = auth.loggedIn
-      ? `已登录湖岸统一账号（${auth.accountId}）。登录不等于同意同步。`
+      ? "已登录湖岸统一账号。登录不等于同意同步。"
       : `${auth.message} 未登录不影响本地检查、修复和导出。`;
     const label = auth.loggedIn ? "退出湖岸账号" : "注册 / 登录湖岸账号";
     for (const selector of ["#btn-login", "#btn-login2", "#btn-login-export"]) {

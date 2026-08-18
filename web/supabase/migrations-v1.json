@@ -25,6 +25,12 @@
       "filename": "004_subscription_events_and_devices.sql",
       "size_bytes": 15582,
       "sha256": "3bef3bbbc09bab77582e6b50e2df20126e586a3a0745e349f1a01ab7a3612894"
+    },
+    {
+      "sequence": 5,
+      "filename": "005_direct_object_transfer.sql",
+      "size_bytes": 6499,
+      "sha256": "b1baf8fa01759340cb079a78f1c23b45217e3bf2756c91a2e11d56d1e6259b34"
     }
   ]
 }

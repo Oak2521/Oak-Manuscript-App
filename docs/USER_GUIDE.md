@@ -2,11 +2,11 @@
 
 ## 桌面应用（推荐）
 
-当前开发源码与最新已打包 Windows x64 NSIS/ZIP 均为 `0.1.0-alpha.58`；制品未签名，不是可售卖正式版。alpha.58 增加 TXT/Markdown 保守空白卫生检查和格式覆盖矩阵；默认账号与权益配置仍为空，仓库没有生产私钥，普通启动和构建不会触发账号/权益联网或下载。
+当前开发源码为 `0.1.0-alpha.60`，最新已打包 Windows x64 NSIS/ZIP 仍为 `0.1.0-alpha.58`；制品未签名，不是可售卖正式版。alpha.58 增加 TXT/Markdown 保守空白卫生检查，alpha.59 修复 Windows Git checkout 的 canonical 字节漂移，alpha.60 记录真实平台能力并拒绝不合格部署组合；默认账号与权益配置仍为空，仓库没有生产私钥，普通启动和构建不会触发账号/权益联网或下载。
 
-**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.58 结果为 Node 719/712/0/7、Python 368/0 failures/0 errors/3 skipped；隐藏 Electron 源码、Web 客户端和 Windows packaged smoke 均通过。
+**开发运行**：Node 22.12+ 环境中执行 `npm install` 后 `npm start`。只有开发或部署 Web 服务端时另执行 `npm install --prefix web`；SDK 不属于桌面根依赖。统一测试用 `npm test`。alpha.60 结果为 Node 726/719/0/7、Python 368/0 failures/0 errors/3 skipped；独立隐藏 Electron 源码 smoke 通过。Web 客户端和 Windows packaged smoke 的最新真实证据仍属于此前版本，alpha.60 未重新打包。
 
-**Web 状态**：客户端保留湖岸账号登录/注册、“默认”引用体例、单任务处理同意和完整临时作业流程；账号后台源码提供同步历史与订阅/设备管理。服务端已有组合与迁移门禁。alpha.56 要求候选部署平台显式满足 50 MiB 请求、100 MiB 响应、240 秒处理及隔离/存储/数据库/调度能力；当前没有任何经官方核对的真实平台 profile。API/计划任务/页面未部署，本地测试不等于平台零留存、订阅或线上可用。
+**Web 状态**：客户端保留湖岸账号登录/注册、“默认”引用体例、单任务处理同意和完整临时作业流程；账号后台源码提供同步历史与订阅/设备管理。alpha.60 已用官方当前资料核对 Netlify Functions + Blobs + Supabase：Blobs/Postgres 基本能力可用，但 Netlify Function 的请求/响应/同步时限和私有隔离不满足当前合同，因此该全包式组合被正式拒绝。API/计划任务/页面仍未部署；下一实现方向是短期凭证直传/直取加专用隔离 worker，本地测试不等于平台零留存、订阅或线上可用。
 
 **账号与结果同步（当前边界）**：欢迎页、导出页和设置页保留湖岸账号入口。仓库受信配置为 `pending_configuration`，点击登录只会显示配置未完成，不打开浏览器或联网。登录用户导出后才会看到 SyncRecord v1 逐字段预览，并可选择仅本次同步、同步本次以后仍询问、暂不同步或不再询问此项目。预览本身不发送；选择前两项即明确授权本次同步：记录先进入系统加密本机队列，正式 transport 存在时立即发送，成功后显示已同步并删除队列项；失败则安全留队，须到设置页明确重试。未配置 transport 时只入队且明确尚未上传。登录、启动和队列恢复绝不自动发送。token 只在主进程密文中并与队列账号绑定；远端创建/幂等重放后才删除本机项，失败或账号切换则保留。当前默认配置下 APP 绝未上传到网站；系统加密不可用时同步安全停止，本地稿件功能不受影响。
 
@@ -178,7 +178,7 @@ npm run verify:release-identity
 npm run release:evidence:verify:win
 ```
 
-验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest；不会扫描其他版本替代当前制品。alpha.54 的 NSIS、ZIP、SHA 文件、packaged-smoke evidence 与 schema v2 canonical manifest 已通过交叉验证；旧 alpha.42 残留曾让生成步骤按设计拒绝，不能复用或混入当前版本证据。
+验证器会按源码 `package.json` 的当前版本读取 EXE/ZIP，核对 PE/ZIP 结构、单链接文件身份、字节数与 SHA-256，再交叉验证 SHA 文件和 canonical manifest；不会扫描其他版本替代当前制品。alpha.58 的 NSIS、ZIP、SHA 文件、packaged-smoke evidence 与 schema v2 canonical manifest 已通过交叉验证；alpha.60 尚未打包，旧制品不能复用或混入当前版本证据。
 
 安装生命周期验收器默认只读、不启动安装器，并要求当前源码版本存在精确制品。alpha.54 对归档 alpha.12 的只读预检已经通过：
 

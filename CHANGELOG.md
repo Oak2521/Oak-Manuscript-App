@@ -4,6 +4,71 @@
 
 ## [未发布]
 
+### 2026-08-17 — GitHub Hosted 源码门建立
+
+> 仅建立 public repository 的无密钥 Windows/Linux 源码、合同与测试门；不生成发布包，不签名、不部署，也不改变 Staging/Production 状态。
+
+- 新增最小权限 `Hosted source gates` workflow：仅 `contents: read`，checkout 不保留凭据，三个官方 action 固定到完整 commit SHA；
+- Windows 2025 与 Ubuntu 24.04 均执行锁定依赖安装、workflow 自校验、Electron/迁移/标准/fuse 源码输入门及统一 `npm test`；
+- 新增 fail-closed workflow 验证器和 TDD，拒绝 `pull_request_target`、write permission、secret 引用、浮动 action、未固定 runner、缺少 `npm ci`/`npm run test:hosted`/自校验及发布命令；
+- 根据真实 PR 失败证据把 Hosted 测试收敛为 41 文件 OAK-10/Oak Account portable Node 测试面与全量 Python；本地 Electron/runtime/toolchain 字节门继续留在受控本地/packaged 链，不在无制品 runner 上伪造；
+- 修复 POSIX 上不可读原稿使 `Project.verify()` 抛出 `PermissionError` 的缺口，并让测试清理器在遍历受控临时目录前恢复目录权限；
+- PR #3 run `32089121218` 在 Linux/Windows required checks 全绿；
+- 完整 Windows package、Authenticode、macOS 原生构建/签名/公证仍是独立门禁，不能由本 workflow 的源码通过替代。
+
+### 2026-08-17 — 0.1.0-alpha.63（ChatGPT OAK-16 runtime consumer compatibility）
+
+> 本地实现、回归和未签名 Windows packaged 检查点；未联网、未连接真实 Staging/账号、未配置 URL/密钥、未迁移、部署、签名、安装或构建 macOS。
+
+- 保持 Desktop Application Login 1.0 冻结合同与 provenance 原字节不变，把桌面/Web Oak access-token consumer 对齐到 OAK-16 的 ES256/P-256 JWKS、P1363 签名和 exact revoke `{revoked:true}`；
+- 新增显式 opt-in 的 OAK-16 Staging consumer 测试，默认回归不联网并跳过；以精确旧 HEAD + 新测试重建 15/4/11 的遗留 TDD RED；
+- 修复 Web verifier 构造后可由调用方替换 JWK 坐标的信任锚可变性漏洞，改为构造期独立 `KeyObject`，并保留先红后绿回归；
+- Alpha.62 制品完整归档；安装验收基线由 Alpha.12 更新为 Alpha.62，专项 13/13 与 Alpha.62→Alpha.63 只读预检通过，未运行安装器；
+- Node 767/760/0/7、Python 368/0/0/3；资源信任 131 文件 / 2,244,237 字节；Windows 全链、packaged smoke、NSIS/ZIP 和 schema v2 发行证据通过。制品仍 `NotSigned`，非 deployed 或 production-ready。
+
+### 2026-08-14 — 0.1.0-alpha.62（ChatGPT Oak Account application-login）
+
+> 本地生产形状与未签名 Windows packaged 检查点；未联网、未使用真实账号/密钥、未迁移、部署、推送、运行安装器、签名或构建 macOS。
+
+- 冻结消费 Oak Account Center 提交 `6aea9986539a0f55b2961426fa08e486a9e30b19`；新增 16 文件 provenance、合同/fixture/negative vector 校验和未知 major 失败关闭；
+- 桌面认证改为系统浏览器 application-login、随机 loopback、PKCE S256、内存 access token 与 OS 加密轮换 refresh；移除 production package 的旧 OAuth client/provider 和自定义 scheme；
+- Web 四个生产组合根改为本地 Ed25519 验证 Oak access token，只用 `oak_account_id` 派生 owner；账号身份不授予 Pro，独立 signed entitlement 继续失败回落 Free；
+- 保留结果同步的逐字段预览/一次确认、加密失败队列/幂等补偿/跨账号隔离，以及 S3 direct-object、一次领取和清扫链；仓库继续以空 Production 配置失败关闭；
+- 修复 Ace 外部 `puppeteer.connect()` 会话与主进程双重关闭 Chrome 的竞态：外部会话只断开连接，主进程保持唯一生命周期 owner；补丁升级为 `OAK-ACE-ISOLATION-003` 并重锁 Node/Python/资源摘要；
+- Node 761/755/0/6、Python 368/0/0/3；Windows 全链构建 305.1 秒退出 0，packaged smoke、NSIS/ZIP、SHA256SUMS 与 schema v2 manifest 通过；制品仍未签名，非 deployed 或 production-ready。
+
+### 2026-08-10 — 0.1.0-alpha.61（ChatGPT Web 对象存储直传/直取）
+
+> 源码检查点；按用户授权下载并核对生产依赖、查阅 Supabase/AWS 官方资料，但未使用生产账号/密钥、执行迁移、部署、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.58。
+
+- Web 作业 API 升为 v2 direct-object 控制面；浏览器以短期 SigV4 凭证直接 PUT/GET Supabase S3 私有桶，公开函数不再缓冲 50 MiB input 或 100 MiB result；
+- 新增 exact 直传 credential/完成契约、单次签发、随机 staging、HEAD metadata/ETag 复核、source-ETag 条件提升、结果 CAS 独占和完成后删除；
+- 浏览器新增部署期独立 Supabase Storage origin pin；仓库默认留空并关闭稿件控件，另一 Supabase 项目或未绑定上传头的 credential 均 fail-closed；
+- 新增 005 migration、5 文件迁移锁、`upload_finalizing` / `result_transfer` 到期清理、S3 分页清扫和 v2 部署准入；生产组合已移除 Netlify Blobs，改为 Supabase S3 direct storage；
+- Web 生产依赖精确锁定 AWS SDK v3 `3.1107.0`，移除 `@netlify/blobs`，联网 npm audit 为 0 漏洞；
+- Node 744/737/0/7、Python 368/0/0/3；资源信任 112 文件 / 2,217,733 字节，manifest `de6471b0…c0115`、anchor `6165a430…bd51`；真实迁移、桶/CORS、隔离 worker、部署和生产零留存仍未验证。
+
+### 2026-08-10 — 0.1.0-alpha.60（ChatGPT 官方平台准入与 Supabase 新密钥兼容）
+
+> 源码检查点；按用户授权联网核对官方资料，但未使用生产账号/密钥、迁移、部署、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.58。
+
+- 新增具日期的 Netlify Functions + Blobs + Supabase exact profile 与官方证据记录；二进制请求有效约 4.5 MiB、缓冲响应 6 MiB、同步执行 60 秒均低于当前 50 MiB / 100 MiB / 240 秒合同；
+- 准入报告固定为不满足，返回公开容量、私有执行隔离和 retry alerting 共 9 个稳定拒绝码；Blobs/Postgres/调度等有官方依据的能力与未证明能力明确分开；
+- 新增 Supabase 服务端 key 共享适配：新 `sb_secret_` 只放 `apikey`，不再错误复用为 Bearer JWT；legacy `service_role` JWT 保留迁移期双头兼容，三个 repository 共用注入安全校验；
+- TDD 专项 29/29；最终 `npm test` 为 Node 726/719/0/7、Python 368/0/0/3；关键源码门禁与独立隐藏 Electron smoke PASS；
+- 资源信任 112 文件 / 2,217,733 字节，manifest `cf925030…7a45`、anchor `f02738d2…e21d`；未生成 alpha.60 安装包，未改变 production-ready=false。
+
+### 2026-08-10 — 0.1.0-alpha.59（ChatGPT Windows LF checkout 可复现性）
+
+> 源码检查点；未联网、部署、推送或重新打包。最新真实 Windows 制品仍为未签名 alpha.58。
+
+- `.gitattributes` 将所有 Git 识别文本固定为 `eol=lf`，不再让 Windows `core.autocrlf=true` 改写 canonical JSON/SQL、迁移清单和资源信任输入；
+- 新增 checkout 回归测试，覆盖全局属性以及发行身份、资源锁、CPython provenance、Web 迁移 manifest/SQL 等严格字节输入；
+- 先复现 Node 719 total / 683 pass / 29 fail / 7 skip，以及 release identity、resource trust、Web migration 三项字节门禁失败；统一 LF 后这些门禁恢复通过；
+- 应用 loose 资源锁按 LF 字节重建为 112 文件 / 2,217,733 字节，manifest `7e25e075…b496`、anchor `0d055104…9def`；标准包 2.1.0 内容与兼容下限不变；
+- 最终 `npm test`：Node 720/713/0/7、Python 368/0/0/3；沙箱内 Electron smoke 因 GPU 子进程 `0xC0000135` 失败且不计通过，沙箱外独立隐藏窗口重跑 PASS；
+- 发行身份仍为 `complete=false`；未生成 alpha.59 Windows/macOS 制品，也未关闭签名、真实安装、许可人工签核、生产账号/支付/Web 部署门禁。
+
 ### 2026-08-02 — 开源许可与社区协作基础
 
 - 采用 Apache License 2.0，新增标准全文 `LICENSE`，并在 npm 元数据中加入 `Apache-2.0`、GitHub 仓库、问题反馈和湖岸官网字段；

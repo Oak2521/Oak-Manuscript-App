@@ -182,10 +182,19 @@ class VerifyTest(unittest.TestCase):
 
     def test_verify_detects_source_tampering(self):
         source_file = self.pdir / "source" / "manuscript.docx"
-        os.chmod(source_file, stat.S_IWRITE)  # 模拟外部强行破坏
+        os.chmod(source_file, stat.S_IREAD | stat.S_IWRITE)  # 模拟外部强行破坏
         source_file.write_bytes(b"tampered")
         problems = self.p.verify()
         self.assertTrue(any("SHA-256" in s or "哈希" in s for s in problems))
+
+    @unittest.skipUnless(os.name == "posix", "POSIX permission semantics required")
+    def test_verify_detects_unreadable_source_without_crashing(self):
+        source_file = self.pdir / "source" / "manuscript.docx"
+        os.chmod(source_file, stat.S_IWRITE)
+
+        problems = self.p.verify()
+
+        self.assertTrue(any("缺失或不安全" in item for item in problems))
 
     def test_verify_detects_missing_subdir(self):
         shutil.rmtree(self.pdir / "exports")

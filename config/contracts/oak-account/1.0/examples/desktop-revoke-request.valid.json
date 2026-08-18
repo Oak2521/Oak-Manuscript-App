@@ -1,0 +1,6 @@
+{
+  "schema_version": "oak-desktop-revoke/1.0",
+  "application_id": "oak-manuscript-desktop",
+  "refresh_token": "synthetic_refresh_token_for_contract_only_000000000001",
+  "mode": "current_token_family"
+}

@@ -1,0 +1,93 @@
+"use strict";
+
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const test = require("node:test");
+
+const ROOT = path.resolve(__dirname, "..");
+const VERIFIER = path.join(ROOT, "scripts", "verify_hosted_ci_workflow.js");
+
+function loadVerifier() {
+  assert.equal(
+    fs.existsSync(VERIFIER),
+    true,
+    "Hosted CI verifier must exist before the workflow can be accepted",
+  );
+  return require(VERIFIER);
+}
+
+test("repository Hosted CI provides safe Windows and Linux source gates", () => {
+  const { verifyHostedCiWorkflow } = loadVerifier();
+  assert.deepEqual(verifyHostedCiWorkflow(ROOT), { ok: true, errors: [] });
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(ROOT, "package.json"), "utf8"),
+  );
+  assert.equal(
+    packageJson.scripts["test:hosted"],
+    "node scripts/run_hosted_source_tests.js && npm run test:python",
+  );
+});
+
+test("Hosted CI verifier rejects privileged, secret-bearing, and floating workflows", () => {
+  const { validateHostedCiText } = loadVerifier();
+  const result = validateHostedCiText(`
+name: unsafe
+on: pull_request_target
+permissions:
+  contents: write
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "\${{ secrets.RELEASE_KEY }}"
+`);
+
+  assert.equal(result.ok, false);
+  assert.deepEqual(
+    new Set(result.errors),
+    new Set([
+      "PULL_REQUEST_TARGET_FORBIDDEN",
+      "WRITE_PERMISSION_FORBIDDEN",
+      "SECRET_REFERENCE_FORBIDDEN",
+      "FLOATING_ACTION_REFERENCE_FORBIDDEN",
+      "WINDOWS_RUNNER_REQUIRED",
+      "PINNED_UBUNTU_RUNNER_REQUIRED",
+      "NPM_CI_REQUIRED",
+      "HOSTED_TEST_REQUIRED",
+      "SELF_VERIFICATION_REQUIRED",
+      "CHECKOUT_CREDENTIAL_PERSISTENCE_MUST_BE_DISABLED",
+    ]),
+  );
+});
+
+test("Hosted CI rejects local-only Electron runtime byte gates", () => {
+  const { validateHostedCiText } = loadVerifier();
+  const workflow = fs.readFileSync(
+    path.join(ROOT, ".github", "workflows", "hosted-ci.yml"),
+    "utf8",
+  );
+  const runtimeBoundWorkflow = workflow.replace(
+    "npm run verify:web:migrations",
+    "npm run verify:electron-runtime && npm run verify:web:migrations",
+  );
+
+  const result = validateHostedCiText(runtimeBoundWorkflow);
+  assert.equal(result.ok, false);
+  assert.equal(
+    result.errors.includes("LOCAL_ELECTRON_RUNTIME_GATE_FORBIDDEN"),
+    true,
+  );
+
+  const localUnifiedWorkflow = workflow.replace(
+    "npm run test:hosted",
+    "npm test",
+  );
+  const localUnifiedResult = validateHostedCiText(localUnifiedWorkflow);
+  assert.equal(localUnifiedResult.ok, false);
+  assert.equal(
+    localUnifiedResult.errors.includes("LOCAL_UNIFIED_TEST_ENTRY_FORBIDDEN"),
+    true,
+  );
+});

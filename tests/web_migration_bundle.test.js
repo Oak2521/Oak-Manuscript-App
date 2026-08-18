@@ -26,12 +26,13 @@ function copyBundle() {
 test("tracked Supabase migration bundle has exact order and byte identities", (t) => {
   const result = verifyWebMigrationBundle(REPO_ROOT);
   assert.equal(result.ok, true);
-  assert.equal(result.migration_count, 4);
+  assert.equal(result.migration_count, 5);
   assert.deepEqual(result.migrations.map((entry) => entry.filename), [
     "001_web_job_state.sql",
     "002_sync_records.sql",
     "003_manuscript_entitlements.sql",
     "004_subscription_events_and_devices.sql",
+    "005_direct_object_transfer.sql",
   ]);
   assert.match(result.manifest_sha256, /^[0-9a-f]{64}$/);
 
@@ -40,6 +41,16 @@ test("tracked Supabase migration bundle has exact order and byte identities", (t
   const sql = path.join(copy, "web", "supabase", "002_sync_records.sql");
   fs.appendFileSync(sql, "-- tampered\n", "utf8");
   assert.throws(() => verifyWebMigrationBundle(copy), /与 manifest 不一致|完整.*事务/);
+});
+
+test("direct-transfer migration adds bounded transitory states and expiry cleanup", () => {
+  const sql = fs.readFileSync(path.join(REPO_ROOT, "web", "supabase", "005_direct_object_transfer.sql"), "utf8");
+  for (const required of [
+    "'upload_finalizing'", "'result_transfer'", "upload_reservation_expires_at <= p_before",
+    "invalid web job state transition", "to service_role",
+  ]) assert.equal(sql.includes(required), true, required);
+  assert.equal(sql.includes("grant execute on function public.oak_manuscript_web_job_compare_and_swap"), true);
+  assert.equal(sql.includes("grant all"), false);
 });
 
 test("migration bundle rejects untracked SQL and non-canonical manifest", (t) => {

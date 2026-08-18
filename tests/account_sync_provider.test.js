@@ -16,7 +16,7 @@ const {
 const AUTHENTICATED = Object.freeze({
   state: "authenticated",
   loggedIn: true,
-  accountId: "account-0001",
+  oakAccountId: "account-0001",
   sessionExpiresAt: "2026-08-01T00:00:00.000Z",
 });
 
@@ -75,16 +75,16 @@ test("AuthProvider models external-browser PKCE states without pretending produc
   assert.deepEqual(auth.status(), {
     state: "signed_out",
     loggedIn: false,
-    accountId: null,
+    oakAccountId: null,
     sessionExpiresAt: null,
-    authMode: "system_browser_pkce",
+    authMode: "system_browser_application_login_pkce",
     productionConfigured: false,
     message: "湖岸统一账号尚未接入生产服务；当前不会打开登录页或发起网络请求。",
   });
   assert.deepEqual(auth.beginLogin(), {
     state: "configuration_required",
     opened: false,
-    authMode: "system_browser_pkce",
+    authMode: "system_browser_application_login_pkce",
     message: "生产账号服务尚未配置，未发起网络请求。",
   });
 
@@ -92,9 +92,9 @@ test("AuthProvider models external-browser PKCE states without pretending produc
     allowLocalSimulation: true,
     clock: () => new Date("2026-07-28T12:00:00.000Z"),
   });
-  assert.equal(mock.simulateLogin({ accountId: "account-0001", ttlSeconds: 60 }).loggedIn, true);
+  assert.equal(mock.simulateLogin({ oakAccountId: "account-0001", ttlSeconds: 60 }).loggedIn, true);
   assert.equal(mock.logout().state, "signed_out");
-  mock.simulateLogin({ accountId: "account-0001", ttlSeconds: 60 });
+  mock.simulateLogin({ oakAccountId: "account-0001", ttlSeconds: 60 });
   assert.equal(mock.expireSession().state, "expired");
   assert.equal(mock.revokeDevice().state, "revoked");
 });

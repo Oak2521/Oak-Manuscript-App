@@ -2,6 +2,11 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const netlifySupabaseProfile = require(
+  "../web/platform-profiles/netlify-functions-blobs-supabase-20260810.json"
+);
 
 const {
   DEPLOYMENT_REQUIREMENTS_SHA256,
@@ -160,4 +165,46 @@ test("profile schema is exact and rejects invented or unverified values", () => 
   assert.throws(() => assessWebDeploymentProfile(capableProfile({
     profile_id: "contains secret token",
   })), /profile_id/);
+});
+
+test("tracked Netlify Functions, Blobs, and Supabase profile is rejected fail-closed", () => {
+  const report = assessWebDeploymentProfile(netlifySupabaseProfile);
+  assert.equal(report.profile_id, "netlify-functions-blobs-supabase-20260810");
+  assert.equal(report.declared_capabilities_satisfied, false);
+  assert.equal(report.production_evidence_verified, false);
+  assert.equal(report.production_ready, false);
+  assert.deepEqual(report.violations, [
+    "PUBLIC_REQUEST_BYTES_INSUFFICIENT",
+    "PUBLIC_RESPONSE_BYTES_INSUFFICIENT",
+    "PUBLIC_EXECUTION_WINDOW_INSUFFICIENT",
+    "CHILD_PROCESS_UNSUPPORTED",
+    "ABSOLUTE_EXECUTABLE_UNSUPPORTED",
+    "PRIVATE_SCRATCH_UNSUPPORTED",
+    "OS_NETWORK_DENY_UNSUPPORTED",
+    "READ_ONLY_APPLICATION_UNSUPPORTED",
+    "RETRY_ALERTING_UNSUPPORTED",
+  ]);
+});
+
+test("tracked platform profile has a dated first-party evidence record", () => {
+  const evidence = fs.readFileSync(path.join(
+    __dirname,
+    "..",
+    "docs",
+    "PLATFORM_ADMISSION_NETLIFY_SUPABASE_20260810.md",
+  ), "utf8");
+  for (const required of [
+    "web/platform-profiles/netlify-functions-blobs-supabase-20260810.json",
+    "https://docs.netlify.com/build/functions/configuration/",
+    "https://docs.netlify.com/build/data-and-storage/netlify-blobs/",
+    "https://docs.netlify.com/manage/monitoring/observability/overview/",
+    "https://supabase.com/docs/guides/getting-started/migrating-to-new-api-keys",
+    "https://supabase.com/docs/guides/database/postgres/row-level-security",
+    "https://supabase.com/docs/guides/cron",
+    "https://www.postgresql.org/docs/current/explicit-locking.html",
+    "核对日期：2026-08-10",
+    "production_ready=false",
+  ]) {
+    assert.equal(evidence.includes(required), true, required);
+  }
 });

@@ -48,8 +48,8 @@ function fixture(overrides = {}) {
   return { config, envelope: { ...unsigned, signature } };
 }
 
-function auth(accountId = ACCOUNT) {
-  return { state: "authenticated", loggedIn: true, accountId };
+function auth(oakAccountId = ACCOUNT) {
+  return { state: "authenticated", loggedIn: true, oakAccountId };
 }
 
 function memoryStore(deviceId = DEVICE, envelope = null) {
@@ -88,7 +88,7 @@ test("tracked signed-entitlement schema matches the runtime exact-key contract",
 
 test("signed entitlement verifies issuer, audience, account, device, exact schema, and signature", () => {
   const { config, envelope } = fixture();
-  assert.equal(verifyEntitlement(envelope, { config, accountId: ACCOUNT, deviceId: DEVICE }).tier, "pro");
+  assert.equal(verifyEntitlement(envelope, { config, oakAccountId: ACCOUNT, deviceId: DEVICE }).tier, "pro");
   for (const poisoned of [
     { ...envelope, extra: true },
     { ...envelope, key_id: "unknown-key" },
@@ -96,7 +96,7 @@ test("signed entitlement verifies issuer, audience, account, device, exact schem
     { ...envelope, claims: { ...envelope.claims, account_id: "account-0002" } },
     { ...envelope, claims: { ...envelope.claims, device_id: "device-20000000-0000-4000-8000-000000000002" } },
     { ...envelope, claims: { ...envelope.claims, tier: "free" } },
-  ]) assert.throws(() => verifyEntitlement(poisoned, { config, accountId: ACCOUNT, deviceId: DEVICE }));
+  ]) assert.throws(() => verifyEntitlement(poisoned, { config, oakAccountId: ACCOUNT, deviceId: DEVICE }));
 });
 
 test("production provider derives active, grace, expired, and revoked without locking local files", () => {
@@ -124,7 +124,7 @@ test("signed-out, wrong-account, tampered, and not-yet-valid caches fail closed 
   const valid = fixture();
   const future = fixture({ not_before: "2026-07-30T00:00:00.000Z", valid_until: "2026-08-30T00:00:00.000Z", grace_until: "2026-09-05T00:00:00.000Z" });
   const cases = [
-    [valid.config, () => ({ state: "signed_out", loggedIn: false, accountId: null }), valid.envelope, "signed_out"],
+    [valid.config, () => ({ state: "signed_out", loggedIn: false, oakAccountId: null }), valid.envelope, "signed_out"],
     [valid.config, () => auth("account-0002"), valid.envelope, "invalid"],
     [valid.config, () => auth(), { ...valid.envelope, signature: "A".repeat(86) }, "invalid"],
     [future.config, () => auth(), future.envelope, "not_yet_valid"],
@@ -154,7 +154,7 @@ test("explicit refresh verifies before atomic cache replacement and never fetche
   const provider = new ProductionLicenseProvider({
     config: initial.config, store,
     client: { async fetchEntitlement() { calls += 1; return renewed.envelope; } },
-    accessTokenProvider: async ({ accountId }) => ({ accountId, accessToken: "a".repeat(48) }),
+    accessTokenProvider: async ({ oakAccountId }) => ({ oakAccountId, accessToken: "a".repeat(48) }),
     authStatusProvider: () => auth(), clock: () => new Date(NOW),
   });
   assert.equal(provider.status().entitlementState, "grace");
@@ -171,7 +171,7 @@ test("refresh rechecks the authenticated account after transport before committi
   const provider = new ProductionLicenseProvider({
     config: signed.config, store,
     client: { async fetchEntitlement() { current = auth("account-0002"); return signed.envelope; } },
-    accessTokenProvider: async ({ accountId }) => ({ accountId, accessToken: "a".repeat(48) }),
+    accessTokenProvider: async ({ oakAccountId }) => ({ oakAccountId, accessToken: "a".repeat(48) }),
     authStatusProvider: () => current, clock: () => new Date(NOW),
   });
   await assert.rejects(() => provider.refresh(auth()), /账号.*变化|稳定/);

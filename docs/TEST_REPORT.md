@@ -1,6 +1,153 @@
 # TEST_REPORT — 测试报告
 
-> 更新日期：2026-08-02。只记录真实执行结果；未运行项不得写成通过。
+> 更新日期：2026-08-17。只记录真实执行结果；未运行项不得写成通过。
+
+## GitHub Hosted workflow 本地门禁（2026-08-17）
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| TDD 红灯 | **PASS（预期失败）** | verifier 尚不存在时，`hosted_ci_workflow.test.js` 为 0 pass / 2 fail，均精确失败在缺少 Hosted CI verifier |
+| workflow 安全合同 | **PASS（本地）** | 当前专项 4/4；拒绝 `pull_request_target`、write permission、secret、浮动 action、本地 Electron runtime 字节门、原始全量本地测试入口及缺少双平台/锁定安装/Hosted 测试的候选 |
+| workflow 自校验 | **PASS（本地）** | `npm run verify:hosted-ci` 返回 `ok=true, errors=[]`；YAML 结构解析得到 `linux-source` 与 `windows-source` 两个 job |
+| Hosted portable Node | **PASS** | 冻结 41 个 OAK-10/Oak Account 文件；PR run `32089121218` 两平台均为 166 total / 165 pass / 0 fail / 1 Staging skip |
+| Hosted Python | **PASS** | 全量 369 项；run `32089121218` 的 Linux/Windows 均为 0 failures / 0 errors，平台条件 skip 如实保留 |
+| Hosted required checks | **PASS** | PR #3、head `d758f6d`：Linux 46 秒、Windows 2 分 5 秒；两项 required contexts 全绿 |
+| package/sign/deploy | **未执行** | workflow 不运行 Windows package、macOS build、签名、公证、artifact upload、Staging 或 Production 部署 |
+
+## 最新验证结论：0.1.0-alpha.63 对齐 OAK-16 Staging runtime（2026-08-17）
+
+本轮未联网，未配置真实 URL、公钥或秘密，未连接账号、Staging、Supabase/替代后端或网站，未部署、签名、安装、卸载或构建 macOS。冻结 Desktop Application Login 1.0 合同及其来源提交 `6aea9986539a0f55b2961426fa08e486a9e30b19` 未改写；新增代码只消费 OAK-16 已验收 runtime 的 ES256/P-256 与 revoke 结果形状。
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| 遗留现场审计 | **PASS** | HEAD `97a7958aee29f8433e174b1a8fcf9edb059c0086` 上 10 个遗留文件全部保留并逐项审计；目标是 OAK-16 runtime compatibility，不是旧 Supabase/通用 OAuth |
+| 遗留实现 RED 重建 | **PASS（预期失败）** | 精确旧 HEAD + 新三组账户测试/fixture 的项目内隔离副本：15 total / 4 pass / 11 fail；失败集中为旧 Ed25519 key shape、ES256 token 拒绝和 revoke `{revoked:true}` 契约不匹配 |
+| 冻结合同 | **PASS** | `verify_oak_account_contract.js`：16 files / 6 valid fixtures / 20 negative vectors / 16 checklist items；source commit 和 machine contract SHA 未漂移 |
+| ES256 桌面/Web 消费者 | **PASS** | exact ES256/P-256 public JWKS、`kid`/`alg`/`use`/`key_ops`、P1363 64 字节签名、300 秒 access token 和 `{revoked:true}` 均有正反测试；旧 Ed25519 application-login key 被拒绝 |
+| Web 信任锚可变性 TDD | **PASS** | 修复前测试证明构造后替换原 JWK `x/y` 可让替换私钥 token 通过；修复后 verifier 使用构造期独立 `KeyObject`，同一 token 返回 `null` |
+| 定向账户/合同/Web 组合 | **PASS** | 37 total / 36 pass / 0 fail / 1 skip；跳过项为必须显式 `OAK10_STAGING_CONSUMER=1` 的真实 Staging consumer，本轮未授权运行 |
+| Node 全量 | **PASS** | 767 total / 760 pass / 0 fail / 7 skip；跳过项不计作通过 |
+| Python 全量 | **PASS** | 368 total / 0 failures / 0 errors / 3 skipped |
+| 资源信任 | **PASS** | 131 文件 / 2,244,237 字节；manifest `e03de88c22cb290be29c44cb63eea25b081e4cc6fa43be879e6ff4f3e8bccb68`；anchor `11d122fd3d41cdf33bbed73611b716a19d6a879de90df3abc047d332cd4e5380` |
+| Windows 完整构建 | **PASS** | 离线 `npm run build:win` 全链退出 0；JRE/Ace stage、源码资源、9 fuse、electron-builder、packaged 资源/运行时探针、隐藏 smoke 和发行证据同链完成 |
+| Packaged smoke | **PASS** | run `msxhfjrn-167d5b76cd673e8b`；unpacked EXE 225,449,472 字节 / `210705cb3cd3ce9aeb4eb6433752bf3368b0e35bab4c9303e37ffa8f1f916036`；输出树 76 文件 / 1,378,019 字节 / `181eea1e2f7d2d1220a237e557666dbabf691966a59d833aef1967dbcfa90fc5` |
+| Windows 制品/发行证据 | **PASS（未签名内测）** | NSIS 190,078,315 字节 / `5ac3dc231ef5e82812869411f449382a8432db4130da14ea202004bbce22eb35`；ZIP 233,925,031 字节 / `861fd3af185f4e1a5c49249e859d411e4831bb63d49f95a95704f61ae8fe6a42`；schema v2 manifest 与 `SHA256SUMS.txt` 独立复验通过 |
+| 安装生命周期 | **只读预检 PASS；真实运行未执行** | 过期 Alpha.12 基线经 TDD 更新为 Alpha.62；专项 13/13，Alpha.62→Alpha.63 九阶段计划 `ready_for_authorized_run=true` 且 `authorized=false`；未修改 HKCU、快捷方式或系统安装状态 |
+| 签名 / Staging / 部署 | **未执行** | unpacked 与 NSIS 均 `NotSigned`；真实 Account Center Staging、跨服务生命周期、数据库/对象存储、干净机安装、macOS、部署和生产零留存均无新证据 |
+
+结论：Alpha.63 的 implemented、tested 和 packaged unsigned Windows 检查点成立；真实 staging-validated、deployed、signed、production-ready 与可售卖正式版仍不成立。OAK-10 保持 `in_review`。
+
+## OAK-10 重启恢复复验（2026-08-15）
+
+本轮只修复 `docs/OAK10_BASELINE_AND_IMPLEMENTATION_AUDIT.md` 两处尾随空格并补齐交接证据，未修改产品代码、配置语义或已打包制品。
+
+| 复验项 | 结果 | 证据边界 |
+|---|---|---|
+| Repo / 配置漂移 | **PASS** | 恢复前分支 `codex/oak-10-manuscript-account`、HEAD `f7d14f027623975799224da4eb824e080aa451de`、五个实施提交与原干净工作树一致；`desktop-auth.json` 仍 `pending_configuration`，发行身份仍 `complete=false` |
+| 文档空白 | **PASS（已修复）** | 总控指出的第 3、4 行尾随空格已移除；提交前以 `git diff --check` 复验 |
+| 冻结合同 | **PASS** | commit `6aea9986539a0f55b2961426fa08e486a9e30b19`；16 files / 6 valid fixtures / 20 negative vectors / 16 checklist items |
+| Node 全量 | **PASS** | 获准的项目内非受限运行：761 total / 755 pass / 0 fail / 6 skip，5.582 秒 |
+| 受限 shell 首轮 | **无效环境失败，不计回归** | Node 与 PowerShell 均无法在项目内创建临时文件/目录，大量测试统一在 `mkdtemp` 返回 `EPERM`；同一 HEAD 非受限重跑全通过，未修改代码规避 |
+| 9 项 Electron fuse | **PASS** | 无未知 fuse，alpha policy 全部符合 |
+| Packaged 资源 | **PASS** | 实际执行 CPython 3.13.14 与 JRE/EpubCheck 探针；errors=[]，仍如实返回 12 项 sale blocker |
+| Packaged smoke 证据 | **PASS** | run `msslwfuj-5c4e1e4dc65c88fc`；EXE `93bdbf88…539c9`，输出树 `e0235b95…01a7` |
+| Schema v2 发行证据 | **PASS** | NSIS `3a3c74da…bb64`，ZIP `9263fb67…2f5c`，`SHA256SUMS.txt` `d6956898…190e`；未重建或签名 |
+
+状态边界不变：implemented/tested/packaged unsigned Windows alpha 成立；staging/signed/deployed/production-ready/可售卖仍不成立。
+
+## 历史验证结论：0.1.0-alpha.62 Oak Account、Pro 与同步生产形状接入
+
+验证日期：2026-08-14。全程未联网，未使用真实账号、Production URL、密钥或数据库；未迁移、部署、推送、运行安装器、签名或构建 macOS。Account Center 合同来自只读提交 `6aea9986539a0f55b2961426fa08e486a9e30b19`，消费副本固定 16 个文件的精确字节与 SHA-256。
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| 冻结合同与来源 | **PASS** | 6 个有效 fixture、20 个 negative vector、16 项验收清单和 16 文件 provenance 全部验证；未知 major、单字节篡改、错误 claims/签名/issuer/audience 失败关闭；不证明服务端已部署 |
+| 桌面 application-login | **PASS（本地/真实 loopback）** | 固定系统浏览器、随机 `127.0.0.1` 端口/路径、PKCE S256、一次 state/callback；access token 只驻内存，refresh-only `OAKAUTH2` 存储、7 天 idle/30 天 absolute、轮换、退出本地先清除与离线撤销未确认均覆盖 |
+| 账户生命周期 | **PASS（注入）** | `suspended`、`deletion_pending`、`deleted` 清除本机凭据并阻止新远端操作；服务端 refresh 拒绝也清除会话。未验证真实跨服务推送/轮询时延 |
+| Renderer / package 泄漏门禁 | **PASS** | preload/Renderer 不获得 token、code、verifier 或完整账号 UUID；ASAR 含新 application-login 四模块，旧 `auth-http-client.js` / `desktop-auth-provider.js` 被 production package 明确排除；无自定义 protocol 注册 |
+| Oak Account 服务端身份 | **PASS（本地签名 fixture）** | 四个生产组合根本地 Ed25519 验证 exact Oak access token，只把 `oak_account_id` 映射为 owner；`sub` 与 `sid` 使用不同值的 fixture，role/extra field 拒绝；旧 GoTrue/Supabase identity 模块不再被生产组合根导入 |
+| Pro 分离 | **PASS** | Oak active identity 不直接授予 Pro；Pro 仍由 Oak Manuscript 独立 signed entitlement 的账号/设备/时间/撤销与签名决定，失败回落 Free 且 `localProjectsLocked=false` |
+| 显式同步与 direct-object | **PASS（本地/注入）** | 定向 49/49：逐字段预览、一次确认、OS 加密失败队列、幂等补偿、跨账号隔离、短凭证 S3 直传/领取、ETag/MIME/长度/metadata、清扫和零留存状态机；未连接真实 Supabase |
+| Ace 生命周期回归 | **PASS** | 首轮完整重跑发现外部 `puppeteer.connect()` 会话与主进程双重关闭的偶发竞态；TDD 修复为外部会话只 `disconnect()`、主进程唯一停止。`OAK-ACE-ISOLATION-003`、Node/Python 双重摘要、stage lock 和 20/20 定向测试均通过 |
+| Node 全量 | **PASS** | 761 total / 755 pass / 0 fail / 6 skip，5.862 秒；跳过项不计作通过 |
+| Python 全量 | **PASS** | 368 total / 0 failures / 0 errors / 3 skipped，43.921 秒 |
+| 统一入口 | **PASS** | `npm test` 依次完成 Node 与 Python，墙钟 54.3 秒 |
+| 资源信任 | **PASS** | 131 文件 / 2,243,858 字节；manifest `9b00c85bf99dda9fef05e8078cbc8cab526e104a30b29ae7dac31498ccd69bbc`；anchor `bc69e8c3051f336f88e52270f18bde048bf5cf4289dfb1207d1dcb30a0e05e16` |
+| Windows 完整构建 | **PASS** | 最终 `npm run build:win` 全链退出码 0，305.1 秒；JRE/Ace stage、源码门禁、electron-builder、9 fuse、packaged 资源、smoke 与发行证据一次完成 |
+| Packaged smoke | **PASS** | `SMOKE-RESULT: PASS`；运行根 `out/packaged-smoke/runs/msslwfuj-5c4e1e4dc65c88fc/projects/`，76 文件 / 1,378,165 字节 / SHA-256 `e0235b95442498d37817111d238c098ef115cf4c6c6ee4f2d0d28e1d715d01a7` |
+| Windows 制品 | **PASS（未签名内测）** | NSIS 190,078,160 字节 / SHA-256 `3a3c74dae29ff936ca0771534c2660e0527899a724211f0bb17e1cc58271bb64`；ZIP 233,924,735 字节 / SHA-256 `9263fb67551dada1feb76899f520c12a1bdfdab2123f8dbe12520d94c1ca2f5c`；schema v2 manifest 与 `SHA256SUMS.txt` 复验通过 |
+| 签名 / 安装 / Staging / 部署 | **未执行** | NSIS 与 unpacked EXE 的 Authenticode 均为 `NotSigned`；未做干净机安装/升级/卸载、macOS 原生构建/签名/公证、真实 Account Center/Supabase/官网 E2E 或生产零留存 |
+
+结论：Alpha.62 已完成 OAK-10 的本地生产形状实现、全量回归和真实 Windows 未签名 packaged 检查点；它没有真实后端配置或环境联调，因而不是 deployed、production-ready 或可售卖正式版。
+
+## 历史验证结论：0.1.0-alpha.61 Web 对象存储直传/直取
+
+验证日期：2026-08-10。经用户授权读取 Supabase/AWS 官方资料、下载精确 Web 生产依赖并查询 npm 漏洞库；没有使用生产账号/密钥、执行真实迁移、连接对象存储、部署、推送、运行安装器或重新打包。最新真实 Windows 制品仍为未签名 alpha.58。
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| direct transfer contract | **PASS** | credential 固定 schema/type/job/transfer/method/部署期 exact Supabase Storage origin pin/exact headers/MIME/size/expiry/完成路径/`single_issue`；仓库 pin 默认留空并关闭稿件控件，外域、另一 Supabase 项目、Bearer/Cookie/api-key header、超过 300 秒及 extra field 均拒绝 |
+| v2 HTTP 控制面 | **PASS** | `/manuscript/api/v2/jobs` 只暴露创建/状态/取消/删除和 input/result transfer 签发/完成；直传模式的旧 input/result 字节路由不可用；完成 JSON 只含 transfer ID |
+| Supabase S3 storage | **PASS** | PUT 固定随机 staging + `If-None-Match:*`；真实 AWS SDK 离线探针确认 content type、no-store、条件创建与全部 metadata 均被 SigV4 签名且 metadata 不进入 URL 查询串，120 秒签名与返回 expiry 对齐；完成以 HEAD 复核大小/MIME/no-store/metadata/ETag，source-ETag CopyObject 到 internal input 并确认 staging 删除；GET 只签 internal output |
+| 单次 result claim | **PASS** | repository revision CAS 先进入 `result_transfer` 再签发；第二请求、错误 transfer 或 extra metadata 均拒绝；完成后清理 output 并终态化，签发失败回滚 claim |
+| 私有 worker 检查 | **PASS（本地/注入）** | 直传 input 只有在私有 worker 读取后才送固定 `web-inspect`；公开函数不读取稿件字节。没有 OS 禁网、容器、病毒库或真实对象存储证据 |
+| staging/input/output 清扫 | **PASS（单元）** | prefix 分页、有界计数、到期/坏 metadata 删除和 delete-confirm 已覆盖；测试发现并修复正式 input 键不含 transfer ID 时的误判。未运行真实 scheduler/告警/备份生命周期 |
+| 005 migration bundle | **PASS（来源字节）** | 5 文件 canonical manifest 摘要 `6ede70b047a47d1abc53114f08843a185efbcf606b50ae1cd0a4d566bd8efa75`；005 摘要 `b1baf8fa01759340cb079a78f1c23b45217e3bf2756c91a2e11d56d1e6259b34`；未在 PostgreSQL/Supabase 执行 |
+| v2 deployment admission/runtime | **PASS（源码声明门禁）** | requirements 摘要 `84fa903a7fd5397549ef7628671e31bb552bed92be93893707d160184e304690`；runtime exact 配置 S3/GoTrue/repository/worker/sweeper，并固定 `data_plane=direct_object`、`production_ready=false` |
+| Web dependency audit | **PASS（2026-08-10 registry 快照）** | `@aws-sdk/client-s3` 与 `@aws-sdk/s3-request-presigner` 精确 `3.1107.0`；移除 `@netlify/blobs`；授权联网 `npm audit --prefix web --omit=dev` 为 0 漏洞 |
+| Node 全量 | **PASS** | 744 total / 737 pass / 0 fail / 7 skip，7.109 秒；跳过项不计作通过 |
+| Python 全量 | **PASS** | 368 total / 0 failures / 0 errors / 3 skipped，111.050 秒 |
+| 统一入口 | **PASS** | `npm test` 依次完成 Node 与 Python，墙钟 123.4 秒 |
+| 资源信任 | **PASS** | 112 文件 / 2,217,733 字节；manifest `de6471b0752411a9d06a5b859bf5726859e0e73965199b09b76a20d26b2c0115`；anchor `6165a4301a2c10de7b39fe25edad53edfc0b23c53fe2e236004dd63de646bd51` |
+| Electron source smoke | **PASS（独立隐藏进程）** | 沙箱内运行因 Chromium GPU 子进程缺失以 `0xC0000135` 退出，不计通过；沙箱外独立隐藏进程保持 Renderer sandbox 并返回 `SMOKE-RESULT: PASS`；输出 `out/source-smoke/runs/mso27a8x-665bbb0e3713f795/projects/` |
+| Web client smoke | **PASS（独立隐藏 Chromium）** | desktop + 390px、登录后账号/设备、撤销确认、空 storage pin 下六个稿件控件禁用及配置提示均通过；外部网络请求 0、完整设备 ID 不可见。首次运行因匿名夹具权益在 2026-08-08 已过期而不再显示有效，修正测试日期后通过；这不证明真实账号/API/直传网络 |
+| packaged / deployment | **未执行** | alpha.61 未生成 NSIS/ZIP/unpacked 或运行 packaged smoke；没有真实 bucket/CORS/迁移/worker/官网 E2E，不能声称 Web 已上线或生产零留存 |
+
+结论：alpha.61 解决了 alpha.60 已证伪的“公开 Function 缓冲大文件”拓扑，形成可测试的短凭证直传/直取源码闭环。预签名 URL 是在有效期内可重放的 bearer credential，应用的 `single_issue` 只限制控制面签发/claim，不把底层 PUT/GET 魔法化为真正一次性传输；真实 CORS、对象一致性、断传/重放、到期清扫和备份删除必须在隔离预生产环境证明。当前仍非已部署网页版，也非可售卖正式版。
+
+## 历史验证结论：0.1.0-alpha.60 官方平台准入与 Supabase 新密钥兼容
+
+验证日期：2026-08-10。本轮经用户授权联网读取 Netlify、Supabase 与 PostgreSQL 官方当前资料；没有使用生产账号/密钥、执行数据库迁移、部署、推送、运行安装器或重新打包。最新真实 Windows 制品仍为未签名 alpha.58。
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| 官方资料核对 | **PASS（来源记录）** | `docs/PLATFORM_ADMISSION_NETLIFY_SUPABASE_20260810.md` 记录核对日期、官方 URL、容量/能力取值与未验证边界；Supabase `changelog.md` 端点返回内部错误，改从官方 breaking-change 索引及当前迁移文档核对，不凭摘要补写未取得内容 |
+| 候选平台 profile | **FAIL（准入按设计拒绝）** | `netlify-functions-blobs-supabase-20260810` 对当前 50 MiB / 100 MiB / 240 秒缓冲合同返回 9 个稳定拒绝码；`declared_capabilities_satisfied=false`、`production_evidence_verified=false`、`production_ready=false` |
+| 公开 HTTP 容量 | **不满足** | Netlify 当前官方上限：二进制请求有效约 4.5 MiB、缓冲响应 6 MiB、同步执行 60 秒；Background Function 虽为 15 分钟，但异步 `202`、256 KiB 载荷且丢弃 handler 结果，不能替代现有公开协议 |
+| Blobs / Postgres / 调度 | **声明能力有官方依据，未做真实环境验证** | Blobs strong consistency、conditional create、metadata、prefix pagination、delete + strong-read 组合；Postgres 事务/advisory lock/RLS/服务端 RPC；Supabase Cron 调度均有官方资料支持。没有连接真实 store/database/scheduler，不能写为生产 E2E |
+| 私有执行与告警 | **未证明，按失败关闭** | 当前官方资料未证明 exact 任意子进程、绝对 executable、private scratch、逐作业 OS 禁网、只读应用；Netlify Observability 明确不含 alerting，外部 Log Drain 未纳入候选组合 |
+| Supabase 新 secret key | **PASS（本地契约）** | `sb_secret_` 只发 `apikey`、不发 Bearer；legacy `service_role` JWT 继续双头迁移兼容。共享 helper、一个真实 repository header 集成及注入反向测试通过；没有使用真实 key 或网络 RPC |
+| TDD 红灯 | **PASS（预期失败已记录）** | profile、证据文件和共享 key helper 尚不存在时，两个测试文件以 `MODULE_NOT_FOUND` / `ENOENT` 失败；实现后专项 29/29 |
+| Node 全量 | **PASS** | 726 total / 719 pass / 0 fail / 7 skip，8.927 秒；跳过项不计作通过 |
+| Python 全量 | **PASS** | 368 total / 0 failures / 0 errors / 3 skipped，128.273 秒 |
+| 统一墙钟 | **PASS** | `npm test` 总墙钟 205.8 秒，Node 与 Python 均实际完成 |
+| 资源信任 | **PASS** | 112 文件 / 2,217,733 字节；manifest `cf9250301aa9f5c9bb8cff9c6ba2e6a817d4ae98a47849276d4183f464717a45`；anchor `f02738d29fe390f237e686608a17328d767bd5a72bc479d23d39c8907bb5e21d` |
+| 关键源码门禁 | **PASS** | Electron runtime、Windows builder/Electron/EpubCheck/JRE/CPython provenance、resource trust、Windows 源码资源、fuse 配置、Web migrations、standards 全部通过 |
+| 源码 Electron smoke | **PASS（独立隐藏窗口）** | 保持 Renderer sandbox，`SMOKE-RESULT: PASS`；输出 `out/source-smoke/runs/msnxaeqt-db05606bd175823b/projects/` |
+| 发行身份 | **结构通过，仍不完整** | `ok=true`、`complete=false`；仍缺法定主体、正式 URL、版权、证书主体、具名复核和 package author/copyright 共 11 项 |
+| 打包 / 部署 | **未执行** | 没有 alpha.60 NSIS/ZIP/unpacked、packaged smoke、签名、真实安装、macOS 或生产 Web 证据；alpha.58 制品摘要不移植为 alpha.60 结论 |
+
+结论：alpha.60 首次把一个真实候选平台的官方能力纳入 fail-closed 准入，并证明现有 Netlify Functions 全包式组合不可上线；同时修复 Supabase 2026 新服务端密钥的请求头兼容。它没有选择或验证替代 worker，没有部署任何生产系统，也没有使产品达到可售卖状态。
+
+## 历史验证结论：0.1.0-alpha.59 Windows LF checkout 可复现性
+
+验证日期：2026-08-10。本轮未联网、未下载依赖、未部署、未推送、未运行真实安装器，也未重新打包。最新真实 Windows 制品仍为未签名 alpha.58。
+
+| 验证项 | 结果 | 证据边界 |
+|---|---|---|
+| 现场复现 | **FAIL（已修复）** | 系统 Git `core.autocrlf=true`；修复前 448 个 tracked 文件中 417 个工作树字节为 CRLF。首次 Node 回归 719 total / 683 pass / 29 fail / 7 skip；`verify:web:migrations`、`verify:release-identity`、`verify:resource-trust` 均因严格 UTF-8/LF 字节漂移失败 |
+| TDD 红灯 | **PASS（预期失败已记录）** | 新增 checkout 测试后先在 `.gitattributes` 自身 CRLF 和缺少全局 `eol=lf` 规则处失败，再修改属性策略 |
+| Git checkout 策略 | **PASS** | `.gitattributes` 使用 `* text=auto eol=lf`；机械刷新 415 个已有 CRLF tracked 文本后，`git ls-files --eol` 中 `w/crlf` / `w/mixed` 为 0；最终 Git 只保留真实语义变更 |
+| 严格字节回归 | **PASS** | 覆盖 CPython provenance、发行身份与 schema、应用资源锁、Web migration manifest/SQL；迁移清单 SHA-256 保持 `0989697d…14b7`，四份 SQL 摘要均与 manifest 一致 |
+| 资源信任 | **PASS** | LF canonical 源码树为 112 文件 / 2,217,733 字节；manifest `7e25e075e1628d6187c6350beba3e708c91ab95fa4b68f2bbcbb4110c057b496`；anchor `0d05510411f08e454c7f2a91465380f4c78e5efcc8967de9d0b5c85935e89def` |
+| Node 全量 | **PASS** | 720 total / 713 pass / 0 fail / 7 skip，6.152 秒；首次升版因 Ollama 当前应用版本断言仍固定 alpha.58 而 1 fail，更新为 alpha.59 后全量通过 |
+| Python 全量 | **PASS** | 368 total / 0 failures / 0 errors / 3 skipped，125.882 秒 |
+| 源码 Electron smoke | **PASS（沙箱外独立隐藏窗口）** | 沙箱内在建窗后因 GPU 子进程 `0xC0000135` 退出，不计通过；沙箱外保持 Renderer sandbox 的隐藏进程 PASS，输出 `out/source-smoke/runs/msnun23q-6a8adc6cd3313ff6/projects/` |
+| 关键源码门禁 | **PASS** | Electron runtime、Windows builder/Electron/EpubCheck/JRE/CPython provenance、resource trust、Windows 源码资源、fuse 配置、Web migrations、standards 全部通过 |
+| 发行身份 | **结构通过，仍不完整** | `ok=true`、`complete=false`；法定销售主体、支持/隐私/条款 URL、版权、Windows 证书主体、具名人工复核及 package author/copyright 共 11 个字段仍缺失 |
+| 打包 / 发布 | **未执行** | 没有 alpha.59 NSIS/ZIP/unpacked、packaged smoke、签名、真实安装或 macOS 证据；alpha.58 制品摘要保持历史记录，不移植为 alpha.59 结论 |
+
+结论：alpha.59 关闭的是 Windows checkout 破坏 canonical 受信字节的可复现性缺口。源码、测试和关键门禁已验证；打包、部署和 production-ready 状态没有因此前进。
 
 ## PR #2 合并与远端默认分支复核（2026-08-02）
 
@@ -33,7 +180,7 @@
 
 结论：源码仓库已经具备可辨认的 Apache-2.0 许可、英文入口、贡献路径和可用的私密安全报告渠道；这些结果只证明 OSS 协作基础和现有回归，不证明制品许可审计、生产部署或可售卖正式版完成。
 
-## GitHub 推送与公开状态核验（2026-08-02）
+## GitHub 推送与公开状态核验（2026-08-02，PR #2 合并前历史）
 
 本轮只验证并改变源码分发状态，没有修改产品代码或重新打包。GitHub 插件确认登录账户为 `Oak2521`，目标仓库具有 admin/push 权限；文档同步后重新运行统一测试。
 
@@ -47,9 +194,9 @@
 | 统一回归 | **PASS** | `npm test`：Node 719 total / 712 pass / 0 fail / 7 skip；Python 368 total / 0 failures / 0 errors / 3 skipped |
 | 产品发行 | **未发布** | 没有创建 GitHub Release、上传安装包或改变 Windows 未签名、macOS/生产未就绪事实 |
 
-结论：源码开发分支已经公开可见并进入草稿 PR，但默认分支尚未更新，公开仓库也不是正式产品发布证据。
+结论：当时源码开发分支已公开可见并进入草稿 PR，但默认分支尚未更新；随后合并结果见上节。公开仓库本身不是正式产品发布证据。
 
-## 最新验证结论：0.1.0-alpha.58 TXT/Markdown 保守卫生检查与 Windows packaged 检查点
+## 历史验证结论：0.1.0-alpha.58 TXT/Markdown 保守卫生检查与 Windows packaged 检查点
 
 验证日期：2026-07-29。本轮未联网、未使用真实账号/密钥/数据库、未部署或推送。Windows 制品未签名；未执行真实安装生命周期。macOS 静态门禁按事实失败。
 
