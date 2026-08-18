@@ -54,3 +54,22 @@ jobs:
     ]),
   );
 });
+
+test("Hosted CI rejects local-only Electron runtime byte gates", () => {
+  const { validateHostedCiText } = loadVerifier();
+  const workflow = fs.readFileSync(
+    path.join(ROOT, ".github", "workflows", "hosted-ci.yml"),
+    "utf8",
+  );
+  const runtimeBoundWorkflow = workflow.replace(
+    "npm run verify:web:migrations",
+    "npm run verify:electron-runtime && npm run verify:web:migrations",
+  );
+
+  const result = validateHostedCiText(runtimeBoundWorkflow);
+  assert.equal(result.ok, false);
+  assert.equal(
+    result.errors.includes("LOCAL_ELECTRON_RUNTIME_GATE_FORBIDDEN"),
+    true,
+  );
+});

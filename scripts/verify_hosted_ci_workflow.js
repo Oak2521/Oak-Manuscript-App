@@ -40,6 +40,9 @@ function validateHostedCiText(text) {
   if (/\b(?:netlify\s+deploy|npm\s+publish|gh\s+release|docker\s+push)\b/u.test(text)) {
     add("DEPLOY_OR_PUBLISH_FORBIDDEN");
   }
+  if (/\bnpm\s+run\s+verify:electron-runtime\b/u.test(text)) {
+    add("LOCAL_ELECTRON_RUNTIME_GATE_FORBIDDEN");
+  }
 
   return { ok: errors.length === 0, errors };
 }
