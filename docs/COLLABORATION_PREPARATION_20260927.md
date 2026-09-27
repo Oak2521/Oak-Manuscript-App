@@ -6,7 +6,7 @@
 - The user explicitly approved this reviewed collaboration branch/PR to the existing public repository. No visibility change, feature, new repository, release or automatic merge.
 - Accepted remote baseline: `c7bf0bea3782d419a558f5ed025fcd6283cb90c0`, product `0.1.0-alpha.63`.
 - Delivery branch: `chore/github-collaboration-20260927`; exact commit is the PR head (this document cannot embed its own future SHA).
-- PR: pending creation after local review and safety checks.
+- PR: [#4](https://github.com/Oak2521/Oak-Manuscript-App/pull/4), open and not merged.
 
 ## Existing local work and authoritative scope
 
@@ -69,7 +69,7 @@ staging/production and zero retention need separate evidence and approvals.
 
 | Tool | Verified | Not verified / required |
 |---|---|---|
-| Codex here | Shared rules read, isolated local worktree, authenticated GitHub read access | Other cloud environments and repo scopes are not inherited |
+| Codex here | Shared rules read, isolated worktree, authenticated branch push/PR creation and exact-file readback | Other cloud environments and repo scopes are not inherited |
 | Claude | Local launcher exists; pointer prepared; official Code docs describe imports | No Claude model session, rule-load test, cloud repo authorization or writeback test |
 | Muse | Official **Meta Muse Code** docs describe AGENTS.md lookup after workspace trust | No `muse` executable on PATH; user's exact Muse product/version unconfirmed; no login/trust/repo/writeback test |
 
@@ -113,6 +113,9 @@ Local-only locations stay in place:
   branch/HEAD unchanged and index empty. This proves this batch's preservation, not earlier history.
 - Final precommit worktree safety pass covers **504** files and introduces no new suspicious match;
   only the reviewed synthetic historical fixtures match. Remote readback will be attached to the PR after publication.
+- GitHub readback at initial commit `d3f095dac1a5944c30ff7e847b37c3ec81fbacf1`:
+  all **11** delivery files matched local bytes; PR #4 head/base/merged=false verified.
+  This follow-up only records the real PR link and readback; final-head evidence belongs in the PR.
 - Existing main protection read: both Linux/Windows source contexts required, enforce_admins=true,
   force pushes/deletions disabled, required approving reviews=0. No settings changed.
 - Human merge approval still applies although GitHub does not enforce an approving-review count.

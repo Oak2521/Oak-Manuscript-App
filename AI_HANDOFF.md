@@ -2,7 +2,7 @@
 
 ## 当前交接：GitHub 多 AI 协作准备（2026-09-27）
 
-- 本批仅整理协作入口，基线为已合并的 `main@c7bf0bea3782d419a558f5ed025fcd6283cb90c0`（alpha.63）。分支 `chore/github-collaboration-20260927`，验收证据及 PR 定位见 [协作记录](docs/COLLABORATION_PREPARATION_20260927.md)。
+- 本批仅整理协作入口，基线为已合并的 `main@c7bf0bea3782d419a558f5ed025fcd6283cb90c0`（alpha.63）。分支 `chore/github-collaboration-20260927`，[PR #4](https://github.com/Oak2521/Oak-Manuscript-App/pull/4) 未合并；验证边界见 [协作记录](docs/COLLABORATION_PREPARATION_20260927.md)。
 - 用户已明确允许本批经安全检查的协作文档提交至现有公开仓库并建 PR；不授权自动合并/发布。以下 8 月记录保留为历史，不表示当前工作树或全部本地成果。
 - 原开发目录有 58 个既存修改/新增文件，含 alpha.64、S1/S2 和 S3 return 源码；本批从远端 main 建独立工作副本，未将其提交、丢弃或覆盖。S3 源码存在不等于已完成阶段验收。
 - 已批准产品方案：商业 v2.0；后续本地 `OAK-5P-R2.0` 以离线报告审阅优先，非移动独立检查、非服务器稿件上传。完整 R2 原件包含跨项目和私人批准记录，保留本地、不公开复制；这里只记录项目相关决策摘要，不构成新的功能开发授权。
