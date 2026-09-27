@@ -2,6 +2,13 @@
 
 [English overview](#english-overview) · [简体中文](#中文说明)
 
+## GitHub 协作入口（2026-09-27）
+
+本 App 的代码、共享规格、Issue、PR 与验收入口是 [Oak2521/Oak-Manuscript-App](https://github.com/Oak2521/Oak-Manuscript-App)。
+共同规则只维护在 [AGENTS.md](AGENTS.md)，接手先读 [AI_HANDOFF.md](AI_HANDOFF.md)。
+本批基于已合并的 alpha.63，只整理文档/忽略规则；本地 alpha.64 和 R2 离线审阅候选未包含在本分支，不把旧公开基线描述为最新本地版本。
+云端接手、平台边界和工具核查见 [协作准备记录](docs/COLLABORATION_PREPARATION_20260927.md)。
+
 ## English overview
 
 Oak Manuscript is an open-source, privacy-first manuscript quality-assurance and revision-preparation platform for authors and publishers. It combines a deterministic Python checking core with an Electron desktop application and evolving Web service boundaries. The product targets Windows, macOS, and the Web while keeping manuscript processing local by default.
@@ -22,7 +29,7 @@ Oak Manuscript deliberately separates five claims that are often blurred togethe
 Development requires Node.js 22.12+ and Python 3.11+:
 
 ```bash
-npm install
+npm ci
 npm test
 npm start
 ```
@@ -65,14 +72,14 @@ alpha.58 发布 `oak-standards/oak-rules 2.1.0`（release sequence 3）：新增
 
 ```bash
 # 安装桌面开发依赖并启动
-npm install
+npm ci
 npm start
 
 # 统一测试入口：Node + Python
 npm test
 
 # 仅在开发/部署 Web 服务端时安装其独立生产依赖
-npm install --prefix web
+npm ci --prefix web
 
 # 分项排障
 npm run test:node
@@ -84,6 +91,23 @@ npm run verify:release-identity
 # 验证 Web 数据库迁移的顺序与精确字节锁
 npm run verify:web:migrations
 ```
+
+以上工作目录均为含 `package.json` 的仓库根，不是混合业务父目录。
+`npm ci` 按锁文件安装开发依赖，可能联网下载 Electron/Ace 所需组件；先确认安装/网络权限，不把命令列出视为已执行。
+现有 Hosted CI 固定 Node **24.16.0**、Python **3.13.14**；Python 核心不需要 pip 安装。
+
+文档/协作配置改动的最小本地检查（无需安装依赖）：
+
+```bash
+node --test tests/hosted_ci_workflow.test.js
+npm run verify:hosted-ci
+git diff --check
+```
+
+云端完整源码检查复用 `.github/workflows/hosted-ci.yml` 的 `npm run test:hosted`，不以它替代打包/设备验收。
+桌面启动为 `npm start`；新 clone 还需要平台资源，见 [USER_GUIDE](docs/USER_GUIDE.md) 与 [资源清单](config/tool-manifests/)。
+Windows 已获资源及构建批准时运行 `npm run build:win`；macOS 在目标 Mac 上运行 `npm run build:mac:x64` 或 `npm run build:mac:arm64`。
+这些构建/启动命令本次未执行；不保证新云端 clone 无需额外资源即可运行桌面或打包。移动端、签名、公证、实际安装、真实账号及生产均另行验收。
 
 批量修复必须先运行只读 `plan-fixes`，在界面集中查看全部修改并一次确认，再携带 `plan_id` 执行 `fix`。完整桌面与命令行流程见 `docs/USER_GUIDE.md`。
 

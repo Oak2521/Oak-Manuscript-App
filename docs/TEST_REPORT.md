@@ -1,5 +1,9 @@
 # TEST_REPORT — 测试报告
 
+## 2026-09-27：协作文档检查
+
+本批不修改产品源码、锁文件或 CI。最小相关检查及安全审查范围记录在 [COLLABORATION_PREPARATION_20260927](COLLABORATION_PREPARATION_20260927.md)。不复跑无关本地全量，不沿用旧产品测试宣称当前所有平台通过；本 PR Hosted CI 结果以对应 head 的 GitHub Checks 为准。
+
 > 更新日期：2026-08-17。只记录真实执行结果；未运行项不得写成通过。
 
 ## GitHub Hosted workflow 本地门禁（2026-08-17）

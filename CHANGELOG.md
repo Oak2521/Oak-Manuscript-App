@@ -1,5 +1,9 @@
 # CHANGELOG — 湖岸稿件（Oak Manuscript）
 
+## 2026-09-27 — GitHub 多 AI 协作准备（文档，不升版本）
+
+共同规则集中 AGENTS.md，增加 CLAUDE.md 指针和 PR 模板；README 补锁定安装、最小检查及平台边界；补敏感/本地数据忽略规则。原未提交开发现场保留，未移入本批。见 [协作记录](docs/COLLABORATION_PREPARATION_20260927.md)。
+
 记录仓库与规则包的版本变更。规则包版本独立于 APP 版本（见 `config/rule-packs/`）。
 
 ## [未发布]
