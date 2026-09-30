@@ -108,7 +108,7 @@ git diff --check
 | `AGENTS.md` | 协作与开发守则（唯一规则文件，接手必读） |
 | `AI_HANDOFF.md` | 当前状态（唯一状态文件）；历史见 `docs/history/` |
 | `docs/功能地图.md` | 模块编号、代码位置与相关测试 |
-| `docs/DEVELOPMENT_STATUS.md` | 当前开发状态（唯一状态来源） |
+| `docs/DEVELOPMENT_STATUS.md` | 开发细节记录（alpha.63 及以前的阶段明细，非当前状态；当前状态以 `AI_HANDOFF.md` 为准） |
 | `docs/ARCHITECTURE.md` | 架构与关键技术决策 |
 | `docs/ACCEPTANCE.md` | 验收标准 |
 | `docs/TEST_REPORT.md` | 测试报告 |
