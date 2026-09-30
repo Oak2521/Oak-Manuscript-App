@@ -14,7 +14,7 @@
 1. 本文件。
 2. `AI_HANDOFF.md`——当前状态（唯一的状态文件，只写当前）。历史交接见 `docs/history/交接历史-截至2026-09-30.md`。
 3. `docs/功能地图.md`——各模块的编号、代码位置与测试。
-4. `docs/DEVELOPMENT_STATUS.md`、权威方案（见第 1 节）、`docs/ACCEPTANCE.md`、`docs/TEST_REPORT.md`。
+4. 权威方案（见第 1 节）、`docs/ACCEPTANCE.md`；需要查历史明细或佐证时再看 `docs/DEVELOPMENT_STATUS.md`、`docs/TEST_REPORT.md`（历史记录，不是当前状态）。
 5. `README.md`——安装、运行与最小检查命令。
 
 核对实际文件与测试状态，不把旧文档状态当作当前事实。
@@ -87,7 +87,7 @@
 4. 规则确定性优先：同一输入 + 同一规则版本 = 相同结果；自动修复必须幂等。
 5. 行为变更先写测试再写实现（TDD），按风险运行相关检查；纯文档/协作配置改动运行差异、链接和相关配置验证（见 README「最小检查」），不必重复无关全量测试。功能批次交付按验收要求运行统一入口，跳过项及未运行项必须明确记录。
 6. 需要联网下载、安装依赖、发布、签名、连接网站或真实账号时，先取得站长授权。已获授权任务的分支推送与开 PR 按「结账」执行。
-7. 每个阶段完成后更新 `docs/DEVELOPMENT_STATUS.md`、`docs/TEST_REPORT.md`、`CHANGELOG.md` 与 `AI_HANDOFF.md`（只写当前状态）。
+7. 每个阶段完成后更新 `AI_HANDOFF.md`（唯一的当前状态）与 `CHANGELOG.md`；阶段明细和测试证据追加到 `docs/DEVELOPMENT_STATUS.md`、`docs/TEST_REPORT.md`（历史记录）。
 8. 交付说明必须包含：完成内容、修改文件、关键决策、测试结果、后续事项。
 9. 新增检查规则必须有稳定 ID、来源证据、正反例、格式覆盖及误报/中英混合测试；来源未核验时保留真实治理状态。自动修复须确定、幂等、可逐条预览、源稿哈希不变，并在一次集中确认后才执行。
 10. 漏洞按 `SECURITY.md` 私密报告，修复前不公开敏感复现细节；不在缺少威胁分析和负向测试时削弱 Electron 隔离、IPC 校验、路径约束、归档处理、标准包签名或显式同意的网络边界。适用时同步中文界面和英文使用说明。
@@ -113,7 +113,7 @@ release/     # 发布产物（不入库）
 
 ## 6. 里程碑与当前阶段
 
-当前版本读取 `package.json`，当前阶段与验证读取 `AI_HANDOFF.md`、`docs/DEVELOPMENT_STATUS.md`、`docs/TEST_REPORT.md`。下方为历史快照，不作为实时状态。
+当前版本读取 `package.json`，**当前阶段与验证状态只读 `AI_HANDOFF.md`**。`docs/DEVELOPMENT_STATUS.md`、`docs/TEST_REPORT.md` 是历史明细与佐证，其中的"当前"字段是当时的记录，不能作为现在的状态。下方为历史快照，不作为实时状态。
 
 ### 历史：alpha.59 阶段记录
 

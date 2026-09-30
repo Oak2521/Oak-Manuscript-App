@@ -6,7 +6,7 @@ The single source of collaboration rules is [`AGENTS.md`](AGENTS.md) (branch nam
 
 ## Before you start
 
-- Read `AGENTS.md`, `AI_HANDOFF.md`, `docs/DEVELOPMENT_STATUS.md`, and `docs/TEST_REPORT.md` before changing code.
+- Read `AGENTS.md` and `AI_HANDOFF.md` (the only current-state file) before changing code; `docs/DEVELOPMENT_STATUS.md` and `docs/TEST_REPORT.md` are historical detail and evidence, not current state.
 - Use only synthetic or explicitly anonymized manuscripts. Never commit unpublished manuscripts, author identities, credentials, contracts, payment data, private endpoints, or production keys.
 - Open an issue before a large architectural change, a new network capability, a new dependency, or a change to privacy and source-integrity guarantees.
 - Keep ordinary builds and tests offline. Any network operation must be explicit and must not upload manuscript content by default.
@@ -40,7 +40,7 @@ The Python checking core intentionally uses the standard library only. The Web s
    git diff --check
    ```
 
-6. Update `AI_HANDOFF.md`, `docs/DEVELOPMENT_STATUS.md`, `docs/TEST_REPORT.md`, and `CHANGELOG.md` when implementation, verification, packaging, deployment, or release status changes.
+6. Update `AI_HANDOFF.md` (current state) and `CHANGELOG.md`, and append detail/evidence to `docs/DEVELOPMENT_STATUS.md` and `docs/TEST_REPORT.md`, when implementation, verification, packaging, deployment, or release status changes.
 
 ## Rules and mechanical fixes
 
