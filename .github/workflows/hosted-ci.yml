@@ -40,7 +40,7 @@ jobs:
       - name: Verify workflow safety contract
         run: npm run verify:hosted-ci
       - name: Check collaboration docs (feature map and links)
-        run: node --test tests/feature-map.test.js tests/doc-links.test.js
+        run: node --test tests/feature-map.test.js tests/doc-links.test.js tests/workflow-action-pins.test.js
       - name: Verify source build inputs
         run: npm run verify:web:migrations && npm run verify:standards && npm run verify:fuses:config
       - name: Run portable Oak Account source tests
@@ -69,7 +69,7 @@ jobs:
       - name: Verify workflow safety contract
         run: npm run verify:hosted-ci
       - name: Check collaboration docs (feature map and links)
-        run: node --test tests/feature-map.test.js tests/doc-links.test.js
+        run: node --test tests/feature-map.test.js tests/doc-links.test.js tests/workflow-action-pins.test.js
       - name: Verify source build inputs
         run: npm run verify:web:migrations && npm run verify:standards && npm run verify:fuses:config
       - name: Run portable Oak Account source tests
