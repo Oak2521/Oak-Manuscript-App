@@ -33,12 +33,10 @@ The Python checking core intentionally uses the standard library only. The Web s
 2. Add or update tests before changing behavior when practical.
 3. Preserve source-file immutability. Generated revisions belong only in project `working/`, `checkpoints/`, or `exports/` locations.
 4. Run the relevant Node and Python tests during development.
-5. Before opening a pull request, run the full suite:
-
-   ```bash
-   npm test
-   git diff --check
-   ```
+5. Before opening a pull request, run checks proportional to the change risk (see `AGENTS.md` §5 rule 5 and README "最小检查"):
+   - Code or behavior changes: run the full suite (`npm test`) plus `git diff --check`.
+   - Documentation or collaboration-config-only changes: run `git diff --check`, `node --test tests/feature-map.test.js tests/doc-links.test.js tests/workflow-action-pins.test.js`, and any config verification the change affects; the unrelated full suite is not required.
+   - The full suite depends on local runtime resources (Electron, CPython, JRE, EpubCheck, etc.). If any check could not run or was skipped, say so explicitly in the PR — never record it as passed.
 
 6. Update `AI_HANDOFF.md` (current state) and `CHANGELOG.md`, and append detail/evidence to `docs/DEVELOPMENT_STATUS.md` and `docs/TEST_REPORT.md`, when implementation, verification, packaging, deployment, or release status changes.
 
@@ -63,7 +61,7 @@ Follow `SECURITY.md` for vulnerability reports. Security-sensitive pull requests
 - [ ] No real manuscript, personal data, credential, or production secret is included.
 - [ ] New behavior has positive and negative tests.
 - [ ] Source manuscripts remain byte-for-byte unchanged.
-- [ ] `npm test` and `git diff --check` pass.
+- [ ] Checks appropriate to the change risk were run and pass (`npm test` for code changes); any check not run or skipped is listed explicitly.
 - [ ] Status documentation distinguishes implemented, tested, packaged, deployed, and production-ready.
 - [ ] User-visible Chinese text and English documentation are updated where applicable.
 
