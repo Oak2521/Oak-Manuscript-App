@@ -15,23 +15,23 @@ The project is built around several non-negotiable properties:
 - registration is not required for local checking, and network features require explicit user action;
 - AI output is advisory only and cannot silently rewrite a manuscript.
 
-The current `0.1.0-alpha.63` source consumes the frozen Oak Account Center application-login contract at commit `6aea9986539a0f55b2961426fa08e486a9e30b19` and aligns its consumers with the accepted OAK-16 Staging runtime. Desktop sign-in uses the system browser, a random `127.0.0.1` callback, PKCE S256, an in-memory access token, and an OS-encrypted rotating refresh session. Server composition roots verify exact ES256/P-256 Oak Account access tokens locally and derive ownership only from `oak_account_id`; identity never grants Pro, which remains a separate Oak Manuscript signed entitlement. Existing explicit result-sync confirmation, encrypted retry queue, and direct-object transfer controls remain intact. Repository configuration intentionally contains no production or Staging URLs, keys, or credentials, so real Account Center, Supabase, Staging, and website integration remain unverified. The latest Windows internal-test package is the unsigned `0.1.0-alpha.63` NSIS/ZIP build.
+The source version is defined by `package.json` and the current state by [`AI_HANDOFF.md`](AI_HANDOFF.md). As of `0.1.0-alpha.63`, the source consumes the frozen Oak Account Center application-login contract at commit `6aea9986539a0f55b2961426fa08e486a9e30b19` and aligns its consumers with the accepted OAK-16 Staging runtime. Desktop sign-in uses the system browser, a random `127.0.0.1` callback, PKCE S256, an in-memory access token, and an OS-encrypted rotating refresh session. Server composition roots verify exact ES256/P-256 Oak Account access tokens locally and derive ownership only from `oak_account_id`; identity never grants Pro, which remains a separate Oak Manuscript signed entitlement. Existing explicit result-sync confirmation, encrypted retry queue, and direct-object transfer controls remain intact. Repository configuration intentionally contains no production or Staging URLs, keys, or credentials, so real Account Center, Supabase, Staging, and website integration remain unverified. The latest Windows internal-test package is the unsigned `0.1.0-alpha.63` NSIS/ZIP build.
 
-Oak Manuscript deliberately separates five claims that are often blurred together: implemented, tested, packaged, deployed, and production-ready. Passing repository tests does not claim that production infrastructure or a commercial release exists. Current evidence and blockers are recorded in [`docs/DEVELOPMENT_STATUS.md`](docs/DEVELOPMENT_STATUS.md) and [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md).
+Oak Manuscript deliberately separates five claims that are often blurred together: implemented, tested, packaged, deployed, and production-ready. Passing repository tests does not claim that production infrastructure or a commercial release exists. The current state and blockers are recorded only in [`AI_HANDOFF.md`](AI_HANDOFF.md); [`docs/DEVELOPMENT_STATUS.md`](docs/DEVELOPMENT_STATUS.md) and [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) are historical detail and evidence.
 
 Development requires Node.js 22.12+ and Python 3.11+:
 
 ```bash
-npm install
+npm ci
 npm test
 npm start
 ```
 
-Contributions are welcome. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), report vulnerabilities through [`SECURITY.md`](SECURITY.md), and review the project boundaries in [`AGENTS.md`](AGENTS.md). The repository is licensed under the [Apache License 2.0](LICENSE).
+Contributions are welcome. Collaboration rules for all contributors (including AI agents) live only in [`AGENTS.md`](AGENTS.md); current status is in [`AI_HANDOFF.md`](AI_HANDOFF.md). Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), report vulnerabilities through [`SECURITY.md`](SECURITY.md), and review the project boundaries in [`AGENTS.md`](AGENTS.md). The repository is licensed under the [Apache License 2.0](LICENSE).
 
 ## 中文说明
 
-本地优先的稿件检查与修订产品。当前源码与最新真实 Windows 打包版本均为 `0.1.0-alpha.63`；Windows NSIS/ZIP 制品未签名，只是可验证内测检查点，不是可售卖正式版。alpha.63 保持 Oak Account Center 冻结提交 `6aea9986539a0f55b2961426fa08e486a9e30b19` 的 application-login 合同，并把桌面/Web consumer 对齐到 OAK-16 的 ES256/P-256 runtime：随机 loopback、PKCE S256、access token 只驻内存、refresh 会话只存 OS 安全存储。Web 生产组合入口只用验签后的 `oak_account_id` 派生 owner；账号身份与 Pro 权益严格分离。显式结果同步、加密失败队列和 Supabase S3 短期直传/直取仍保留。仓库没有 Production/Staging URL、公钥或真实凭据；真实账号、迁移、桶/CORS、隔离 worker、生产零留存和官网部署尚未完成。商业正式版目标仍为 Windows、macOS 与 Web。
+本地优先的稿件检查与修订产品。源码版本以 `package.json` 为准，当前状态见 `AI_HANDOFF.md`；最新真实 Windows 打包版本为 `0.1.0-alpha.63`；Windows NSIS/ZIP 制品未签名，只是可验证内测检查点，不是可售卖正式版。alpha.63 保持 Oak Account Center 冻结提交 `6aea9986539a0f55b2961426fa08e486a9e30b19` 的 application-login 合同，并把桌面/Web consumer 对齐到 OAK-16 的 ES256/P-256 runtime：随机 loopback、PKCE S256、access token 只驻内存、refresh 会话只存 OS 安全存储。Web 生产组合入口只用验签后的 `oak_account_id` 派生 owner；账号身份与 Pro 权益严格分离。显式结果同步、加密失败队列和 Supabase S3 短期直传/直取仍保留。仓库没有 Production/Staging URL、公钥或真实凭据；真实账号、迁移、桶/CORS、隔离 worker、生产零留存和官网部署尚未完成。商业正式版目标仍为 Windows、macOS 与 Web。
 
 **当前桌面核心承诺**：稿件默认只在本机处理；永不原地修改原稿（SHA-256 全程校验）；不强制注册；报告与导出不设营销门槛。
 
@@ -55,7 +55,7 @@ alpha.58 发布 `oak-standards/oak-rules 2.1.0`（release sequence 3）：新增
 
 此前两个固定 AI 组合的窄验收仍成立：Ollama 0.32.5 + qwen3:4b，以及 LM Studio headless llmster 0.0.20+1 + 同一 Qwen3 4B GGUF；这不是所有版本、模型、硬件、桌面 GUI 或稿件类型的全面兼容/质量承诺。OpenAI、Anthropic、Gemini 官方云仍未接入。账号、权益和同步默认配置均没有 Production URL 或真实信任根，所以当前普通 APP 仍不能登录、刷新生产订阅或上传。“源码接线存在”不等于生产服务已经验收。
 
-最终统一验证证据以 `docs/TEST_REPORT.md` 为准。alpha.63 当前统一回归为 Node 767 total / 760 pass / 0 fail / 7 skip、Python 368 total / 0 failures / 0 errors / 3 skipped。Windows 全链退出 0，NSIS、ZIP、真实 ASAR/fuse/资源门禁、双进程 packaged smoke 与 schema v2 发布清单均已生成并验证；Alpha.62→Alpha.63 只读安装预检通过。制品仍未签名、真实系统安装未执行、发行身份 `complete=false`，因此仍只是内测包。
+以下为 alpha.63 时的历史验证记录，明细见 `docs/TEST_REPORT.md`（历史证据）；当前版本与验证状态以 `AI_HANDOFF.md` 为准。alpha.63 当时的统一回归为 Node 767 total / 760 pass / 0 fail / 7 skip、Python 368 total / 0 failures / 0 errors / 3 skipped。Windows 全链退出 0，NSIS、ZIP、真实 ASAR/fuse/资源门禁、双进程 packaged smoke 与 schema v2 发布清单均已生成并验证；Alpha.62→Alpha.63 只读安装预检通过。制品仍未签名、真实系统安装未执行、发行身份 `complete=false`，因此仍只是内测包。
 
 当前桌面安全边界包括：默认 Electron session 离线与固定 CSP；PDF 使用禁 JavaScript/导航/网络的非持久隔离 session；项目 schema/路径完整校验与跨进程内核写锁；创建项目在锁内以单一输入文件描述符复制到 `source`，再生成 `working`；自选导出目录逐级验证、全部目标预检和逐文件原子换入；标准包以 canonical manifest、内容寻址存储、高水位和精确回滚目标 fail-closed。已有项目不会因全局标准更新而静默换规则，必须先查看差异并显式确认，升级后强制重检。
 
@@ -64,15 +64,15 @@ alpha.58 发布 `oak-standards/oak-rules 2.1.0`（release sequence 3）：新增
 开发要求：Node.js 22.12+、Python 3.11+；Python 核心零第三方依赖。
 
 ```bash
-# 安装桌面开发依赖并启动
-npm install
+# 按锁文件安装桌面开发依赖并启动
+npm ci
 npm start
 
 # 统一测试入口：Node + Python
 npm test
 
 # 仅在开发/部署 Web 服务端时安装其独立生产依赖
-npm install --prefix web
+npm ci --prefix web
 
 # 分项排障
 npm run test:node
@@ -85,6 +85,18 @@ npm run verify:release-identity
 npm run verify:web:migrations
 ```
 
+以上命令均在含 `package.json` 的仓库根目录运行。`npm ci` 按锁文件安装，可能联网下载 Electron/Ace 所需组件，属于需要授权的联网操作。Hosted CI 固定 Node **24.16.0**、Python **3.13.14**；Python 核心不需要 pip 安装。桌面启动与打包还需要平台资源，见 [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) 与 `config/tool-manifests/`；Windows 打包用 `npm run build:win`，macOS 须在目标 Mac 上运行 `npm run build:mac:x64` 或 `npm run build:mac:arm64`。签名、公证、真实安装、真实账号与生产部署另行验收。
+
+### 最小检查（文档/协作配置改动，无需安装依赖）
+
+```bash
+node --test tests/feature-map.test.js tests/doc-links.test.js tests/hosted_ci_workflow.test.js
+npm run verify:hosted-ci
+git diff --check
+```
+
+云端完整源码检查复用 `.github/workflows/hosted-ci.yml` 中的 `npm run test:hosted`，它不替代打包或设备验收。
+
 批量修复必须先运行只读 `plan-fixes`，在界面集中查看全部修改并一次确认，再携带 `plan_id` 执行 `fix`。完整桌面与命令行流程见 `docs/USER_GUIDE.md`。
 
 ## 文档导航
@@ -93,12 +105,13 @@ npm run verify:web:migrations
 |---|---|
 | `docs/湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md` | **商业正式版权威需求方案（唯一）** |
 | `docs/湖岸稿件_Oak_Manuscript_APP_开发方案_v1.2_Claude_20260711.md` | Claude `0.0.1` 历史基线（非当前权威） |
-| `AGENTS.md` | 开发引擎守则（接手必读） |
-| `AI_HANDOFF.md` | 项目交接说明 |
-| `docs/DEVELOPMENT_STATUS.md` | 当前开发状态（唯一状态来源） |
+| `AGENTS.md` | 协作与开发守则（唯一规则文件，接手必读） |
+| `AI_HANDOFF.md` | 当前状态（唯一状态文件）；历史见 `docs/history/` |
+| `docs/功能地图.md` | 模块编号、代码位置与相关测试 |
+| `docs/DEVELOPMENT_STATUS.md` | 开发细节记录（alpha.63 及以前的阶段明细，非当前状态；当前状态以 `AI_HANDOFF.md` 为准） |
 | `docs/ARCHITECTURE.md` | 架构与关键技术决策 |
 | `docs/ACCEPTANCE.md` | 验收标准 |
-| `docs/TEST_REPORT.md` | 测试报告 |
+| `docs/TEST_REPORT.md` | 测试报告（历史验证证据，非当前状态；当前状态以 `AI_HANDOFF.md` 为准） |
 | `CONTRIBUTING.md` | 贡献流程、测试要求与规则提交边界 |
 | `SECURITY.md` | 私密漏洞报告入口、支持范围与重点威胁面 |
 | `LICENSE` | Apache License 2.0 开源许可证 |

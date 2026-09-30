@@ -2,9 +2,11 @@
 
 Thank you for helping improve Oak Manuscript. The project welcomes focused bug reports, tests, documentation, standards research, and code contributions.
 
+The single source of collaboration rules is [`AGENTS.md`](AGENTS.md) (branch naming `<ai>/<issue>-<topic>`, no direct pushes to `main`, cross-review, merge approval, and hand-off). This guide only summarizes contribution expectations and does not override it. Current status: [`AI_HANDOFF.md`](AI_HANDOFF.md). Module map: [`docs/功能地图.md`](docs/功能地图.md). Use the [pull request template](.github/pull_request_template.md).
+
 ## Before you start
 
-- Read `AGENTS.md`, `AI_HANDOFF.md`, `docs/DEVELOPMENT_STATUS.md`, and `docs/TEST_REPORT.md` before changing code.
+- Read `AGENTS.md` and `AI_HANDOFF.md` (the only current-state file) before changing code; `docs/DEVELOPMENT_STATUS.md` and `docs/TEST_REPORT.md` are historical detail and evidence, not current state.
 - Use only synthetic or explicitly anonymized manuscripts. Never commit unpublished manuscripts, author identities, credentials, contracts, payment data, private endpoints, or production keys.
 - Open an issue before a large architectural change, a new network capability, a new dependency, or a change to privacy and source-integrity guarantees.
 - Keep ordinary builds and tests offline. Any network operation must be explicit and must not upload manuscript content by default.
@@ -18,7 +20,7 @@ Requirements:
 - Windows for current packaged-runtime verification; macOS builds are configured but require native macOS verification
 
 ```bash
-npm install
+npm ci
 npm test
 npm start
 ```
@@ -27,18 +29,16 @@ The Python checking core intentionally uses the standard library only. The Web s
 
 ## Contribution workflow
 
-1. Create a focused branch from the current default branch.
+1. Open or pick an issue, then create a focused branch named `<ai-or-user>/<issue>-<topic>` from the current default branch.
 2. Add or update tests before changing behavior when practical.
 3. Preserve source-file immutability. Generated revisions belong only in project `working/`, `checkpoints/`, or `exports/` locations.
 4. Run the relevant Node and Python tests during development.
-5. Before opening a pull request, run the full suite:
+5. Before opening a pull request, run checks proportional to the change risk (see `AGENTS.md` §5 rule 5 and README "最小检查"):
+   - Code or behavior changes: run the full suite (`npm test`) plus `git diff --check`.
+   - Documentation or collaboration-config-only changes: run `git diff --check`, `node --test tests/feature-map.test.js tests/doc-links.test.js tests/workflow-action-pins.test.js`, and any config verification the change affects; the unrelated full suite is not required.
+   - The full suite depends on local runtime resources (Electron, CPython, JRE, EpubCheck, etc.). If any check could not run or was skipped, say so explicitly in the PR — never record it as passed.
 
-   ```bash
-   npm test
-   git diff --check
-   ```
-
-6. Update `AI_HANDOFF.md`, `docs/DEVELOPMENT_STATUS.md`, `docs/TEST_REPORT.md`, and `CHANGELOG.md` when implementation, verification, packaging, deployment, or release status changes.
+6. Update `AI_HANDOFF.md` (current state) and `CHANGELOG.md`, and append detail/evidence to `docs/DEVELOPMENT_STATUS.md` and `docs/TEST_REPORT.md`, when implementation, verification, packaging, deployment, or release status changes.
 
 ## Rules and mechanical fixes
 
@@ -61,7 +61,7 @@ Follow `SECURITY.md` for vulnerability reports. Security-sensitive pull requests
 - [ ] No real manuscript, personal data, credential, or production secret is included.
 - [ ] New behavior has positive and negative tests.
 - [ ] Source manuscripts remain byte-for-byte unchanged.
-- [ ] `npm test` and `git diff --check` pass.
+- [ ] Checks appropriate to the change risk were run and pass (`npm test` for code changes); any check not run or skipped is listed explicitly.
 - [ ] Status documentation distinguishes implemented, tested, packaged, deployed, and production-ready.
 - [ ] User-visible Chinese text and English documentation are updated where applicable.
 
