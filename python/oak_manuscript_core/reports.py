@@ -33,7 +33,7 @@ _CITATION_CONFIDENCE_LABELS = {
     "medium": "中",
     "low": "低",
 }
-_FORMAT_LABELS = {"md": "Markdown", "txt": "TXT"}
+_FORMAT_LABELS = {"md": "Markdown", "txt": "TXT", "docx": "DOCX"}
 _EXCLUDED_LABELS = {
     "fenced_code": "围栏代码块",
     "inline_code": "行内代码",
@@ -42,6 +42,10 @@ _EXCLUDED_LABELS = {
     "layout_sensitive": "保守识别的排版敏感文本",
 }
 _NOT_CHECKED_LABELS = {
+    "numbered_citation_ranges_and_lists": "编号引用的区间与并列形式",
+    "complex_author_year_citations": "叙述式与多引文并列的作者—年份引用",
+    "document_visual_fidelity": "完整 Word 版式保真与刻意留白判断",
+    "reference_truth": "参考文献真实性与内容准确性",
     "semantic_rewriting": "语义改写与语言润色",
     "full_markdown_conformance": "完整 Markdown 语法合规",
     "layout_reconstruction": "版式还原",

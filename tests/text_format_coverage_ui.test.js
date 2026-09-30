@@ -55,3 +55,19 @@ test("coverage model rejects unknown fields, unsafe rule ids, and unbounded disc
   assert.throws(() => normalizeFormatCoverage(fixture({ disclosure: "x".repeat(513) })), /disclosure/);
   assert.throws(() => normalizeFormatCoverage(fixture({ excluded_contexts: ["unknown"] })), /excluded_contexts/);
 });
+
+test("DOCX coverage displays manual boundaries without claiming layout exemption", () => {
+  const view = normalizeFormatCoverage(fixture({
+    schema_version: "1.1", format: "docx",
+    rule_ids: ["DOCX-SPACE-001"], auto_fixable_rule_ids: ["DOCX-SPACE-001"],
+    excluded_contexts: [],
+    not_checked: ["numbered_citation_ranges_and_lists", "document_visual_fidelity"],
+    disclosure: "规则命中仍需人工复核，诗歌留白未逐项确认前不要批量修复。",
+  }));
+  assert.equal(view.formatLabel, "DOCX");
+  assert.equal(view.autoFixLabel, "DOCX-SPACE-001");
+  assert.match(view.notCheckedLabel, /区间与并列/);
+  assert.match(view.summary, /人工复核/);
+  assert.doesNotMatch(view.excludedLabel, /已排除|诗歌/);
+  assert.throws(() => normalizeFormatCoverage(fixture({format: "docx"})), /身份/);
+});

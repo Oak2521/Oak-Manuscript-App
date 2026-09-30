@@ -321,6 +321,17 @@ async function runSmoke(win, pathPolicy) {
     );
     assert(check.issueCount > 0, `${sc.name}：应检出问题`);
     assert(check.page === "issues", `${sc.name}：应停在问题页`);
+    if (sc.sample.endsWith(".docx")) {
+      const coverageView = await js(`(() => {
+        const card = document.querySelector("#format-coverage-card");
+        return { visible: !card.classList.contains("hidden"), text: card.textContent,
+          modelLoaded: Boolean(window.OakFormatCoverage) };
+      })()`);
+      assert(coverageView.visible && coverageView.text.includes("DOCX")
+        && coverageView.text.includes("区间与并列")
+        && coverageView.text.includes("未逐项确认"),
+      `${sc.name}：DOCX 结果页必须显示真实覆盖与人工复核边界：${JSON.stringify(coverageView)}`);
+    }
     assertSameStandardIdentity(
       check.rulepack,
       appInfo.standardIdentity,
@@ -431,6 +442,12 @@ async function runSmoke(win, pathPolicy) {
     const exportedReports = exp.files.filter((file) => path.basename(file) === "report.json");
     assert(exportedReports.length === 1, `${sc.name}：导出必须且只能包含一个 report.json`);
     const exportedReport = readSmokeJson(exportedReports[0], "导出报告");
+    if (sc.sample.endsWith(".docx")) {
+      assert(exportedReport.format_coverage?.schema_version === "1.1"
+        && exportedReport.format_coverage?.format === "docx"
+        && exportedReport.format_coverage.not_checked.includes("numbered_citation_ranges_and_lists"),
+      `${sc.name}：打包检查结果的 DOCX 覆盖必须随导出保留`);
+    }
     assertSameStandardIdentity(
       exportedReport.rulepack,
       appInfo.standardIdentity,

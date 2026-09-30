@@ -128,9 +128,9 @@ test("SemVer comparison orders prereleases without lexical alpha.10/alpha.9 erro
   assert.throws(() => compareSemver("v1", "1.0.0"), /合法 SemVer/);
 });
 
-test("Alpha.63 install acceptance uses the immediate packaged Alpha.62 predecessor", () => {
-  assert.equal(CURRENT_VERSION, "0.1.0-alpha.63");
-  assert.equal(PREVIOUS_VERSION, "0.1.0-alpha.62");
+test("Alpha.64 install acceptance uses the immediate packaged Alpha.63 predecessor", () => {
+  assert.equal(CURRENT_VERSION, "0.1.0-alpha.64");
+  assert.equal(PREVIOUS_VERSION, "0.1.0-alpha.63");
   assert.equal(compareSemver(PREVIOUS_VERSION, CURRENT_VERSION), -1);
 });
 

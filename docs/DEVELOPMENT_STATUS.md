@@ -2,12 +2,13 @@
 
 ## 2026-09-30 合流审阅分支（非发行）
 
-- 项目 Issue #5；从 main `c7bf0bea3782d419a558f5ed025fcd6283cb90c0` 恢复20个已审阅快照文件。
-- 恢复独立的合成离线审阅/意见回导模块、固定协议资源白名单修复及撤回验证时钟传递；未接入真实稿件、账号、上传、生产或已打包应用。
-- 定向 Node：39 total / 38 pass / 0 fail / 1 skip。统一 `npm test`：Node 641 total / 615 pass / 23 fail / 3 skip，失败涉及缺少 Electron、构建/S3 等依赖及本地运行时资源；未改测试制造通过。该失败使统一入口未运行 Python，随后单独 `npm run test:python`：369 total / 0 failures / 0 errors / 9 skips。
-- Alpha.64/DOCX覆盖及配套资源清单尚未合流：快照清单的 project.py 字节与 main 不同，而快照没有该文件，保留当前 main 信任链。版本保持 Alpha.63；离线演示中的 Alpha.64 是构造测试标记，不是已发行版本。
-- 内部计划/阶段档案、试点材料及本机专用 smoke 脚本未公开；9/27 协作 PR #4 保持独立。详细公开范围、三组待决定事项见 `docs/MERGE_LINES_2026-09-30.md`。
-- 下一步：Claude审阅与站长决定；仅由站长合并。源码合流不等于 packaged、deployed 或 production-ready。
+- 项目Issue #5；从main `c7bf0bea3782d419a558f5ed025fcd6283cb90c0`恢复38个逐文件审阅的快照文件，保留旧工作区与备份。
+- 恢复Alpha.64的DOCX覆盖披露、协议资源白名单、撤回校验时钟修复，以及独立合成离线审阅/意见回导模块。未接入真实稿件、账号或上传，未打包或部署。
+- 定向Node：43 total / 42 pass / 0 fail / 1 skip；统一npm test的Node阶段642 total / 616 pass / 23 fail / 3 skip。缺少Electron、构建/S3依赖及CPython/JRE/EpubCheck等本地运行时资源，全量门未通过；未改测试制造通过。
+- Python分项372 total / 0 failures / 0 errors / 9 skips。资源信任只读校验通过：132文件 / 2249190字节；新增合成样本后按原构建器同步清单及信任锚，不伪造打包证据。
+- 更正首批判断：实际project.py SHA与快照清单一致，没有此前声称的缺文件问题。38个导入文件中36个与快照字节一致，两个资源元数据文件额外纳入合成样本摘要。
+- 内部文档与本机smoke工具未公开；9/27协作PR #4保持独立。两个待决定组及验证边界见docs/MERGE_LINES_2026-09-30.md。
+- 下一步Claude审阅、站长决定与合并；source recovered，不等于packaged、deployed或production-ready。历史文档中的旧阶段结果不代表本次验证。
 
 
 > 更新日期：2026-08-17。新记录在上；“已完成”必须有本地测试或构建证据。

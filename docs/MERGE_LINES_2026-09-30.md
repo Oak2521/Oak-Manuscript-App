@@ -2,14 +2,15 @@
 
 ## 2026-09-30 合流审阅分支（非发行）
 
-- 项目 Issue #5；从 main `c7bf0bea3782d419a558f5ed025fcd6283cb90c0` 恢复20个已审阅快照文件。
-- 恢复独立的合成离线审阅/意见回导模块、固定协议资源白名单修复及撤回验证时钟传递；未接入真实稿件、账号、上传、生产或已打包应用。
-- 定向 Node：39 total / 38 pass / 0 fail / 1 skip。统一 `npm test`：Node 641 total / 615 pass / 23 fail / 3 skip，失败涉及缺少 Electron、构建/S3 等依赖及本地运行时资源；未改测试制造通过。该失败使统一入口未运行 Python，随后单独 `npm run test:python`：369 total / 0 failures / 0 errors / 9 skips。
-- Alpha.64/DOCX覆盖及配套资源清单尚未合流：快照清单的 project.py 字节与 main 不同，而快照没有该文件，保留当前 main 信任链。版本保持 Alpha.63；离线演示中的 Alpha.64 是构造测试标记，不是已发行版本。
-- 内部计划/阶段档案、试点材料及本机专用 smoke 脚本未公开；9/27 协作 PR #4 保持独立。详细公开范围、三组待决定事项见 `docs/MERGE_LINES_2026-09-30.md`。
-- 下一步：Claude审阅与站长决定；仅由站长合并。源码合流不等于 packaged、deployed 或 production-ready。
+- 项目Issue #5；从main `c7bf0bea3782d419a558f5ed025fcd6283cb90c0`恢复38个逐文件审阅的快照文件，保留旧工作区与备份。
+- 恢复Alpha.64的DOCX覆盖披露、协议资源白名单、撤回校验时钟修复，以及独立合成离线审阅/意见回导模块。未接入真实稿件、账号或上传，未打包或部署。
+- 定向Node：43 total / 42 pass / 0 fail / 1 skip；统一npm test的Node阶段642 total / 616 pass / 23 fail / 3 skip。缺少Electron、构建/S3依赖及CPython/JRE/EpubCheck等本地运行时资源，全量门未通过；未改测试制造通过。
+- Python分项372 total / 0 failures / 0 errors / 9 skips。资源信任只读校验通过：132文件 / 2249190字节；新增合成样本后按原构建器同步清单及信任锚，不伪造打包证据。
+- 更正首批判断：实际project.py SHA与快照清单一致，没有此前声称的缺文件问题。38个导入文件中36个与快照字节一致，两个资源元数据文件额外纳入合成样本摘要。
+- 内部文档与本机smoke工具未公开；9/27协作PR #4保持独立。两个待决定组及验证边界见docs/MERGE_LINES_2026-09-30.md。
+- 下一步Claude审阅、站长决定与合并；source recovered，不等于packaged、deployed或production-ready。历史文档中的旧阶段结果不代表本次验证。
 
-## 已恢复快照文件
+## 已恢复文件
 
 - `electron/app-protocol.js`
 - `electron/standards-provider.js`
@@ -31,20 +32,36 @@
 - `tests/offline_review_package.test.js`
 - `tests/offline_review_return.test.js`
 - `tests/offline_review_s2.test.js`
+- `config/tool-manifests/app-resources-v1.json`
+- `electron/resource-trust-anchor.json`
+- `electron/smoke.js`
+- `package-lock.json`
+- `package.json`
+- `python/oak_manuscript_core/__init__.py`
+- `python/oak_manuscript_core/format_coverage.py`
+- `python/oak_manuscript_core/reports.py`
+- `python/tests/test_reports_export.py`
+- `renderer/format-coverage-model.js`
+- `renderer/index.html`
+- `scripts/windows_install_acceptance.js`
+- `tests/ollama_compatibility.test.js`
+- `tests/text_format_coverage_ui.test.js`
+- `tests/windows_install_acceptance.test.js`
+- `web/package-lock.json`
+- `web/package.json`
+- `python/tests/test_docx_coverage.py`
 
 ## 未合流与待决定
 
-1. 内部方案、恢复设计、试点登记、阶段关闭文档与历史状态快照：公开性尚未确认，原件保留，不复制内部正文。是否另存私有档案由站长决定。
-2. Alpha.64/DOCX覆盖整组：缺少资源清单指向的 project.py 快照，不能拼造发行信任证据；保留主线相应文件，待找回完整来源再评估。版本号、发行清单、trust anchor、旧测试和界面覆盖保持成套主线状态。
-3. 两个本机 smoke 工具：本机环境路径依赖，不随此次公开；未来是否通用化另行决定。GUI smoke未运行。
+1. 内部计划、阶段报告、恢复设计、试点登记和规格/用户指南快照：未确认公开范围，原件保留。应否另存私有档案或抽取公开技术说明，由站长决定。
+2. 两个本机专用smoke脚本：环境路径依赖，暂不公开，是否通用化另行决定。GUI smoke未运行。
 
-9/27规则/AGENTS协作线按总任务明令排除，不是待合并功能。所有旧提交线已在main内，未导入额外商业历史。现行版本仍Alpha.63。
+AGENTS与9/27协作PR #4按任务要求独立审阅。既有商业版、Claude基线和账户线均已包含于main，不重复合并。未导入真实稿件、作者隐私或凭据。
 
 ## 可归档候选
 
-仅就已提交历史，`claude/user-service-app-plan-wkjns1`、`chatgpt/commercial-v1`、`codex/oak-10-manuscript-account` 三条线已被main包含，可列分支归档候选。仍有未并快照的工作区不能视为可整体归档；这里只列候选，不删除、不改名。
+只就提交历史：claude/user-service-app-plan-wkjns1、chatgpt/commercial-v1、codex/oak-10-manuscript-account三条分支已由main包含。未合流快照仍存在，不能把原工作区整体列为可归档；只建议、不删除。
 
-## 验证边界
+## 修正记录
 
-全量门未通过；具体计数见上方。未安装新运行时或第三方依赖，没有打包、真实安装/升级、真实账号、签名或部署。测试使用匿名构造样本。导入的是救援时原测试，不是为让失败通过而改测试。
-
+首批提交955d617保留了错误的project.py缺口判断。后续直接计算实际文件哈希并与快照逐项比较，发现完全一致；本次以普通追加提交修正，不改写历史。Alpha.64源码可合流，但不是发行验收完成。
