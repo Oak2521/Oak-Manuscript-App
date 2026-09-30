@@ -1,0 +1,37 @@
+# 在 issue、PR 里写 @claude，由 Claude 在云端接手（方案 v2.0 第 0 层）。
+# 只响应仓库所有者 Oak2521：站长本人和 Codex 都用这个账号评论；Claude 自己的回复来自 claude[bot]，不会触发，避免循环。
+# 需要仓库 Secret：CLAUDE_CODE_OAUTH_TOKEN（订阅账号，由 claude setup-token 生成），由站长在仓库 Settings → Secrets 中配置；未配置时本 workflow 会失败，但不影响 Hosted source gates。
+name: Claude
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+  issues:
+    types: [opened]
+
+jobs:
+  claude:
+    if: |
+      (github.event_name == 'issue_comment' && github.event.comment.user.login == 'Oak2521' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && github.event.comment.user.login == 'Oak2521' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && github.event.review.user.login == 'Oak2521' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && github.event.issue.user.login == 'Oak2521' && contains(github.event.issue.body, '@claude'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

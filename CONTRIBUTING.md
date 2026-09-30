@@ -2,6 +2,8 @@
 
 Thank you for helping improve Oak Manuscript. The project welcomes focused bug reports, tests, documentation, standards research, and code contributions.
 
+The single source of collaboration rules is [`AGENTS.md`](AGENTS.md) (branch naming `<ai>/<issue>-<topic>`, no direct pushes to `main`, cross-review, merge approval, and hand-off). This guide only summarizes contribution expectations and does not override it. Current status: [`AI_HANDOFF.md`](AI_HANDOFF.md). Module map: [`docs/功能地图.md`](docs/功能地图.md). Use the [pull request template](.github/pull_request_template.md).
+
 ## Before you start
 
 - Read `AGENTS.md`, `AI_HANDOFF.md`, `docs/DEVELOPMENT_STATUS.md`, and `docs/TEST_REPORT.md` before changing code.
@@ -18,7 +20,7 @@ Requirements:
 - Windows for current packaged-runtime verification; macOS builds are configured but require native macOS verification
 
 ```bash
-npm install
+npm ci
 npm test
 npm start
 ```
@@ -27,7 +29,7 @@ The Python checking core intentionally uses the standard library only. The Web s
 
 ## Contribution workflow
 
-1. Create a focused branch from the current default branch.
+1. Open or pick an issue, then create a focused branch named `<ai-or-user>/<issue>-<topic>` from the current default branch.
 2. Add or update tests before changing behavior when practical.
 3. Preserve source-file immutability. Generated revisions belong only in project `working/`, `checkpoints/`, or `exports/` locations.
 4. Run the relevant Node and Python tests during development.

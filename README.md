@@ -22,12 +22,12 @@ Oak Manuscript deliberately separates five claims that are often blurred togethe
 Development requires Node.js 22.12+ and Python 3.11+:
 
 ```bash
-npm install
+npm ci
 npm test
 npm start
 ```
 
-Contributions are welcome. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), report vulnerabilities through [`SECURITY.md`](SECURITY.md), and review the project boundaries in [`AGENTS.md`](AGENTS.md). The repository is licensed under the [Apache License 2.0](LICENSE).
+Contributions are welcome. Collaboration rules for all contributors (including AI agents) live only in [`AGENTS.md`](AGENTS.md); current status is in [`AI_HANDOFF.md`](AI_HANDOFF.md). Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), report vulnerabilities through [`SECURITY.md`](SECURITY.md), and review the project boundaries in [`AGENTS.md`](AGENTS.md). The repository is licensed under the [Apache License 2.0](LICENSE).
 
 ## 中文说明
 
@@ -64,15 +64,15 @@ alpha.58 发布 `oak-standards/oak-rules 2.1.0`（release sequence 3）：新增
 开发要求：Node.js 22.12+、Python 3.11+；Python 核心零第三方依赖。
 
 ```bash
-# 安装桌面开发依赖并启动
-npm install
+# 按锁文件安装桌面开发依赖并启动
+npm ci
 npm start
 
 # 统一测试入口：Node + Python
 npm test
 
 # 仅在开发/部署 Web 服务端时安装其独立生产依赖
-npm install --prefix web
+npm ci --prefix web
 
 # 分项排障
 npm run test:node
@@ -85,6 +85,18 @@ npm run verify:release-identity
 npm run verify:web:migrations
 ```
 
+以上命令均在含 `package.json` 的仓库根目录运行。`npm ci` 按锁文件安装，可能联网下载 Electron/Ace 所需组件，属于需要授权的联网操作。Hosted CI 固定 Node **24.16.0**、Python **3.13.14**；Python 核心不需要 pip 安装。桌面启动与打包还需要平台资源，见 [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) 与 `config/tool-manifests/`；Windows 打包用 `npm run build:win`，macOS 须在目标 Mac 上运行 `npm run build:mac:x64` 或 `npm run build:mac:arm64`。签名、公证、真实安装、真实账号与生产部署另行验收。
+
+### 最小检查（文档/协作配置改动，无需安装依赖）
+
+```bash
+node --test tests/feature-map.test.js tests/doc-links.test.js tests/hosted_ci_workflow.test.js
+npm run verify:hosted-ci
+git diff --check
+```
+
+云端完整源码检查复用 `.github/workflows/hosted-ci.yml` 中的 `npm run test:hosted`，它不替代打包或设备验收。
+
 批量修复必须先运行只读 `plan-fixes`，在界面集中查看全部修改并一次确认，再携带 `plan_id` 执行 `fix`。完整桌面与命令行流程见 `docs/USER_GUIDE.md`。
 
 ## 文档导航
@@ -93,8 +105,9 @@ npm run verify:web:migrations
 |---|---|
 | `docs/湖岸稿件_Oak_Manuscript_商业正式版开发方案_v2.0_ChatGPT_20260726.md` | **商业正式版权威需求方案（唯一）** |
 | `docs/湖岸稿件_Oak_Manuscript_APP_开发方案_v1.2_Claude_20260711.md` | Claude `0.0.1` 历史基线（非当前权威） |
-| `AGENTS.md` | 开发引擎守则（接手必读） |
-| `AI_HANDOFF.md` | 项目交接说明 |
+| `AGENTS.md` | 协作与开发守则（唯一规则文件，接手必读） |
+| `AI_HANDOFF.md` | 当前状态（唯一状态文件）；历史见 `docs/history/` |
+| `docs/功能地图.md` | 模块编号、代码位置与相关测试 |
 | `docs/DEVELOPMENT_STATUS.md` | 当前开发状态（唯一状态来源） |
 | `docs/ARCHITECTURE.md` | 架构与关键技术决策 |
 | `docs/ACCEPTANCE.md` | 验收标准 |
