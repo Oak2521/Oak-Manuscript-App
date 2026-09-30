@@ -119,6 +119,15 @@ class OpsFlowTest(unittest.TestCase):
         exported_report = json.loads(
             (self.proj.root / "exports" / "report.json").read_text(encoding="utf-8")
         )
+        # DOCX 覆盖记录须跨真实 check/recheck/export 保留，而非只在 UI 内生成。
+        coverage = exported_report["format_coverage"]
+        self.assertEqual(coverage["schema_version"], "1.1")
+        self.assertEqual(coverage["format"], "docx")
+        self.assertEqual(coverage, check_result["format_coverage"])
+        for report_name in ("report.md", "report.html"):
+            report_text = (self.proj.root / "exports" / report_name).read_text(encoding="utf-8")
+            self.assertIn("区间与并列", report_text)
+            self.assertIn("未逐项确认", report_text)
         self.assertEqual(
             set(project_identity),
             {

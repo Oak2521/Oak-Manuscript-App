@@ -1,4 +1,4 @@
-// TXT/Markdown 覆盖披露的纯展示模型；只接受 content-free 固定合同。
+// 格式覆盖披露的纯展示模型；只接受 content-free 固定合同。
 
 "use strict";
 
@@ -11,7 +11,7 @@
     "schema_version", "format", "status", "rule_ids", "auto_fixable_rule_ids",
     "excluded_contexts", "not_checked", "disclosure",
   ]);
-  const FORMAT_LABELS = Object.freeze({ md: "Markdown", txt: "TXT" });
+  const FORMAT_LABELS = Object.freeze({ md: "Markdown", txt: "TXT", docx: "DOCX" });
   const EXCLUDED_LABELS = Object.freeze({
     fenced_code: "围栏代码块",
     inline_code: "行内代码",
@@ -20,6 +20,10 @@
     layout_sensitive: "保守识别的排版敏感文本",
   });
   const NOT_CHECKED_LABELS = Object.freeze({
+    numbered_citation_ranges_and_lists: "编号引用的区间与并列形式",
+    complex_author_year_citations: "叙述式与多引文并列的作者—年份引用",
+    document_visual_fidelity: "完整 Word 版式保真与刻意留白判断",
+    reference_truth: "参考文献真实性与内容准确性",
     semantic_rewriting: "语义改写与语言润色",
     full_markdown_conformance: "完整 Markdown 语法合规",
     layout_reconstruction: "版式还原",
@@ -53,7 +57,8 @@
 
   function normalizeFormatCoverage(value) {
     exactObject(value);
-    if (value.schema_version !== "1.0" || !Object.hasOwn(FORMAT_LABELS, value.format) ||
+    const version = value.format === "docx" ? "1.1" : "1.0";
+    if (value.schema_version !== version || !Object.hasOwn(FORMAT_LABELS, value.format) ||
         value.status !== "limited") {
       throw new Error("格式覆盖记录身份非法");
     }

@@ -1,5 +1,16 @@
 # DEVELOPMENT_STATUS — 开发状态（唯一状态来源）
 
+## 2026-09-30 合流审阅分支（非发行）
+
+- 项目Issue #5；从main `c7bf0bea3782d419a558f5ed025fcd6283cb90c0`恢复38个逐文件审阅的快照文件，保留旧工作区与备份。
+- 恢复Alpha.64的DOCX覆盖披露、协议资源白名单、撤回校验时钟修复，以及独立合成离线审阅/意见回导模块。未接入真实稿件、账号或上传，未打包或部署。
+- 定向Node：43 total / 42 pass / 0 fail / 1 skip；统一npm test的Node阶段642 total / 616 pass / 23 fail / 3 skip。缺少Electron、构建/S3依赖及CPython/JRE/EpubCheck等本地运行时资源，全量门未通过；未改测试制造通过。
+- Python分项372 total / 0 failures / 0 errors / 9 skips。资源信任只读校验通过：132文件 / 2249190字节；新增合成样本后按原构建器同步清单及信任锚，不伪造打包证据。
+- 更正首批判断：实际project.py SHA与快照清单一致，没有此前声称的缺文件问题。38个导入文件中36个与快照字节一致，两个资源元数据文件额外纳入合成样本摘要。
+- 内部文档与本机smoke工具未公开；9/27协作PR #4保持独立。两个待决定组及验证边界见docs/MERGE_LINES_2026-09-30.md。
+- 下一步Claude审阅、站长决定与合并；source recovered，不等于packaged、deployed或production-ready。历史文档中的旧阶段结果不代表本次验证。
+
+
 > 更新日期：2026-08-17。新记录在上；“已完成”必须有本地测试或构建证据。
 
 ## 当前版本与基线

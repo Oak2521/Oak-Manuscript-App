@@ -13,6 +13,10 @@ const APP_ASSETS = Object.freeze(new Map([
     file: "p0-ui-model.js",
     contentType: "text/javascript; charset=utf-8",
   })],
+  ["/format-coverage-model.js", Object.freeze({
+    file: "format-coverage-model.js",
+    contentType: "text/javascript; charset=utf-8",
+  })],
   ["/app.js", Object.freeze({ file: "app.js", contentType: "text/javascript; charset=utf-8" })],
 ]));
 

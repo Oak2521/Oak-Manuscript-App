@@ -268,6 +268,7 @@ class StandardsProvider {
       bundledManifestSha256: this.bundledRelease.manifestSha256,
       bundledManifestSha256s,
       fsImpl: this.fs,
+      now: () => this._remoteNow(),
     });
     this.trustConfigured = effectiveTrust !== null;
     this.store = store;
