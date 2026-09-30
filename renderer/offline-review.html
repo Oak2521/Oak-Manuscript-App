@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
+  <title>湖岸稿件 · 离线审阅</title>
+  <link rel="stylesheet" href="offline-review.css">
+  <script defer src="../shared/offline-review-core.js"></script>
+  <script defer src="../shared/offline-review-browser.js"></script>
+  <script defer src="../shared/offline-review-drafts.js"></script>
+  <script defer src="offline-review.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">OAK MANUSCRIPT / S2 合成演示</p>
+      <h1>离线报告审阅</h1>
+      <p>查看规则提示，记录留给桌面编辑的意见。此演示只使用合成报告。</p>
+    </header>
+    <section class="panel" aria-labelledby="open-heading">
+      <h2 id="open-heading">打开审阅包</h2>
+      <button id="export-synthetic" type="button" hidden>导出合成审阅包</button>
+      <p id="export-status" role="status">选择桌面导出的合成 JSON 审阅包（最多 2 MiB）。</p>
+      <label for="review-file">本地审阅包</label>
+      <input id="review-file" type="file" accept=".json,application/json">
+      <p id="load-status" role="status" aria-live="polite">尚未打开报告。</p>
+    </section>
+    <section id="review-panel" hidden>
+      <div class="panel">
+        <h2>报告概况</h2>
+        <p id="summary"></p>
+        <p id="identity" class="identity"></p>
+        <p id="coverage"></p>
+        <p class="muted">校验确认内容一致性；报告来源仍需人工确认。编号引用区间与并列、复杂作者年份、版式和文献真实性可能未覆盖。</p>
+      </div>
+      <div class="section-heading">
+        <h2>逐项审阅</h2>
+        <p id="draft-status" role="status" aria-live="polite">意见仅保存在本机当前浏览器配置中。</p>
+      </div>
+      <p class="muted">意见与原报告分开保存，输入即保存。意见不修改稿件，也不执行任何修复。清理浏览器数据会删除本地草稿。</p>
+      <div id="issues"></div>
+    </section>
+  </main>
+</body>
+</html>

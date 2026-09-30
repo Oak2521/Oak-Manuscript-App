@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'; worker-src 'none'">
+  <title>湖岸稿件 · 离线意见回导</title>
+  <link rel="stylesheet" href="offline-review.css">
+  <script defer src="../shared/offline-review-core.js"></script>
+  <script defer src="../shared/offline-review-browser.js"></script>
+  <script defer src="../shared/offline-review-drafts.js"></script>
+  <script defer src="../shared/offline-review-return.js"></script>
+  <script defer src="offline-review-return.js"></script>
+</head>
+<body><main>
+  <header><p class="eyebrow">OAK MANUSCRIPT / S3 合成演示</p>
+    <h1>离线意见回导</h1>
+    <p>浏览器记录并显式导出意见；桌面预览后由用户确认为待审。不修改稿件，不执行修复。</p>
+  </header>
+  <section class="panel">
+    <h2>1. 打开对应报告</h2>
+    <button id="return-export-synthetic" type="button" hidden>导出合成报告</button>
+    <p id="return-export-status" role="status"></p>
+    <label for="return-report-file">仅使用合成审阅包（最多 2 MiB）</label>
+    <input id="return-report-file" type="file" accept=".json,application/json">
+    <p id="return-report-status" role="status">尚未打开报告。</p>
+    <p id="return-identity" class="identity"></p>
+    <p>哈希验证一致性，不认证报告来源。切换到不同报告后，旧报告的意见不能回导到新报告。</p>
+  </section>
+  <section id="return-draft-panel" class="panel" hidden>
+    <h2>2. 浏览器意见草稿</h2>
+    <div id="return-draft-issues"></div>
+    <p id="return-draft-status" role="status"></p>
+    <p>每次输入保存到当前浏览器。导出不会删除原草稿；清除浏览器数据会失去草稿。</p>
+    <p>响应文件含你输入的意见文字，请先检查内容，再点击导出。有效期为导出后 7 天；过期需重新导出。没有自动上传。</p>
+    <button id="export-opinions" type="button" disabled>显式导出意见 JSON</button>
+    <p id="return-download-status" role="status"></p>
+  </section>
+  <section id="return-desktop-panel" class="panel" hidden>
+    <h2>2. 桌面回导预览</h2>
+    <label for="response-file">选择意见响应（最多 256 KiB）</label>
+    <input id="response-file" type="file" accept=".json,application/json" disabled>
+    <p id="return-import-status" role="status">选择对应报告后才可回导。</p>
+    <div id="response-preview"></div>
+    <p>预览不保存。点击确认只保存为待审记录，不代表采纳意见或批准改稿。每报告最多 16 次递增修订，存储上限 1 MiB，不自动清空重放记录。</p>
+    <button id="confirm-return" type="button" disabled>确认存为待审（不改稿）</button>
+    <button id="cancel-return" type="button" disabled>取消预览</button>
+    <h2>已保存的待审意见</h2>
+    <div id="return-receipts"></div>
+    <p>待审意见只保存在本演示的隔离桌面配置中；浏览器草稿与源报告不被覆盖。不是 Alpha.64 产品发行功能。</p>
+  </section>
+</main></body></html>

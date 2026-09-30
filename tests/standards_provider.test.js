@@ -485,6 +485,29 @@ test("explicit remote check verifies signed bytes before an opaque one-shot inst
   );
 });
 
+test("revocation verification uses the provider clock and rechecks expiry on every call", async (t) => {
+  const signing = signingFixture();
+  let now = new Date("2026-07-29T12:00:00.000Z");
+  const provider = createProvider(t, {
+    trustStore: signing.trustStore,
+    clock: () => now,
+  });
+  await provider.initialize();
+  const identity = await provider.verifiedActiveIdentity();
+  const bytes = revocationEnvelope(signing, []);
+  const result = await provider.applyRevocationEnvelope(bytes);
+  assert.equal(result.active_revoked, false);
+
+  now = new Date("2026-08-29T00:00:00.000Z");
+  await assert.rejects(() => provider.applyRevocationEnvelope(bytes),
+    (error) => error?.code === "EXPIRED_REVOCATION_LIST");
+  now = new Date("2026-07-28T23:59:59.999Z");
+  await assert.rejects(() => provider.applyRevocationEnvelope(bytes),
+    (error) => error?.code === "NOT_YET_VALID");
+  now = new Date("2026-07-29T12:00:00.000Z");
+  assert.deepEqual(await provider.verifiedActiveIdentity(), identity);
+});
+
 test("signed revocation of the active release blocks new work but preserves history and permits a safe forward recovery", async (t) => {
   const signing = signingFixture();
   const envelopeBytes = updateEnvelope(signing.privateKey, signing.keyid);

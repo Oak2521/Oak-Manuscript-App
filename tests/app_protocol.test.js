@@ -30,13 +30,13 @@ test("app protocol is registered as a standard secure scheme without CSP bypass"
   }]]);
 });
 
-test("app protocol resolves only four fixed renderer assets", () => {
+test("app protocol resolves only five fixed renderer assets", () => {
   const root = path.resolve("D:/fixture/resources/app.asar/renderer");
   assert.deepEqual(resolveAppResource(APP_ENTRY_URL, root), {
     target: path.join(root, "index.html"),
     contentType: "text/html; charset=utf-8",
   });
-  for (const name of ["styles.css", "p0-ui-model.js", "app.js"]) {
+  for (const name of ["styles.css", "p0-ui-model.js", "format-coverage-model.js", "app.js"]) {
     assert.equal(resolveAppResource(`${APP_SCHEME}://renderer/${name}`, root).target,
       path.join(root, name));
   }
@@ -81,4 +81,19 @@ test("main registers the privileged scheme before ready and installs its handler
   assert.ok(installAt > readyAt && installAt < windowAt);
   assert.match(source, /mainWindow\.loadURL\(APP_ENTRY_URL\)/);
   assert.doesNotMatch(source, /mainWindow\.loadFile\(path\.join\(pathPolicy\.repoRoot\(\)/);
+});
+
+test("the coverage model is served as executable JavaScript through the real app protocol", async () => {
+  const handler = createAppProtocolHandler({
+    rendererRoot: path.resolve(__dirname, "../renderer"),
+  });
+  const response = await handler({ url: `${APP_SCHEME}://renderer/format-coverage-model.js` });
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("content-type"), "text/javascript; charset=utf-8");
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  const context = {};
+  require("node:vm").runInNewContext(await response.text(), context);
+  assert.equal(typeof context.OakFormatCoverage.normalizeFormatCoverage, "function");
+  const denied = await handler({ url: `${APP_SCHEME}://renderer/format-coverage-model.js.bak` });
+  assert.equal(denied.status, 404);
 });

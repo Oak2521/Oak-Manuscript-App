@@ -1,5 +1,15 @@
 # AI_HANDOFF — 湖岸稿件（Oak Manuscript）项目交接说明
 
+## 2026-09-30 合流审阅分支（非发行）
+
+- 项目 Issue #5；从 main `c7bf0bea3782d419a558f5ed025fcd6283cb90c0` 恢复20个已审阅快照文件。
+- 恢复独立的合成离线审阅/意见回导模块、固定协议资源白名单修复及撤回验证时钟传递；未接入真实稿件、账号、上传、生产或已打包应用。
+- 定向 Node：39 total / 38 pass / 0 fail / 1 skip。统一 `npm test`：Node 641 total / 615 pass / 23 fail / 3 skip，失败涉及缺少 Electron、构建/S3 等依赖及本地运行时资源；未改测试制造通过。该失败使统一入口未运行 Python，随后单独 `npm run test:python`：369 total / 0 failures / 0 errors / 9 skips。
+- Alpha.64/DOCX覆盖及配套资源清单尚未合流：快照清单的 project.py 字节与 main 不同，而快照没有该文件，保留当前 main 信任链。版本保持 Alpha.63；离线演示中的 Alpha.64 是构造测试标记，不是已发行版本。
+- 内部计划/阶段档案、试点材料及本机专用 smoke 脚本未公开；9/27 协作 PR #4 保持独立。详细公开范围、三组待决定事项见 `docs/MERGE_LINES_2026-09-30.md`。
+- 下一步：Claude审阅与站长决定；仅由站长合并。源码合流不等于 packaged、deployed 或 production-ready。
+
+
 > 更新日期：2026-08-17
 > 当前开发方：ChatGPT Codex
 > 当前版本：`0.1.0-alpha.63`
