@@ -1,7 +1,7 @@
 {
   "schema_version": "oak-manuscript-frozen-contract-provenance/1.0",
   "contract": "oak-desktop-application-login/1.0",
-  "source_repository": "D:\\Workspace\\Oak by Lake\\oak-account-center",
+  "source_repository": "（账号中心私有仓库，本机路径已略）",
   "source_commit": "6aea9986539a0f55b2961426fa08e486a9e30b19",
   "source_status": "FROZEN_FOR_CONSUMER_IMPLEMENTATION",
   "copied_at": "2026-08-14",
@@ -21,6 +21,6 @@
     {"path":"examples/desktop-session-claims.valid.json","bytes":411,"sha256":"d2905169e8b5952bb69b6b0954782f51745186a1bfb42a0d8ba33c062df9cbcd"},
     {"path":"examples/desktop-token-response.valid.json","bytes":831,"sha256":"02747542b23a0500569cec115ce5cef560079a476f1acfe8a19b4e0ddec0d34f"},
     {"path":"examples/desktop-login-negative-vectors.v1.json","bytes":3831,"sha256":"5a1fedd05cb6d7afd9f100231d6ea2e20bd3f0c5f007c1598f62b9373b048647"},
-    {"path":"evidence/oak-4-desktop-application-login-contract-evidence.json","bytes":2729,"sha256":"e667e4f538d1dfa4adf4f29cb35d5beb2a032013f7524c243cdc8b064960e390"}
+    {"path":"evidence/oak-4-desktop-application-login-contract-evidence.json","bytes":2606,"sha256":"832f14f8f6590fe50b303da068048ab215b71b756a168a5db1ff923f027778fc"}
   ]
 }
