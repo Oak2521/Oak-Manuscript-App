@@ -21,6 +21,6 @@
     {"path":"examples/desktop-session-claims.valid.json","bytes":411,"sha256":"d2905169e8b5952bb69b6b0954782f51745186a1bfb42a0d8ba33c062df9cbcd"},
     {"path":"examples/desktop-token-response.valid.json","bytes":831,"sha256":"02747542b23a0500569cec115ce5cef560079a476f1acfe8a19b4e0ddec0d34f"},
     {"path":"examples/desktop-login-negative-vectors.v1.json","bytes":3831,"sha256":"5a1fedd05cb6d7afd9f100231d6ea2e20bd3f0c5f007c1598f62b9373b048647"},
-    {"path":"evidence/oak-4-desktop-application-login-contract-evidence.json","bytes":2606,"sha256":"832f14f8f6590fe50b303da068048ab215b71b756a168a5db1ff923f027778fc"}
+    {"path":"evidence/oak-4-desktop-application-login-contract-evidence.json","bytes":2617,"sha256":"0ce454a08ea4ca24b5a0a3150cc5ce24d31f9541d0f9e5927e7b1b3759a2ab77"}
   ]
 }

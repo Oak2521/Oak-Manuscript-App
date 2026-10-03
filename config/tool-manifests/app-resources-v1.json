@@ -10,7 +10,7 @@
     "config/tool-manifests/app-resources-v1.json"
   ],
   "file_count": 132,
-  "total_bytes": 2249072,
+  "total_bytes": 2249083,
   "files": [
     {
       "path": "config/app-config.json",
@@ -19,8 +19,8 @@
     },
     {
       "path": "config/contracts/oak-account/1.0/evidence/oak-4-desktop-application-login-contract-evidence.json",
-      "size_bytes": 2606,
-      "sha256": "832f14f8f6590fe50b303da068048ab215b71b756a168a5db1ff923f027778fc"
+      "size_bytes": 2617,
+      "sha256": "0ce454a08ea4ca24b5a0a3150cc5ce24d31f9541d0f9e5927e7b1b3759a2ab77"
     },
     {
       "path": "config/contracts/oak-account/1.0/examples/desktop-login-authorization.valid.json",
@@ -70,7 +70,7 @@
     {
       "path": "config/contracts/oak-account/1.0/provenance.json",
       "size_bytes": 2815,
-      "sha256": "0239bb7b778ff2969935e20ea07f588fa2d9218985b582609af023f2909b6b51"
+      "sha256": "22cc75f45db07e7298296362fbfcd90a256af37cfe3b0f3bd84684892269a356"
     },
     {
       "path": "config/contracts/oak-account/1.0/schemas/oak-desktop-login-authorization.v1.schema.json",
