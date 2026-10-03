@@ -42,7 +42,7 @@
 
 必须随级别显示：「仅代表技术与规范准备程度，不评价学术质量、文学价值或出版可行性。」
 
-**与内部三态模型的映射**（参考 oak-publishing-system 的 pass/review/blocked 经验，语义相近但不相同，禁止混用）：error ≈ blocked，warning/suggestion ≈ review，全部通过 ≈ pass。APP 对外只使用本节的三个中文级别与 severity 词汇。
+**与内部三态模型的映射**（参考出版系统仓库的 pass/review/blocked 经验，语义相近但不相同，禁止混用）：error ≈ blocked，warning/suggestion ≈ review，全部通过 ≈ pass。APP 对外只使用本节的三个中文级别与 severity 词汇。
 
 ## 3. 规则模型（Rule，规则包条目）
 

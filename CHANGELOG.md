@@ -462,7 +462,7 @@
 - 新增 `web/supabase-session-adapter.js`：只接受唯一、格式有界的 `Authorization: Bearer`，调用注入的服务端 verifier，并把 exact `{subject_id}` 净化为 `{principal, auth_mode: "bearer"}`；token、角色及完整 Supabase user 不进入作业状态机；
 - `web/http-handler.js` 的可信会话显式区分 Bearer 与 Cookie。两者都要求 HTTPS，状态变更都要求精确同源 Origin；Bearer 依赖显式 Authorization 且不开放 CORS，Cookie 模式继续强制 timing-safe CSRF；
 - 拒绝缺失、短 token、空白、逗号合并、重复 Authorization、无效/过期 token、越权 verifier 字段和 malformed principal；verifier 基础设施异常保留为服务错误而非伪装成认证失败；
-- 官网 `netlify-site` 只读核对确认现状为 Supabase 浏览器 access token + Netlify Function 调用 GoTrue `/auth/v1/user`；本仓库没有修改网站，也没有实现生产网络 verifier；
+- 官网 `官网仓库` 只读核对确认现状为 Supabase 浏览器 access token + Netlify Function 调用 GoTrue `/auth/v1/user`；本仓库没有修改网站，也没有实现生产网络 verifier；
 - 定向 handler/adapter 25/25；完整回归 Node 413 total / 406 pass / 0 fail / 7 skip，Python 351 total / 0 failures / 0 errors / 3 skipped；首次全量因版本字节引发资源锁漂移而按设计失败，显式更新后资源门禁和全量回归通过；
 - 资源清单仍为 78 文件 / 2,124,858 字节，manifest SHA-256 `c84e051d22986a5c495b932991e71d87cf807eb2fb1adcc55823a6c2ecab2cbf`，锚点 SHA-256 `bbc5c905bcebbbb5feb08ebaa73d86e728e8f832b2dc55181f88abd33efd6a25`。
 
@@ -923,5 +923,5 @@
 
 **文档与方案**
 
-- 方案升级 v1.2：完成 oak-publishing-system 与 netlify-site 只读核对，落实全部「待核实」标注；
+- 方案升级 v1.2：完成出版系统仓库与官网仓库只读核对，落实全部「待核实」标注；
 - 仓库基线：§19 目录骨架、AGENTS.md、七份 docs 骨架。

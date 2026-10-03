@@ -6,7 +6,7 @@
 
 ## 冻结合同
 
-- 唯一来源：只读仓库 `D:\Workspace\Oak by Lake\oak-account-center`。
+- 唯一来源：只读仓库 （本机路径已略）。
 - 冻结提交：`6aea9986539a0f55b2961426fa08e486a9e30b19`。
 - 来源状态：`FROZEN_FOR_CONSUMER_IMPLEMENTATION`。
 - 消费副本：`config/contracts/oak-account/1.0/`；`provenance.json` 固定 16 个文件的字节数和 SHA-256。

@@ -529,7 +529,7 @@
 
 ## 前一验证结论：0.1.0-alpha.42 真实 Ollama 0.32.5 / qwen3:4b 窄范围兼容验收
 
-验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已明确批准下载；本轮只从 Ollama 官方文档、官方 GitHub release 和官方模型库取得公开运行包/模型。没有使用用户稿件、项目、账号、AI 凭据或生产端点，没有部署、修改官网或改写系统安装状态。运行包、模型、HOME/状态、临时目录、日志和证据全部隔离在仓库 `out/external-validation/ollama/v0.32.5/`；服务只监听 `127.0.0.1:11435`，结束后已确认进程退出且端口关闭。
+验证日期：2026-07-29。工作区：（本机路径已略）。用户已明确批准下载；本轮只从 Ollama 官方文档、官方 GitHub release 和官方模型库取得公开运行包/模型。没有使用用户稿件、项目、账号、AI 凭据或生产端点，没有部署、修改官网或改写系统安装状态。运行包、模型、HOME/状态、临时目录、日志和证据全部隔离在仓库 `out/external-validation/ollama/v0.32.5/`；服务只监听 `127.0.0.1:11435`，结束后已确认进程退出且端口关闭。
 
 | 项目 | 结果 | 证据 |
 |---|---|---|
@@ -552,7 +552,7 @@
 
 ## 前一验证结论：0.1.0-alpha.42 compatible AI 故障恢复与 Windows packaged 验收
 
-验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮没有外部联网、真实模型调用、真实 AI 凭据、部署或官网修改；真实 socket 仅绑定测试进程内的 `127.0.0.1` 临时 HTTP 服务。源码及 packaged Electron smoke 均在独立隐藏进程执行。首次 α42 构建验证完成后发现会进入 ASAR 的内部 README 仍记载 α37；修正并提交后执行最终 205.7 秒重构建，以下只采信最终制品。
+验证日期：2026-07-29。工作区：（本机路径已略）。本轮没有外部联网、真实模型调用、真实 AI 凭据、部署或官网修改；真实 socket 仅绑定测试进程内的 `127.0.0.1` 临时 HTTP 服务。源码及 packaged Electron smoke 均在独立隐藏进程执行。首次 α42 构建验证完成后发现会进入 ASAR 的内部 README 仍记载 α37；修正并提交后执行最终 205.7 秒重构建，以下只采信最终制品。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -574,7 +574,7 @@
 
 ## 历史验证结论：0.1.0-alpha.41 OpenAI-compatible“我的 AI”纵向链
 
-验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实 AI 凭据、未部署或修改官网，也未读写项目目录外内容。源码 Electron smoke 在独立隐藏进程执行；没有重新打包，最新真实 Windows 制品保持 alpha.37。
+验证日期：2026-07-29。工作区：（本机路径已略）。本轮未联网、未调用真实模型、未使用真实 AI 凭据、未部署或修改官网，也未读写项目目录外内容。源码 Electron smoke 在独立隐藏进程执行；没有重新打包，最新真实 Windows 制品保持 alpha.37。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -590,7 +590,7 @@
 
 ## 历史验证结论：0.1.0-alpha.40 登录故障恢复与同步幂等收敛
 
-验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未使用真实账号/端点/API key、未执行数据库迁移、未部署或修改官网，也未读写项目目录外内容。源码 Electron smoke 在独立隐藏进程执行；没有重新打包，最新真实 Windows 制品保持 alpha.37。
+验证日期：2026-07-29。工作区：（本机路径已略）。本轮未联网、未使用真实账号/端点/API key、未执行数据库迁移、未部署或修改官网，也未读写项目目录外内容。源码 Electron smoke 在独立隐藏进程执行；没有重新打包，最新真实 Windows 制品保持 alpha.37。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -605,7 +605,7 @@
 
 ## 历史验证结论：0.1.0-alpha.39 桌面 PKCE、加密会话与显式同步接线
 
-验证日期：2026-07-29。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未使用真实账号/端点/API key、未执行数据库迁移、未部署或修改官网，也未读写项目目录外内容。源码 Electron smoke 在独立隐藏进程执行；没有重新打包，最新真实 Windows 制品保持 alpha.37。
+验证日期：2026-07-29。工作区：（本机路径已略）。本轮未联网、未使用真实账号/端点/API key、未执行数据库迁移、未部署或修改官网，也未读写项目目录外内容。源码 Electron smoke 在独立隐藏进程执行；没有重新打包，最新真实 Windows 制品保持 alpha.37。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -621,7 +621,7 @@
 
 ## 历史验证结论：0.1.0-alpha.38 SyncRecord 服务端与桌面 transport 源码
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实账号/API/service-role/AI 密钥、未执行数据库迁移、未部署或修改官网，也未读写项目目录外内容。源码 Electron smoke 以独立隐藏进程执行；本轮没有重新打包，最新真实 Windows 制品保持 alpha.37。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网、未调用真实模型、未使用真实账号/API/service-role/AI 密钥、未执行数据库迁移、未部署或修改官网，也未读写项目目录外内容。源码 Electron smoke 以独立隐藏进程执行；本轮没有重新打包，最新真实 Windows 制品保持 alpha.37。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -638,7 +638,7 @@
 
 ## 历史验证结论：0.1.0-alpha.37 packaged smoke 证据绑定制品
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未修改官网或项目目录外内容；Electron smoke 均以隐藏进程执行。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未修改官网或项目目录外内容；Electron smoke 均以隐藏进程执行。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -666,7 +666,7 @@
 
 ## 历史验证结论：0.1.0-alpha.35 AI 有界 HTTP 底座与适配路由契约
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未修改官网、未部署或生成 alpha.35 安装包。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未修改官网、未部署或生成 alpha.35 安装包。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -682,7 +682,7 @@
 
 ## 历史验证结论：0.1.0-alpha.34 AI 建议人工审阅契约
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未修改官网、未部署或生成 alpha.34 安装包。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未修改官网、未部署或生成 alpha.34 安装包。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -699,7 +699,7 @@
 
 ## 历史验证结论：0.1.0-alpha.33 AI 单条问题发送预览与一次确认契约
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未修改官网、未部署或生成 alpha.33 安装包。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网、未调用真实模型、未使用真实 AI 密钥、未修改官网、未部署或生成 alpha.33 安装包。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -717,7 +717,7 @@
 
 ## 历史验证结论：0.1.0-alpha.32 三模式 AI 设置与加密凭据
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未调用模型、未使用真实 AI 密钥、未修改官网、未部署或生成 alpha.32 安装包。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网、未调用模型、未使用真实 AI 密钥、未修改官网、未部署或生成 alpha.32 安装包。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -734,7 +734,7 @@
 
 ## 历史验证结论：0.1.0-alpha.31 Web 有界双清扫
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网，没有使用真实密钥、执行 Supabase 迁移、连接 Netlify Blobs、修改官网、部署计划任务/容器、启动 Electron/安装器或生成 alpha.31 安装包。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网，没有使用真实密钥、执行 Supabase 迁移、连接 Netlify Blobs、修改官网、部署计划任务/容器、启动 Electron/安装器或生成 alpha.31 安装包。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -752,7 +752,7 @@
 
 ## 历史验证结论：0.1.0-alpha.30 Web 一次性结果领取
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网，没有使用真实密钥、执行 Supabase 迁移、连接 Netlify Blobs、修改官网、部署容器、启动 Electron/安装器或生成 alpha.30 安装包。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网，没有使用真实密钥、执行 Supabase 迁移、连接 Netlify Blobs、修改官网、部署容器、启动 Electron/安装器或生成 alpha.30 安装包。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -770,7 +770,7 @@
 
 ## 历史验证结论：0.1.0-alpha.29 Web 上传结构与主动内容前置门禁
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网，没有使用真实密钥、执行 Supabase 迁移、连接 Netlify Blobs、修改官网、部署容器、启动 Electron/安装器或生成 alpha.29 安装包。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网，没有使用真实密钥、执行 Supabase 迁移、连接 Netlify Blobs、修改官网、部署容器、启动 Electron/安装器或生成 alpha.29 安装包。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -786,7 +786,7 @@
 
 ## 历史验证结论：0.1.0-alpha.28 私有租约队列与隔离核心检查点
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网，没有使用真实 service-role key、执行 Supabase 迁移、连接 Netlify Blobs、修改官网、部署容器、启动 Electron/安装器或生成 alpha.28 安装包。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网，没有使用真实 service-role key、执行 Supabase 迁移、连接 Netlify Blobs、修改官网、部署容器、启动 Electron/安装器或生成 alpha.28 安装包。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -803,7 +803,7 @@
 
 ## 历史验证结论：0.1.0-alpha.27 持久任务与幂等数据库检查点
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网；官网 Supabase schema 与服务端调用方式仅作只读参考。没有执行真实数据库迁移、配置或读取 service-role key、连接 Supabase/Netlify、修改官网、启动 Electron/安装器，也未生成 alpha.27 安装包。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网；官网 Supabase schema 与服务端调用方式仅作只读参考。没有执行真实数据库迁移、配置或读取 service-role key、连接 Supabase/Netlify、修改官网、启动 Electron/安装器，也未生成 alpha.27 安装包。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -819,7 +819,7 @@
 
 ## 历史验证结论：0.1.0-alpha.26 Netlify 临时对象存储检查点
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。经用户授权，仅执行 npm SDK 下载与审计；没有连接 Netlify store、真实 Supabase、官网或用户稿件，没有启动 Electron/安装器，也未生成 alpha.26 安装包。
+验证日期：2026-07-28。工作区：（本机路径已略）。经用户授权，仅执行 npm SDK 下载与审计；没有连接 Netlify store、真实 Supabase、官网或用户稿件，没有启动 Electron/安装器，也未生成 alpha.26 安装包。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -835,7 +835,7 @@
 
 ## 历史验证结论：0.1.0-alpha.25 GoTrue、Fetch 与 Web 工作台检查点
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。未联网、未修改官网、未启动 Electron/安装器，也未生成 alpha.25 安装包。GoTrue 请求只由注入的测试 fetch 模拟；UI 截图由完全拦截非本地请求的无界面 Chrome 生成。
+验证日期：2026-07-28。工作区：（本机路径已略）。未联网、未修改官网、未启动 Electron/安装器，也未生成 alpha.25 安装包。GoTrue 请求只由注入的测试 fetch 模拟；UI 截图由完全拦截非本地请求的无界面 Chrome 生成。
 
 | 验证 | 结果 | 证据 |
 |---|---|---|
@@ -850,7 +850,7 @@
 
 ## 历史验证结论：0.1.0-alpha.24 Supabase Bearer 会话适配检查点
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。官网仅作本地只读核对；未联网、未修改网站、未启动 Electron/安装器，也未生成 alpha.24 安装包。
+验证日期：2026-07-28。工作区：（本机路径已略）。官网仅作本地只读核对；未联网、未修改网站、未启动 Electron/安装器，也未生成 alpha.24 安装包。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -865,7 +865,7 @@
 
 ## 历史验证结论：0.1.0-alpha.23 同源 HTTPS Web 作业 handler 检查点
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网；所有 Electron/packaged 进程隐藏执行，实际安装器未运行。Web handler 未监听端口，也没有真实上传、Supabase、对象存储或官网请求。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网；所有 Electron/packaged 进程隐藏执行，实际安装器未运行。Web handler 未监听端口，也没有真实上传、Supabase、对象存储或官网请求。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -904,7 +904,7 @@ packaged 运行根：`out/packaged-smoke/runs/ms536bic-c319680eda532edb/projects
 
 ## 历史验证结论：0.1.0-alpha.22 Web 临时作业契约与零留存状态机检查点
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未发出应用网络请求；所有 Electron/packaged 进程隐藏执行，实际安装器未运行。Web 代码仅为内存参考实现，没有启动 HTTP 服务或上传稿件。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未发出应用网络请求；所有 Electron/packaged 进程隐藏执行，实际安装器未运行。Web 代码仅为内存参考实现，没有启动 HTTP 服务或上传稿件。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -941,7 +941,7 @@ packaged 运行根：`out/packaged-smoke/runs/ms51i9ei-380951fc1506cffb/projects
 
 ## 历史验证结论：0.1.0-alpha.21 本机加密同步队列与重启恢复检查点
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网；所有 Electron/packaged 进程隐藏执行，实际安装器未运行。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网；所有 Electron/packaged 进程隐藏执行，实际安装器未运行。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -975,7 +975,7 @@ packaged 运行根：`out/packaged-smoke/runs/ms51i9ei-380951fc1506cffb/projects
 
 ## 历史验证结论：0.1.0-alpha.20 打包发行身份与真实 ASAR 元数据绑定检查点
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网；所有 Electron/packaged 进程隐藏执行，实际安装器未运行。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网；所有 Electron/packaged 进程隐藏执行，实际安装器未运行。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -1017,7 +1017,7 @@ packaged 运行根：`out/packaged-smoke/runs/ms51i9ei-380951fc1506cffb/projects
 
 ## 历史验证结论：0.1.0-alpha.19 发行商身份 fail-closed 门禁检查点
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。未联网；所有 GUI/packaged 进程隐藏执行，实际安装器未运行。
+验证日期：2026-07-28。工作区：（本机路径已略）。未联网；所有 GUI/packaged 进程隐藏执行，实际安装器未运行。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -1049,7 +1049,7 @@ packaged 运行根：`out/packaged-smoke/runs/ms51i9ei-380951fc1506cffb/projects
 
 ## 历史验证结论：0.1.0-alpha.18 Electron 与 Windows builder 来源机器证据检查点
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已明确允许下载；Electron 证据使用 GitHub 官方 release/API/SHASUMS256 与 npm checksums，builder 证据使用 GitHub 官方 release API 和仓库内已有的三份已验哈希归档。所有 packaged GUI 进程隐藏执行，实际安装器未运行。
+验证日期：2026-07-28。工作区：（本机路径已略）。用户已明确允许下载；Electron 证据使用 GitHub 官方 release/API/SHASUMS256 与 npm checksums，builder 证据使用 GitHub 官方 release API 和仓库内已有的三份已验哈希归档。所有 packaged GUI 进程隐藏执行，实际安装器未运行。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -1084,7 +1084,7 @@ packaged 运行根：`out/packaged-smoke/runs/ms51i9ei-380951fc1506cffb/projects
 
 ## 历史验证结论：0.1.0-alpha.17 Temurin/JRE 来源机器证据与 Windows 制品检查点
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已明确允许下载；本轮从 Eclipse Adoptium 官方 GitHub release 获取 Temurin 21.0.11+10 ZIP、checksum、build metadata、detached signature、release API JSON，并从官方 Adoptium 端点获取公钥。所有 packaged GUI 进程隐藏执行，实际安装器未运行。
+验证日期：2026-07-28。工作区：（本机路径已略）。用户已明确允许下载；本轮从 Eclipse Adoptium 官方 GitHub release 获取 Temurin 21.0.11+10 ZIP、checksum、build metadata、detached signature、release API JSON，并从官方 Adoptium 端点获取公钥。所有 packaged GUI 进程隐藏执行，实际安装器未运行。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -1118,7 +1118,7 @@ packaged 运行根：`out/packaged-smoke/runs/ms51i9ei-380951fc1506cffb/projects
 
 ## 历史验证结论：0.1.0-alpha.16 EpubCheck 来源机器证据与 Windows 制品检查点
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已明确允许下载；本轮只从 W3C/DAISY 官方 GitHub release 获取 EpubCheck 5.3.0 审计输入。Windows 构建使用仓库内已锁定工具；所有 packaged GUI 进程隐藏执行，实际安装器未运行。
+验证日期：2026-07-28。工作区：（本机路径已略）。用户已明确允许下载；本轮只从 W3C/DAISY 官方 GitHub release 获取 EpubCheck 5.3.0 审计输入。Windows 构建使用仓库内已锁定工具；所有 packaged GUI 进程隐藏执行，实际安装器未运行。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -1151,7 +1151,7 @@ packaged 运行根：`out/packaged-smoke/runs/ms51i9ei-380951fc1506cffb/projects
 
 ## 历史验证结论：0.1.0-alpha.15 CPython 来源机器证据与 Windows 制品检查点
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已明确允许下载；本轮只从 Python 官方站点获取 CPython 3.13.14 审计输入。Windows 构建使用仓库内已锁定工具；所有 packaged GUI 进程隐藏执行，实际安装器未运行。
+验证日期：2026-07-28。工作区：（本机路径已略）。用户已明确允许下载；本轮只从 Python 官方站点获取 CPython 3.13.14 审计输入。Windows 构建使用仓库内已锁定工具；所有 packaged GUI 进程隐藏执行，实际安装器未运行。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -1184,7 +1184,7 @@ packaged 运行根：`out/packaged-smoke/runs/ms51i9ei-380951fc1506cffb/projects
 
 ## 历史验证结论：0.1.0-alpha.14 Windows 安装生命周期验收工具检查点
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮没有联网。实际安装器未运行；所有 packaged GUI 进程隐藏执行。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮没有联网。实际安装器未运行；所有 packaged GUI 进程隐藏执行。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -1216,7 +1216,7 @@ packaged 运行根：`out/packaged-smoke/runs/ms51i9ei-380951fc1506cffb/projects
 
 ## 历史验证结论：0.1.0-alpha.13 Electron 43 全 fuse 固定检查点
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已批准本轮依赖下载；实际 Windows 构建使用仓库内已锁定离线工具，Electron 与 Chrome 均以隐藏进程运行。
+验证日期：2026-07-28。工作区：（本机路径已略）。用户已批准本轮依赖下载；实际 Windows 构建使用仓库内已锁定离线工具，Electron 与 Chrome 均以隐藏进程运行。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -1256,7 +1256,7 @@ packaged 运行根：`out/packaged-smoke/runs/ms51i9ei-380951fc1506cffb/projects
 
 ## 历史验证结论：0.1.0-alpha.12 Windows 可安装 alpha
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。用户已批准下载；构建、Electron 与 Chrome 均以隐藏进程运行。
+验证日期：2026-07-28。工作区：（本机路径已略）。用户已批准下载；构建、Electron 与 Chrome 均以隐藏进程运行。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -1293,7 +1293,7 @@ packaged 运行根：`out/packaged-smoke/runs/ms51i9ei-380951fc1506cffb/projects
 
 ## 历史验证结论：0.1.0-alpha.11 ASAR 资源信任根
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未运行 electron-builder、未生成安装器/ZIP/发布证据；已按授权在独立隐藏窗口运行 alpha.11 源码 UI smoke。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网、未运行 electron-builder、未生成安装器/ZIP/发布证据；已按授权在独立隐藏窗口运行 alpha.11 源码 UI smoke。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -1326,7 +1326,7 @@ alpha.11 隐藏 smoke 运行根：`out/source-smoke/runs/ms4eowx9-64e0aab5311e2a
 
 ## 历史验证结论：0.1.0-alpha.10 Ace 受控 utilityProcess 与 RunAsNode 关闭
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未下载 builder 归档、未运行 electron-builder，也未生成安装器、ZIP 或发布证据。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网、未下载 builder 归档、未运行 electron-builder，也未生成安装器、ZIP 或发布证据。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -1356,7 +1356,7 @@ alpha.11 隐藏 smoke 运行根：`out/source-smoke/runs/ms4eowx9-64e0aab5311e2a
 
 ## 历史验证结论：0.1.0-alpha.9 Electron ASAR 与 fuse 发布硬化合同
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网、未下载 builder 归档、未运行 electron-builder，也未生成安装器、ZIP 或发布证据。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网、未下载 builder 归档、未运行 electron-builder，也未生成安装器、ZIP 或发布证据。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|
@@ -1391,7 +1391,7 @@ alpha.11 隐藏 smoke 运行根：`out/source-smoke/runs/ms4eowx9-64e0aab5311e2a
 
 ## 历史验证结论：0.1.0-alpha.8 统一账号、权益与 SyncRecord v1 离线契约
 
-验证日期：2026-07-28。工作区：`D:\Workspace\Oak Manuscript GPT\Oak Manuscript Commercial\repo`。本轮未联网，未调用生产账号/支付/同步服务，未下载 builder 归档，未生成安装器、ZIP 或发布证据。
+验证日期：2026-07-28。工作区：（本机路径已略）。本轮未联网，未调用生产账号/支付/同步服务，未下载 builder 归档，未生成安装器、ZIP 或发布证据。
 
 | 命令 / 检查 | 结果 | 关键事实 |
 |---|---|---|

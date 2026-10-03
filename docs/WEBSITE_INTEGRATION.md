@@ -1,6 +1,6 @@
 # WEBSITE_INTEGRATION — 网站对接与 Provider 接口
 
-> 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `netlify-site` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
+> 当前依据为商业正式版方案 v2.0。2026-07-28 已只读复核本地 `官网仓库` 的 Supabase/Netlify Functions 鉴权源码；这不证明线上部署与本地分支一致。核心功能不依赖网站；一切对接经 Provider 接口，后接保持本地项目格式向后兼容。
 
 ## Provider 一览（当前 alpha.56 源码）
 
