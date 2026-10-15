@@ -1,6 +1,6 @@
 # 在 issue、PR 里写 @claude，由 Claude 在云端接手（方案 v2.0 第 0 层）。
 # 只响应仓库所有者 Oak2521：站长本人和 Codex 都用这个账号评论；Claude 自己的回复来自 claude[bot]，不会触发，避免循环。
-# 需要仓库 Secret：ANTHROPIC_API_KEY（Max 套餐附带的 API 额度，Console 组织 Oak by Lake Publishing），由站长在仓库 Settings → Secrets 中配置；未配置时本 workflow 会失败，但不影响 Hosted source gates。
+# 需要仓库 Secret：CLAUDE_CODE_OAUTH_TOKEN（订阅账号，由 claude setup-token 生成），由站长在仓库 Settings → Secrets 中配置；未配置时本 workflow 会失败，但不影响 Hosted source gates。
 name: Claude
 
 on:
@@ -34,4 +34,4 @@ jobs:
           fetch-depth: 1
       - uses: anthropics/claude-code-action@fd1c128679612beff4ca259c78021c506e8aa7a7 # v1
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
