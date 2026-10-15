@@ -22,5 +22,5 @@
 ## 待站长处理
 
 - 合流记录中两组未公开内容：站长已决定内部计划/报告快照另存私有档案、不进本公开仓库；两个本机专用 smoke 脚本只留本机。
-- 若要启用 `@claude`：在仓库 Secrets 中配置 `ANTHROPIC_API_KEY`。
+- 若要启用 `@claude`：在仓库 Secrets 中配置 `CLAUDE_CODE_OAUTH_TOKEN`。
 - 账号、权益、标准联网配置仍为 `pending_configuration`；任何真实环境接入、签名与发布均属站长执行类事项。
