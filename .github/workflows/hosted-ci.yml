@@ -1,10 +1,8 @@
+# 2026-10-18 站长批准（省 Actions 额度）：只在 PR 上跑，不再在合并后的默认分支上重跑——分支保护已要求 PR 检查全绿，合并后重跑没有新信息。
 name: Hosted source gates
 
 on:
   pull_request:
-    branches:
-      - main
-  push:
     branches:
       - main
   workflow_dispatch:
